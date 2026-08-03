@@ -1,0 +1,43 @@
+<Project>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <!-- TD-12: built-in .NET analyzers at the broadest rule set, no StyleCop -->
+  <PropertyGroup>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest-all</AnalysisLevel>
+  </PropertyGroup>
+
+  <!-- Tag-driven versioning: `git tag v1.2.3` produces package version 1.2.3.
+       Untagged builds get a height-suffixed prerelease off the last tag. -->
+  <PropertyGroup>
+    <MinVerTagPrefix>v</MinVerTagPrefix>
+    <MinVerAutoIncrement>minor</MinVerAutoIncrement>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MinVer" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- Package metadata shared by every publishable platform library.
+       Per-project PackageId/Description live in the individual csproj files.
+       No licence is declared: these are private packages on an authenticated feed. -->
+  <PropertyGroup>
+    <Authors>Mark Chivers</Authors>
+    <Company>Mark Chivers</Company>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/markchivs73/frontier-platform</RepositoryUrl>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <!-- Symbols are embedded rather than shipped as .snupkg: GitHub Packages does not
+         accept symbol packages, so a separate snupkg would fail the push. -->
+    <DebugType>embedded</DebugType>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+  </PropertyGroup>
+
+</Project>

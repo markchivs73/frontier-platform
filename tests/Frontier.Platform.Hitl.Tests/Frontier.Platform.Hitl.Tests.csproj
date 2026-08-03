@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Frontier.Platform.Hitl\Frontier.Platform.Hitl.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- S9.23: shared emulator endpoint helper (env-driven, vnext-preview HTTP default) -->
+    <Compile Include="..\Shared\EmulatorCosmos.cs" Link="EmulatorCosmos.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Shared HITL fixtures (S11.3): one copy for Hitl.Tests and the relocated activity tests -->
+    <Compile Include="..\Shared\HitlFixtures.cs" Link="HitlFixtures.cs" />
+  </ItemGroup>
+
+</Project>

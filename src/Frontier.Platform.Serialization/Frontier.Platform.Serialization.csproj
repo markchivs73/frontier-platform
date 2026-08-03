@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <Description>Canonical JSON profile: omit-null, declared property order, snake_case wire names, ISO-8601-UTC-ms dates, fixed-scale string decimals, string enums, invariant culture. Byte-stable output — definition hashing, cache hits and audit signing depend on it.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Frontier.Platform.Abstractions\Frontier.Platform.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

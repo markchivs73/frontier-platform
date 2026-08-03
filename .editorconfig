@@ -1,0 +1,73 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+
+[*.cs]
+indent_size = 4
+
+# File-scoped namespaces only (engineering-standards)
+csharp_style_namespace_declarations = file_scoped:warning
+
+# Always require braces (engineering-standards)
+csharp_prefer_braces = true:warning
+
+# Always require accessibility modifiers — no implicit-private members
+# (engineering-standards: members are `public` or `internal` only)
+dotnet_style_require_accessibility_modifiers = always:warning
+dotnet_diagnostic.IDE0040.severity = warning
+
+# `sealed` by default for non-abstract classes (engineering-standards)
+dotnet_diagnostic.CA1852.severity = warning
+
+# `using` directives outside the namespace, sorted with System first
+csharp_using_directive_placement = outside_namespace:warning
+dotnet_sort_system_directives_first = true
+
+# No `#region` blocks
+dotnet_diagnostic.IDE0079.severity = warning
+
+# Prefer expression-bodied members for simple one-line members
+csharp_style_expression_bodied_methods = when_on_single_line:suggestion
+csharp_style_expression_bodied_properties = when_on_single_line:suggestion
+
+# CA1812 false-positives on every `internal sealed` implementation that is
+# only ever constructed by the DI container via AddFrontierXxx() — the
+# analyzer can't see container-resolved activation.
+dotnet_diagnostic.CA1812.severity = none
+
+# CA2007 (ConfigureAwait) targets general-purpose libraries that may run
+# under a foreign SynchronizationContext. ASP.NET Core hosts/tests have none.
+dotnet_diagnostic.CA2007.severity = none
+
+[tests/**/*.cs]
+# Test methods are named Method_Scenario_ExpectedOutcome (testing-strategy).
+dotnet_diagnostic.CA1707.severity = none
+
+[spike/**/*.cs]
+# Spike test methods follow the same Method_Scenario_ExpectedOutcome convention.
+dotnet_diagnostic.CA1707.severity = none
+
+[demo/**/*.cs]
+# Demo-server test methods follow the same Method_Scenario_ExpectedOutcome convention (S9.25).
+dotnet_diagnostic.CA1707.severity = none
+
+[src/Frontier.Platform.Abstractions/SmartEnum.cs]
+# CA1711: "SmartEnum" is the established pattern name (TD-11) — it
+# intentionally evokes enum semantics for callers.
+dotnet_diagnostic.CA1711.severity = none
+
+# CA1000: List/FromName/TryFromName are the smart-enum API surface, called
+# via the CRTP-derived type (TEnum : SmartEnum<TEnum>) — this *is* the
+# pattern, not a violation of it.
+dotnet_diagnostic.CA1000.severity = none
+
+[*.{json,props,targets,csproj,slnx,yml,yaml}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false

@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <!-- Platform-only closure (ADR-PA2): this project must never reference a
+       Frontier.Reason.* assembly — it moves with the platform on extraction.
+       Serialization is referenced for CanonicalProfile, the profile every
+       contract round-trips through. -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Frontier.Platform.Abstractions\Frontier.Platform.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\Frontier.Platform.Serialization\Frontier.Platform.Serialization.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Shared canonical round-trip harness (S11.2): one copy, compile-linked here and
+         into Frontier.Reason.Workflow.Abstractions.Tests -->
+    <Compile Include="..\Shared\ContractRoundTripAssertions.cs" Link="ContractRoundTripAssertions.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="GoldenFiles\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

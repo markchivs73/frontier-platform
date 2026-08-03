@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <Description>Tiered context assembly (baseline to dynamic to real-time) with provider cache breakpoints at tier boundaries, context validation/comparison/debugging, and the Cosmos-backed engagement context store. Agents never self-retrieve context.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- DI and options pattern -->
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+
+    <!-- Cosmos DB for engagement and baseline stores. Newtonsoft.Json is not used in code:
+         Microsoft.Azure.Cosmos's build targets require the explicit reference (S11.2 verified —
+         removing it is a build error until the SDK drops the check). -->
+    <PackageReference Include="Microsoft.Azure.Cosmos" />
+    <PackageReference Include="Newtonsoft.Json" />
+
+    <!-- Provider SDKs for caching strategies (TD-7) -->
+    <PackageReference Include="Anthropic" />
+    <PackageReference Include="OpenAI" />
+
+    <!-- Microsoft.Extensions.AI for message abstractions -->
+    <PackageReference Include="Microsoft.Extensions.AI" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Platform contract kernel (ADR-PA2: platform libraries never reference Frontier.Reason.*) -->
+    <ProjectReference Include="../Frontier.Platform.Abstractions/Frontier.Platform.Abstractions.csproj" />
+    <!-- Frontier serialization (canonical profile) -->
+    <ProjectReference Include="../Frontier.Platform.Serialization/Frontier.Platform.Serialization.csproj" />
+  </ItemGroup>
+
+</Project>

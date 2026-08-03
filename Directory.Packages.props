@@ -1,0 +1,70 @@
+<Project>
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <!-- Tag-driven package versioning (see Directory.Build.props) -->
+  <ItemGroup>
+    <PackageVersion Include="MinVer" Version="7.0.0" />
+  </ItemGroup>
+
+  <!-- Test-framework packages -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+    <PackageVersion Include="Moq" Version="4.20.70" />
+    <PackageVersion Include="NetArchTest.Rules" Version="1.3.2" />
+  </ItemGroup>
+
+  <!-- Cosmos DB SDK (TD-1) + Newtonsoft.Json for Azure SDK compatibility.
+       Newtonsoft.Json is not used in platform code: the Cosmos SDK's build targets
+       mandate the explicit reference (S11.2/S11.3). -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.Azure.Cosmos" Version="3.61.0" />
+    <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
+  </ItemGroup>
+
+  <!-- Azure Blob Storage SDK (doc 02 §8): audit archival exports -->
+  <ItemGroup>
+    <PackageVersion Include="Azure.Storage.Blobs" Version="12.29.0" />
+  </ItemGroup>
+
+  <!-- Durable Task abstractions: retry-policy translation in Platform.Resilience -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.DurableTask.Abstractions" Version="1.24.2" />
+  </ItemGroup>
+
+  <!-- Microsoft.Extensions.AI + provider SDKs for context-assembly caching (TD-7) -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.Extensions.AI" Version="10.7.0" />
+    <PackageVersion Include="Anthropic" Version="12.35.1" />
+    <PackageVersion Include="OpenAI" Version="2.5.0" />
+  </ItemGroup>
+
+  <!-- Polly v8 (TD-1) -->
+  <ItemGroup>
+    <PackageVersion Include="Polly.Core" Version="8.7.0" />
+    <PackageVersion Include="Polly.RateLimiting" Version="8.7.0" />
+  </ItemGroup>
+
+  <!-- DI registration for platform libraries that don't reference Microsoft.AspNetCore.App
+       (doc 00 §9: AddFrontierXxx() extensions, consumer-owned interfaces, no SDK types) -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.9" />
+  </ItemGroup>
+
+  <!-- Options pattern: bind + validate library-owned configuration sections (doc 12 §4) -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.9" />
+  </ItemGroup>
+
+</Project>

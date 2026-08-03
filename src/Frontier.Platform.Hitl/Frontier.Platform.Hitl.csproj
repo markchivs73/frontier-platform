@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <Description>Human-in-the-loop approval store, request factory, decided/pending query services and rollback support over Cosmos. Solution-agnostic: callers drive it from their own orchestration activity shells.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Newtonsoft.Json is not used in code: Microsoft.Azure.Cosmos's build targets require
+         the explicit reference (S11.2/S11.3 verified — previously satisfied transitively via the
+         removed Microsoft.DurableTask.Abstractions package). -->
+    <PackageReference Include="Microsoft.Azure.Cosmos" />
+    <PackageReference Include="Newtonsoft.Json" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Platform contract kernel (ADR-PA2: platform libraries never reference Frontier.Reason.*) -->
+    <ProjectReference Include="..\Frontier.Platform.Abstractions\Frontier.Platform.Abstractions.csproj" />
+    <ProjectReference Include="..\Frontier.Platform.Serialization\Frontier.Platform.Serialization.csproj" />
+  </ItemGroup>
+
+</Project>

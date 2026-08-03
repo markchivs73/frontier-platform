@@ -1,0 +1,1 @@
+{"schema_version":"1.0","engagement_id":"eng-1","agent_role":"analyst","baseline_components":["firm-standards","playbooks"],"dynamic_fields":["timeline","stakeholders"],"requires_real_time":true,"real_time_sources":["crm-feed"]}

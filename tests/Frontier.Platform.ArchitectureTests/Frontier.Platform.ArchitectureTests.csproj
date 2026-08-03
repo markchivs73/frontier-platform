@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="NetArchTest.Rules" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <!-- Every platform library, so the reference-graph rules can load each by name. -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Frontier.Platform.Abstractions\Frontier.Platform.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\Frontier.Platform.Audit\Frontier.Platform.Audit.csproj" />
+    <ProjectReference Include="..\..\src\Frontier.Platform.ContextAssembly\Frontier.Platform.ContextAssembly.csproj" />
+    <ProjectReference Include="..\..\src\Frontier.Platform.Guardrails\Frontier.Platform.Guardrails.csproj" />
+    <ProjectReference Include="..\..\src\Frontier.Platform.Hitl\Frontier.Platform.Hitl.csproj" />
+    <ProjectReference Include="..\..\src\Frontier.Platform.ModelRoleConfig\Frontier.Platform.ModelRoleConfig.csproj" />
+    <ProjectReference Include="..\..\src\Frontier.Platform.Observability\Frontier.Platform.Observability.csproj" />
+    <ProjectReference Include="..\..\src\Frontier.Platform.Resilience\Frontier.Platform.Resilience.csproj" />
+    <ProjectReference Include="..\..\src\Frontier.Platform.Serialization\Frontier.Platform.Serialization.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <Description>Retry, circuit-breaker and bulkhead policy specifications with failure classification (permanent contract violations are never retried; transient faults are), translated to named Polly v8 profiles. Retry policy is data, not code.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Azure.Cosmos" />
+    <PackageReference Include="Microsoft.DurableTask.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Polly.Core" />
+    <PackageReference Include="Polly.RateLimiting" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Frontier.Platform.Abstractions\Frontier.Platform.Abstractions.csproj" />
+    <ProjectReference Include="..\Frontier.Platform.Serialization\Frontier.Platform.Serialization.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <Description>Platform contract kernel: SmartEnum&lt;T&gt;, IVersionedContract, ContractMigrator, the permanent-failure exceptions, and the shared kernel contracts (EngagementId, ContextRequest, ExecutionStatus, GateKind, DecisionKind, HitlDecision, ResolvedModelSummary). Zero dependencies (ADR-PA1).</Description>
+  </PropertyGroup>
+
+</Project>

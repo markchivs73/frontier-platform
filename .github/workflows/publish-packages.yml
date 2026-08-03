@@ -1,0 +1,47 @@
+name: Publish NuGet Packages
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # MinVer derives the version from tag history
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore FrontierPlatform.slnx
+
+      - name: Build
+        run: dotnet build FrontierPlatform.slnx -c Release --no-restore
+
+      # Emulator-backed tests are excluded here: this job runs no Cosmos emulator.
+      # They are covered by the CI workflow on pull requests.
+      - name: Test (unit + architecture)
+        run: >-
+          dotnet test FrontierPlatform.slnx -c Release --no-build
+          --filter "FullyQualifiedName!~Integration"
+
+      - name: Pack
+        run: dotnet pack FrontierPlatform.slnx -c Release --no-build -o ./artifacts
+
+      - name: Push to GitHub Packages
+        run: >-
+          dotnet nuget push "./artifacts/*.nupkg"
+          --api-key "${{ secrets.GITHUB_TOKEN }}"
+          --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
+          --skip-duplicate
