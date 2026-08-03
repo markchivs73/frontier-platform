@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Frontier.Platform.SmokeConsumer</RootNamespace>
+  </PropertyGroup>
+
+  <!--
+    Floating "*-*" resolves the highest version available including prereleases, which is
+    whatever `dotnet pack` just wrote into ../artifacts. MinVer stamps a prerelease version
+    on untagged builds, so a fixed version here would need updating on every run.
+  -->
+  <ItemGroup>
+    <PackageReference Include="Frontier.Platform.Abstractions" Version="*-*" />
+    <PackageReference Include="Frontier.Platform.Audit" Version="*-*" />
+    <PackageReference Include="Frontier.Platform.ContextAssembly" Version="*-*" />
+    <PackageReference Include="Frontier.Platform.Guardrails" Version="*-*" />
+    <PackageReference Include="Frontier.Platform.Hitl" Version="*-*" />
+    <PackageReference Include="Frontier.Platform.ModelRoleConfig" Version="*-*" />
+    <PackageReference Include="Frontier.Platform.Observability" Version="*-*" />
+    <PackageReference Include="Frontier.Platform.Resilience" Version="*-*" />
+    <PackageReference Include="Frontier.Platform.Serialization" Version="*-*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.9" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.9" />
+  </ItemGroup>
+
+</Project>

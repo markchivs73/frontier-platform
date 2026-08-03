@@ -1,0 +1,12 @@
+<Project>
+
+  <!--
+    Stops the repository root Directory.Packages.props applying here. Central package
+    management is switched off for the sample so its PackageReference items can carry a
+    floating version and resolve whatever was just packed into ./artifacts.
+  -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+</Project>

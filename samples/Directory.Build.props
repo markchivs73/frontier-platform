@@ -1,0 +1,20 @@
+<Project>
+
+  <!--
+    Deliberately does NOT import the repository root Directory.Build.props.
+
+    MSBuild stops at the nearest Directory.Build.props walking up, so this file isolates
+    everything under samples/ from the repo's build customisation. That isolation is the
+    point of the smoke consumer: it must compile the way a real consumer would, against
+    published packages, with none of this repo's MinVer stamping, public-API analyzers or
+    central package management applied to it.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+</Project>
