@@ -1,0 +1,136 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_VERSION: "10.0.x"
+  DOTNET_NOLOGO: "true"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+
+jobs:
+  # Unit + architecture tests and the per-assembly coverage gate, via the same composite
+  # action the publish workflow uses — a tag build is held to exactly this bar.
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # MinVer walks tag history
+
+      - uses: ./.github/actions/build-and-test
+
+  # Integration tests ([Trait("Category","Integration")]) against a bare Cosmos emulator.
+  # No provisioning step: every integration fixture calls CreateDatabaseIfNotExistsAsync and
+  # tears its own database down, so there is no cosmos-init equivalent to run here.
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - run: dotnet build FrontierPlatform.slnx -c Release -warnaserror
+
+      # vnext-preview emulator — plain HTTP, dramatically lighter than the :latest image,
+      # which crashed (ExitCode 1) on 2-CPU runners. Started via `docker run` rather than
+      # `services:` so we can poll readiness with a real data-plane request (an /_explorer
+      # probe passes while the data plane is still dead).
+      - name: Start Cosmos DB emulator (vnext-preview)
+        run: |
+          docker run -d --name cosmos-emulator -p 8081:8081 \
+            mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview \
+            --protocol http
+
+      - name: Wait for Cosmos DB emulator (data-plane gate)
+        run: |
+          # A bare `curl -s` exits 0 on ANY completed HTTP response, including 503 — the
+          # exact false-positive this gate was written to replace. Require a non-503 status
+          # specifically; the emulator's HTTP listener comes up well before its data-plane
+          # engine finishes initializing.
+          #
+          # `curl -w "%{http_code}"` already prints "000" on its own when the request never
+          # got a response (connection refused/reset). An earlier version of this gate ALSO
+          # appended `|| echo "000"` on top of that, so a failed curl produced the literal
+          # string "000000", which passed the `!= "000"` check as if it were a real status
+          # and made the gate false-positive again.
+          #
+          # GitHub Actions runs `run:` blocks under `bash -e`: `code=$(cmd)` still trips
+          # errexit when `cmd` exits non-zero (curl does, e.g. exit 56/CURLE_RECV_ERROR, on
+          # a bare connection reset), aborting the whole step before the loop even gets to
+          # retry — removing the old `|| echo "000"` reintroduced exactly that. `|| true`
+          # suppresses the abort without printing anything extra to stdout; `${code:-000}`
+          # then covers the case where curl produced no output at all.
+          for i in $(seq 1 36); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8081/ 2>/dev/null || true)
+            code="${code:-000}"
+            if [ "$code" != "000" ] && [ "$code" != "503" ]; then
+              echo "Cosmos DB emulator data plane is up (HTTP $code)"
+              exit 0
+            fi
+            echo "Waiting for Cosmos DB emulator... ($i/36, last status: $code)"
+            sleep 5
+          done
+          echo "::error::Cosmos DB emulator did not become ready in time"
+          docker logs cosmos-emulator
+          exit 1
+
+      # Solution-wide, deliberately: no coverage is collected here, so the per-project rule
+      # does not apply, and a hardcoded project list is what silently stops covering a new
+      # suite when someone adds one.
+      - name: Run integration tests
+        env:
+          COSMOS_EMULATOR_ENDPOINT: http://localhost:8081
+        run: >-
+          dotnet test FrontierPlatform.slnx -c Release --no-build
+          --filter "Category=Integration"
+
+      # "Connection refused" partway through the suite suggests the emulator container died
+      # mid-run (e.g. OOM on a 2-CPU runner). Capture exit state, logs and kernel OOM activity.
+      - name: Dump Cosmos emulator state on failure
+        if: failure()
+        run: |
+          echo "::group::docker inspect cosmos-emulator"
+          docker inspect cosmos-emulator --format='{{json .State}}' || true
+          echo "::endgroup::"
+          echo "::group::docker logs cosmos-emulator (last 200 lines)"
+          docker logs --tail 200 cosmos-emulator || true
+          echo "::endgroup::"
+          echo "::group::dmesg OOM check"
+          dmesg | grep -i -E "killed process|out of memory" || echo "no OOM entries found"
+          echo "::endgroup::"
+
+  # Proves packaging stays healthy on every PR, not just on a tag.
+  pack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # MinVer stamps the version from tag history
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - run: dotnet build FrontierPlatform.slnx -c Release -warnaserror
+
+      - run: dotnet pack FrontierPlatform.slnx -c Release --no-build -o ./artifacts
+
+      - name: Verify all nine packages were produced
+        run: |
+          count=$(find ./artifacts -name '*.nupkg' | wc -l)
+          echo "Packages produced: $count"
+          if [ "$count" -ne 9 ]; then
+            echo "::error::Expected 9 packages, got $count"
+            find ./artifacts -name '*.nupkg' -print
+            exit 1
+          fi

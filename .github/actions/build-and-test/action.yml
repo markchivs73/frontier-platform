@@ -1,0 +1,61 @@
+name: Build and test
+description: >-
+  Restore, build with warnings as errors, scan for vulnerable packages, run the unit and
+  architecture suites with per-assembly coverage, and enforce the coverage gate. Shared by
+  ci.yml and publish-packages.yml so a tag build is held to exactly the same bar as a PR.
+
+inputs:
+  dotnet-version:
+    description: .NET SDK version to install
+    required: false
+    default: '10.0.x'
+  coverage-threshold:
+    description: Minimum per-assembly line AND branch coverage percentage
+    required: false
+    default: '95'
+
+runs:
+  using: composite
+  steps:
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ inputs.dotnet-version }}
+
+    - name: Restore
+      shell: bash
+      run: dotnet restore FrontierPlatform.slnx
+
+    # Release, not Debug: the artifact that ships is the Release build, so the PR run and
+    # the tag run execute identical commands.
+    - name: Build
+      shell: bash
+      run: dotnet build FrontierPlatform.slnx -c Release --no-restore -warnaserror
+
+    # NuGet Advisory Database scan. This repo's pinned PackageVersion floors become minimum
+    # versions in every published nuspec, so a vulnerable floor propagates to consumers.
+    - name: Check for vulnerable NuGet packages
+      shell: bash
+      run: bash .github/scripts/check-vulnerabilities.sh
+
+    # Coverage is collected PER TEST PROJECT, not solution-wide: parallel solution-wide runs
+    # corrupt coverlet's per-assembly AssemblyLoadContext attribution (duplicate "Assembly N"
+    # modules with near-zero hits), silently deflating the gate.
+    #
+    # The filter is on the trait, not the namespace — several CosmosTopologyCheckTests classes
+    # sit in *.Tests.Integration namespaces but are unit tests and carry no Integration trait.
+    - name: Run unit and architecture tests with coverage (per project)
+      shell: bash
+      run: |
+        rm -rf ./coverage
+        for proj in tests/*/; do
+          # Skip directories with no .csproj (tests/Shared holds compile-linked helpers).
+          compgen -G "${proj}*.csproj" > /dev/null || continue
+          dotnet test "$proj" -c Release --no-build --filter "Category!=Integration" \
+            --collect:"XPlat Code Coverage" --settings coverlet.runsettings \
+            --results-directory ./coverage
+        done
+
+    - name: Check coverage threshold (per assembly)
+      shell: bash
+      run: python3 .github/scripts/coverage_by_assembly.py ./coverage ${{ inputs.coverage-threshold }}

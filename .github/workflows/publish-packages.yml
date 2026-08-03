@@ -5,6 +5,10 @@ on:
     tags:
       - 'v*'
 
+env:
+  DOTNET_NOLOGO: "true"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -18,28 +22,13 @@ jobs:
         with:
           fetch-depth: 0  # MinVer derives the version from tag history
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.x'
-
-      - name: Restore
-        run: dotnet restore FrontierPlatform.slnx
-
-      - name: Build
-        run: dotnet build FrontierPlatform.slnx -c Release --no-restore
-
-      # Emulator-backed tests are excluded here: this job runs no Cosmos emulator.
-      # They are covered by the CI workflow on pull requests.
+      # Same composite action ci.yml runs: build with warnings as errors, vulnerability
+      # scan, unit + architecture tests, and the per-assembly coverage gate. Packing from
+      # the same job and checkout guarantees the bits pushed are the bits tested.
       #
-      # Filter on the trait, NOT the namespace: several CosmosTopologyCheckTests classes
-      # live in *.Tests.Integration namespaces but carry no [Trait("Category","Integration")]
-      # — they are unit tests. A FullyQualifiedName!~Integration filter silently drops 19 of
-      # them. The trait is what the tests actually declare, so it is what we filter on.
-      - name: Test (unit + architecture)
-        run: >-
-          dotnet test FrontierPlatform.slnx -c Release --no-build
-          --filter "Category!=Integration"
+      # Emulator-backed integration tests are not run here — this job starts no Cosmos
+      # emulator. They gate every pull request via ci.yml instead.
+      - uses: ./.github/actions/build-and-test
 
       - name: Pack
         run: dotnet pack FrontierPlatform.slnx -c Release --no-build -o ./artifacts
