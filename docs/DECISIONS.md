@@ -114,3 +114,5 @@ that says the same thing in both always will.
 `dtf-determinism` (no DTF here), `implementation-plan` (no plan file), `local-dev` (no Aspire,
 DTS or Playwright). `definition-of-done` was folded into `code-review` and the PR template
 rather than kept separate.
+
+<!-- Fast-path probe: docs-only changes skip the test jobs. -->
