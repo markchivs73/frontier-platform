@@ -16,6 +16,33 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: "true"
 
 jobs:
+  # Doc-only fast path: if a change touches nothing but markdown, docs/ or .claude/,
+  # the build/test jobs are skipped entirely. `ci-gate` below is what makes this safe
+  # to combine with a required status check.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - id: filter
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="${{ github.event.pull_request.base.sha }}"
+          else
+            base="${{ github.event.before }}"
+          fi
+          changed=$(git diff --name-only "$base" "${{ github.sha }}" || true)
+          echo "Changed files:"; echo "$changed"
+          if echo "$changed" | grep -qvE '^(docs/.*|\.claude/.*|.*\.md)$'; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "code=false" >> "$GITHUB_OUTPUT"
+          fi
+
   # Commit subjects must be "<scope>: Imperative summary" ("<scope>!:" for a public API break).
   # With lockstep versioning the log between two tags is the only input to the release
   # decision, so the scope and the "!" marker are load-bearing, not cosmetic.
@@ -39,6 +66,8 @@ jobs:
   # Unit + architecture tests and the per-assembly coverage gate, via the same composite
   # action the publish workflow uses — a tag build is held to exactly this bar.
   test:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -51,6 +80,8 @@ jobs:
   # No provisioning step: every integration fixture calls CreateDatabaseIfNotExistsAsync and
   # tears its own database down, so there is no cosmos-init equivalent to run here.
   integration:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -131,6 +162,8 @@ jobs:
 
   # Proves packaging stays healthy on every PR, not just on a tag.
   pack:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -154,3 +187,24 @@ jobs:
             find ./artifacts -name '*.nupkg' -print
             exit 1
           fi
+
+  # Single required status check — see the frontier-workflow twin of this job.
+  # Always runs, so the check is always reported; passes when every upstream job
+  # either succeeded or was skipped by the doc-only filter. Requiring the test jobs
+  # directly would leave a docs-only PR pending forever.
+  ci-gate:
+    if: always()
+    needs: [changes, commit-lint, test, integration, pack]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify no required job failed
+        run: |
+          results="${{ join(needs.*.result, ' ') }}"
+          echo "Upstream job results: $results"
+          for result in $results; do
+            case "$result" in
+              success|skipped) ;;
+              *) echo "::error::A required job did not succeed (result: $result)"; exit 1;;
+            esac
+          done
+          echo "All required jobs succeeded or were legitimately skipped."
