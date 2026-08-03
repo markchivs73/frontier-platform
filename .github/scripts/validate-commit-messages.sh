@@ -31,8 +31,11 @@ done < <(
 all_scopes+=(meta ci docs deps)
 
 scope_alternation="$(IFS='|'; echo "${all_scopes[*]}")"
-# scope, optional '!', ': ', then a capitalised imperative summary with no trailing period.
-pattern="^(${scope_alternation})!?: [A-Z][^.]*[^.[:space:]]$"
+# scope, optional '!', ': ', then a summary starting with a capital.
+# Structure and the trailing-period rule are checked separately: folding "no trailing period"
+# into this pattern as [^.]* would also reject every legitimate internal period, and summaries
+# routinely name types like Frontier.Platform.Abstractions or CanonicalProfile.Options.
+pattern="^(${scope_alternation})!?: [A-Z]"
 
 failed=0
 while IFS= read -r subject; do
@@ -46,6 +49,10 @@ while IFS= read -r subject; do
     failed=1
     continue
   fi
+
+  case "$subject" in
+    *.) echo "::error::Commit subject must not end with a period: $subject"; failed=1;;
+  esac
 
   if [ "${#subject}" -gt 72 ]; then
     echo "::error::Commit subject exceeds 72 characters (${#subject}): $subject"
