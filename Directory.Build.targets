@@ -1,0 +1,31 @@
+<Project>
+
+  <!--
+    Vendored from frontier-workflow/Directory.Build.targets @ 8df00ee.
+    Drift check: git -C ../frontier-workflow log 8df00ee..HEAD Directory.Build.targets
+    (an XML comment cannot contain a double hyphen, so no short-form git flags here)
+
+    iCloud Drive guard. This repo lives under ~/Documents, which macOS syncs to iCloud Drive
+    ("Desktop & Documents Folders"). iCloud periodically creates duplicate copies of files
+    named "<name> 2.cs", "<name> 3.cs", etc. The .NET SDK globs **/*.cs, so those copies get
+    compiled alongside the originals and break the build with duplicate-type errors. No real
+    source file in this repo has a space in its name, so we exclude any spaced filename from
+    the build. This runs in .targets (not .props) so the SDK's default item globs already
+    exist and can be removed from.
+
+    iCloud can also duplicate whole build-output DIRECTORIES ("obj 2/", "bin 3/") rather than
+    individual files. The SDK's default exclude only matches the literal "obj/**"/"bin/**"
+    paths, so a duplicated "obj 2/" is not excluded by default and its auto-generated
+    AssemblyInfo.cs collides with the real one (CS0579). No real source directory in this repo
+    has a name ending in " <digit>", so exclude any path passing through one, at any depth.
+  -->
+  <ItemGroup>
+    <Compile Remove="**/* *.cs" />
+    <Content Remove="**/* *.razor" />
+    <Content Remove="**/* *.json" />
+    <Compile Remove="**/* [0-9]*/**/*.cs" />
+    <Content Remove="**/* [0-9]*/**/*.razor" />
+    <Content Remove="**/* [0-9]*/**/*.json" />
+  </ItemGroup>
+
+</Project>

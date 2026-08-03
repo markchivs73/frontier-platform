@@ -38,6 +38,10 @@
          accept symbol packages, so a separate snupkg would fail the push. -->
     <DebugType>embedded</DebugType>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <!-- Required alongside the two properties above: without it the embedded sources carry
+         absolute build-machine paths, so SourceLink cannot resolve them from a published
+         package. Set only on the CI runner so local builds keep debuggable local paths. -->
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
   </PropertyGroup>
 
 </Project>

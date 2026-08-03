@@ -31,10 +31,15 @@ jobs:
 
       # Emulator-backed tests are excluded here: this job runs no Cosmos emulator.
       # They are covered by the CI workflow on pull requests.
+      #
+      # Filter on the trait, NOT the namespace: several CosmosTopologyCheckTests classes
+      # live in *.Tests.Integration namespaces but carry no [Trait("Category","Integration")]
+      # — they are unit tests. A FullyQualifiedName!~Integration filter silently drops 19 of
+      # them. The trait is what the tests actually declare, so it is what we filter on.
       - name: Test (unit + architecture)
         run: >-
           dotnet test FrontierPlatform.slnx -c Release --no-build
-          --filter "FullyQualifiedName!~Integration"
+          --filter "Category!=Integration"
 
       - name: Pack
         run: dotnet pack FrontierPlatform.slnx -c Release --no-build -o ./artifacts
