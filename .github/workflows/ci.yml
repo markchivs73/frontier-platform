@@ -188,6 +188,14 @@ jobs:
             exit 1
           fi
 
+      # Restores the packed .nupkg files from ./artifacts and compiles against them, which
+      # is the only way to catch what packing cannot: a dependency missing from a nuspec, a
+      # type that is internal but needed, or a registration extension unreachable from
+      # outside its assembly. Does no I/O — no emulator, network or key required.
+      - name: Smoke-test the packages as a consumer would
+        working-directory: samples/Frontier.Platform.SmokeConsumer
+        run: dotnet run -c Release
+
   # Single required status check — see the frontier-workflow twin of this job.
   # Always runs, so the check is always reported; passes when every upstream job
   # either succeeded or was skipped by the doc-only filter. Requiring the test jobs

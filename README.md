@@ -84,6 +84,17 @@ dotnet test FrontierPlatform.slnx -c Release --filter "Category=Integration"
 
 Set `COSMOS_EMULATOR_ENDPOINT` if the emulator is not on `http://localhost:8081`.
 
+To check the packages from a consumer's point of view — restoring the real `.nupkg` files
+rather than project references:
+
+```bash
+dotnet pack FrontierPlatform.slnx -c Release -o ./artifacts
+dotnet run -c Release --project samples/Frontier.Platform.SmokeConsumer
+```
+
+This is what catches a dependency missing from a nuspec or a type that is `internal` but
+needed — both of which pack perfectly happily. It runs on every PR as part of the `pack` job.
+
 ## Contributing
 
 Conventions live in [`.claude/skills/`](.claude/skills/) and are summarised in
