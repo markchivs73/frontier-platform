@@ -1,0 +1,225 @@
+#nullable enable
+Frontier.Platform.Guardrails.AdmissionDecision
+Frontier.Platform.Guardrails.AdmissionDecision.<Clone>$() -> Frontier.Platform.Guardrails.AdmissionDecision!
+Frontier.Platform.Guardrails.AdmissionDecision.AdmissionDecision(Frontier.Platform.Guardrails.AdmissionResult Result, string? Reason, long? GrantedMaxOutputTokens, System.TimeSpan? RetryAfter) -> void
+Frontier.Platform.Guardrails.AdmissionDecision.Deconstruct(out Frontier.Platform.Guardrails.AdmissionResult Result, out string? Reason, out long? GrantedMaxOutputTokens, out System.TimeSpan? RetryAfter) -> void
+Frontier.Platform.Guardrails.AdmissionDecision.Equals(Frontier.Platform.Guardrails.AdmissionDecision? other) -> bool
+Frontier.Platform.Guardrails.AdmissionDecision.GrantedMaxOutputTokens.get -> long?
+Frontier.Platform.Guardrails.AdmissionDecision.GrantedMaxOutputTokens.init -> void
+Frontier.Platform.Guardrails.AdmissionDecision.Reason.get -> string?
+Frontier.Platform.Guardrails.AdmissionDecision.Reason.init -> void
+Frontier.Platform.Guardrails.AdmissionDecision.Result.get -> Frontier.Platform.Guardrails.AdmissionResult
+Frontier.Platform.Guardrails.AdmissionDecision.Result.init -> void
+Frontier.Platform.Guardrails.AdmissionDecision.RetryAfter.get -> System.TimeSpan?
+Frontier.Platform.Guardrails.AdmissionDecision.RetryAfter.init -> void
+Frontier.Platform.Guardrails.AdmissionResult
+Frontier.Platform.Guardrails.AdmissionResult.Deferred = 3 -> Frontier.Platform.Guardrails.AdmissionResult
+Frontier.Platform.Guardrails.AdmissionResult.Deny = 2 -> Frontier.Platform.Guardrails.AdmissionResult
+Frontier.Platform.Guardrails.AdmissionResult.Proceed = 0 -> Frontier.Platform.Guardrails.AdmissionResult
+Frontier.Platform.Guardrails.AdmissionResult.ProceedWithWarning = 1 -> Frontier.Platform.Guardrails.AdmissionResult
+Frontier.Platform.Guardrails.BudgetLedgerDocument
+Frontier.Platform.Guardrails.BudgetLedgerDocument.<Clone>$() -> Frontier.Platform.Guardrails.BudgetLedgerDocument!
+Frontier.Platform.Guardrails.BudgetLedgerDocument.BudgetLedgerDocument() -> void
+Frontier.Platform.Guardrails.BudgetLedgerDocument.ETag.get -> string?
+Frontier.Platform.Guardrails.BudgetLedgerDocument.ETag.init -> void
+Frontier.Platform.Guardrails.BudgetLedgerDocument.EngagementId.get -> string!
+Frontier.Platform.Guardrails.BudgetLedgerDocument.EngagementId.init -> void
+Frontier.Platform.Guardrails.BudgetLedgerDocument.Equals(Frontier.Platform.Guardrails.BudgetLedgerDocument? other) -> bool
+Frontier.Platform.Guardrails.BudgetLedgerDocument.ExecutionSnapshots.get -> System.Collections.Generic.Dictionary<string!, Frontier.Platform.Guardrails.ExecutionLedgerSnapshot!>?
+Frontier.Platform.Guardrails.BudgetLedgerDocument.ExecutionSnapshots.init -> void
+Frontier.Platform.Guardrails.BudgetLedgerDocument.Id.get -> string!
+Frontier.Platform.Guardrails.BudgetLedgerDocument.Id.init -> void
+Frontier.Platform.Guardrails.BudgetLedgerDocument.InvocationCount.get -> int
+Frontier.Platform.Guardrails.BudgetLedgerDocument.InvocationCount.init -> void
+Frontier.Platform.Guardrails.BudgetLedgerDocument.PartitionKey.get -> string!
+Frontier.Platform.Guardrails.BudgetLedgerDocument.PartitionKey.init -> void
+Frontier.Platform.Guardrails.BudgetLedgerDocument.Timestamp.get -> long?
+Frontier.Platform.Guardrails.BudgetLedgerDocument.Timestamp.init -> void
+Frontier.Platform.Guardrails.BudgetLedgerDocument.TotalCostGbp.get -> decimal
+Frontier.Platform.Guardrails.BudgetLedgerDocument.TotalCostGbp.init -> void
+Frontier.Platform.Guardrails.BudgetLedgerDocument.TotalInputTokens.get -> long
+Frontier.Platform.Guardrails.BudgetLedgerDocument.TotalInputTokens.init -> void
+Frontier.Platform.Guardrails.BudgetLedgerDocument.TotalOutputTokens.get -> long
+Frontier.Platform.Guardrails.BudgetLedgerDocument.TotalOutputTokens.init -> void
+Frontier.Platform.Guardrails.BudgetScopeKind
+Frontier.Platform.Guardrails.BudgetScopeKind.Engagement = 2 -> Frontier.Platform.Guardrails.BudgetScopeKind
+Frontier.Platform.Guardrails.BudgetScopeKind.Execution = 1 -> Frontier.Platform.Guardrails.BudgetScopeKind
+Frontier.Platform.Guardrails.BudgetScopeKind.Fleet = 3 -> Frontier.Platform.Guardrails.BudgetScopeKind
+Frontier.Platform.Guardrails.BudgetScopeKind.Invocation = 0 -> Frontier.Platform.Guardrails.BudgetScopeKind
+Frontier.Platform.Guardrails.BudgetScopeRef
+Frontier.Platform.Guardrails.BudgetScopeRef.<Clone>$() -> Frontier.Platform.Guardrails.BudgetScopeRef!
+Frontier.Platform.Guardrails.BudgetScopeRef.BudgetScopeRef(Frontier.Platform.Guardrails.BudgetScopeKind Kind, string! Id) -> void
+Frontier.Platform.Guardrails.BudgetScopeRef.Deconstruct(out Frontier.Platform.Guardrails.BudgetScopeKind Kind, out string! Id) -> void
+Frontier.Platform.Guardrails.BudgetScopeRef.Equals(Frontier.Platform.Guardrails.BudgetScopeRef? other) -> bool
+Frontier.Platform.Guardrails.BudgetScopeRef.Id.get -> string!
+Frontier.Platform.Guardrails.BudgetScopeRef.Id.init -> void
+Frontier.Platform.Guardrails.BudgetScopeRef.Kind.get -> Frontier.Platform.Guardrails.BudgetScopeKind
+Frontier.Platform.Guardrails.BudgetScopeRef.Kind.init -> void
+Frontier.Platform.Guardrails.BudgetSnapshot
+Frontier.Platform.Guardrails.BudgetSnapshot.<Clone>$() -> Frontier.Platform.Guardrails.BudgetSnapshot!
+Frontier.Platform.Guardrails.BudgetSnapshot.BudgetSnapshot(Frontier.Platform.Guardrails.BudgetScopeRef! Scope, long TokensUsed, decimal CostGbp, int InvocationCount) -> void
+Frontier.Platform.Guardrails.BudgetSnapshot.CostGbp.get -> decimal
+Frontier.Platform.Guardrails.BudgetSnapshot.CostGbp.init -> void
+Frontier.Platform.Guardrails.BudgetSnapshot.Deconstruct(out Frontier.Platform.Guardrails.BudgetScopeRef! Scope, out long TokensUsed, out decimal CostGbp, out int InvocationCount) -> void
+Frontier.Platform.Guardrails.BudgetSnapshot.Equals(Frontier.Platform.Guardrails.BudgetSnapshot? other) -> bool
+Frontier.Platform.Guardrails.BudgetSnapshot.InvocationCount.get -> int
+Frontier.Platform.Guardrails.BudgetSnapshot.InvocationCount.init -> void
+Frontier.Platform.Guardrails.BudgetSnapshot.Scope.get -> Frontier.Platform.Guardrails.BudgetScopeRef!
+Frontier.Platform.Guardrails.BudgetSnapshot.Scope.init -> void
+Frontier.Platform.Guardrails.BudgetSnapshot.TokensUsed.get -> long
+Frontier.Platform.Guardrails.BudgetSnapshot.TokensUsed.init -> void
+Frontier.Platform.Guardrails.BudgetSpec
+Frontier.Platform.Guardrails.BudgetSpec.<Clone>$() -> Frontier.Platform.Guardrails.BudgetSpec!
+Frontier.Platform.Guardrails.BudgetSpec.BudgetSpec(long? MaxTokens, decimal? MaxCostGbp, int? MaxAgentInvocations) -> void
+Frontier.Platform.Guardrails.BudgetSpec.Deconstruct(out long? MaxTokens, out decimal? MaxCostGbp, out int? MaxAgentInvocations) -> void
+Frontier.Platform.Guardrails.BudgetSpec.Equals(Frontier.Platform.Guardrails.BudgetSpec? other) -> bool
+Frontier.Platform.Guardrails.BudgetSpec.MaxAgentInvocations.get -> int?
+Frontier.Platform.Guardrails.BudgetSpec.MaxAgentInvocations.init -> void
+Frontier.Platform.Guardrails.BudgetSpec.MaxCostGbp.get -> decimal?
+Frontier.Platform.Guardrails.BudgetSpec.MaxCostGbp.init -> void
+Frontier.Platform.Guardrails.BudgetSpec.MaxTokens.get -> long?
+Frontier.Platform.Guardrails.BudgetSpec.MaxTokens.init -> void
+Frontier.Platform.Guardrails.ExecutionLedgerSnapshot
+Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.<Clone>$() -> Frontier.Platform.Guardrails.ExecutionLedgerSnapshot!
+Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.Deconstruct(out string! ExecutionId, out long TotalTokens, out decimal TotalCostGbp, out int InvocationCount, out System.DateTime LastUpdatedUtc) -> void
+Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.Equals(Frontier.Platform.Guardrails.ExecutionLedgerSnapshot? other) -> bool
+Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.ExecutionId.get -> string!
+Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.ExecutionId.init -> void
+Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.ExecutionLedgerSnapshot(string! ExecutionId, long TotalTokens, decimal TotalCostGbp, int InvocationCount, System.DateTime LastUpdatedUtc) -> void
+Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.InvocationCount.get -> int
+Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.InvocationCount.init -> void
+Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.LastUpdatedUtc.get -> System.DateTime
+Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.LastUpdatedUtc.init -> void
+Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.TotalCostGbp.get -> decimal
+Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.TotalCostGbp.init -> void
+Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.TotalTokens.get -> long
+Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.TotalTokens.init -> void
+Frontier.Platform.Guardrails.FailureMode
+Frontier.Platform.Guardrails.FailureMode.FailClosed = 1 -> Frontier.Platform.Guardrails.FailureMode
+Frontier.Platform.Guardrails.FailureMode.FailOpenWithAudit = 0 -> Frontier.Platform.Guardrails.FailureMode
+Frontier.Platform.Guardrails.GuardrailPolicy
+Frontier.Platform.Guardrails.GuardrailPolicy.<Clone>$() -> Frontier.Platform.Guardrails.GuardrailPolicy!
+Frontier.Platform.Guardrails.GuardrailPolicy.Deconstruct(out string! PolicyId, out Frontier.Platform.Guardrails.BudgetSpec? PerInvocation, out Frontier.Platform.Guardrails.BudgetSpec? PerExecution, out Frontier.Platform.Guardrails.BudgetSpec? PerEngagement, out int SoftThresholdPercent, out Frontier.Platform.Guardrails.FailureMode OnInfrastructureFailure) -> void
+Frontier.Platform.Guardrails.GuardrailPolicy.Equals(Frontier.Platform.Guardrails.GuardrailPolicy? other) -> bool
+Frontier.Platform.Guardrails.GuardrailPolicy.GuardrailPolicy(string! PolicyId, Frontier.Platform.Guardrails.BudgetSpec? PerInvocation, Frontier.Platform.Guardrails.BudgetSpec? PerExecution, Frontier.Platform.Guardrails.BudgetSpec? PerEngagement, int SoftThresholdPercent = 80, Frontier.Platform.Guardrails.FailureMode OnInfrastructureFailure = Frontier.Platform.Guardrails.FailureMode.FailOpenWithAudit) -> void
+Frontier.Platform.Guardrails.GuardrailPolicy.OnInfrastructureFailure.get -> Frontier.Platform.Guardrails.FailureMode
+Frontier.Platform.Guardrails.GuardrailPolicy.OnInfrastructureFailure.init -> void
+Frontier.Platform.Guardrails.GuardrailPolicy.PerEngagement.get -> Frontier.Platform.Guardrails.BudgetSpec?
+Frontier.Platform.Guardrails.GuardrailPolicy.PerEngagement.init -> void
+Frontier.Platform.Guardrails.GuardrailPolicy.PerExecution.get -> Frontier.Platform.Guardrails.BudgetSpec?
+Frontier.Platform.Guardrails.GuardrailPolicy.PerExecution.init -> void
+Frontier.Platform.Guardrails.GuardrailPolicy.PerInvocation.get -> Frontier.Platform.Guardrails.BudgetSpec?
+Frontier.Platform.Guardrails.GuardrailPolicy.PerInvocation.init -> void
+Frontier.Platform.Guardrails.GuardrailPolicy.PolicyId.get -> string!
+Frontier.Platform.Guardrails.GuardrailPolicy.PolicyId.init -> void
+Frontier.Platform.Guardrails.GuardrailPolicy.SoftThresholdPercent.get -> int
+Frontier.Platform.Guardrails.GuardrailPolicy.SoftThresholdPercent.init -> void
+Frontier.Platform.Guardrails.GuardrailsServiceCollectionExtensions
+Frontier.Platform.Guardrails.IAdmissionController
+Frontier.Platform.Guardrails.IAdmissionController.AdmitAsync(Frontier.Platform.Guardrails.InvocationCostEstimate! estimate, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Guardrails.AdmissionDecision!>!
+Frontier.Platform.Guardrails.IBudgetHierarchy
+Frontier.Platform.Guardrails.IBudgetHierarchy.CanApproveAsync(Frontier.Platform.Guardrails.BudgetScopeRef! invocationScope, Frontier.Platform.Guardrails.BudgetScopeRef! engagementScope, Frontier.Platform.Guardrails.InvocationCostEstimate! estimate, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<bool>!
+Frontier.Platform.Guardrails.IBudgetHierarchy.RecordHierarchicalUsageAsync(Frontier.Platform.Guardrails.BudgetScopeRef! invocationScope, Frontier.Platform.Guardrails.BudgetScopeRef! engagementScope, Frontier.Platform.Guardrails.UsageRecord! usage, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Frontier.Platform.Guardrails.IBudgetLedger
+Frontier.Platform.Guardrails.IBudgetLedger.GetSnapshotAsync(Frontier.Platform.Guardrails.BudgetScopeRef! scope, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Guardrails.BudgetSnapshot!>!
+Frontier.Platform.Guardrails.IBudgetLedger.RecordUsageAsync(Frontier.Platform.Guardrails.UsageRecord! usage, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Frontier.Platform.Guardrails.IKillSwitch
+Frontier.Platform.Guardrails.IKillSwitch.ActivateAsync(string! reason, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Frontier.Platform.Guardrails.IKillSwitch.DeactivateAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Frontier.Platform.Guardrails.IKillSwitch.IsActiveAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<bool>!
+Frontier.Platform.Guardrails.InvocationCostEstimate
+Frontier.Platform.Guardrails.InvocationCostEstimate.<Clone>$() -> Frontier.Platform.Guardrails.InvocationCostEstimate!
+Frontier.Platform.Guardrails.InvocationCostEstimate.AgentRole.get -> string!
+Frontier.Platform.Guardrails.InvocationCostEstimate.AgentRole.init -> void
+Frontier.Platform.Guardrails.InvocationCostEstimate.CorrelationId.get -> string!
+Frontier.Platform.Guardrails.InvocationCostEstimate.CorrelationId.init -> void
+Frontier.Platform.Guardrails.InvocationCostEstimate.Deconstruct(out string! CorrelationId, out string! ExecutionId, out string! EngagementId, out string! NodeId, out string! AgentRole, out string! ResolvedModel, out long PromptTokens, out long MaxOutputTokens, out decimal EstimatedCostGbp) -> void
+Frontier.Platform.Guardrails.InvocationCostEstimate.EngagementId.get -> string!
+Frontier.Platform.Guardrails.InvocationCostEstimate.EngagementId.init -> void
+Frontier.Platform.Guardrails.InvocationCostEstimate.Equals(Frontier.Platform.Guardrails.InvocationCostEstimate? other) -> bool
+Frontier.Platform.Guardrails.InvocationCostEstimate.EstimatedCostGbp.get -> decimal
+Frontier.Platform.Guardrails.InvocationCostEstimate.EstimatedCostGbp.init -> void
+Frontier.Platform.Guardrails.InvocationCostEstimate.ExecutionId.get -> string!
+Frontier.Platform.Guardrails.InvocationCostEstimate.ExecutionId.init -> void
+Frontier.Platform.Guardrails.InvocationCostEstimate.InvocationCostEstimate(string! CorrelationId, string! ExecutionId, string! EngagementId, string! NodeId, string! AgentRole, string! ResolvedModel, long PromptTokens, long MaxOutputTokens, decimal EstimatedCostGbp) -> void
+Frontier.Platform.Guardrails.InvocationCostEstimate.MaxOutputTokens.get -> long
+Frontier.Platform.Guardrails.InvocationCostEstimate.MaxOutputTokens.init -> void
+Frontier.Platform.Guardrails.InvocationCostEstimate.NodeId.get -> string!
+Frontier.Platform.Guardrails.InvocationCostEstimate.NodeId.init -> void
+Frontier.Platform.Guardrails.InvocationCostEstimate.PromptTokens.get -> long
+Frontier.Platform.Guardrails.InvocationCostEstimate.PromptTokens.init -> void
+Frontier.Platform.Guardrails.InvocationCostEstimate.ResolvedModel.get -> string!
+Frontier.Platform.Guardrails.InvocationCostEstimate.ResolvedModel.init -> void
+Frontier.Platform.Guardrails.Phase1GuardrailPolicyCatalogue
+Frontier.Platform.Guardrails.UsageRecord
+Frontier.Platform.Guardrails.UsageRecord.<Clone>$() -> Frontier.Platform.Guardrails.UsageRecord!
+Frontier.Platform.Guardrails.UsageRecord.AgentRole.get -> string!
+Frontier.Platform.Guardrails.UsageRecord.AgentRole.init -> void
+Frontier.Platform.Guardrails.UsageRecord.CorrelationId.get -> string!
+Frontier.Platform.Guardrails.UsageRecord.CorrelationId.init -> void
+Frontier.Platform.Guardrails.UsageRecord.CostGbp.get -> decimal
+Frontier.Platform.Guardrails.UsageRecord.CostGbp.init -> void
+Frontier.Platform.Guardrails.UsageRecord.Deconstruct(out string! CorrelationId, out string! ExecutionId, out string! EngagementId, out string! NodeId, out string! AgentRole, out string! ResolvedModel, out long InputTokens, out long OutputTokens, out decimal CostGbp) -> void
+Frontier.Platform.Guardrails.UsageRecord.EngagementId.get -> string!
+Frontier.Platform.Guardrails.UsageRecord.EngagementId.init -> void
+Frontier.Platform.Guardrails.UsageRecord.Equals(Frontier.Platform.Guardrails.UsageRecord? other) -> bool
+Frontier.Platform.Guardrails.UsageRecord.ExecutionId.get -> string!
+Frontier.Platform.Guardrails.UsageRecord.ExecutionId.init -> void
+Frontier.Platform.Guardrails.UsageRecord.InputTokens.get -> long
+Frontier.Platform.Guardrails.UsageRecord.InputTokens.init -> void
+Frontier.Platform.Guardrails.UsageRecord.NodeId.get -> string!
+Frontier.Platform.Guardrails.UsageRecord.NodeId.init -> void
+Frontier.Platform.Guardrails.UsageRecord.OutputTokens.get -> long
+Frontier.Platform.Guardrails.UsageRecord.OutputTokens.init -> void
+Frontier.Platform.Guardrails.UsageRecord.ResolvedModel.get -> string!
+Frontier.Platform.Guardrails.UsageRecord.ResolvedModel.init -> void
+Frontier.Platform.Guardrails.UsageRecord.UsageRecord(string! CorrelationId, string! ExecutionId, string! EngagementId, string! NodeId, string! AgentRole, string! ResolvedModel, long InputTokens, long OutputTokens, decimal CostGbp) -> void
+override Frontier.Platform.Guardrails.AdmissionDecision.Equals(object? obj) -> bool
+override Frontier.Platform.Guardrails.AdmissionDecision.GetHashCode() -> int
+override Frontier.Platform.Guardrails.AdmissionDecision.ToString() -> string!
+override Frontier.Platform.Guardrails.BudgetLedgerDocument.Equals(object? obj) -> bool
+override Frontier.Platform.Guardrails.BudgetLedgerDocument.GetHashCode() -> int
+override Frontier.Platform.Guardrails.BudgetLedgerDocument.ToString() -> string!
+override Frontier.Platform.Guardrails.BudgetScopeRef.Equals(object? obj) -> bool
+override Frontier.Platform.Guardrails.BudgetScopeRef.GetHashCode() -> int
+override Frontier.Platform.Guardrails.BudgetScopeRef.ToString() -> string!
+override Frontier.Platform.Guardrails.BudgetSnapshot.Equals(object? obj) -> bool
+override Frontier.Platform.Guardrails.BudgetSnapshot.GetHashCode() -> int
+override Frontier.Platform.Guardrails.BudgetSnapshot.ToString() -> string!
+override Frontier.Platform.Guardrails.BudgetSpec.Equals(object? obj) -> bool
+override Frontier.Platform.Guardrails.BudgetSpec.GetHashCode() -> int
+override Frontier.Platform.Guardrails.BudgetSpec.ToString() -> string!
+override Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.Equals(object? obj) -> bool
+override Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.GetHashCode() -> int
+override Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.ToString() -> string!
+override Frontier.Platform.Guardrails.GuardrailPolicy.Equals(object? obj) -> bool
+override Frontier.Platform.Guardrails.GuardrailPolicy.GetHashCode() -> int
+override Frontier.Platform.Guardrails.GuardrailPolicy.ToString() -> string!
+override Frontier.Platform.Guardrails.InvocationCostEstimate.Equals(object? obj) -> bool
+override Frontier.Platform.Guardrails.InvocationCostEstimate.GetHashCode() -> int
+override Frontier.Platform.Guardrails.InvocationCostEstimate.ToString() -> string!
+override Frontier.Platform.Guardrails.UsageRecord.Equals(object? obj) -> bool
+override Frontier.Platform.Guardrails.UsageRecord.GetHashCode() -> int
+override Frontier.Platform.Guardrails.UsageRecord.ToString() -> string!
+static Frontier.Platform.Guardrails.AdmissionDecision.operator !=(Frontier.Platform.Guardrails.AdmissionDecision? left, Frontier.Platform.Guardrails.AdmissionDecision? right) -> bool
+static Frontier.Platform.Guardrails.AdmissionDecision.operator ==(Frontier.Platform.Guardrails.AdmissionDecision? left, Frontier.Platform.Guardrails.AdmissionDecision? right) -> bool
+static Frontier.Platform.Guardrails.BudgetLedgerDocument.operator !=(Frontier.Platform.Guardrails.BudgetLedgerDocument? left, Frontier.Platform.Guardrails.BudgetLedgerDocument? right) -> bool
+static Frontier.Platform.Guardrails.BudgetLedgerDocument.operator ==(Frontier.Platform.Guardrails.BudgetLedgerDocument? left, Frontier.Platform.Guardrails.BudgetLedgerDocument? right) -> bool
+static Frontier.Platform.Guardrails.BudgetScopeRef.operator !=(Frontier.Platform.Guardrails.BudgetScopeRef? left, Frontier.Platform.Guardrails.BudgetScopeRef? right) -> bool
+static Frontier.Platform.Guardrails.BudgetScopeRef.operator ==(Frontier.Platform.Guardrails.BudgetScopeRef? left, Frontier.Platform.Guardrails.BudgetScopeRef? right) -> bool
+static Frontier.Platform.Guardrails.BudgetSnapshot.operator !=(Frontier.Platform.Guardrails.BudgetSnapshot? left, Frontier.Platform.Guardrails.BudgetSnapshot? right) -> bool
+static Frontier.Platform.Guardrails.BudgetSnapshot.operator ==(Frontier.Platform.Guardrails.BudgetSnapshot? left, Frontier.Platform.Guardrails.BudgetSnapshot? right) -> bool
+static Frontier.Platform.Guardrails.BudgetSpec.operator !=(Frontier.Platform.Guardrails.BudgetSpec? left, Frontier.Platform.Guardrails.BudgetSpec? right) -> bool
+static Frontier.Platform.Guardrails.BudgetSpec.operator ==(Frontier.Platform.Guardrails.BudgetSpec? left, Frontier.Platform.Guardrails.BudgetSpec? right) -> bool
+static Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.operator !=(Frontier.Platform.Guardrails.ExecutionLedgerSnapshot? left, Frontier.Platform.Guardrails.ExecutionLedgerSnapshot? right) -> bool
+static Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.operator ==(Frontier.Platform.Guardrails.ExecutionLedgerSnapshot? left, Frontier.Platform.Guardrails.ExecutionLedgerSnapshot? right) -> bool
+static Frontier.Platform.Guardrails.GuardrailPolicy.operator !=(Frontier.Platform.Guardrails.GuardrailPolicy? left, Frontier.Platform.Guardrails.GuardrailPolicy? right) -> bool
+static Frontier.Platform.Guardrails.GuardrailPolicy.operator ==(Frontier.Platform.Guardrails.GuardrailPolicy? left, Frontier.Platform.Guardrails.GuardrailPolicy? right) -> bool
+static Frontier.Platform.Guardrails.GuardrailsServiceCollectionExtensions.AddFrontierGuardrails(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Frontier.Platform.Guardrails.GuardrailsServiceCollectionExtensions.AddFrontierGuardrails(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Microsoft.Azure.Cosmos.Container! guardRailLedgerContainer) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Frontier.Platform.Guardrails.InvocationCostEstimate.operator !=(Frontier.Platform.Guardrails.InvocationCostEstimate? left, Frontier.Platform.Guardrails.InvocationCostEstimate? right) -> bool
+static Frontier.Platform.Guardrails.InvocationCostEstimate.operator ==(Frontier.Platform.Guardrails.InvocationCostEstimate? left, Frontier.Platform.Guardrails.InvocationCostEstimate? right) -> bool
+static Frontier.Platform.Guardrails.UsageRecord.operator !=(Frontier.Platform.Guardrails.UsageRecord? left, Frontier.Platform.Guardrails.UsageRecord? right) -> bool
+static Frontier.Platform.Guardrails.UsageRecord.operator ==(Frontier.Platform.Guardrails.UsageRecord? left, Frontier.Platform.Guardrails.UsageRecord? right) -> bool
+static readonly Frontier.Platform.Guardrails.Phase1GuardrailPolicyCatalogue.Default -> Frontier.Platform.Guardrails.GuardrailPolicy!
+static readonly Frontier.Platform.Guardrails.Phase1GuardrailPolicyCatalogue.Sandbox -> Frontier.Platform.Guardrails.GuardrailPolicy!

@@ -9,6 +9,13 @@
     <PackageVersion Include="MinVer" Version="7.0.0" />
   </ItemGroup>
 
+  <!-- Public API surface tracking on the publishable libraries (see Directory.Build.props):
+       every public member must appear in a PublicAPI.*.txt file, so a surface change is a
+       reviewable diff rather than a silent compatibility obligation. -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="5.6.0" />
+  </ItemGroup>
+
   <!-- Test-framework packages -->
   <ItemGroup>
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />

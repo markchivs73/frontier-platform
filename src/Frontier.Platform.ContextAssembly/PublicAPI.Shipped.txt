@@ -1,0 +1,313 @@
+#nullable enable
+Frontier.Platform.ContextAssembly.BaselineCatalogue
+Frontier.Platform.ContextAssembly.BaselineCatalogue.<Clone>$() -> Frontier.Platform.ContextAssembly.BaselineCatalogue!
+Frontier.Platform.ContextAssembly.BaselineCatalogue.BaselineCatalogue(string! CatalogueId, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Components) -> void
+Frontier.Platform.ContextAssembly.BaselineCatalogue.CatalogueId.get -> string!
+Frontier.Platform.ContextAssembly.BaselineCatalogue.Components.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Frontier.Platform.ContextAssembly.BaselineCatalogue.Deconstruct(out string! CatalogueId, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Components) -> void
+Frontier.Platform.ContextAssembly.BaselineCatalogue.Equals(Frontier.Platform.ContextAssembly.BaselineCatalogue? other) -> bool
+Frontier.Platform.ContextAssembly.BaselineTierComparison
+Frontier.Platform.ContextAssembly.BaselineTierComparison.BaselineTierComparison(string! ContentHash, string! CacheVerdict, bool ChangedFromPrevious) -> void
+Frontier.Platform.ContextAssembly.BaselineTierComparison.Deconstruct(out string! ContentHash, out string! CacheVerdict, out bool ChangedFromPrevious) -> void
+Frontier.Platform.ContextAssembly.BaselineTierComparison.Equals(Frontier.Platform.ContextAssembly.BaselineTierComparison? other) -> bool
+Frontier.Platform.ContextAssembly.CacheHitMetrics
+Frontier.Platform.ContextAssembly.CacheHitMetrics.<Clone>$() -> Frontier.Platform.ContextAssembly.CacheHitMetrics!
+Frontier.Platform.ContextAssembly.CacheHitMetrics.BytesFromCache.get -> int
+Frontier.Platform.ContextAssembly.CacheHitMetrics.BytesFromCache.init -> void
+Frontier.Platform.ContextAssembly.CacheHitMetrics.CacheHitMetrics(string! Tier, bool IsHit, int BytesFromCache, int TokensFromCache, decimal EstimatedCostSavings) -> void
+Frontier.Platform.ContextAssembly.CacheHitMetrics.Deconstruct(out string! Tier, out bool IsHit, out int BytesFromCache, out int TokensFromCache, out decimal EstimatedCostSavings) -> void
+Frontier.Platform.ContextAssembly.CacheHitMetrics.Equals(Frontier.Platform.ContextAssembly.CacheHitMetrics? other) -> bool
+Frontier.Platform.ContextAssembly.CacheHitMetrics.EstimatedCostSavings.get -> decimal
+Frontier.Platform.ContextAssembly.CacheHitMetrics.EstimatedCostSavings.init -> void
+Frontier.Platform.ContextAssembly.CacheHitMetrics.IsHit.get -> bool
+Frontier.Platform.ContextAssembly.CacheHitMetrics.IsHit.init -> void
+Frontier.Platform.ContextAssembly.CacheHitMetrics.Tier.get -> string!
+Frontier.Platform.ContextAssembly.CacheHitMetrics.Tier.init -> void
+Frontier.Platform.ContextAssembly.CacheHitMetrics.TokensFromCache.get -> int
+Frontier.Platform.ContextAssembly.CacheHitMetrics.TokensFromCache.init -> void
+Frontier.Platform.ContextAssembly.CachingCapabilities
+Frontier.Platform.ContextAssembly.CachingCapabilities.<Clone>$() -> Frontier.Platform.ContextAssembly.CachingCapabilities!
+Frontier.Platform.ContextAssembly.CachingCapabilities.CachingCapabilities(bool SupportsExplicitDirectives, bool SupportsImplicitPrefixCaching, int? MinTokensForCaching, System.Collections.Generic.IReadOnlyList<string!>! SupportedCacheDirectives) -> void
+Frontier.Platform.ContextAssembly.CachingCapabilities.Deconstruct(out bool SupportsExplicitDirectives, out bool SupportsImplicitPrefixCaching, out int? MinTokensForCaching, out System.Collections.Generic.IReadOnlyList<string!>! SupportedCacheDirectives) -> void
+Frontier.Platform.ContextAssembly.CachingCapabilities.Equals(Frontier.Platform.ContextAssembly.CachingCapabilities? other) -> bool
+Frontier.Platform.ContextAssembly.CachingCapabilities.MinTokensForCaching.get -> int?
+Frontier.Platform.ContextAssembly.CachingCapabilities.MinTokensForCaching.init -> void
+Frontier.Platform.ContextAssembly.CachingCapabilities.SupportedCacheDirectives.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Frontier.Platform.ContextAssembly.CachingCapabilities.SupportedCacheDirectives.init -> void
+Frontier.Platform.ContextAssembly.CachingCapabilities.SupportsExplicitDirectives.get -> bool
+Frontier.Platform.ContextAssembly.CachingCapabilities.SupportsExplicitDirectives.init -> void
+Frontier.Platform.ContextAssembly.CachingCapabilities.SupportsImplicitPrefixCaching.get -> bool
+Frontier.Platform.ContextAssembly.CachingCapabilities.SupportsImplicitPrefixCaching.init -> void
+Frontier.Platform.ContextAssembly.CachingMetadata
+Frontier.Platform.ContextAssembly.CachingMetadata.<Clone>$() -> Frontier.Platform.ContextAssembly.CachingMetadata!
+Frontier.Platform.ContextAssembly.CachingMetadata.AssembledAtUtc.get -> System.DateTime
+Frontier.Platform.ContextAssembly.CachingMetadata.AssembledAtUtc.init -> void
+Frontier.Platform.ContextAssembly.CachingMetadata.CachingMetadata(string! ProviderId, string! ModelId, string? ModelVersion, int MaxTokens, System.DateTime AssembledAtUtc) -> void
+Frontier.Platform.ContextAssembly.CachingMetadata.Deconstruct(out string! ProviderId, out string! ModelId, out string? ModelVersion, out int MaxTokens, out System.DateTime AssembledAtUtc) -> void
+Frontier.Platform.ContextAssembly.CachingMetadata.Equals(Frontier.Platform.ContextAssembly.CachingMetadata? other) -> bool
+Frontier.Platform.ContextAssembly.CachingMetadata.MaxTokens.get -> int
+Frontier.Platform.ContextAssembly.CachingMetadata.MaxTokens.init -> void
+Frontier.Platform.ContextAssembly.CachingMetadata.ModelId.get -> string!
+Frontier.Platform.ContextAssembly.CachingMetadata.ModelId.init -> void
+Frontier.Platform.ContextAssembly.CachingMetadata.ModelVersion.get -> string?
+Frontier.Platform.ContextAssembly.CachingMetadata.ModelVersion.init -> void
+Frontier.Platform.ContextAssembly.CachingMetadata.ProviderId.get -> string!
+Frontier.Platform.ContextAssembly.CachingMetadata.ProviderId.init -> void
+Frontier.Platform.ContextAssembly.CachingStrategyRegistry
+Frontier.Platform.ContextAssembly.CachingStrategyRegistry.CachingStrategyRegistry(Frontier.Platform.ContextAssembly.ICachingStrategy! fallbackStrategy) -> void
+Frontier.Platform.ContextAssembly.CachingStrategyRegistry.Register(string! provider, string! modelPattern, string? versionPattern, Frontier.Platform.ContextAssembly.ICachingStrategy! strategy) -> void
+Frontier.Platform.ContextAssembly.CachingStrategyRegistry.Resolve(string! provider, string! modelId, string? modelVersion = null) -> Frontier.Platform.ContextAssembly.ICachingStrategy!
+Frontier.Platform.ContextAssembly.CachingStrategyRegistry.ResolveStrategy(string! provider) -> Frontier.Platform.ContextAssembly.ICachingStrategy?
+Frontier.Platform.ContextAssembly.ContextAssemblyOptions
+Frontier.Platform.ContextAssembly.ContextAssemblyOptions.<Clone>$() -> Frontier.Platform.ContextAssembly.ContextAssemblyOptions!
+Frontier.Platform.ContextAssembly.ContextAssemblyOptions.BaselineCatalogueId.get -> string!
+Frontier.Platform.ContextAssembly.ContextAssemblyOptions.BaselineCatalogueId.init -> void
+Frontier.Platform.ContextAssembly.ContextAssemblyOptions.BaselineMaxTokens.get -> int
+Frontier.Platform.ContextAssembly.ContextAssemblyOptions.BaselineMaxTokens.init -> void
+Frontier.Platform.ContextAssembly.ContextAssemblyOptions.ContextAssemblyOptions() -> void
+Frontier.Platform.ContextAssembly.ContextAssemblyOptions.DynamicMaxTokens.get -> int
+Frontier.Platform.ContextAssembly.ContextAssemblyOptions.DynamicMaxTokens.init -> void
+Frontier.Platform.ContextAssembly.ContextAssemblyOptions.DynamicRefreshInterval.get -> System.TimeSpan
+Frontier.Platform.ContextAssembly.ContextAssemblyOptions.DynamicRefreshInterval.init -> void
+Frontier.Platform.ContextAssembly.ContextAssemblyOptions.EnableCaching.get -> bool
+Frontier.Platform.ContextAssembly.ContextAssemblyOptions.EnableCaching.init -> void
+Frontier.Platform.ContextAssembly.ContextAssemblyOptions.Equals(Frontier.Platform.ContextAssembly.ContextAssemblyOptions? other) -> bool
+Frontier.Platform.ContextAssembly.ContextAssemblyOptions.RealTimeMaxTokens.get -> int
+Frontier.Platform.ContextAssembly.ContextAssemblyOptions.RealTimeMaxTokens.init -> void
+Frontier.Platform.ContextAssembly.ContextAssemblyServiceCollectionExtensions
+Frontier.Platform.ContextAssembly.ContextComparisonResult
+Frontier.Platform.ContextAssembly.ContextComparisonResult.<Clone>$() -> Frontier.Platform.ContextAssembly.ContextComparisonResult!
+Frontier.Platform.ContextAssembly.ContextComparisonResult.BaselineComparison.get -> Frontier.Platform.ContextAssembly.BaselineTierComparison!
+Frontier.Platform.ContextAssembly.ContextComparisonResult.ContextComparisonResult(Frontier.Platform.ContextAssembly.BaselineTierComparison! BaselineComparison, Frontier.Platform.ContextAssembly.DynamicTierComparison! DynamicComparison, Frontier.Platform.ContextAssembly.RealTimeTierComparison? RealTimeComparison) -> void
+Frontier.Platform.ContextAssembly.ContextComparisonResult.Deconstruct(out Frontier.Platform.ContextAssembly.BaselineTierComparison! BaselineComparison, out Frontier.Platform.ContextAssembly.DynamicTierComparison! DynamicComparison, out Frontier.Platform.ContextAssembly.RealTimeTierComparison? RealTimeComparison) -> void
+Frontier.Platform.ContextAssembly.ContextComparisonResult.DynamicComparison.get -> Frontier.Platform.ContextAssembly.DynamicTierComparison!
+Frontier.Platform.ContextAssembly.ContextComparisonResult.Equals(Frontier.Platform.ContextAssembly.ContextComparisonResult? other) -> bool
+Frontier.Platform.ContextAssembly.ContextComparisonResult.RealTimeComparison.get -> Frontier.Platform.ContextAssembly.RealTimeTierComparison?
+Frontier.Platform.ContextAssembly.ContextPackageMetadata
+Frontier.Platform.ContextAssembly.ContextPackageMetadata.<Clone>$() -> Frontier.Platform.ContextAssembly.ContextPackageMetadata!
+Frontier.Platform.ContextAssembly.ContextPackageMetadata.AssembledAtUtc.get -> System.DateTime
+Frontier.Platform.ContextAssembly.ContextPackageMetadata.AssembledAtUtc.init -> void
+Frontier.Platform.ContextAssembly.ContextPackageMetadata.BaselineBytes.get -> int
+Frontier.Platform.ContextAssembly.ContextPackageMetadata.BaselineBytes.init -> void
+Frontier.Platform.ContextAssembly.ContextPackageMetadata.CacheDirectives.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.ContextAssembly.ProviderCacheDirective!>?
+Frontier.Platform.ContextAssembly.ContextPackageMetadata.CacheDirectives.init -> void
+Frontier.Platform.ContextAssembly.ContextPackageMetadata.ContextPackageMetadata(System.DateTime AssembledAtUtc, int BaselineBytes, int DynamicBytes, int RealTimeBytes, string? RefreshReason = null, System.Collections.Generic.IReadOnlyList<Frontier.Platform.ContextAssembly.ProviderCacheDirective!>? CacheDirectives = null) -> void
+Frontier.Platform.ContextAssembly.ContextPackageMetadata.Deconstruct(out System.DateTime AssembledAtUtc, out int BaselineBytes, out int DynamicBytes, out int RealTimeBytes, out string? RefreshReason, out System.Collections.Generic.IReadOnlyList<Frontier.Platform.ContextAssembly.ProviderCacheDirective!>? CacheDirectives) -> void
+Frontier.Platform.ContextAssembly.ContextPackageMetadata.DynamicBytes.get -> int
+Frontier.Platform.ContextAssembly.ContextPackageMetadata.DynamicBytes.init -> void
+Frontier.Platform.ContextAssembly.ContextPackageMetadata.Equals(Frontier.Platform.ContextAssembly.ContextPackageMetadata? other) -> bool
+Frontier.Platform.ContextAssembly.ContextPackageMetadata.RealTimeBytes.get -> int
+Frontier.Platform.ContextAssembly.ContextPackageMetadata.RealTimeBytes.init -> void
+Frontier.Platform.ContextAssembly.ContextPackageMetadata.RefreshReason.get -> string?
+Frontier.Platform.ContextAssembly.ContextPackageMetadata.RefreshReason.init -> void
+Frontier.Platform.ContextAssembly.ContextPackageMetadata.Validate() -> void
+Frontier.Platform.ContextAssembly.ContextTier
+Frontier.Platform.ContextAssembly.ContextTier.Baseline = 0 -> Frontier.Platform.ContextAssembly.ContextTier
+Frontier.Platform.ContextAssembly.ContextTier.Dynamic = 1 -> Frontier.Platform.ContextAssembly.ContextTier
+Frontier.Platform.ContextAssembly.ContextTier.RealTime = 2 -> Frontier.Platform.ContextAssembly.ContextTier
+Frontier.Platform.ContextAssembly.DynamicContextRefreshResult
+Frontier.Platform.ContextAssembly.DynamicContextRefreshResult.<Clone>$() -> Frontier.Platform.ContextAssembly.DynamicContextRefreshResult!
+Frontier.Platform.ContextAssembly.DynamicContextRefreshResult.ContentHash.get -> string!
+Frontier.Platform.ContextAssembly.DynamicContextRefreshResult.Deconstruct(out bool Refreshed, out int Epoch, out string! ContentHash) -> void
+Frontier.Platform.ContextAssembly.DynamicContextRefreshResult.DynamicContextRefreshResult(bool Refreshed, int Epoch, string! ContentHash) -> void
+Frontier.Platform.ContextAssembly.DynamicContextRefreshResult.Epoch.get -> int
+Frontier.Platform.ContextAssembly.DynamicContextRefreshResult.Equals(Frontier.Platform.ContextAssembly.DynamicContextRefreshResult? other) -> bool
+Frontier.Platform.ContextAssembly.DynamicContextRefreshResult.Refreshed.get -> bool
+Frontier.Platform.ContextAssembly.DynamicTierComparison
+Frontier.Platform.ContextAssembly.DynamicTierComparison.Deconstruct(out string! ContentHash, out string! CacheVerdict, out bool ChangedFromPrevious, out int? EpochIfAvailable) -> void
+Frontier.Platform.ContextAssembly.DynamicTierComparison.DynamicTierComparison(string! ContentHash, string! CacheVerdict, bool ChangedFromPrevious, int? EpochIfAvailable) -> void
+Frontier.Platform.ContextAssembly.DynamicTierComparison.EpochIfAvailable.get -> int?
+Frontier.Platform.ContextAssembly.DynamicTierComparison.Equals(Frontier.Platform.ContextAssembly.DynamicTierComparison? other) -> bool
+Frontier.Platform.ContextAssembly.EngagementContextEpoch
+Frontier.Platform.ContextAssembly.EngagementContextEpoch.<Clone>$() -> Frontier.Platform.ContextAssembly.EngagementContextEpoch!
+Frontier.Platform.ContextAssembly.EngagementContextEpoch.Content.get -> string!
+Frontier.Platform.ContextAssembly.EngagementContextEpoch.Content.init -> void
+Frontier.Platform.ContextAssembly.EngagementContextEpoch.ContentHash.get -> string!
+Frontier.Platform.ContextAssembly.EngagementContextEpoch.ContentHash.init -> void
+Frontier.Platform.ContextAssembly.EngagementContextEpoch.CreatedAtUtc.get -> System.DateTime
+Frontier.Platform.ContextAssembly.EngagementContextEpoch.CreatedAtUtc.init -> void
+Frontier.Platform.ContextAssembly.EngagementContextEpoch.Deconstruct(out string! Id, out string! EngagementId, out int Epoch, out string! ContentHash, out string! Content, out System.DateTime CreatedAtUtc) -> void
+Frontier.Platform.ContextAssembly.EngagementContextEpoch.EngagementContextEpoch(string! Id, string! EngagementId, int Epoch, string! ContentHash, string! Content, System.DateTime CreatedAtUtc) -> void
+Frontier.Platform.ContextAssembly.EngagementContextEpoch.EngagementId.get -> string!
+Frontier.Platform.ContextAssembly.EngagementContextEpoch.EngagementId.init -> void
+Frontier.Platform.ContextAssembly.EngagementContextEpoch.Epoch.get -> int
+Frontier.Platform.ContextAssembly.EngagementContextEpoch.Epoch.init -> void
+Frontier.Platform.ContextAssembly.EngagementContextEpoch.Equals(Frontier.Platform.ContextAssembly.EngagementContextEpoch? other) -> bool
+Frontier.Platform.ContextAssembly.EngagementContextEpoch.Id.get -> string!
+Frontier.Platform.ContextAssembly.EngagementContextEpoch.Id.init -> void
+Frontier.Platform.ContextAssembly.EngagementContextEpoch.SchemaVersion.get -> string!
+Frontier.Platform.ContextAssembly.EngagementContextEpoch.Validate() -> void
+Frontier.Platform.ContextAssembly.EngagementContextPointer
+Frontier.Platform.ContextAssembly.EngagementContextPointer.<Clone>$() -> Frontier.Platform.ContextAssembly.EngagementContextPointer!
+Frontier.Platform.ContextAssembly.EngagementContextPointer.ContentHash.get -> string!
+Frontier.Platform.ContextAssembly.EngagementContextPointer.ContentHash.init -> void
+Frontier.Platform.ContextAssembly.EngagementContextPointer.Deconstruct(out string! Id, out string! EngagementId, out int Epoch, out string! ContentHash, out System.DateTime UpdatedAtUtc) -> void
+Frontier.Platform.ContextAssembly.EngagementContextPointer.EngagementContextPointer(string! Id, string! EngagementId, int Epoch, string! ContentHash, System.DateTime UpdatedAtUtc) -> void
+Frontier.Platform.ContextAssembly.EngagementContextPointer.EngagementId.get -> string!
+Frontier.Platform.ContextAssembly.EngagementContextPointer.EngagementId.init -> void
+Frontier.Platform.ContextAssembly.EngagementContextPointer.Epoch.get -> int
+Frontier.Platform.ContextAssembly.EngagementContextPointer.Epoch.init -> void
+Frontier.Platform.ContextAssembly.EngagementContextPointer.Equals(Frontier.Platform.ContextAssembly.EngagementContextPointer? other) -> bool
+Frontier.Platform.ContextAssembly.EngagementContextPointer.Id.get -> string!
+Frontier.Platform.ContextAssembly.EngagementContextPointer.Id.init -> void
+Frontier.Platform.ContextAssembly.EngagementContextPointer.SchemaVersion.get -> string!
+Frontier.Platform.ContextAssembly.EngagementContextPointer.UpdatedAtUtc.get -> System.DateTime
+Frontier.Platform.ContextAssembly.EngagementContextPointer.UpdatedAtUtc.init -> void
+Frontier.Platform.ContextAssembly.EngagementContextPointer.Validate() -> void
+Frontier.Platform.ContextAssembly.IBaselineCatalogueStore
+Frontier.Platform.ContextAssembly.IBaselineCatalogueStore.GetBaselineCatalogueAsync(string! catalogueId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<string?>!
+Frontier.Platform.ContextAssembly.ICachingStrategy
+Frontier.Platform.ContextAssembly.ICachingStrategy.ApplyCacheHintsAsync(Frontier.Platform.Serialization.ContextPackage! package, Frontier.Platform.ContextAssembly.CachingMetadata! metadata, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.ContextAssembly.ProviderMessageLayout!>!
+Frontier.Platform.ContextAssembly.ICachingStrategy.ExtractCacheMetrics(object? providerResponse) -> Frontier.Platform.ContextAssembly.CacheHitMetrics?
+Frontier.Platform.ContextAssembly.ICachingStrategy.GetCapabilities() -> Frontier.Platform.ContextAssembly.CachingCapabilities!
+Frontier.Platform.ContextAssembly.ICachingStrategy.ProviderName.get -> string!
+Frontier.Platform.ContextAssembly.ICachingStrategyRegistry
+Frontier.Platform.ContextAssembly.ICachingStrategyRegistry.Resolve(string! provider, string! modelId, string? modelVersion = null) -> Frontier.Platform.ContextAssembly.ICachingStrategy?
+Frontier.Platform.ContextAssembly.ICachingStrategyRegistry.ResolveStrategy(string! provider) -> Frontier.Platform.ContextAssembly.ICachingStrategy?
+Frontier.Platform.ContextAssembly.IContextAssembler
+Frontier.Platform.ContextAssembly.IContextAssembler.AssembleAsync(Frontier.Platform.ContextAssembly.CachingMetadata! metadata, string! baselineContent, string! dynamicContent, string! realTimeContent, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Frontier.Platform.Serialization.ContextPackage!>!
+Frontier.Platform.ContextAssembly.IContextDebugger
+Frontier.Platform.ContextAssembly.IContextDebugger.CompareAsync(Frontier.Platform.Serialization.ContextPackage! current, Frontier.Platform.Serialization.ContextPackage? previous, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.ContextAssembly.ContextComparisonResult!>!
+Frontier.Platform.ContextAssembly.IContextDebugger.DumpContextAsync(string! executionId, Frontier.Platform.Serialization.ContextPackage! package, Frontier.Platform.ContextAssembly.ProviderMessageLayout! layout, System.IO.TextWriter! output, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task!
+Frontier.Platform.ContextAssembly.IContextValidator
+Frontier.Platform.ContextAssembly.IContextValidator.ValidateRequest(Frontier.Platform.Abstractions.ContextRequest! request, Frontier.Platform.ContextAssembly.BaselineCatalogue! catalogue) -> System.Collections.Generic.IReadOnlyList<string!>!
+Frontier.Platform.ContextAssembly.IDynamicContextRefresher
+Frontier.Platform.ContextAssembly.IDynamicContextRefresher.RefreshDynamicAsync(Frontier.Platform.Abstractions.EngagementId! engagementId, string! newDynamicContent, string! refreshReason, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.ContextAssembly.DynamicContextRefreshResult!>!
+Frontier.Platform.ContextAssembly.IEngagementContextStore
+Frontier.Platform.ContextAssembly.IEngagementContextStore.GetDynamicContextAsync(Frontier.Platform.Abstractions.EngagementId! engagementId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<string?>!
+Frontier.Platform.ContextAssembly.IEngagementContextStore.UpsertDynamicContextAsync(Frontier.Platform.Abstractions.EngagementId! engagementId, string! dynamicContent, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<int>!
+Frontier.Platform.ContextAssembly.Phase1ContextCatalogue
+Frontier.Platform.ContextAssembly.ProviderCacheDirective
+Frontier.Platform.ContextAssembly.ProviderCacheDirective.<Clone>$() -> Frontier.Platform.ContextAssembly.ProviderCacheDirective!
+Frontier.Platform.ContextAssembly.ProviderCacheDirective.Deconstruct(out string! Tier, out string! Provider, out string! Strategy, out System.DateTime? ExpiresAtUtc) -> void
+Frontier.Platform.ContextAssembly.ProviderCacheDirective.Equals(Frontier.Platform.ContextAssembly.ProviderCacheDirective? other) -> bool
+Frontier.Platform.ContextAssembly.ProviderCacheDirective.ExpiresAtUtc.get -> System.DateTime?
+Frontier.Platform.ContextAssembly.ProviderCacheDirective.ExpiresAtUtc.init -> void
+Frontier.Platform.ContextAssembly.ProviderCacheDirective.Provider.get -> string!
+Frontier.Platform.ContextAssembly.ProviderCacheDirective.Provider.init -> void
+Frontier.Platform.ContextAssembly.ProviderCacheDirective.ProviderCacheDirective(string! Tier, string! Provider, string! Strategy, System.DateTime? ExpiresAtUtc = null) -> void
+Frontier.Platform.ContextAssembly.ProviderCacheDirective.Strategy.get -> string!
+Frontier.Platform.ContextAssembly.ProviderCacheDirective.Strategy.init -> void
+Frontier.Platform.ContextAssembly.ProviderCacheDirective.Tier.get -> string!
+Frontier.Platform.ContextAssembly.ProviderCacheDirective.Tier.init -> void
+Frontier.Platform.ContextAssembly.ProviderMessageLayout
+Frontier.Platform.ContextAssembly.ProviderMessageLayout.<Clone>$() -> Frontier.Platform.ContextAssembly.ProviderMessageLayout!
+Frontier.Platform.ContextAssembly.ProviderMessageLayout.CacheDirectives.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.ContextAssembly.ProviderCacheDirective!>!
+Frontier.Platform.ContextAssembly.ProviderMessageLayout.CacheDirectives.init -> void
+Frontier.Platform.ContextAssembly.ProviderMessageLayout.Deconstruct(out System.Collections.Generic.IReadOnlyList<object!>! SystemMessages, out System.Collections.Generic.IReadOnlyList<object!>! UserMessages, out System.Collections.Generic.IReadOnlyList<Frontier.Platform.ContextAssembly.ProviderCacheDirective!>! CacheDirectives, out int EstimatedTokens) -> void
+Frontier.Platform.ContextAssembly.ProviderMessageLayout.Equals(Frontier.Platform.ContextAssembly.ProviderMessageLayout? other) -> bool
+Frontier.Platform.ContextAssembly.ProviderMessageLayout.EstimatedTokens.get -> int
+Frontier.Platform.ContextAssembly.ProviderMessageLayout.EstimatedTokens.init -> void
+Frontier.Platform.ContextAssembly.ProviderMessageLayout.ProviderMessageLayout(System.Collections.Generic.IReadOnlyList<object!>! SystemMessages, System.Collections.Generic.IReadOnlyList<object!>! UserMessages, System.Collections.Generic.IReadOnlyList<Frontier.Platform.ContextAssembly.ProviderCacheDirective!>! CacheDirectives, int EstimatedTokens) -> void
+Frontier.Platform.ContextAssembly.ProviderMessageLayout.SystemMessages.get -> System.Collections.Generic.IReadOnlyList<object!>!
+Frontier.Platform.ContextAssembly.ProviderMessageLayout.SystemMessages.init -> void
+Frontier.Platform.ContextAssembly.ProviderMessageLayout.UserMessages.get -> System.Collections.Generic.IReadOnlyList<object!>!
+Frontier.Platform.ContextAssembly.ProviderMessageLayout.UserMessages.init -> void
+Frontier.Platform.ContextAssembly.RealTimeTierComparison
+Frontier.Platform.ContextAssembly.RealTimeTierComparison.Deconstruct(out string! ContentHash, out string! CacheVerdict, out bool ChangedFromPrevious, out int FetchCount) -> void
+Frontier.Platform.ContextAssembly.RealTimeTierComparison.Equals(Frontier.Platform.ContextAssembly.RealTimeTierComparison? other) -> bool
+Frontier.Platform.ContextAssembly.RealTimeTierComparison.FetchCount.get -> int
+Frontier.Platform.ContextAssembly.RealTimeTierComparison.RealTimeTierComparison(string! ContentHash, string! CacheVerdict, bool ChangedFromPrevious, int FetchCount) -> void
+Frontier.Platform.ContextAssembly.TierComparisonBase
+Frontier.Platform.ContextAssembly.TierComparisonBase.CacheVerdict.get -> string!
+Frontier.Platform.ContextAssembly.TierComparisonBase.ChangedFromPrevious.get -> bool
+Frontier.Platform.ContextAssembly.TierComparisonBase.ContentHash.get -> string!
+Frontier.Platform.ContextAssembly.TierComparisonBase.Deconstruct(out string! ContentHash, out string! CacheVerdict, out bool ChangedFromPrevious) -> void
+Frontier.Platform.ContextAssembly.TierComparisonBase.TierComparisonBase(Frontier.Platform.ContextAssembly.TierComparisonBase! original) -> void
+Frontier.Platform.ContextAssembly.TierComparisonBase.TierComparisonBase(string! ContentHash, string! CacheVerdict, bool ChangedFromPrevious) -> void
+const Frontier.Platform.ContextAssembly.Phase1ContextCatalogue.BaselineCatalogueId = "firm-standards-v1" -> string!
+const Frontier.Platform.ContextAssembly.Phase1ContextCatalogue.HelpdeskEngagementId = "ENGAGEMENT-HELPDESK-1" -> string!
+const Frontier.Platform.ContextAssembly.Phase1ContextCatalogue.SeedEngagementId = "ENGAGEMENT-12345" -> string!
+override Frontier.Platform.ContextAssembly.BaselineCatalogue.Equals(object? obj) -> bool
+override Frontier.Platform.ContextAssembly.BaselineCatalogue.GetHashCode() -> int
+override Frontier.Platform.ContextAssembly.BaselineCatalogue.ToString() -> string!
+override Frontier.Platform.ContextAssembly.BaselineTierComparison.<Clone>$() -> Frontier.Platform.ContextAssembly.BaselineTierComparison!
+override Frontier.Platform.ContextAssembly.BaselineTierComparison.Equals(object? obj) -> bool
+override Frontier.Platform.ContextAssembly.BaselineTierComparison.GetHashCode() -> int
+override Frontier.Platform.ContextAssembly.BaselineTierComparison.ToString() -> string!
+override Frontier.Platform.ContextAssembly.CacheHitMetrics.Equals(object? obj) -> bool
+override Frontier.Platform.ContextAssembly.CacheHitMetrics.GetHashCode() -> int
+override Frontier.Platform.ContextAssembly.CacheHitMetrics.ToString() -> string!
+override Frontier.Platform.ContextAssembly.CachingCapabilities.Equals(object? obj) -> bool
+override Frontier.Platform.ContextAssembly.CachingCapabilities.GetHashCode() -> int
+override Frontier.Platform.ContextAssembly.CachingCapabilities.ToString() -> string!
+override Frontier.Platform.ContextAssembly.CachingMetadata.Equals(object? obj) -> bool
+override Frontier.Platform.ContextAssembly.CachingMetadata.GetHashCode() -> int
+override Frontier.Platform.ContextAssembly.CachingMetadata.ToString() -> string!
+override Frontier.Platform.ContextAssembly.ContextAssemblyOptions.Equals(object? obj) -> bool
+override Frontier.Platform.ContextAssembly.ContextAssemblyOptions.GetHashCode() -> int
+override Frontier.Platform.ContextAssembly.ContextAssemblyOptions.ToString() -> string!
+override Frontier.Platform.ContextAssembly.ContextComparisonResult.Equals(object? obj) -> bool
+override Frontier.Platform.ContextAssembly.ContextComparisonResult.GetHashCode() -> int
+override Frontier.Platform.ContextAssembly.ContextComparisonResult.ToString() -> string!
+override Frontier.Platform.ContextAssembly.ContextPackageMetadata.Equals(object? obj) -> bool
+override Frontier.Platform.ContextAssembly.ContextPackageMetadata.GetHashCode() -> int
+override Frontier.Platform.ContextAssembly.ContextPackageMetadata.ToString() -> string!
+override Frontier.Platform.ContextAssembly.DynamicContextRefreshResult.Equals(object? obj) -> bool
+override Frontier.Platform.ContextAssembly.DynamicContextRefreshResult.GetHashCode() -> int
+override Frontier.Platform.ContextAssembly.DynamicContextRefreshResult.ToString() -> string!
+override Frontier.Platform.ContextAssembly.DynamicTierComparison.<Clone>$() -> Frontier.Platform.ContextAssembly.DynamicTierComparison!
+override Frontier.Platform.ContextAssembly.DynamicTierComparison.Equals(object? obj) -> bool
+override Frontier.Platform.ContextAssembly.DynamicTierComparison.GetHashCode() -> int
+override Frontier.Platform.ContextAssembly.DynamicTierComparison.ToString() -> string!
+override Frontier.Platform.ContextAssembly.EngagementContextEpoch.Equals(object? obj) -> bool
+override Frontier.Platform.ContextAssembly.EngagementContextEpoch.GetHashCode() -> int
+override Frontier.Platform.ContextAssembly.EngagementContextEpoch.ToString() -> string!
+override Frontier.Platform.ContextAssembly.EngagementContextPointer.Equals(object? obj) -> bool
+override Frontier.Platform.ContextAssembly.EngagementContextPointer.GetHashCode() -> int
+override Frontier.Platform.ContextAssembly.EngagementContextPointer.ToString() -> string!
+override Frontier.Platform.ContextAssembly.ProviderCacheDirective.Equals(object? obj) -> bool
+override Frontier.Platform.ContextAssembly.ProviderCacheDirective.GetHashCode() -> int
+override Frontier.Platform.ContextAssembly.ProviderCacheDirective.ToString() -> string!
+override Frontier.Platform.ContextAssembly.ProviderMessageLayout.Equals(object? obj) -> bool
+override Frontier.Platform.ContextAssembly.ProviderMessageLayout.GetHashCode() -> int
+override Frontier.Platform.ContextAssembly.ProviderMessageLayout.ToString() -> string!
+override Frontier.Platform.ContextAssembly.RealTimeTierComparison.<Clone>$() -> Frontier.Platform.ContextAssembly.RealTimeTierComparison!
+override Frontier.Platform.ContextAssembly.RealTimeTierComparison.Equals(object? obj) -> bool
+override Frontier.Platform.ContextAssembly.RealTimeTierComparison.GetHashCode() -> int
+override Frontier.Platform.ContextAssembly.RealTimeTierComparison.ToString() -> string!
+override Frontier.Platform.ContextAssembly.TierComparisonBase.Equals(object? obj) -> bool
+override Frontier.Platform.ContextAssembly.TierComparisonBase.GetHashCode() -> int
+override Frontier.Platform.ContextAssembly.TierComparisonBase.ToString() -> string!
+override sealed Frontier.Platform.ContextAssembly.BaselineTierComparison.Equals(Frontier.Platform.ContextAssembly.TierComparisonBase? other) -> bool
+override sealed Frontier.Platform.ContextAssembly.DynamicTierComparison.Equals(Frontier.Platform.ContextAssembly.TierComparisonBase? other) -> bool
+override sealed Frontier.Platform.ContextAssembly.RealTimeTierComparison.Equals(Frontier.Platform.ContextAssembly.TierComparisonBase? other) -> bool
+static Frontier.Platform.ContextAssembly.BaselineCatalogue.operator !=(Frontier.Platform.ContextAssembly.BaselineCatalogue? left, Frontier.Platform.ContextAssembly.BaselineCatalogue? right) -> bool
+static Frontier.Platform.ContextAssembly.BaselineCatalogue.operator ==(Frontier.Platform.ContextAssembly.BaselineCatalogue? left, Frontier.Platform.ContextAssembly.BaselineCatalogue? right) -> bool
+static Frontier.Platform.ContextAssembly.BaselineTierComparison.operator !=(Frontier.Platform.ContextAssembly.BaselineTierComparison? left, Frontier.Platform.ContextAssembly.BaselineTierComparison? right) -> bool
+static Frontier.Platform.ContextAssembly.BaselineTierComparison.operator ==(Frontier.Platform.ContextAssembly.BaselineTierComparison? left, Frontier.Platform.ContextAssembly.BaselineTierComparison? right) -> bool
+static Frontier.Platform.ContextAssembly.CacheHitMetrics.operator !=(Frontier.Platform.ContextAssembly.CacheHitMetrics? left, Frontier.Platform.ContextAssembly.CacheHitMetrics? right) -> bool
+static Frontier.Platform.ContextAssembly.CacheHitMetrics.operator ==(Frontier.Platform.ContextAssembly.CacheHitMetrics? left, Frontier.Platform.ContextAssembly.CacheHitMetrics? right) -> bool
+static Frontier.Platform.ContextAssembly.CachingCapabilities.operator !=(Frontier.Platform.ContextAssembly.CachingCapabilities? left, Frontier.Platform.ContextAssembly.CachingCapabilities? right) -> bool
+static Frontier.Platform.ContextAssembly.CachingCapabilities.operator ==(Frontier.Platform.ContextAssembly.CachingCapabilities? left, Frontier.Platform.ContextAssembly.CachingCapabilities? right) -> bool
+static Frontier.Platform.ContextAssembly.CachingMetadata.operator !=(Frontier.Platform.ContextAssembly.CachingMetadata? left, Frontier.Platform.ContextAssembly.CachingMetadata? right) -> bool
+static Frontier.Platform.ContextAssembly.CachingMetadata.operator ==(Frontier.Platform.ContextAssembly.CachingMetadata? left, Frontier.Platform.ContextAssembly.CachingMetadata? right) -> bool
+static Frontier.Platform.ContextAssembly.ContextAssemblyOptions.operator !=(Frontier.Platform.ContextAssembly.ContextAssemblyOptions? left, Frontier.Platform.ContextAssembly.ContextAssemblyOptions? right) -> bool
+static Frontier.Platform.ContextAssembly.ContextAssemblyOptions.operator ==(Frontier.Platform.ContextAssembly.ContextAssemblyOptions? left, Frontier.Platform.ContextAssembly.ContextAssemblyOptions? right) -> bool
+static Frontier.Platform.ContextAssembly.ContextAssemblyServiceCollectionExtensions.AddFrontierContextAssembly(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Frontier.Platform.ContextAssembly.ContextAssemblyOptions!>? configure = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Frontier.Platform.ContextAssembly.ContextComparisonResult.operator !=(Frontier.Platform.ContextAssembly.ContextComparisonResult? left, Frontier.Platform.ContextAssembly.ContextComparisonResult? right) -> bool
+static Frontier.Platform.ContextAssembly.ContextComparisonResult.operator ==(Frontier.Platform.ContextAssembly.ContextComparisonResult? left, Frontier.Platform.ContextAssembly.ContextComparisonResult? right) -> bool
+static Frontier.Platform.ContextAssembly.ContextPackageMetadata.operator !=(Frontier.Platform.ContextAssembly.ContextPackageMetadata? left, Frontier.Platform.ContextAssembly.ContextPackageMetadata? right) -> bool
+static Frontier.Platform.ContextAssembly.ContextPackageMetadata.operator ==(Frontier.Platform.ContextAssembly.ContextPackageMetadata? left, Frontier.Platform.ContextAssembly.ContextPackageMetadata? right) -> bool
+static Frontier.Platform.ContextAssembly.DynamicContextRefreshResult.operator !=(Frontier.Platform.ContextAssembly.DynamicContextRefreshResult? left, Frontier.Platform.ContextAssembly.DynamicContextRefreshResult? right) -> bool
+static Frontier.Platform.ContextAssembly.DynamicContextRefreshResult.operator ==(Frontier.Platform.ContextAssembly.DynamicContextRefreshResult? left, Frontier.Platform.ContextAssembly.DynamicContextRefreshResult? right) -> bool
+static Frontier.Platform.ContextAssembly.DynamicTierComparison.operator !=(Frontier.Platform.ContextAssembly.DynamicTierComparison? left, Frontier.Platform.ContextAssembly.DynamicTierComparison? right) -> bool
+static Frontier.Platform.ContextAssembly.DynamicTierComparison.operator ==(Frontier.Platform.ContextAssembly.DynamicTierComparison? left, Frontier.Platform.ContextAssembly.DynamicTierComparison? right) -> bool
+static Frontier.Platform.ContextAssembly.EngagementContextEpoch.operator !=(Frontier.Platform.ContextAssembly.EngagementContextEpoch? left, Frontier.Platform.ContextAssembly.EngagementContextEpoch? right) -> bool
+static Frontier.Platform.ContextAssembly.EngagementContextEpoch.operator ==(Frontier.Platform.ContextAssembly.EngagementContextEpoch? left, Frontier.Platform.ContextAssembly.EngagementContextEpoch? right) -> bool
+static Frontier.Platform.ContextAssembly.EngagementContextPointer.operator !=(Frontier.Platform.ContextAssembly.EngagementContextPointer? left, Frontier.Platform.ContextAssembly.EngagementContextPointer? right) -> bool
+static Frontier.Platform.ContextAssembly.EngagementContextPointer.operator ==(Frontier.Platform.ContextAssembly.EngagementContextPointer? left, Frontier.Platform.ContextAssembly.EngagementContextPointer? right) -> bool
+static Frontier.Platform.ContextAssembly.ProviderCacheDirective.operator !=(Frontier.Platform.ContextAssembly.ProviderCacheDirective? left, Frontier.Platform.ContextAssembly.ProviderCacheDirective? right) -> bool
+static Frontier.Platform.ContextAssembly.ProviderCacheDirective.operator ==(Frontier.Platform.ContextAssembly.ProviderCacheDirective? left, Frontier.Platform.ContextAssembly.ProviderCacheDirective? right) -> bool
+static Frontier.Platform.ContextAssembly.ProviderMessageLayout.operator !=(Frontier.Platform.ContextAssembly.ProviderMessageLayout? left, Frontier.Platform.ContextAssembly.ProviderMessageLayout? right) -> bool
+static Frontier.Platform.ContextAssembly.ProviderMessageLayout.operator ==(Frontier.Platform.ContextAssembly.ProviderMessageLayout? left, Frontier.Platform.ContextAssembly.ProviderMessageLayout? right) -> bool
+static Frontier.Platform.ContextAssembly.RealTimeTierComparison.operator !=(Frontier.Platform.ContextAssembly.RealTimeTierComparison? left, Frontier.Platform.ContextAssembly.RealTimeTierComparison? right) -> bool
+static Frontier.Platform.ContextAssembly.RealTimeTierComparison.operator ==(Frontier.Platform.ContextAssembly.RealTimeTierComparison? left, Frontier.Platform.ContextAssembly.RealTimeTierComparison? right) -> bool
+static Frontier.Platform.ContextAssembly.TierComparisonBase.operator !=(Frontier.Platform.ContextAssembly.TierComparisonBase? left, Frontier.Platform.ContextAssembly.TierComparisonBase? right) -> bool
+static Frontier.Platform.ContextAssembly.TierComparisonBase.operator ==(Frontier.Platform.ContextAssembly.TierComparisonBase? left, Frontier.Platform.ContextAssembly.TierComparisonBase? right) -> bool
+static readonly Frontier.Platform.ContextAssembly.Phase1ContextCatalogue.BaselineCatalogueJson -> string!
+static readonly Frontier.Platform.ContextAssembly.Phase1ContextCatalogue.EngagementContextJson -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+virtual Frontier.Platform.ContextAssembly.TierComparisonBase.<Clone>$() -> Frontier.Platform.ContextAssembly.TierComparisonBase!
+virtual Frontier.Platform.ContextAssembly.TierComparisonBase.EqualityContract.get -> System.Type!
+virtual Frontier.Platform.ContextAssembly.TierComparisonBase.Equals(Frontier.Platform.ContextAssembly.TierComparisonBase? other) -> bool
+virtual Frontier.Platform.ContextAssembly.TierComparisonBase.PrintMembers(System.Text.StringBuilder! builder) -> bool

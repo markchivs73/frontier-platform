@@ -1,0 +1,162 @@
+#nullable enable
+Frontier.Platform.Resilience.BulkheadSpec
+Frontier.Platform.Resilience.BulkheadSpec.<Clone>$() -> Frontier.Platform.Resilience.BulkheadSpec!
+Frontier.Platform.Resilience.BulkheadSpec.BulkheadSpec() -> void
+Frontier.Platform.Resilience.BulkheadSpec.Equals(Frontier.Platform.Resilience.BulkheadSpec? other) -> bool
+Frontier.Platform.Resilience.BulkheadSpec.MaxConcurrent.get -> int
+Frontier.Platform.Resilience.BulkheadSpec.MaxConcurrent.init -> void
+Frontier.Platform.Resilience.BulkheadSpec.MaxQueue.get -> int
+Frontier.Platform.Resilience.BulkheadSpec.MaxQueue.init -> void
+Frontier.Platform.Resilience.BulkheadSpec.Scope.get -> string!
+Frontier.Platform.Resilience.BulkheadSpec.Scope.init -> void
+Frontier.Platform.Resilience.CircuitBreakerSpec
+Frontier.Platform.Resilience.CircuitBreakerSpec.<Clone>$() -> Frontier.Platform.Resilience.CircuitBreakerSpec!
+Frontier.Platform.Resilience.CircuitBreakerSpec.BreakDurationSeconds.get -> int
+Frontier.Platform.Resilience.CircuitBreakerSpec.BreakDurationSeconds.init -> void
+Frontier.Platform.Resilience.CircuitBreakerSpec.CircuitBreakerSpec() -> void
+Frontier.Platform.Resilience.CircuitBreakerSpec.Equals(Frontier.Platform.Resilience.CircuitBreakerSpec? other) -> bool
+Frontier.Platform.Resilience.CircuitBreakerSpec.FailureRatio.get -> double
+Frontier.Platform.Resilience.CircuitBreakerSpec.FailureRatio.init -> void
+Frontier.Platform.Resilience.CircuitBreakerSpec.MinThroughput.get -> int
+Frontier.Platform.Resilience.CircuitBreakerSpec.MinThroughput.init -> void
+Frontier.Platform.Resilience.CircuitBreakerSpec.SamplingWindowSeconds.get -> int
+Frontier.Platform.Resilience.CircuitBreakerSpec.SamplingWindowSeconds.init -> void
+Frontier.Platform.Resilience.CircuitTransition
+Frontier.Platform.Resilience.CircuitTransition.<Clone>$() -> Frontier.Platform.Resilience.CircuitTransition!
+Frontier.Platform.Resilience.CircuitTransition.CircuitTransition() -> void
+Frontier.Platform.Resilience.CircuitTransition.Equals(Frontier.Platform.Resilience.CircuitTransition? other) -> bool
+Frontier.Platform.Resilience.CircuitTransition.From.get -> Polly.CircuitBreaker.CircuitState
+Frontier.Platform.Resilience.CircuitTransition.From.init -> void
+Frontier.Platform.Resilience.CircuitTransition.ModelId.get -> string!
+Frontier.Platform.Resilience.CircuitTransition.ModelId.init -> void
+Frontier.Platform.Resilience.CircuitTransition.OccurredAtUtc.get -> System.DateTime
+Frontier.Platform.Resilience.CircuitTransition.OccurredAtUtc.init -> void
+Frontier.Platform.Resilience.CircuitTransition.Provider.get -> string!
+Frontier.Platform.Resilience.CircuitTransition.Provider.init -> void
+Frontier.Platform.Resilience.CircuitTransition.To.get -> Polly.CircuitBreaker.CircuitState
+Frontier.Platform.Resilience.CircuitTransition.To.init -> void
+Frontier.Platform.Resilience.FailureClass
+Frontier.Platform.Resilience.FailureClass.IsRetryable.get -> bool
+Frontier.Platform.Resilience.FailureClassification
+Frontier.Platform.Resilience.FailureClassification.<Clone>$() -> Frontier.Platform.Resilience.FailureClassification!
+Frontier.Platform.Resilience.FailureClassification.Class.get -> Frontier.Platform.Resilience.FailureClass!
+Frontier.Platform.Resilience.FailureClassification.Class.init -> void
+Frontier.Platform.Resilience.FailureClassification.Equals(Frontier.Platform.Resilience.FailureClassification? other) -> bool
+Frontier.Platform.Resilience.FailureClassification.FailureClassification() -> void
+Frontier.Platform.Resilience.FailureClassification.ReasonCode.get -> string!
+Frontier.Platform.Resilience.FailureClassification.ReasonCode.init -> void
+Frontier.Platform.Resilience.FailureClassification.RetryAfter.get -> System.TimeSpan?
+Frontier.Platform.Resilience.FailureClassification.RetryAfter.init -> void
+Frontier.Platform.Resilience.ICircuitStateProvider
+Frontier.Platform.Resilience.ICircuitStateProvider.GetState(string! provider, string! modelId) -> Polly.CircuitBreaker.CircuitState
+Frontier.Platform.Resilience.ICircuitStateProvider.Subscribe(System.Action<Frontier.Platform.Resilience.CircuitTransition!>! onTransition) -> System.IDisposable!
+Frontier.Platform.Resilience.IFailureClassifier
+Frontier.Platform.Resilience.IFailureClassifier.Classify(System.Exception! exception) -> Frontier.Platform.Resilience.FailureClassification!
+Frontier.Platform.Resilience.IResiliencePolicyProvider
+Frontier.Platform.Resilience.IResiliencePolicyProvider.GetPipeline(string! profileName) -> Polly.ResiliencePipeline!
+Frontier.Platform.Resilience.IResiliencePolicyProvider.GetTaskOptions(string! profileName) -> Microsoft.DurableTask.TaskOptions!
+Frontier.Platform.Resilience.IRetryBudget
+Frontier.Platform.Resilience.IRetryBudget.GetSnapshot(string! executionId) -> Frontier.Platform.Resilience.RetryBudgetSnapshot!
+Frontier.Platform.Resilience.IRetryBudget.TryConsume(string! executionId) -> bool
+Frontier.Platform.Resilience.InnerRetrySpec
+Frontier.Platform.Resilience.InnerRetrySpec.<Clone>$() -> Frontier.Platform.Resilience.InnerRetrySpec!
+Frontier.Platform.Resilience.InnerRetrySpec.Backoff.get -> string!
+Frontier.Platform.Resilience.InnerRetrySpec.Backoff.init -> void
+Frontier.Platform.Resilience.InnerRetrySpec.BaseDelayMs.get -> int
+Frontier.Platform.Resilience.InnerRetrySpec.BaseDelayMs.init -> void
+Frontier.Platform.Resilience.InnerRetrySpec.Equals(Frontier.Platform.Resilience.InnerRetrySpec? other) -> bool
+Frontier.Platform.Resilience.InnerRetrySpec.InnerRetrySpec() -> void
+Frontier.Platform.Resilience.InnerRetrySpec.MaxAttempts.get -> int
+Frontier.Platform.Resilience.InnerRetrySpec.MaxAttempts.init -> void
+Frontier.Platform.Resilience.InnerRetrySpec.MaxDelayMs.get -> int
+Frontier.Platform.Resilience.InnerRetrySpec.MaxDelayMs.init -> void
+Frontier.Platform.Resilience.OuterRetrySpec
+Frontier.Platform.Resilience.OuterRetrySpec.<Clone>$() -> Frontier.Platform.Resilience.OuterRetrySpec!
+Frontier.Platform.Resilience.OuterRetrySpec.Equals(Frontier.Platform.Resilience.OuterRetrySpec? other) -> bool
+Frontier.Platform.Resilience.OuterRetrySpec.MaxAttempts.get -> int
+Frontier.Platform.Resilience.OuterRetrySpec.MaxAttempts.init -> void
+Frontier.Platform.Resilience.OuterRetrySpec.OuterRetrySpec() -> void
+Frontier.Platform.Resilience.Phase1ResilienceProfileCatalogue
+Frontier.Platform.Resilience.ResilienceProfile
+Frontier.Platform.Resilience.ResilienceProfile.<Clone>$() -> Frontier.Platform.Resilience.ResilienceProfile!
+Frontier.Platform.Resilience.ResilienceProfile.Bulkhead.get -> Frontier.Platform.Resilience.BulkheadSpec!
+Frontier.Platform.Resilience.ResilienceProfile.Bulkhead.init -> void
+Frontier.Platform.Resilience.ResilienceProfile.CircuitBreaker.get -> Frontier.Platform.Resilience.CircuitBreakerSpec!
+Frontier.Platform.Resilience.ResilienceProfile.CircuitBreaker.init -> void
+Frontier.Platform.Resilience.ResilienceProfile.Equals(Frontier.Platform.Resilience.ResilienceProfile? other) -> bool
+Frontier.Platform.Resilience.ResilienceProfile.InnerRetry.get -> Frontier.Platform.Resilience.InnerRetrySpec!
+Frontier.Platform.Resilience.ResilienceProfile.InnerRetry.init -> void
+Frontier.Platform.Resilience.ResilienceProfile.OuterRetry.get -> Frontier.Platform.Resilience.OuterRetrySpec!
+Frontier.Platform.Resilience.ResilienceProfile.OuterRetry.init -> void
+Frontier.Platform.Resilience.ResilienceProfile.ProfileId.get -> string!
+Frontier.Platform.Resilience.ResilienceProfile.ProfileId.init -> void
+Frontier.Platform.Resilience.ResilienceProfile.ResilienceProfile() -> void
+Frontier.Platform.Resilience.ResilienceProfile.TimeoutMs.get -> int
+Frontier.Platform.Resilience.ResilienceProfile.TimeoutMs.init -> void
+Frontier.Platform.Resilience.ResilienceProfile.Version.get -> int
+Frontier.Platform.Resilience.ResilienceProfile.Version.init -> void
+Frontier.Platform.Resilience.ResilienceServiceCollectionExtensions
+Frontier.Platform.Resilience.RetryBudgetSnapshot
+Frontier.Platform.Resilience.RetryBudgetSnapshot.<Clone>$() -> Frontier.Platform.Resilience.RetryBudgetSnapshot!
+Frontier.Platform.Resilience.RetryBudgetSnapshot.Equals(Frontier.Platform.Resilience.RetryBudgetSnapshot? other) -> bool
+Frontier.Platform.Resilience.RetryBudgetSnapshot.ExecutionId.get -> string!
+Frontier.Platform.Resilience.RetryBudgetSnapshot.ExecutionId.init -> void
+Frontier.Platform.Resilience.RetryBudgetSnapshot.InvocationCount.get -> int
+Frontier.Platform.Resilience.RetryBudgetSnapshot.InvocationCount.init -> void
+Frontier.Platform.Resilience.RetryBudgetSnapshot.IsExhausted.get -> bool
+Frontier.Platform.Resilience.RetryBudgetSnapshot.IsExhausted.init -> void
+Frontier.Platform.Resilience.RetryBudgetSnapshot.RetryBudgetSnapshot() -> void
+Frontier.Platform.Resilience.RetryBudgetSnapshot.RetryCount.get -> int
+Frontier.Platform.Resilience.RetryBudgetSnapshot.RetryCount.init -> void
+override Frontier.Platform.Resilience.BulkheadSpec.Equals(object? obj) -> bool
+override Frontier.Platform.Resilience.BulkheadSpec.GetHashCode() -> int
+override Frontier.Platform.Resilience.BulkheadSpec.ToString() -> string!
+override Frontier.Platform.Resilience.CircuitBreakerSpec.Equals(object? obj) -> bool
+override Frontier.Platform.Resilience.CircuitBreakerSpec.GetHashCode() -> int
+override Frontier.Platform.Resilience.CircuitBreakerSpec.ToString() -> string!
+override Frontier.Platform.Resilience.CircuitTransition.Equals(object? obj) -> bool
+override Frontier.Platform.Resilience.CircuitTransition.GetHashCode() -> int
+override Frontier.Platform.Resilience.CircuitTransition.ToString() -> string!
+override Frontier.Platform.Resilience.FailureClassification.Equals(object? obj) -> bool
+override Frontier.Platform.Resilience.FailureClassification.GetHashCode() -> int
+override Frontier.Platform.Resilience.FailureClassification.ToString() -> string!
+override Frontier.Platform.Resilience.InnerRetrySpec.Equals(object? obj) -> bool
+override Frontier.Platform.Resilience.InnerRetrySpec.GetHashCode() -> int
+override Frontier.Platform.Resilience.InnerRetrySpec.ToString() -> string!
+override Frontier.Platform.Resilience.OuterRetrySpec.Equals(object? obj) -> bool
+override Frontier.Platform.Resilience.OuterRetrySpec.GetHashCode() -> int
+override Frontier.Platform.Resilience.OuterRetrySpec.ToString() -> string!
+override Frontier.Platform.Resilience.ResilienceProfile.Equals(object? obj) -> bool
+override Frontier.Platform.Resilience.ResilienceProfile.GetHashCode() -> int
+override Frontier.Platform.Resilience.ResilienceProfile.ToString() -> string!
+override Frontier.Platform.Resilience.RetryBudgetSnapshot.Equals(object? obj) -> bool
+override Frontier.Platform.Resilience.RetryBudgetSnapshot.GetHashCode() -> int
+override Frontier.Platform.Resilience.RetryBudgetSnapshot.ToString() -> string!
+static Frontier.Platform.Resilience.BulkheadSpec.operator !=(Frontier.Platform.Resilience.BulkheadSpec? left, Frontier.Platform.Resilience.BulkheadSpec? right) -> bool
+static Frontier.Platform.Resilience.BulkheadSpec.operator ==(Frontier.Platform.Resilience.BulkheadSpec? left, Frontier.Platform.Resilience.BulkheadSpec? right) -> bool
+static Frontier.Platform.Resilience.CircuitBreakerSpec.operator !=(Frontier.Platform.Resilience.CircuitBreakerSpec? left, Frontier.Platform.Resilience.CircuitBreakerSpec? right) -> bool
+static Frontier.Platform.Resilience.CircuitBreakerSpec.operator ==(Frontier.Platform.Resilience.CircuitBreakerSpec? left, Frontier.Platform.Resilience.CircuitBreakerSpec? right) -> bool
+static Frontier.Platform.Resilience.CircuitTransition.operator !=(Frontier.Platform.Resilience.CircuitTransition? left, Frontier.Platform.Resilience.CircuitTransition? right) -> bool
+static Frontier.Platform.Resilience.CircuitTransition.operator ==(Frontier.Platform.Resilience.CircuitTransition? left, Frontier.Platform.Resilience.CircuitTransition? right) -> bool
+static Frontier.Platform.Resilience.FailureClassification.operator !=(Frontier.Platform.Resilience.FailureClassification? left, Frontier.Platform.Resilience.FailureClassification? right) -> bool
+static Frontier.Platform.Resilience.FailureClassification.operator ==(Frontier.Platform.Resilience.FailureClassification? left, Frontier.Platform.Resilience.FailureClassification? right) -> bool
+static Frontier.Platform.Resilience.InnerRetrySpec.operator !=(Frontier.Platform.Resilience.InnerRetrySpec? left, Frontier.Platform.Resilience.InnerRetrySpec? right) -> bool
+static Frontier.Platform.Resilience.InnerRetrySpec.operator ==(Frontier.Platform.Resilience.InnerRetrySpec? left, Frontier.Platform.Resilience.InnerRetrySpec? right) -> bool
+static Frontier.Platform.Resilience.OuterRetrySpec.operator !=(Frontier.Platform.Resilience.OuterRetrySpec? left, Frontier.Platform.Resilience.OuterRetrySpec? right) -> bool
+static Frontier.Platform.Resilience.OuterRetrySpec.operator ==(Frontier.Platform.Resilience.OuterRetrySpec? left, Frontier.Platform.Resilience.OuterRetrySpec? right) -> bool
+static Frontier.Platform.Resilience.ResilienceProfile.operator !=(Frontier.Platform.Resilience.ResilienceProfile? left, Frontier.Platform.Resilience.ResilienceProfile? right) -> bool
+static Frontier.Platform.Resilience.ResilienceProfile.operator ==(Frontier.Platform.Resilience.ResilienceProfile? left, Frontier.Platform.Resilience.ResilienceProfile? right) -> bool
+static Frontier.Platform.Resilience.ResilienceServiceCollectionExtensions.AddFrontierResilience(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Frontier.Platform.Resilience.RetryBudgetSnapshot.operator !=(Frontier.Platform.Resilience.RetryBudgetSnapshot? left, Frontier.Platform.Resilience.RetryBudgetSnapshot? right) -> bool
+static Frontier.Platform.Resilience.RetryBudgetSnapshot.operator ==(Frontier.Platform.Resilience.RetryBudgetSnapshot? left, Frontier.Platform.Resilience.RetryBudgetSnapshot? right) -> bool
+static readonly Frontier.Platform.Resilience.FailureClass.Deferred -> Frontier.Platform.Resilience.FailureClass!
+static readonly Frontier.Platform.Resilience.FailureClass.Permanent -> Frontier.Platform.Resilience.FailureClass!
+static readonly Frontier.Platform.Resilience.FailureClass.Transient -> Frontier.Platform.Resilience.FailureClass!
+static readonly Frontier.Platform.Resilience.Phase1ResilienceProfileCatalogue.ByProfileId -> System.Collections.Generic.IReadOnlyDictionary<string!, Frontier.Platform.Resilience.ResilienceProfile!>!
+static readonly Frontier.Platform.Resilience.Phase1ResilienceProfileCatalogue.LlmDefault -> Frontier.Platform.Resilience.ResilienceProfile!
+static readonly Frontier.Platform.Resilience.Phase1ResilienceProfileCatalogue.LlmInteractive -> Frontier.Platform.Resilience.ResilienceProfile!
+static readonly Frontier.Platform.Resilience.Phase1ResilienceProfileCatalogue.McpRead -> Frontier.Platform.Resilience.ResilienceProfile!
+static readonly Frontier.Platform.Resilience.Phase1ResilienceProfileCatalogue.McpWrite -> Frontier.Platform.Resilience.ResilienceProfile!
+static readonly Frontier.Platform.Resilience.Phase1ResilienceProfileCatalogue.None -> Frontier.Platform.Resilience.ResilienceProfile!
+static readonly Frontier.Platform.Resilience.Phase1ResilienceProfileCatalogue.SnapshotPersistence -> Frontier.Platform.Resilience.ResilienceProfile!
+static readonly Frontier.Platform.Resilience.Phase1ResilienceProfileCatalogue.Storage -> Frontier.Platform.Resilience.ResilienceProfile!

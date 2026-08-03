@@ -1,0 +1,104 @@
+#nullable enable
+Frontier.Platform.Hitl.ApprovalRequest
+Frontier.Platform.Hitl.ApprovalRequest.<Clone>$() -> Frontier.Platform.Hitl.ApprovalRequest!
+Frontier.Platform.Hitl.ApprovalRequest.ApprovalRequest() -> void
+Frontier.Platform.Hitl.ApprovalRequest.ApproverRoles.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Frontier.Platform.Hitl.ApprovalRequest.ApproverRoles.init -> void
+Frontier.Platform.Hitl.ApprovalRequest.Decision.get -> Frontier.Platform.Abstractions.HitlDecision?
+Frontier.Platform.Hitl.ApprovalRequest.Decision.init -> void
+Frontier.Platform.Hitl.ApprovalRequest.EngagementId.get -> string!
+Frontier.Platform.Hitl.ApprovalRequest.EngagementId.init -> void
+Frontier.Platform.Hitl.ApprovalRequest.Equals(Frontier.Platform.Hitl.ApprovalRequest? other) -> bool
+Frontier.Platform.Hitl.ApprovalRequest.EscalateAtUtc.get -> System.DateTime?
+Frontier.Platform.Hitl.ApprovalRequest.EscalateAtUtc.init -> void
+Frontier.Platform.Hitl.ApprovalRequest.ExecutionId.get -> string!
+Frontier.Platform.Hitl.ApprovalRequest.ExecutionId.init -> void
+Frontier.Platform.Hitl.ApprovalRequest.GateId.get -> string!
+Frontier.Platform.Hitl.ApprovalRequest.GateId.init -> void
+Frontier.Platform.Hitl.ApprovalRequest.GateKind.get -> Frontier.Platform.Abstractions.GateKind!
+Frontier.Platform.Hitl.ApprovalRequest.GateKind.init -> void
+Frontier.Platform.Hitl.ApprovalRequest.Id.get -> string!
+Frontier.Platform.Hitl.ApprovalRequest.Id.init -> void
+Frontier.Platform.Hitl.ApprovalRequest.RequestedAtUtc.get -> System.DateTime
+Frontier.Platform.Hitl.ApprovalRequest.RequestedAtUtc.init -> void
+Frontier.Platform.Hitl.ApprovalRequest.SectionRefs.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Frontier.Platform.Hitl.ApprovalRequest.SectionRefs.init -> void
+Frontier.Platform.Hitl.ApprovalRequest.Status.get -> Frontier.Platform.Hitl.ApprovalRequestStatus!
+Frontier.Platform.Hitl.ApprovalRequest.Status.init -> void
+Frontier.Platform.Hitl.ApprovalRequest.Ttl.get -> int
+Frontier.Platform.Hitl.ApprovalRequest.Ttl.init -> void
+Frontier.Platform.Hitl.ApprovalRequestFactory
+Frontier.Platform.Hitl.ApprovalRequestStatus
+Frontier.Platform.Hitl.CosmosOptions
+Frontier.Platform.Hitl.CosmosOptions.CosmosOptions() -> void
+Frontier.Platform.Hitl.CosmosOptions.Database.get -> string!
+Frontier.Platform.Hitl.CosmosOptions.Database.init -> void
+Frontier.Platform.Hitl.CosmosOptions.Endpoint.get -> string!
+Frontier.Platform.Hitl.CosmosOptions.Endpoint.init -> void
+Frontier.Platform.Hitl.CosmosOptions.Key.get -> string!
+Frontier.Platform.Hitl.CosmosOptions.Key.init -> void
+Frontier.Platform.Hitl.GateOpenRequest
+Frontier.Platform.Hitl.GateOpenRequest.<Clone>$() -> Frontier.Platform.Hitl.GateOpenRequest!
+Frontier.Platform.Hitl.GateOpenRequest.ApproverRoles.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Frontier.Platform.Hitl.GateOpenRequest.ApproverRoles.init -> void
+Frontier.Platform.Hitl.GateOpenRequest.EngagementId.get -> string!
+Frontier.Platform.Hitl.GateOpenRequest.EngagementId.init -> void
+Frontier.Platform.Hitl.GateOpenRequest.Equals(Frontier.Platform.Hitl.GateOpenRequest? other) -> bool
+Frontier.Platform.Hitl.GateOpenRequest.ExecutionId.get -> string!
+Frontier.Platform.Hitl.GateOpenRequest.ExecutionId.init -> void
+Frontier.Platform.Hitl.GateOpenRequest.GateId.get -> string!
+Frontier.Platform.Hitl.GateOpenRequest.GateId.init -> void
+Frontier.Platform.Hitl.GateOpenRequest.GateKind.get -> Frontier.Platform.Abstractions.GateKind!
+Frontier.Platform.Hitl.GateOpenRequest.GateKind.init -> void
+Frontier.Platform.Hitl.GateOpenRequest.GateOpenRequest() -> void
+Frontier.Platform.Hitl.GateOpenRequest.Occurrence.get -> int
+Frontier.Platform.Hitl.GateOpenRequest.Occurrence.init -> void
+Frontier.Platform.Hitl.GateOpenRequest.RequestedAtUtc.get -> System.DateTime
+Frontier.Platform.Hitl.GateOpenRequest.RequestedAtUtc.init -> void
+Frontier.Platform.Hitl.GateOpenRequest.SectionRefs.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Frontier.Platform.Hitl.GateOpenRequest.SectionRefs.init -> void
+Frontier.Platform.Hitl.GateOpenRequest.TimeoutMinutes.get -> int
+Frontier.Platform.Hitl.GateOpenRequest.TimeoutMinutes.init -> void
+Frontier.Platform.Hitl.HitlServiceCollectionExtensions
+Frontier.Platform.Hitl.IApprovalQueryService
+Frontier.Platform.Hitl.IApprovalQueryService.GetAsync(string! approvalId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Hitl.ApprovalRequest?>!
+Frontier.Platform.Hitl.IApprovalQueryService.GetByEngagementAsync(string! engagementId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Frontier.Platform.Hitl.ApprovalRequest!>!>!
+Frontier.Platform.Hitl.IApprovalQueryService.GetEscalatedAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Frontier.Platform.Hitl.ApprovalRequest!>!>!
+Frontier.Platform.Hitl.IApprovalQueryService.GetPendingAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Frontier.Platform.Hitl.ApprovalRequest!>!>!
+Frontier.Platform.Hitl.IApprovalStore
+Frontier.Platform.Hitl.IApprovalStore.GetDecidedAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Frontier.Platform.Hitl.ApprovalRequest!>!>!
+Frontier.Platform.Hitl.IApprovalStore.UpsertAsync(Frontier.Platform.Hitl.ApprovalRequest! request, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Frontier.Platform.Hitl.IRollbackPlanner
+Frontier.Platform.Hitl.IRollbackPlanner.Plan(string! rollbackTargetSection, System.Collections.Generic.IReadOnlyList<string!>! cascadeDownstreamSections, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! approvedSnapshotRefs) -> Frontier.Platform.Hitl.RollbackPlan!
+Frontier.Platform.Hitl.RollbackPlan
+Frontier.Platform.Hitl.RollbackPlan.<Clone>$() -> Frontier.Platform.Hitl.RollbackPlan!
+Frontier.Platform.Hitl.RollbackPlan.Equals(Frontier.Platform.Hitl.RollbackPlan? other) -> bool
+Frontier.Platform.Hitl.RollbackPlan.InvalidSet.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Frontier.Platform.Hitl.RollbackPlan.InvalidSet.init -> void
+Frontier.Platform.Hitl.RollbackPlan.RestoreSet.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Frontier.Platform.Hitl.RollbackPlan.RestoreSet.init -> void
+Frontier.Platform.Hitl.RollbackPlan.RollbackPlan() -> void
+Frontier.Platform.Hitl.RollbackPlanner
+Frontier.Platform.Hitl.RollbackPlanner.Plan(string! rollbackTargetSection, System.Collections.Generic.IReadOnlyList<string!>! cascadeDownstreamSections, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! approvedSnapshotRefs) -> Frontier.Platform.Hitl.RollbackPlan!
+Frontier.Platform.Hitl.RollbackPlanner.RollbackPlanner() -> void
+override Frontier.Platform.Hitl.ApprovalRequest.Equals(object? obj) -> bool
+override Frontier.Platform.Hitl.ApprovalRequest.GetHashCode() -> int
+override Frontier.Platform.Hitl.ApprovalRequest.ToString() -> string!
+override Frontier.Platform.Hitl.GateOpenRequest.Equals(object? obj) -> bool
+override Frontier.Platform.Hitl.GateOpenRequest.GetHashCode() -> int
+override Frontier.Platform.Hitl.GateOpenRequest.ToString() -> string!
+override Frontier.Platform.Hitl.RollbackPlan.Equals(object? obj) -> bool
+override Frontier.Platform.Hitl.RollbackPlan.GetHashCode() -> int
+override Frontier.Platform.Hitl.RollbackPlan.ToString() -> string!
+static Frontier.Platform.Hitl.ApprovalRequest.operator !=(Frontier.Platform.Hitl.ApprovalRequest? left, Frontier.Platform.Hitl.ApprovalRequest? right) -> bool
+static Frontier.Platform.Hitl.ApprovalRequest.operator ==(Frontier.Platform.Hitl.ApprovalRequest? left, Frontier.Platform.Hitl.ApprovalRequest? right) -> bool
+static Frontier.Platform.Hitl.ApprovalRequestFactory.Open(Frontier.Platform.Hitl.GateOpenRequest! request) -> Frontier.Platform.Hitl.ApprovalRequest!
+static Frontier.Platform.Hitl.GateOpenRequest.operator !=(Frontier.Platform.Hitl.GateOpenRequest? left, Frontier.Platform.Hitl.GateOpenRequest? right) -> bool
+static Frontier.Platform.Hitl.GateOpenRequest.operator ==(Frontier.Platform.Hitl.GateOpenRequest? left, Frontier.Platform.Hitl.GateOpenRequest? right) -> bool
+static Frontier.Platform.Hitl.HitlServiceCollectionExtensions.AddFrontierHitl(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Microsoft.Extensions.Configuration.IConfiguration! configuration) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Frontier.Platform.Hitl.RollbackPlan.operator !=(Frontier.Platform.Hitl.RollbackPlan? left, Frontier.Platform.Hitl.RollbackPlan? right) -> bool
+static Frontier.Platform.Hitl.RollbackPlan.operator ==(Frontier.Platform.Hitl.RollbackPlan? left, Frontier.Platform.Hitl.RollbackPlan? right) -> bool
+static readonly Frontier.Platform.Hitl.ApprovalRequestStatus.Decided -> Frontier.Platform.Hitl.ApprovalRequestStatus!
+static readonly Frontier.Platform.Hitl.ApprovalRequestStatus.Escalated -> Frontier.Platform.Hitl.ApprovalRequestStatus!
+static readonly Frontier.Platform.Hitl.ApprovalRequestStatus.Expired -> Frontier.Platform.Hitl.ApprovalRequestStatus!
+static readonly Frontier.Platform.Hitl.ApprovalRequestStatus.Pending -> Frontier.Platform.Hitl.ApprovalRequestStatus!

@@ -1,0 +1,127 @@
+#nullable enable
+Frontier.Platform.Abstractions.BudgetExceededException
+Frontier.Platform.Abstractions.BudgetExceededException.BudgetExceededException() -> void
+Frontier.Platform.Abstractions.BudgetExceededException.BudgetExceededException(string! message) -> void
+Frontier.Platform.Abstractions.BudgetExceededException.BudgetExceededException(string! message, System.Exception! innerException) -> void
+Frontier.Platform.Abstractions.BudgetExceededException.BudgetExceededException(string! policyId, string! reason) -> void
+Frontier.Platform.Abstractions.BudgetExceededException.PolicyId.get -> string!
+Frontier.Platform.Abstractions.BudgetExceededException.Reason.get -> string!
+Frontier.Platform.Abstractions.ContextRequest
+Frontier.Platform.Abstractions.ContextRequest.<Clone>$() -> Frontier.Platform.Abstractions.ContextRequest!
+Frontier.Platform.Abstractions.ContextRequest.AgentRole.get -> string!
+Frontier.Platform.Abstractions.ContextRequest.AgentRole.init -> void
+Frontier.Platform.Abstractions.ContextRequest.BaselineComponents.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Frontier.Platform.Abstractions.ContextRequest.BaselineComponents.init -> void
+Frontier.Platform.Abstractions.ContextRequest.ContextRequest() -> void
+Frontier.Platform.Abstractions.ContextRequest.DynamicFields.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Frontier.Platform.Abstractions.ContextRequest.DynamicFields.init -> void
+Frontier.Platform.Abstractions.ContextRequest.EngagementId.get -> string!
+Frontier.Platform.Abstractions.ContextRequest.EngagementId.init -> void
+Frontier.Platform.Abstractions.ContextRequest.Equals(Frontier.Platform.Abstractions.ContextRequest? other) -> bool
+Frontier.Platform.Abstractions.ContextRequest.RealTimeSources.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Frontier.Platform.Abstractions.ContextRequest.RealTimeSources.init -> void
+Frontier.Platform.Abstractions.ContextRequest.RequiresRealTime.get -> bool
+Frontier.Platform.Abstractions.ContextRequest.RequiresRealTime.init -> void
+Frontier.Platform.Abstractions.ContextRequest.SchemaVersion.get -> string!
+Frontier.Platform.Abstractions.ContextRequest.SchemaVersion.init -> void
+Frontier.Platform.Abstractions.ContextRequest.Validate() -> void
+Frontier.Platform.Abstractions.ContractMigrator
+Frontier.Platform.Abstractions.ContractViolationException
+Frontier.Platform.Abstractions.ContractViolationException.ContractType.get -> string!
+Frontier.Platform.Abstractions.ContractViolationException.ContractViolationException() -> void
+Frontier.Platform.Abstractions.ContractViolationException.ContractViolationException(string! contractType, System.Collections.Generic.IReadOnlyList<string!>! violations) -> void
+Frontier.Platform.Abstractions.ContractViolationException.ContractViolationException(string! message) -> void
+Frontier.Platform.Abstractions.ContractViolationException.ContractViolationException(string! message, System.Exception! innerException) -> void
+Frontier.Platform.Abstractions.ContractViolationException.Violations.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Frontier.Platform.Abstractions.DecisionKind
+Frontier.Platform.Abstractions.EngagementId
+Frontier.Platform.Abstractions.EngagementId.<Clone>$() -> Frontier.Platform.Abstractions.EngagementId!
+Frontier.Platform.Abstractions.EngagementId.Deconstruct(out string! Value) -> void
+Frontier.Platform.Abstractions.EngagementId.EngagementId(string! Value) -> void
+Frontier.Platform.Abstractions.EngagementId.Equals(Frontier.Platform.Abstractions.EngagementId? other) -> bool
+Frontier.Platform.Abstractions.EngagementId.Value.get -> string!
+Frontier.Platform.Abstractions.EngagementId.Value.init -> void
+Frontier.Platform.Abstractions.ExecutionStatus
+Frontier.Platform.Abstractions.GateKind
+Frontier.Platform.Abstractions.HitlDecision
+Frontier.Platform.Abstractions.HitlDecision.<Clone>$() -> Frontier.Platform.Abstractions.HitlDecision!
+Frontier.Platform.Abstractions.HitlDecision.ApproverId.get -> string!
+Frontier.Platform.Abstractions.HitlDecision.ApproverId.init -> void
+Frontier.Platform.Abstractions.HitlDecision.DecidedAtUtc.get -> System.DateTime
+Frontier.Platform.Abstractions.HitlDecision.DecidedAtUtc.init -> void
+Frontier.Platform.Abstractions.HitlDecision.Equals(Frontier.Platform.Abstractions.HitlDecision? other) -> bool
+Frontier.Platform.Abstractions.HitlDecision.GateId.get -> string!
+Frontier.Platform.Abstractions.HitlDecision.GateId.init -> void
+Frontier.Platform.Abstractions.HitlDecision.HitlDecision() -> void
+Frontier.Platform.Abstractions.HitlDecision.Kind.get -> Frontier.Platform.Abstractions.DecisionKind!
+Frontier.Platform.Abstractions.HitlDecision.Kind.init -> void
+Frontier.Platform.Abstractions.HitlDecision.Notes.get -> string?
+Frontier.Platform.Abstractions.HitlDecision.Notes.init -> void
+Frontier.Platform.Abstractions.HitlDecision.RequestId.get -> string!
+Frontier.Platform.Abstractions.HitlDecision.RequestId.init -> void
+Frontier.Platform.Abstractions.HitlDecision.RollbackToNodeId.get -> string?
+Frontier.Platform.Abstractions.HitlDecision.RollbackToNodeId.init -> void
+Frontier.Platform.Abstractions.IVersionedContract
+Frontier.Platform.Abstractions.IVersionedContract.SchemaVersion.get -> string!
+Frontier.Platform.Abstractions.IVersionedContract.Validate() -> void
+Frontier.Platform.Abstractions.ResolvedModelSummary
+Frontier.Platform.Abstractions.ResolvedModelSummary.<Clone>$() -> Frontier.Platform.Abstractions.ResolvedModelSummary!
+Frontier.Platform.Abstractions.ResolvedModelSummary.ChainPosition.get -> int
+Frontier.Platform.Abstractions.ResolvedModelSummary.ChainPosition.init -> void
+Frontier.Platform.Abstractions.ResolvedModelSummary.Equals(Frontier.Platform.Abstractions.ResolvedModelSummary? other) -> bool
+Frontier.Platform.Abstractions.ResolvedModelSummary.MappingVersion.get -> int
+Frontier.Platform.Abstractions.ResolvedModelSummary.MappingVersion.init -> void
+Frontier.Platform.Abstractions.ResolvedModelSummary.ModelId.get -> string!
+Frontier.Platform.Abstractions.ResolvedModelSummary.ModelId.init -> void
+Frontier.Platform.Abstractions.ResolvedModelSummary.ModelVersion.get -> string?
+Frontier.Platform.Abstractions.ResolvedModelSummary.ModelVersion.init -> void
+Frontier.Platform.Abstractions.ResolvedModelSummary.Provider.get -> string!
+Frontier.Platform.Abstractions.ResolvedModelSummary.Provider.init -> void
+Frontier.Platform.Abstractions.ResolvedModelSummary.ResolvedModelSummary() -> void
+Frontier.Platform.Abstractions.ResolvedModelSummary.RoleId.get -> string!
+Frontier.Platform.Abstractions.ResolvedModelSummary.RoleId.init -> void
+Frontier.Platform.Abstractions.SmartEnum<TEnum>
+Frontier.Platform.Abstractions.SmartEnum<TEnum>.Equals(Frontier.Platform.Abstractions.SmartEnum<TEnum!>? other) -> bool
+Frontier.Platform.Abstractions.SmartEnum<TEnum>.Name.get -> string!
+Frontier.Platform.Abstractions.SmartEnum<TEnum>.SmartEnum(string! name) -> void
+override Frontier.Platform.Abstractions.ContextRequest.Equals(object? obj) -> bool
+override Frontier.Platform.Abstractions.ContextRequest.GetHashCode() -> int
+override Frontier.Platform.Abstractions.ContextRequest.ToString() -> string!
+override Frontier.Platform.Abstractions.EngagementId.Equals(object? obj) -> bool
+override Frontier.Platform.Abstractions.EngagementId.GetHashCode() -> int
+override Frontier.Platform.Abstractions.EngagementId.ToString() -> string!
+override Frontier.Platform.Abstractions.HitlDecision.Equals(object? obj) -> bool
+override Frontier.Platform.Abstractions.HitlDecision.GetHashCode() -> int
+override Frontier.Platform.Abstractions.HitlDecision.ToString() -> string!
+override Frontier.Platform.Abstractions.ResolvedModelSummary.Equals(object? obj) -> bool
+override Frontier.Platform.Abstractions.ResolvedModelSummary.GetHashCode() -> int
+override Frontier.Platform.Abstractions.ResolvedModelSummary.ToString() -> string!
+override Frontier.Platform.Abstractions.SmartEnum<TEnum>.Equals(object? obj) -> bool
+override Frontier.Platform.Abstractions.SmartEnum<TEnum>.GetHashCode() -> int
+override Frontier.Platform.Abstractions.SmartEnum<TEnum>.ToString() -> string!
+static Frontier.Platform.Abstractions.ContextRequest.operator !=(Frontier.Platform.Abstractions.ContextRequest? left, Frontier.Platform.Abstractions.ContextRequest? right) -> bool
+static Frontier.Platform.Abstractions.ContextRequest.operator ==(Frontier.Platform.Abstractions.ContextRequest? left, Frontier.Platform.Abstractions.ContextRequest? right) -> bool
+static Frontier.Platform.Abstractions.ContractMigrator.Rehydrate<T>(System.ReadOnlyMemory<byte> storedBytes, System.Text.Json.JsonSerializerOptions! options, System.Collections.Generic.IReadOnlyDictionary<string!, System.Func<System.Text.Json.JsonElement, System.Text.Json.JsonSerializerOptions!, T>!>? adapters = null) -> T
+static Frontier.Platform.Abstractions.EngagementId.implicit operator Frontier.Platform.Abstractions.EngagementId!(string! value) -> Frontier.Platform.Abstractions.EngagementId!
+static Frontier.Platform.Abstractions.EngagementId.implicit operator string!(Frontier.Platform.Abstractions.EngagementId! engagementId) -> string!
+static Frontier.Platform.Abstractions.EngagementId.operator !=(Frontier.Platform.Abstractions.EngagementId? left, Frontier.Platform.Abstractions.EngagementId? right) -> bool
+static Frontier.Platform.Abstractions.EngagementId.operator ==(Frontier.Platform.Abstractions.EngagementId? left, Frontier.Platform.Abstractions.EngagementId? right) -> bool
+static Frontier.Platform.Abstractions.HitlDecision.operator !=(Frontier.Platform.Abstractions.HitlDecision? left, Frontier.Platform.Abstractions.HitlDecision? right) -> bool
+static Frontier.Platform.Abstractions.HitlDecision.operator ==(Frontier.Platform.Abstractions.HitlDecision? left, Frontier.Platform.Abstractions.HitlDecision? right) -> bool
+static Frontier.Platform.Abstractions.ResolvedModelSummary.operator !=(Frontier.Platform.Abstractions.ResolvedModelSummary? left, Frontier.Platform.Abstractions.ResolvedModelSummary? right) -> bool
+static Frontier.Platform.Abstractions.ResolvedModelSummary.operator ==(Frontier.Platform.Abstractions.ResolvedModelSummary? left, Frontier.Platform.Abstractions.ResolvedModelSummary? right) -> bool
+static Frontier.Platform.Abstractions.SmartEnum<TEnum>.FromName(string! name) -> TEnum!
+static Frontier.Platform.Abstractions.SmartEnum<TEnum>.List.get -> System.Collections.Generic.IReadOnlyList<TEnum!>!
+static Frontier.Platform.Abstractions.SmartEnum<TEnum>.TryFromName(string! name, out TEnum! value) -> bool
+static readonly Frontier.Platform.Abstractions.DecisionKind.Approve -> Frontier.Platform.Abstractions.DecisionKind!
+static readonly Frontier.Platform.Abstractions.DecisionKind.Escalate -> Frontier.Platform.Abstractions.DecisionKind!
+static readonly Frontier.Platform.Abstractions.DecisionKind.Reject -> Frontier.Platform.Abstractions.DecisionKind!
+static readonly Frontier.Platform.Abstractions.ExecutionStatus.Cancelled -> Frontier.Platform.Abstractions.ExecutionStatus!
+static readonly Frontier.Platform.Abstractions.ExecutionStatus.Completed -> Frontier.Platform.Abstractions.ExecutionStatus!
+static readonly Frontier.Platform.Abstractions.ExecutionStatus.Failed -> Frontier.Platform.Abstractions.ExecutionStatus!
+static readonly Frontier.Platform.Abstractions.ExecutionStatus.PausedAtGate -> Frontier.Platform.Abstractions.ExecutionStatus!
+static readonly Frontier.Platform.Abstractions.ExecutionStatus.PausedOnFailure -> Frontier.Platform.Abstractions.ExecutionStatus!
+static readonly Frontier.Platform.Abstractions.ExecutionStatus.Running -> Frontier.Platform.Abstractions.ExecutionStatus!
+static readonly Frontier.Platform.Abstractions.GateKind.Business -> Frontier.Platform.Abstractions.GateKind!
+static readonly Frontier.Platform.Abstractions.GateKind.Intake -> Frontier.Platform.Abstractions.GateKind!
+static readonly Frontier.Platform.Abstractions.GateKind.Technical -> Frontier.Platform.Abstractions.GateKind!

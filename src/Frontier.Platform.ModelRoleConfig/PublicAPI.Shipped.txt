@@ -1,0 +1,203 @@
+#nullable enable
+Frontier.Platform.ModelRoleConfig.CapabilityRequirements
+Frontier.Platform.ModelRoleConfig.CapabilityRequirements.<Clone>$() -> Frontier.Platform.ModelRoleConfig.CapabilityRequirements!
+Frontier.Platform.ModelRoleConfig.CapabilityRequirements.CapabilityRequirements() -> void
+Frontier.Platform.ModelRoleConfig.CapabilityRequirements.Equals(Frontier.Platform.ModelRoleConfig.CapabilityRequirements? other) -> bool
+Frontier.Platform.ModelRoleConfig.CapabilityRequirements.MaxLatencyMs.get -> int
+Frontier.Platform.ModelRoleConfig.CapabilityRequirements.MaxLatencyMs.init -> void
+Frontier.Platform.ModelRoleConfig.CapabilityRequirements.MinContextWindow.get -> int
+Frontier.Platform.ModelRoleConfig.CapabilityRequirements.MinContextWindow.init -> void
+Frontier.Platform.ModelRoleConfig.CapabilityRequirements.NeedsStructuredOutput.get -> bool
+Frontier.Platform.ModelRoleConfig.CapabilityRequirements.NeedsStructuredOutput.init -> void
+Frontier.Platform.ModelRoleConfig.CapabilityRequirements.NeedsToolUse.get -> bool
+Frontier.Platform.ModelRoleConfig.CapabilityRequirements.NeedsToolUse.init -> void
+Frontier.Platform.ModelRoleConfig.CosmosOptions
+Frontier.Platform.ModelRoleConfig.CosmosOptions.CosmosOptions() -> void
+Frontier.Platform.ModelRoleConfig.CosmosOptions.Database.get -> string!
+Frontier.Platform.ModelRoleConfig.CosmosOptions.Database.init -> void
+Frontier.Platform.ModelRoleConfig.CosmosOptions.Endpoint.get -> string!
+Frontier.Platform.ModelRoleConfig.CosmosOptions.Endpoint.init -> void
+Frontier.Platform.ModelRoleConfig.CosmosOptions.Key.get -> string!
+Frontier.Platform.ModelRoleConfig.CosmosOptions.Key.init -> void
+Frontier.Platform.ModelRoleConfig.ICircuitBreakerQuery
+Frontier.Platform.ModelRoleConfig.ICircuitBreakerQuery.IsOpen(string! provider, string! modelId) -> bool
+Frontier.Platform.ModelRoleConfig.IMappingGovernanceService
+Frontier.Platform.ModelRoleConfig.IMappingGovernanceService.ApproveAsync(string! proposalId, string! approverId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Frontier.Platform.ModelRoleConfig.IMappingGovernanceService.ProposeChangeAsync(Frontier.Platform.ModelRoleConfig.MappingChange! change, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.MappingChangeProposal!>!
+Frontier.Platform.ModelRoleConfig.IMappingGovernanceService.RollbackAsync(string! roleId, int toVersion, string! reason, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Frontier.Platform.ModelRoleConfig.IModelResolver
+Frontier.Platform.ModelRoleConfig.IModelResolver.ResolveAsync(Frontier.Platform.ModelRoleConfig.ResolutionRequest! request, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.ResolvedModel!>!
+Frontier.Platform.ModelRoleConfig.IReferencedRolesSource
+Frontier.Platform.ModelRoleConfig.IReferencedRolesSource.GetReferencedRoleIdsAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlySet<string!>!>!
+Frontier.Platform.ModelRoleConfig.IRoleRegistry
+Frontier.Platform.ModelRoleConfig.IRoleRegistry.GetActiveMappingAsync(string! roleId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.RoleMapping!>!
+Frontier.Platform.ModelRoleConfig.IRoleRegistry.GetCatalogueAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.RoleCatalogue!>!
+Frontier.Platform.ModelRoleConfig.IRoleRegistry.GetMappingVersionAsync(string! roleId, int version, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.RoleMapping!>!
+Frontier.Platform.ModelRoleConfig.MappingChange
+Frontier.Platform.ModelRoleConfig.MappingChange.<Clone>$() -> Frontier.Platform.ModelRoleConfig.MappingChange!
+Frontier.Platform.ModelRoleConfig.MappingChange.Equals(Frontier.Platform.ModelRoleConfig.MappingChange? other) -> bool
+Frontier.Platform.ModelRoleConfig.MappingChange.MappingChange() -> void
+Frontier.Platform.ModelRoleConfig.MappingChange.ProposedMapping.get -> Frontier.Platform.ModelRoleConfig.RoleMapping!
+Frontier.Platform.ModelRoleConfig.MappingChange.ProposedMapping.init -> void
+Frontier.Platform.ModelRoleConfig.MappingChange.Reason.get -> string!
+Frontier.Platform.ModelRoleConfig.MappingChange.Reason.init -> void
+Frontier.Platform.ModelRoleConfig.MappingChange.RoleId.get -> string!
+Frontier.Platform.ModelRoleConfig.MappingChange.RoleId.init -> void
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.<Clone>$() -> Frontier.Platform.ModelRoleConfig.MappingChangeProposal!
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.Change.get -> Frontier.Platform.ModelRoleConfig.MappingChange!
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.Change.init -> void
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.Equals(Frontier.Platform.ModelRoleConfig.MappingChangeProposal? other) -> bool
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.MappingChangeProposal() -> void
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.ProposalId.get -> string!
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.ProposalId.init -> void
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.ProposedAtUtc.get -> System.DateTime
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.ProposedAtUtc.init -> void
+Frontier.Platform.ModelRoleConfig.ModelEntry
+Frontier.Platform.ModelRoleConfig.ModelEntry.<Clone>$() -> Frontier.Platform.ModelRoleConfig.ModelEntry!
+Frontier.Platform.ModelRoleConfig.ModelEntry.CacheReadCostPer1kGbp.get -> decimal
+Frontier.Platform.ModelRoleConfig.ModelEntry.CacheReadCostPer1kGbp.init -> void
+Frontier.Platform.ModelRoleConfig.ModelEntry.CachingStrategy.get -> string?
+Frontier.Platform.ModelRoleConfig.ModelEntry.CachingStrategy.init -> void
+Frontier.Platform.ModelRoleConfig.ModelEntry.ContextWindow.get -> int
+Frontier.Platform.ModelRoleConfig.ModelEntry.ContextWindow.init -> void
+Frontier.Platform.ModelRoleConfig.ModelEntry.Equals(Frontier.Platform.ModelRoleConfig.ModelEntry? other) -> bool
+Frontier.Platform.ModelRoleConfig.ModelEntry.InputCostPer1kGbp.get -> decimal
+Frontier.Platform.ModelRoleConfig.ModelEntry.InputCostPer1kGbp.init -> void
+Frontier.Platform.ModelRoleConfig.ModelEntry.MaxOutputTokens.get -> int
+Frontier.Platform.ModelRoleConfig.ModelEntry.MaxOutputTokens.init -> void
+Frontier.Platform.ModelRoleConfig.ModelEntry.ModelEntry() -> void
+Frontier.Platform.ModelRoleConfig.ModelEntry.ModelId.get -> string!
+Frontier.Platform.ModelRoleConfig.ModelEntry.ModelId.init -> void
+Frontier.Platform.ModelRoleConfig.ModelEntry.OutputCostPer1kGbp.get -> decimal
+Frontier.Platform.ModelRoleConfig.ModelEntry.OutputCostPer1kGbp.init -> void
+Frontier.Platform.ModelRoleConfig.ModelEntry.Provider.get -> string!
+Frontier.Platform.ModelRoleConfig.ModelEntry.Provider.init -> void
+Frontier.Platform.ModelRoleConfig.ModelRoleConfigServiceCollectionExtensions
+Frontier.Platform.ModelRoleConfig.Phase1RoleCatalogue
+Frontier.Platform.ModelRoleConfig.ResolutionRequest
+Frontier.Platform.ModelRoleConfig.ResolutionRequest.<Clone>$() -> Frontier.Platform.ModelRoleConfig.ResolutionRequest!
+Frontier.Platform.ModelRoleConfig.ResolutionRequest.EngagementId.get -> string!
+Frontier.Platform.ModelRoleConfig.ResolutionRequest.EngagementId.init -> void
+Frontier.Platform.ModelRoleConfig.ResolutionRequest.Equals(Frontier.Platform.ModelRoleConfig.ResolutionRequest? other) -> bool
+Frontier.Platform.ModelRoleConfig.ResolutionRequest.MappingVersion.get -> int?
+Frontier.Platform.ModelRoleConfig.ResolutionRequest.MappingVersion.init -> void
+Frontier.Platform.ModelRoleConfig.ResolutionRequest.ResolutionRequest() -> void
+Frontier.Platform.ModelRoleConfig.ResolutionRequest.RoleId.get -> string!
+Frontier.Platform.ModelRoleConfig.ResolutionRequest.RoleId.init -> void
+Frontier.Platform.ModelRoleConfig.ResolvedModel
+Frontier.Platform.ModelRoleConfig.ResolvedModel.<Clone>$() -> Frontier.Platform.ModelRoleConfig.ResolvedModel!
+Frontier.Platform.ModelRoleConfig.ResolvedModel.ChainPosition.get -> int
+Frontier.Platform.ModelRoleConfig.ResolvedModel.ChainPosition.init -> void
+Frontier.Platform.ModelRoleConfig.ResolvedModel.Entry.get -> Frontier.Platform.ModelRoleConfig.ModelEntry!
+Frontier.Platform.ModelRoleConfig.ResolvedModel.Entry.init -> void
+Frontier.Platform.ModelRoleConfig.ResolvedModel.Equals(Frontier.Platform.ModelRoleConfig.ResolvedModel? other) -> bool
+Frontier.Platform.ModelRoleConfig.ResolvedModel.MappingVersion.get -> int
+Frontier.Platform.ModelRoleConfig.ResolvedModel.MappingVersion.init -> void
+Frontier.Platform.ModelRoleConfig.ResolvedModel.ModelId.get -> string!
+Frontier.Platform.ModelRoleConfig.ResolvedModel.ModelId.init -> void
+Frontier.Platform.ModelRoleConfig.ResolvedModel.ModelVersion.get -> string?
+Frontier.Platform.ModelRoleConfig.ResolvedModel.ModelVersion.init -> void
+Frontier.Platform.ModelRoleConfig.ResolvedModel.Provider.get -> string!
+Frontier.Platform.ModelRoleConfig.ResolvedModel.Provider.init -> void
+Frontier.Platform.ModelRoleConfig.ResolvedModel.ResolvedModel() -> void
+Frontier.Platform.ModelRoleConfig.ResolvedModel.RoleId.get -> string!
+Frontier.Platform.ModelRoleConfig.ResolvedModel.RoleId.init -> void
+Frontier.Platform.ModelRoleConfig.RoleCatalogue
+Frontier.Platform.ModelRoleConfig.RoleCatalogue.<Clone>$() -> Frontier.Platform.ModelRoleConfig.RoleCatalogue!
+Frontier.Platform.ModelRoleConfig.RoleCatalogue.Equals(Frontier.Platform.ModelRoleConfig.RoleCatalogue? other) -> bool
+Frontier.Platform.ModelRoleConfig.RoleCatalogue.RoleCatalogue() -> void
+Frontier.Platform.ModelRoleConfig.RoleCatalogue.Roles.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.ModelRoleConfig.RoleDefinition!>!
+Frontier.Platform.ModelRoleConfig.RoleCatalogue.Roles.init -> void
+Frontier.Platform.ModelRoleConfig.RoleDefinition
+Frontier.Platform.ModelRoleConfig.RoleDefinition.<Clone>$() -> Frontier.Platform.ModelRoleConfig.RoleDefinition!
+Frontier.Platform.ModelRoleConfig.RoleDefinition.Description.get -> string!
+Frontier.Platform.ModelRoleConfig.RoleDefinition.Description.init -> void
+Frontier.Platform.ModelRoleConfig.RoleDefinition.Equals(Frontier.Platform.ModelRoleConfig.RoleDefinition? other) -> bool
+Frontier.Platform.ModelRoleConfig.RoleDefinition.Requirements.get -> Frontier.Platform.ModelRoleConfig.CapabilityRequirements!
+Frontier.Platform.ModelRoleConfig.RoleDefinition.Requirements.init -> void
+Frontier.Platform.ModelRoleConfig.RoleDefinition.RoleDefinition() -> void
+Frontier.Platform.ModelRoleConfig.RoleDefinition.RoleId.get -> string!
+Frontier.Platform.ModelRoleConfig.RoleDefinition.RoleId.init -> void
+Frontier.Platform.ModelRoleConfig.RoleDefinition.Stakes.get -> Frontier.Platform.ModelRoleConfig.StakesLevel!
+Frontier.Platform.ModelRoleConfig.RoleDefinition.Stakes.init -> void
+Frontier.Platform.ModelRoleConfig.RoleMapping
+Frontier.Platform.ModelRoleConfig.RoleMapping.<Clone>$() -> Frontier.Platform.ModelRoleConfig.RoleMapping!
+Frontier.Platform.ModelRoleConfig.RoleMapping.ApprovedBy.get -> string!
+Frontier.Platform.ModelRoleConfig.RoleMapping.ApprovedBy.init -> void
+Frontier.Platform.ModelRoleConfig.RoleMapping.CanaryPercent.get -> int
+Frontier.Platform.ModelRoleConfig.RoleMapping.CanaryPercent.init -> void
+Frontier.Platform.ModelRoleConfig.RoleMapping.Chain.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.ModelRoleConfig.ModelEntry!>!
+Frontier.Platform.ModelRoleConfig.RoleMapping.Chain.init -> void
+Frontier.Platform.ModelRoleConfig.RoleMapping.ChangeReason.get -> string!
+Frontier.Platform.ModelRoleConfig.RoleMapping.ChangeReason.init -> void
+Frontier.Platform.ModelRoleConfig.RoleMapping.EffectiveFromUtc.get -> System.DateTime
+Frontier.Platform.ModelRoleConfig.RoleMapping.EffectiveFromUtc.init -> void
+Frontier.Platform.ModelRoleConfig.RoleMapping.Equals(Frontier.Platform.ModelRoleConfig.RoleMapping? other) -> bool
+Frontier.Platform.ModelRoleConfig.RoleMapping.EvaluationEvidenceRef.get -> string?
+Frontier.Platform.ModelRoleConfig.RoleMapping.EvaluationEvidenceRef.init -> void
+Frontier.Platform.ModelRoleConfig.RoleMapping.MappingVersion.get -> int
+Frontier.Platform.ModelRoleConfig.RoleMapping.MappingVersion.init -> void
+Frontier.Platform.ModelRoleConfig.RoleMapping.PredecessorFleetVersion.get -> int?
+Frontier.Platform.ModelRoleConfig.RoleMapping.PredecessorFleetVersion.init -> void
+Frontier.Platform.ModelRoleConfig.RoleMapping.Ring.get -> Frontier.Platform.ModelRoleConfig.RolloutRing!
+Frontier.Platform.ModelRoleConfig.RoleMapping.Ring.init -> void
+Frontier.Platform.ModelRoleConfig.RoleMapping.RoleId.get -> string!
+Frontier.Platform.ModelRoleConfig.RoleMapping.RoleId.init -> void
+Frontier.Platform.ModelRoleConfig.RoleMapping.RoleMapping() -> void
+Frontier.Platform.ModelRoleConfig.RolloutRing
+Frontier.Platform.ModelRoleConfig.StakesLevel
+override Frontier.Platform.ModelRoleConfig.CapabilityRequirements.Equals(object? obj) -> bool
+override Frontier.Platform.ModelRoleConfig.CapabilityRequirements.GetHashCode() -> int
+override Frontier.Platform.ModelRoleConfig.CapabilityRequirements.ToString() -> string!
+override Frontier.Platform.ModelRoleConfig.MappingChange.Equals(object? obj) -> bool
+override Frontier.Platform.ModelRoleConfig.MappingChange.GetHashCode() -> int
+override Frontier.Platform.ModelRoleConfig.MappingChange.ToString() -> string!
+override Frontier.Platform.ModelRoleConfig.MappingChangeProposal.Equals(object? obj) -> bool
+override Frontier.Platform.ModelRoleConfig.MappingChangeProposal.GetHashCode() -> int
+override Frontier.Platform.ModelRoleConfig.MappingChangeProposal.ToString() -> string!
+override Frontier.Platform.ModelRoleConfig.ModelEntry.Equals(object? obj) -> bool
+override Frontier.Platform.ModelRoleConfig.ModelEntry.GetHashCode() -> int
+override Frontier.Platform.ModelRoleConfig.ModelEntry.ToString() -> string!
+override Frontier.Platform.ModelRoleConfig.ResolutionRequest.Equals(object? obj) -> bool
+override Frontier.Platform.ModelRoleConfig.ResolutionRequest.GetHashCode() -> int
+override Frontier.Platform.ModelRoleConfig.ResolutionRequest.ToString() -> string!
+override Frontier.Platform.ModelRoleConfig.ResolvedModel.Equals(object? obj) -> bool
+override Frontier.Platform.ModelRoleConfig.ResolvedModel.GetHashCode() -> int
+override Frontier.Platform.ModelRoleConfig.ResolvedModel.ToString() -> string!
+override Frontier.Platform.ModelRoleConfig.RoleCatalogue.Equals(object? obj) -> bool
+override Frontier.Platform.ModelRoleConfig.RoleCatalogue.GetHashCode() -> int
+override Frontier.Platform.ModelRoleConfig.RoleCatalogue.ToString() -> string!
+override Frontier.Platform.ModelRoleConfig.RoleDefinition.Equals(object? obj) -> bool
+override Frontier.Platform.ModelRoleConfig.RoleDefinition.GetHashCode() -> int
+override Frontier.Platform.ModelRoleConfig.RoleDefinition.ToString() -> string!
+override Frontier.Platform.ModelRoleConfig.RoleMapping.Equals(object? obj) -> bool
+override Frontier.Platform.ModelRoleConfig.RoleMapping.GetHashCode() -> int
+override Frontier.Platform.ModelRoleConfig.RoleMapping.ToString() -> string!
+static Frontier.Platform.ModelRoleConfig.CapabilityRequirements.operator !=(Frontier.Platform.ModelRoleConfig.CapabilityRequirements? left, Frontier.Platform.ModelRoleConfig.CapabilityRequirements? right) -> bool
+static Frontier.Platform.ModelRoleConfig.CapabilityRequirements.operator ==(Frontier.Platform.ModelRoleConfig.CapabilityRequirements? left, Frontier.Platform.ModelRoleConfig.CapabilityRequirements? right) -> bool
+static Frontier.Platform.ModelRoleConfig.MappingChange.operator !=(Frontier.Platform.ModelRoleConfig.MappingChange? left, Frontier.Platform.ModelRoleConfig.MappingChange? right) -> bool
+static Frontier.Platform.ModelRoleConfig.MappingChange.operator ==(Frontier.Platform.ModelRoleConfig.MappingChange? left, Frontier.Platform.ModelRoleConfig.MappingChange? right) -> bool
+static Frontier.Platform.ModelRoleConfig.MappingChangeProposal.operator !=(Frontier.Platform.ModelRoleConfig.MappingChangeProposal? left, Frontier.Platform.ModelRoleConfig.MappingChangeProposal? right) -> bool
+static Frontier.Platform.ModelRoleConfig.MappingChangeProposal.operator ==(Frontier.Platform.ModelRoleConfig.MappingChangeProposal? left, Frontier.Platform.ModelRoleConfig.MappingChangeProposal? right) -> bool
+static Frontier.Platform.ModelRoleConfig.ModelEntry.operator !=(Frontier.Platform.ModelRoleConfig.ModelEntry? left, Frontier.Platform.ModelRoleConfig.ModelEntry? right) -> bool
+static Frontier.Platform.ModelRoleConfig.ModelEntry.operator ==(Frontier.Platform.ModelRoleConfig.ModelEntry? left, Frontier.Platform.ModelRoleConfig.ModelEntry? right) -> bool
+static Frontier.Platform.ModelRoleConfig.ModelRoleConfigServiceCollectionExtensions.AddFrontierModelRoleConfig(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Microsoft.Extensions.Configuration.IConfiguration! configuration) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Frontier.Platform.ModelRoleConfig.ResolutionRequest.operator !=(Frontier.Platform.ModelRoleConfig.ResolutionRequest? left, Frontier.Platform.ModelRoleConfig.ResolutionRequest? right) -> bool
+static Frontier.Platform.ModelRoleConfig.ResolutionRequest.operator ==(Frontier.Platform.ModelRoleConfig.ResolutionRequest? left, Frontier.Platform.ModelRoleConfig.ResolutionRequest? right) -> bool
+static Frontier.Platform.ModelRoleConfig.ResolvedModel.operator !=(Frontier.Platform.ModelRoleConfig.ResolvedModel? left, Frontier.Platform.ModelRoleConfig.ResolvedModel? right) -> bool
+static Frontier.Platform.ModelRoleConfig.ResolvedModel.operator ==(Frontier.Platform.ModelRoleConfig.ResolvedModel? left, Frontier.Platform.ModelRoleConfig.ResolvedModel? right) -> bool
+static Frontier.Platform.ModelRoleConfig.RoleCatalogue.operator !=(Frontier.Platform.ModelRoleConfig.RoleCatalogue? left, Frontier.Platform.ModelRoleConfig.RoleCatalogue? right) -> bool
+static Frontier.Platform.ModelRoleConfig.RoleCatalogue.operator ==(Frontier.Platform.ModelRoleConfig.RoleCatalogue? left, Frontier.Platform.ModelRoleConfig.RoleCatalogue? right) -> bool
+static Frontier.Platform.ModelRoleConfig.RoleDefinition.operator !=(Frontier.Platform.ModelRoleConfig.RoleDefinition? left, Frontier.Platform.ModelRoleConfig.RoleDefinition? right) -> bool
+static Frontier.Platform.ModelRoleConfig.RoleDefinition.operator ==(Frontier.Platform.ModelRoleConfig.RoleDefinition? left, Frontier.Platform.ModelRoleConfig.RoleDefinition? right) -> bool
+static Frontier.Platform.ModelRoleConfig.RoleMapping.operator !=(Frontier.Platform.ModelRoleConfig.RoleMapping? left, Frontier.Platform.ModelRoleConfig.RoleMapping? right) -> bool
+static Frontier.Platform.ModelRoleConfig.RoleMapping.operator ==(Frontier.Platform.ModelRoleConfig.RoleMapping? left, Frontier.Platform.ModelRoleConfig.RoleMapping? right) -> bool
+static readonly Frontier.Platform.ModelRoleConfig.Phase1RoleCatalogue.Catalogue -> Frontier.Platform.ModelRoleConfig.RoleCatalogue!
+static readonly Frontier.Platform.ModelRoleConfig.Phase1RoleCatalogue.DeepReasoningMappingV1 -> Frontier.Platform.ModelRoleConfig.RoleMapping!
+static readonly Frontier.Platform.ModelRoleConfig.RolloutRing.Canary -> Frontier.Platform.ModelRoleConfig.RolloutRing!
+static readonly Frontier.Platform.ModelRoleConfig.RolloutRing.Fleet -> Frontier.Platform.ModelRoleConfig.RolloutRing!
+static readonly Frontier.Platform.ModelRoleConfig.RolloutRing.Shadow -> Frontier.Platform.ModelRoleConfig.RolloutRing!
+static readonly Frontier.Platform.ModelRoleConfig.StakesLevel.Material -> Frontier.Platform.ModelRoleConfig.StakesLevel!
+static readonly Frontier.Platform.ModelRoleConfig.StakesLevel.Mechanical -> Frontier.Platform.ModelRoleConfig.StakesLevel!
+static readonly Frontier.Platform.ModelRoleConfig.StakesLevel.Standard -> Frontier.Platform.ModelRoleConfig.StakesLevel!

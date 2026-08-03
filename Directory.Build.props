@@ -25,6 +25,18 @@
     <PackageReference Include="MinVer" PrivateAssets="all" />
   </ItemGroup>
 
+  <!-- Public API surface tracking, on the publishable libraries only. Every public member
+       must be listed in PublicAPI.Shipped.txt or PublicAPI.Unshipped.txt; RS0016 (member
+       missing from the files) and RS0017 (member listed but gone) are errors under the
+       repo-wide TreatWarningsAsErrors. In a single solution an accidental `public` is
+       harmless — here it is a permanent compatibility obligation to a package consumer,
+       and this turns the major-vs-minor release decision into a reviewable text diff. -->
+  <ItemGroup Condition="'$(IsPackable)' == 'true'">
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />
+    <AdditionalFiles Include="PublicAPI.Shipped.txt" />
+    <AdditionalFiles Include="PublicAPI.Unshipped.txt" />
+  </ItemGroup>
+
   <!-- Package metadata shared by every publishable platform library.
        Per-project PackageId/Description live in the individual csproj files.
        No licence is declared: these are private packages on an authenticated feed. -->

@@ -1,0 +1,145 @@
+#nullable enable
+Frontier.Platform.Serialization.BaselineTier
+Frontier.Platform.Serialization.BaselineTier.<Clone>$() -> Frontier.Platform.Serialization.BaselineTier!
+Frontier.Platform.Serialization.BaselineTier.BaselineTier() -> void
+Frontier.Platform.Serialization.BaselineTier.BaselineVersion.get -> string!
+Frontier.Platform.Serialization.BaselineTier.BaselineVersion.init -> void
+Frontier.Platform.Serialization.BaselineTier.Components.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Frontier.Platform.Serialization.BaselineTier.Components.init -> void
+Frontier.Platform.Serialization.BaselineTier.Content.get -> string!
+Frontier.Platform.Serialization.BaselineTier.Content.init -> void
+Frontier.Platform.Serialization.BaselineTier.Equals(Frontier.Platform.Serialization.BaselineTier? other) -> bool
+Frontier.Platform.Serialization.CacheHint
+Frontier.Platform.Serialization.CacheHint.<Clone>$() -> Frontier.Platform.Serialization.CacheHint!
+Frontier.Platform.Serialization.CacheHint.BaselineCacheKey.get -> string!
+Frontier.Platform.Serialization.CacheHint.BaselineCacheKey.init -> void
+Frontier.Platform.Serialization.CacheHint.BreakpointAfterBaseline.get -> int
+Frontier.Platform.Serialization.CacheHint.BreakpointAfterBaseline.init -> void
+Frontier.Platform.Serialization.CacheHint.BreakpointAfterDynamic.get -> int
+Frontier.Platform.Serialization.CacheHint.BreakpointAfterDynamic.init -> void
+Frontier.Platform.Serialization.CacheHint.CacheHint() -> void
+Frontier.Platform.Serialization.CacheHint.DynamicCacheKey.get -> string!
+Frontier.Platform.Serialization.CacheHint.DynamicCacheKey.init -> void
+Frontier.Platform.Serialization.CacheHint.Equals(Frontier.Platform.Serialization.CacheHint? other) -> bool
+Frontier.Platform.Serialization.CanonicalProfile
+Frontier.Platform.Serialization.ContextPackage
+Frontier.Platform.Serialization.ContextPackage.<Clone>$() -> Frontier.Platform.Serialization.ContextPackage!
+Frontier.Platform.Serialization.ContextPackage.Baseline.get -> Frontier.Platform.Serialization.BaselineTier!
+Frontier.Platform.Serialization.ContextPackage.Baseline.init -> void
+Frontier.Platform.Serialization.ContextPackage.ContextPackage() -> void
+Frontier.Platform.Serialization.ContextPackage.Dynamic.get -> Frontier.Platform.Serialization.DynamicTier!
+Frontier.Platform.Serialization.ContextPackage.Dynamic.init -> void
+Frontier.Platform.Serialization.ContextPackage.Equals(Frontier.Platform.Serialization.ContextPackage? other) -> bool
+Frontier.Platform.Serialization.ContextPackage.Hints.get -> Frontier.Platform.Serialization.CacheHint!
+Frontier.Platform.Serialization.ContextPackage.Hints.init -> void
+Frontier.Platform.Serialization.ContextPackage.RealTime.get -> Frontier.Platform.Serialization.RealTimeTier?
+Frontier.Platform.Serialization.ContextPackage.RealTime.init -> void
+Frontier.Platform.Serialization.DecimalPrecisionAttribute
+Frontier.Platform.Serialization.DecimalPrecisionAttribute.DecimalPrecisionAttribute(int scale) -> void
+Frontier.Platform.Serialization.DecimalPrecisionAttribute.Scale.get -> int
+Frontier.Platform.Serialization.DynamicTier
+Frontier.Platform.Serialization.DynamicTier.<Clone>$() -> Frontier.Platform.Serialization.DynamicTier!
+Frontier.Platform.Serialization.DynamicTier.AssembledFromSnapshotRef.get -> string!
+Frontier.Platform.Serialization.DynamicTier.AssembledFromSnapshotRef.init -> void
+Frontier.Platform.Serialization.DynamicTier.Content.get -> string!
+Frontier.Platform.Serialization.DynamicTier.Content.init -> void
+Frontier.Platform.Serialization.DynamicTier.DynamicEpoch.get -> int
+Frontier.Platform.Serialization.DynamicTier.DynamicEpoch.init -> void
+Frontier.Platform.Serialization.DynamicTier.DynamicTier() -> void
+Frontier.Platform.Serialization.DynamicTier.EngagementId.get -> Frontier.Platform.Abstractions.EngagementId!
+Frontier.Platform.Serialization.DynamicTier.EngagementId.init -> void
+Frontier.Platform.Serialization.DynamicTier.Equals(Frontier.Platform.Serialization.DynamicTier? other) -> bool
+Frontier.Platform.Serialization.EngagementIdConverter
+Frontier.Platform.Serialization.EngagementIdConverter.EngagementIdConverter() -> void
+Frontier.Platform.Serialization.FixedPrecisionDecimalConverter
+Frontier.Platform.Serialization.FixedPrecisionDecimalConverter.FixedPrecisionDecimalConverter() -> void
+Frontier.Platform.Serialization.FixedPrecisionDecimalConverter.FixedPrecisionDecimalConverter(int scale) -> void
+Frontier.Platform.Serialization.FixedPrecisionDecimalConverter.Scale.get -> int
+Frontier.Platform.Serialization.IStartupCheck
+Frontier.Platform.Serialization.IStartupCheck.CheckAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Serialization.StartupCheckResult!>!
+Frontier.Platform.Serialization.IStartupCheck.Name.get -> string!
+Frontier.Platform.Serialization.Iso8601UtcDateTimeConverter
+Frontier.Platform.Serialization.Iso8601UtcDateTimeConverter.Iso8601UtcDateTimeConverter() -> void
+Frontier.Platform.Serialization.RealTimeFetch
+Frontier.Platform.Serialization.RealTimeFetch.<Clone>$() -> Frontier.Platform.Serialization.RealTimeFetch!
+Frontier.Platform.Serialization.RealTimeFetch.Equals(Frontier.Platform.Serialization.RealTimeFetch? other) -> bool
+Frontier.Platform.Serialization.RealTimeFetch.FetchedAtUtc.get -> System.DateTime
+Frontier.Platform.Serialization.RealTimeFetch.FetchedAtUtc.init -> void
+Frontier.Platform.Serialization.RealTimeFetch.IsStale.get -> bool
+Frontier.Platform.Serialization.RealTimeFetch.IsStale.init -> void
+Frontier.Platform.Serialization.RealTimeFetch.RealTimeFetch() -> void
+Frontier.Platform.Serialization.RealTimeFetch.SourceId.get -> string!
+Frontier.Platform.Serialization.RealTimeFetch.SourceId.init -> void
+Frontier.Platform.Serialization.RealTimeTier
+Frontier.Platform.Serialization.RealTimeTier.<Clone>$() -> Frontier.Platform.Serialization.RealTimeTier!
+Frontier.Platform.Serialization.RealTimeTier.Content.get -> string!
+Frontier.Platform.Serialization.RealTimeTier.Content.init -> void
+Frontier.Platform.Serialization.RealTimeTier.Equals(Frontier.Platform.Serialization.RealTimeTier? other) -> bool
+Frontier.Platform.Serialization.RealTimeTier.Fetches.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Serialization.RealTimeFetch!>!
+Frontier.Platform.Serialization.RealTimeTier.Fetches.init -> void
+Frontier.Platform.Serialization.RealTimeTier.RealTimeTier() -> void
+Frontier.Platform.Serialization.SerializationServiceCollectionExtensions
+Frontier.Platform.Serialization.SmartEnumJsonConverter<TEnum>
+Frontier.Platform.Serialization.SmartEnumJsonConverter<TEnum>.SmartEnumJsonConverter() -> void
+Frontier.Platform.Serialization.SmartEnumJsonConverterFactory
+Frontier.Platform.Serialization.SmartEnumJsonConverterFactory.SmartEnumJsonConverterFactory() -> void
+Frontier.Platform.Serialization.StartupCheckResult
+Frontier.Platform.Serialization.StartupCheckResult.<Clone>$() -> Frontier.Platform.Serialization.StartupCheckResult!
+Frontier.Platform.Serialization.StartupCheckResult.Equals(Frontier.Platform.Serialization.StartupCheckResult? other) -> bool
+Frontier.Platform.Serialization.StartupCheckResult.FailureReason.get -> string?
+Frontier.Platform.Serialization.StartupCheckResult.FailureReason.init -> void
+Frontier.Platform.Serialization.StartupCheckResult.Passed.get -> bool
+Frontier.Platform.Serialization.StartupCheckResult.Passed.init -> void
+Frontier.Platform.Serialization.StartupCheckResult.StartupCheckResult() -> void
+override Frontier.Platform.Serialization.BaselineTier.Equals(object? obj) -> bool
+override Frontier.Platform.Serialization.BaselineTier.GetHashCode() -> int
+override Frontier.Platform.Serialization.BaselineTier.ToString() -> string!
+override Frontier.Platform.Serialization.CacheHint.Equals(object? obj) -> bool
+override Frontier.Platform.Serialization.CacheHint.GetHashCode() -> int
+override Frontier.Platform.Serialization.CacheHint.ToString() -> string!
+override Frontier.Platform.Serialization.ContextPackage.Equals(object? obj) -> bool
+override Frontier.Platform.Serialization.ContextPackage.GetHashCode() -> int
+override Frontier.Platform.Serialization.ContextPackage.ToString() -> string!
+override Frontier.Platform.Serialization.DecimalPrecisionAttribute.CreateConverter(System.Type! typeToConvert) -> System.Text.Json.Serialization.JsonConverter!
+override Frontier.Platform.Serialization.DynamicTier.Equals(object? obj) -> bool
+override Frontier.Platform.Serialization.DynamicTier.GetHashCode() -> int
+override Frontier.Platform.Serialization.DynamicTier.ToString() -> string!
+override Frontier.Platform.Serialization.EngagementIdConverter.Read(ref System.Text.Json.Utf8JsonReader reader, System.Type! typeToConvert, System.Text.Json.JsonSerializerOptions! options) -> Frontier.Platform.Abstractions.EngagementId!
+override Frontier.Platform.Serialization.EngagementIdConverter.Write(System.Text.Json.Utf8JsonWriter! writer, Frontier.Platform.Abstractions.EngagementId! value, System.Text.Json.JsonSerializerOptions! options) -> void
+override Frontier.Platform.Serialization.FixedPrecisionDecimalConverter.Read(ref System.Text.Json.Utf8JsonReader reader, System.Type! typeToConvert, System.Text.Json.JsonSerializerOptions! options) -> decimal
+override Frontier.Platform.Serialization.FixedPrecisionDecimalConverter.Write(System.Text.Json.Utf8JsonWriter! writer, decimal value, System.Text.Json.JsonSerializerOptions! options) -> void
+override Frontier.Platform.Serialization.Iso8601UtcDateTimeConverter.Read(ref System.Text.Json.Utf8JsonReader reader, System.Type! typeToConvert, System.Text.Json.JsonSerializerOptions! options) -> System.DateTime
+override Frontier.Platform.Serialization.Iso8601UtcDateTimeConverter.Write(System.Text.Json.Utf8JsonWriter! writer, System.DateTime value, System.Text.Json.JsonSerializerOptions! options) -> void
+override Frontier.Platform.Serialization.RealTimeFetch.Equals(object? obj) -> bool
+override Frontier.Platform.Serialization.RealTimeFetch.GetHashCode() -> int
+override Frontier.Platform.Serialization.RealTimeFetch.ToString() -> string!
+override Frontier.Platform.Serialization.RealTimeTier.Equals(object? obj) -> bool
+override Frontier.Platform.Serialization.RealTimeTier.GetHashCode() -> int
+override Frontier.Platform.Serialization.RealTimeTier.ToString() -> string!
+override Frontier.Platform.Serialization.SmartEnumJsonConverter<TEnum>.Read(ref System.Text.Json.Utf8JsonReader reader, System.Type! typeToConvert, System.Text.Json.JsonSerializerOptions! options) -> TEnum
+override Frontier.Platform.Serialization.SmartEnumJsonConverter<TEnum>.Write(System.Text.Json.Utf8JsonWriter! writer, TEnum value, System.Text.Json.JsonSerializerOptions! options) -> void
+override Frontier.Platform.Serialization.SmartEnumJsonConverterFactory.CanConvert(System.Type! typeToConvert) -> bool
+override Frontier.Platform.Serialization.SmartEnumJsonConverterFactory.CreateConverter(System.Type! typeToConvert, System.Text.Json.JsonSerializerOptions! options) -> System.Text.Json.Serialization.JsonConverter!
+override Frontier.Platform.Serialization.StartupCheckResult.Equals(object? obj) -> bool
+override Frontier.Platform.Serialization.StartupCheckResult.GetHashCode() -> int
+override Frontier.Platform.Serialization.StartupCheckResult.ToString() -> string!
+static Frontier.Platform.Serialization.BaselineTier.operator !=(Frontier.Platform.Serialization.BaselineTier? left, Frontier.Platform.Serialization.BaselineTier? right) -> bool
+static Frontier.Platform.Serialization.BaselineTier.operator ==(Frontier.Platform.Serialization.BaselineTier? left, Frontier.Platform.Serialization.BaselineTier? right) -> bool
+static Frontier.Platform.Serialization.CacheHint.operator !=(Frontier.Platform.Serialization.CacheHint? left, Frontier.Platform.Serialization.CacheHint? right) -> bool
+static Frontier.Platform.Serialization.CacheHint.operator ==(Frontier.Platform.Serialization.CacheHint? left, Frontier.Platform.Serialization.CacheHint? right) -> bool
+static Frontier.Platform.Serialization.CanonicalProfile.Hash<T>(T value) -> string!
+static Frontier.Platform.Serialization.CanonicalProfile.SerializeCanonical<T>(T value) -> byte[]!
+static Frontier.Platform.Serialization.ContextPackage.operator !=(Frontier.Platform.Serialization.ContextPackage? left, Frontier.Platform.Serialization.ContextPackage? right) -> bool
+static Frontier.Platform.Serialization.ContextPackage.operator ==(Frontier.Platform.Serialization.ContextPackage? left, Frontier.Platform.Serialization.ContextPackage? right) -> bool
+static Frontier.Platform.Serialization.DynamicTier.operator !=(Frontier.Platform.Serialization.DynamicTier? left, Frontier.Platform.Serialization.DynamicTier? right) -> bool
+static Frontier.Platform.Serialization.DynamicTier.operator ==(Frontier.Platform.Serialization.DynamicTier? left, Frontier.Platform.Serialization.DynamicTier? right) -> bool
+static Frontier.Platform.Serialization.RealTimeFetch.operator !=(Frontier.Platform.Serialization.RealTimeFetch? left, Frontier.Platform.Serialization.RealTimeFetch? right) -> bool
+static Frontier.Platform.Serialization.RealTimeFetch.operator ==(Frontier.Platform.Serialization.RealTimeFetch? left, Frontier.Platform.Serialization.RealTimeFetch? right) -> bool
+static Frontier.Platform.Serialization.RealTimeTier.operator !=(Frontier.Platform.Serialization.RealTimeTier? left, Frontier.Platform.Serialization.RealTimeTier? right) -> bool
+static Frontier.Platform.Serialization.RealTimeTier.operator ==(Frontier.Platform.Serialization.RealTimeTier? left, Frontier.Platform.Serialization.RealTimeTier? right) -> bool
+static Frontier.Platform.Serialization.SerializationServiceCollectionExtensions.AddFrontierSerialization(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Frontier.Platform.Serialization.StartupCheckResult.Fail(string! reason) -> Frontier.Platform.Serialization.StartupCheckResult!
+static Frontier.Platform.Serialization.StartupCheckResult.Pass() -> Frontier.Platform.Serialization.StartupCheckResult!
+static Frontier.Platform.Serialization.StartupCheckResult.operator !=(Frontier.Platform.Serialization.StartupCheckResult? left, Frontier.Platform.Serialization.StartupCheckResult? right) -> bool
+static Frontier.Platform.Serialization.StartupCheckResult.operator ==(Frontier.Platform.Serialization.StartupCheckResult? left, Frontier.Platform.Serialization.StartupCheckResult? right) -> bool
+static readonly Frontier.Platform.Serialization.CanonicalProfile.Options -> System.Text.Json.JsonSerializerOptions!

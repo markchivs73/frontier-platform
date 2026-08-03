@@ -1,0 +1,409 @@
+#nullable enable
+Frontier.Platform.Audit.AgentInvocation
+Frontier.Platform.Audit.AgentInvocation.<Clone>$() -> Frontier.Platform.Audit.AgentInvocation!
+Frontier.Platform.Audit.AgentInvocation.AgentInvocation() -> void
+Frontier.Platform.Audit.AgentInvocation.AgentRole.get -> string!
+Frontier.Platform.Audit.AgentInvocation.AgentRole.init -> void
+Frontier.Platform.Audit.AgentInvocation.CacheReadTokens.get -> long
+Frontier.Platform.Audit.AgentInvocation.CacheReadTokens.init -> void
+Frontier.Platform.Audit.AgentInvocation.CacheWriteTokens.get -> long
+Frontier.Platform.Audit.AgentInvocation.CacheWriteTokens.init -> void
+Frontier.Platform.Audit.AgentInvocation.CorrelationId.get -> string!
+Frontier.Platform.Audit.AgentInvocation.CorrelationId.init -> void
+Frontier.Platform.Audit.AgentInvocation.Equals(Frontier.Platform.Audit.AgentInvocation? other) -> bool
+Frontier.Platform.Audit.AgentInvocation.InputContractType.get -> string!
+Frontier.Platform.Audit.AgentInvocation.InputContractType.init -> void
+Frontier.Platform.Audit.AgentInvocation.InputHash.get -> string!
+Frontier.Platform.Audit.AgentInvocation.InputHash.init -> void
+Frontier.Platform.Audit.AgentInvocation.InputTokens.get -> long
+Frontier.Platform.Audit.AgentInvocation.InputTokens.init -> void
+Frontier.Platform.Audit.AgentInvocation.InvokedAtUtc.get -> System.DateTime
+Frontier.Platform.Audit.AgentInvocation.InvokedAtUtc.init -> void
+Frontier.Platform.Audit.AgentInvocation.LatencyMs.get -> long
+Frontier.Platform.Audit.AgentInvocation.LatencyMs.init -> void
+Frontier.Platform.Audit.AgentInvocation.NodeId.get -> string!
+Frontier.Platform.Audit.AgentInvocation.NodeId.init -> void
+Frontier.Platform.Audit.AgentInvocation.OutputContractType.get -> string!
+Frontier.Platform.Audit.AgentInvocation.OutputContractType.init -> void
+Frontier.Platform.Audit.AgentInvocation.OutputHash.get -> string!
+Frontier.Platform.Audit.AgentInvocation.OutputHash.init -> void
+Frontier.Platform.Audit.AgentInvocation.OutputTokens.get -> long
+Frontier.Platform.Audit.AgentInvocation.OutputTokens.init -> void
+Frontier.Platform.Audit.AgentInvocation.ResolvedModel.get -> Frontier.Platform.Abstractions.ResolvedModelSummary!
+Frontier.Platform.Audit.AgentInvocation.ResolvedModel.init -> void
+Frontier.Platform.Audit.AgentInvocation.RetryCount.get -> int
+Frontier.Platform.Audit.AgentInvocation.RetryCount.init -> void
+Frontier.Platform.Audit.AgentInvocation.SectionKey.get -> string?
+Frontier.Platform.Audit.AgentInvocation.SectionKey.init -> void
+Frontier.Platform.Audit.AgentInvocation.ToolCalls.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.ToolCall!>!
+Frontier.Platform.Audit.AgentInvocation.ToolCalls.init -> void
+Frontier.Platform.Audit.AuditQuery
+Frontier.Platform.Audit.AuditQuery.<Clone>$() -> Frontier.Platform.Audit.AuditQuery!
+Frontier.Platform.Audit.AuditQuery.AuditQuery() -> void
+Frontier.Platform.Audit.AuditQuery.DefinitionHash.get -> string?
+Frontier.Platform.Audit.AuditQuery.DefinitionHash.init -> void
+Frontier.Platform.Audit.AuditQuery.EngagementId.get -> string?
+Frontier.Platform.Audit.AuditQuery.EngagementId.init -> void
+Frontier.Platform.Audit.AuditQuery.Equals(Frontier.Platform.Audit.AuditQuery? other) -> bool
+Frontier.Platform.Audit.AuditQuery.FromUtc.get -> System.DateTime?
+Frontier.Platform.Audit.AuditQuery.FromUtc.init -> void
+Frontier.Platform.Audit.AuditQuery.ModelId.get -> string?
+Frontier.Platform.Audit.AuditQuery.ModelId.init -> void
+Frontier.Platform.Audit.AuditQuery.OverridesOnly.get -> bool
+Frontier.Platform.Audit.AuditQuery.OverridesOnly.init -> void
+Frontier.Platform.Audit.AuditQuery.ToUtc.get -> System.DateTime?
+Frontier.Platform.Audit.AuditQuery.ToUtc.init -> void
+Frontier.Platform.Audit.AuditQuery.ValidatorId.get -> string?
+Frontier.Platform.Audit.AuditQuery.ValidatorId.init -> void
+Frontier.Platform.Audit.AuditRecord
+Frontier.Platform.Audit.AuditRecord.<Clone>$() -> Frontier.Platform.Audit.AuditRecord!
+Frontier.Platform.Audit.AuditRecord.AgentInvocations.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.AgentInvocation!>!
+Frontier.Platform.Audit.AuditRecord.AgentInvocations.init -> void
+Frontier.Platform.Audit.AuditRecord.AuditRecord() -> void
+Frontier.Platform.Audit.AuditRecord.CacheMetrics.get -> Frontier.Platform.Audit.CacheMetrics!
+Frontier.Platform.Audit.AuditRecord.CacheMetrics.init -> void
+Frontier.Platform.Audit.AuditRecord.ClosedAtUtc.get -> System.DateTime
+Frontier.Platform.Audit.AuditRecord.ClosedAtUtc.init -> void
+Frontier.Platform.Audit.AuditRecord.DefinitionHash.get -> string!
+Frontier.Platform.Audit.AuditRecord.DefinitionHash.init -> void
+Frontier.Platform.Audit.AuditRecord.DefinitionVersion.get -> int
+Frontier.Platform.Audit.AuditRecord.DefinitionVersion.init -> void
+Frontier.Platform.Audit.AuditRecord.EngagementId.get -> string!
+Frontier.Platform.Audit.AuditRecord.EngagementId.init -> void
+Frontier.Platform.Audit.AuditRecord.Equals(Frontier.Platform.Audit.AuditRecord? other) -> bool
+Frontier.Platform.Audit.AuditRecord.ExecutionId.get -> string!
+Frontier.Platform.Audit.AuditRecord.ExecutionId.init -> void
+Frontier.Platform.Audit.AuditRecord.FinalStatus.get -> Frontier.Platform.Abstractions.ExecutionStatus!
+Frontier.Platform.Audit.AuditRecord.FinalStatus.init -> void
+Frontier.Platform.Audit.AuditRecord.HumanDecisions.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.HumanDecisionRecord!>!
+Frontier.Platform.Audit.AuditRecord.HumanDecisions.init -> void
+Frontier.Platform.Audit.AuditRecord.OrchestrationEvents.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.WorkflowEvent!>!
+Frontier.Platform.Audit.AuditRecord.OrchestrationEvents.init -> void
+Frontier.Platform.Audit.AuditRecord.Sandbox.get -> bool?
+Frontier.Platform.Audit.AuditRecord.Sandbox.init -> void
+Frontier.Platform.Audit.AuditRecord.SchemaVersion.get -> string!
+Frontier.Platform.Audit.AuditRecord.SchemaVersion.init -> void
+Frontier.Platform.Audit.AuditRecord.StartedAtUtc.get -> System.DateTime
+Frontier.Platform.Audit.AuditRecord.StartedAtUtc.init -> void
+Frontier.Platform.Audit.AuditRecord.Validate() -> void
+Frontier.Platform.Audit.AuditRecord.ValidatorOutcomes.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.ValidatorOutcome!>!
+Frontier.Platform.Audit.AuditRecord.ValidatorOutcomes.init -> void
+Frontier.Platform.Audit.AuditRecord.WorkflowId.get -> string!
+Frontier.Platform.Audit.AuditRecord.WorkflowId.init -> void
+Frontier.Platform.Audit.AuditServiceCollectionExtensions
+Frontier.Platform.Audit.AuditSummary
+Frontier.Platform.Audit.AuditSummary.<Clone>$() -> Frontier.Platform.Audit.AuditSummary!
+Frontier.Platform.Audit.AuditSummary.AuditSummary() -> void
+Frontier.Platform.Audit.AuditSummary.ClosedAtUtc.get -> System.DateTime
+Frontier.Platform.Audit.AuditSummary.ClosedAtUtc.init -> void
+Frontier.Platform.Audit.AuditSummary.DefinitionHash.get -> string!
+Frontier.Platform.Audit.AuditSummary.DefinitionHash.init -> void
+Frontier.Platform.Audit.AuditSummary.DefinitionVersion.get -> int
+Frontier.Platform.Audit.AuditSummary.DefinitionVersion.init -> void
+Frontier.Platform.Audit.AuditSummary.EngagementId.get -> string!
+Frontier.Platform.Audit.AuditSummary.EngagementId.init -> void
+Frontier.Platform.Audit.AuditSummary.Equals(Frontier.Platform.Audit.AuditSummary? other) -> bool
+Frontier.Platform.Audit.AuditSummary.ExecutionId.get -> string!
+Frontier.Platform.Audit.AuditSummary.ExecutionId.init -> void
+Frontier.Platform.Audit.AuditSummary.FinalStatus.get -> Frontier.Platform.Abstractions.ExecutionStatus!
+Frontier.Platform.Audit.AuditSummary.FinalStatus.init -> void
+Frontier.Platform.Audit.AuditSummary.StartedAtUtc.get -> System.DateTime
+Frontier.Platform.Audit.AuditSummary.StartedAtUtc.init -> void
+Frontier.Platform.Audit.AuditSummary.WorkflowId.get -> string!
+Frontier.Platform.Audit.AuditSummary.WorkflowId.init -> void
+Frontier.Platform.Audit.AuditTelemetryRecord
+Frontier.Platform.Audit.AuditTelemetryRecord.<Clone>$() -> Frontier.Platform.Audit.AuditTelemetryRecord!
+Frontier.Platform.Audit.AuditTelemetryRecord.AgentRole.get -> string!
+Frontier.Platform.Audit.AuditTelemetryRecord.AgentRole.init -> void
+Frontier.Platform.Audit.AuditTelemetryRecord.AuditTelemetryRecord() -> void
+Frontier.Platform.Audit.AuditTelemetryRecord.BaselineCacheChanged.get -> bool
+Frontier.Platform.Audit.AuditTelemetryRecord.BaselineCacheChanged.init -> void
+Frontier.Platform.Audit.AuditTelemetryRecord.CacheReadTokens.get -> long
+Frontier.Platform.Audit.AuditTelemetryRecord.CacheReadTokens.init -> void
+Frontier.Platform.Audit.AuditTelemetryRecord.CacheWriteTokens.get -> long
+Frontier.Platform.Audit.AuditTelemetryRecord.CacheWriteTokens.init -> void
+Frontier.Platform.Audit.AuditTelemetryRecord.CorrelationId.get -> string!
+Frontier.Platform.Audit.AuditTelemetryRecord.CorrelationId.init -> void
+Frontier.Platform.Audit.AuditTelemetryRecord.DynamicCacheChanged.get -> bool
+Frontier.Platform.Audit.AuditTelemetryRecord.DynamicCacheChanged.init -> void
+Frontier.Platform.Audit.AuditTelemetryRecord.Equals(Frontier.Platform.Audit.AuditTelemetryRecord? other) -> bool
+Frontier.Platform.Audit.AuditTelemetryRecord.ExecutionId.get -> string!
+Frontier.Platform.Audit.AuditTelemetryRecord.ExecutionId.init -> void
+Frontier.Platform.Audit.AuditTelemetryRecord.InputContractType.get -> string!
+Frontier.Platform.Audit.AuditTelemetryRecord.InputContractType.init -> void
+Frontier.Platform.Audit.AuditTelemetryRecord.InputHash.get -> string!
+Frontier.Platform.Audit.AuditTelemetryRecord.InputHash.init -> void
+Frontier.Platform.Audit.AuditTelemetryRecord.InputTokens.get -> long
+Frontier.Platform.Audit.AuditTelemetryRecord.InputTokens.init -> void
+Frontier.Platform.Audit.AuditTelemetryRecord.InvokedAtUtc.get -> System.DateTime
+Frontier.Platform.Audit.AuditTelemetryRecord.InvokedAtUtc.init -> void
+Frontier.Platform.Audit.AuditTelemetryRecord.LatencyMs.get -> long
+Frontier.Platform.Audit.AuditTelemetryRecord.LatencyMs.init -> void
+Frontier.Platform.Audit.AuditTelemetryRecord.NodeId.get -> string!
+Frontier.Platform.Audit.AuditTelemetryRecord.NodeId.init -> void
+Frontier.Platform.Audit.AuditTelemetryRecord.OutputContractType.get -> string!
+Frontier.Platform.Audit.AuditTelemetryRecord.OutputContractType.init -> void
+Frontier.Platform.Audit.AuditTelemetryRecord.OutputHash.get -> string!
+Frontier.Platform.Audit.AuditTelemetryRecord.OutputHash.init -> void
+Frontier.Platform.Audit.AuditTelemetryRecord.OutputTokens.get -> long
+Frontier.Platform.Audit.AuditTelemetryRecord.OutputTokens.init -> void
+Frontier.Platform.Audit.AuditTelemetryRecord.RealTimeCacheChanged.get -> bool
+Frontier.Platform.Audit.AuditTelemetryRecord.RealTimeCacheChanged.init -> void
+Frontier.Platform.Audit.AuditTelemetryRecord.ResolvedModel.get -> Frontier.Platform.Abstractions.ResolvedModelSummary!
+Frontier.Platform.Audit.AuditTelemetryRecord.ResolvedModel.init -> void
+Frontier.Platform.Audit.AuditTelemetryRecord.RetryCount.get -> int
+Frontier.Platform.Audit.AuditTelemetryRecord.RetryCount.init -> void
+Frontier.Platform.Audit.AuditTelemetryRecord.SectionKey.get -> string?
+Frontier.Platform.Audit.AuditTelemetryRecord.SectionKey.init -> void
+Frontier.Platform.Audit.AuditTelemetryRecord.ToolCalls.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.ToolCall!>!
+Frontier.Platform.Audit.AuditTelemetryRecord.ToolCalls.init -> void
+Frontier.Platform.Audit.CacheMetrics
+Frontier.Platform.Audit.CacheMetrics.<Clone>$() -> Frontier.Platform.Audit.CacheMetrics!
+Frontier.Platform.Audit.CacheMetrics.Baseline.get -> Frontier.Platform.Audit.CacheTierMetrics!
+Frontier.Platform.Audit.CacheMetrics.Baseline.init -> void
+Frontier.Platform.Audit.CacheMetrics.CacheMetrics() -> void
+Frontier.Platform.Audit.CacheMetrics.Dynamic.get -> Frontier.Platform.Audit.CacheTierMetrics!
+Frontier.Platform.Audit.CacheMetrics.Dynamic.init -> void
+Frontier.Platform.Audit.CacheMetrics.Equals(Frontier.Platform.Audit.CacheMetrics? other) -> bool
+Frontier.Platform.Audit.CacheMetrics.RealTime.get -> Frontier.Platform.Audit.CacheTierMetrics!
+Frontier.Platform.Audit.CacheMetrics.RealTime.init -> void
+Frontier.Platform.Audit.CacheTierMetrics
+Frontier.Platform.Audit.CacheTierMetrics.<Clone>$() -> Frontier.Platform.Audit.CacheTierMetrics!
+Frontier.Platform.Audit.CacheTierMetrics.CacheTierMetrics() -> void
+Frontier.Platform.Audit.CacheTierMetrics.Equals(Frontier.Platform.Audit.CacheTierMetrics? other) -> bool
+Frontier.Platform.Audit.CacheTierMetrics.HitRatePercent.get -> decimal
+Frontier.Platform.Audit.CacheTierMetrics.HitRatePercent.init -> void
+Frontier.Platform.Audit.CacheTierMetrics.Reads.get -> int
+Frontier.Platform.Audit.CacheTierMetrics.Reads.init -> void
+Frontier.Platform.Audit.CacheTierMetrics.TokensRead.get -> long
+Frontier.Platform.Audit.CacheTierMetrics.TokensRead.init -> void
+Frontier.Platform.Audit.CacheTierMetrics.Writes.get -> int
+Frontier.Platform.Audit.CacheTierMetrics.Writes.init -> void
+Frontier.Platform.Audit.CosmosOptions
+Frontier.Platform.Audit.CosmosOptions.CosmosOptions() -> void
+Frontier.Platform.Audit.CosmosOptions.Database.get -> string!
+Frontier.Platform.Audit.CosmosOptions.Database.init -> void
+Frontier.Platform.Audit.CosmosOptions.Endpoint.get -> string!
+Frontier.Platform.Audit.CosmosOptions.Endpoint.init -> void
+Frontier.Platform.Audit.CosmosOptions.Key.get -> string!
+Frontier.Platform.Audit.CosmosOptions.Key.init -> void
+Frontier.Platform.Audit.HumanDecisionRecord
+Frontier.Platform.Audit.HumanDecisionRecord.<Clone>$() -> Frontier.Platform.Audit.HumanDecisionRecord!
+Frontier.Platform.Audit.HumanDecisionRecord.ApproverId.get -> string!
+Frontier.Platform.Audit.HumanDecisionRecord.ApproverId.init -> void
+Frontier.Platform.Audit.HumanDecisionRecord.DecidedAtUtc.get -> System.DateTime
+Frontier.Platform.Audit.HumanDecisionRecord.DecidedAtUtc.init -> void
+Frontier.Platform.Audit.HumanDecisionRecord.Equals(Frontier.Platform.Audit.HumanDecisionRecord? other) -> bool
+Frontier.Platform.Audit.HumanDecisionRecord.GateId.get -> string!
+Frontier.Platform.Audit.HumanDecisionRecord.GateId.init -> void
+Frontier.Platform.Audit.HumanDecisionRecord.HumanDecisionRecord() -> void
+Frontier.Platform.Audit.HumanDecisionRecord.Kind.get -> Frontier.Platform.Abstractions.DecisionKind!
+Frontier.Platform.Audit.HumanDecisionRecord.Kind.init -> void
+Frontier.Platform.Audit.HumanDecisionRecord.Notes.get -> string?
+Frontier.Platform.Audit.HumanDecisionRecord.Notes.init -> void
+Frontier.Platform.Audit.HumanDecisionRecord.RequestId.get -> string!
+Frontier.Platform.Audit.HumanDecisionRecord.RequestId.init -> void
+Frontier.Platform.Audit.IAuditQueryService
+Frontier.Platform.Audit.IAuditQueryService.GetAsync(string! executionId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Audit.SignedAuditRecord?>!
+Frontier.Platform.Audit.IAuditQueryService.GetChainAsync(string! engagementId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.SignedAuditRecord!>!>!
+Frontier.Platform.Audit.IAuditQueryService.QueryAsync(Frontier.Platform.Audit.AuditQuery! query, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.AuditSummary!>!>!
+Frontier.Platform.Audit.IAuditRecordStore
+Frontier.Platform.Audit.IAuditRecordStore.CreateAsync(Frontier.Platform.Audit.SignedAuditRecord! record, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Frontier.Platform.Audit.IAuditRecordStore.GetAsync(string! executionId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Audit.SignedAuditRecord?>!
+Frontier.Platform.Audit.IAuditRecordStore.GetChainAsync(string! engagementId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.SignedAuditRecord!>!>!
+Frontier.Platform.Audit.IAuditSigner
+Frontier.Platform.Audit.IAuditSigner.SignAsync(Frontier.Platform.Audit.AuditRecord! record, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Audit.SignedAuditRecord!>!
+Frontier.Platform.Audit.IAuditSigner.VerifyAsync(string! executionId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Audit.VerificationResult!>!
+Frontier.Platform.Audit.IAuditTelemetryStaging
+Frontier.Platform.Audit.IAuditTelemetryStaging.GetForExecutionAsync(string! executionId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.AuditTelemetryRecord!>!>!
+Frontier.Platform.Audit.IAuditTelemetryStaging.RecordInvocationAsync(Frontier.Platform.Audit.AuditTelemetryRecord! record, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Frontier.Platform.Audit.IKeyProvider
+Frontier.Platform.Audit.IKeyProvider.GetCurrentKeyAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Audit.SigningKey!>!
+Frontier.Platform.Audit.SignedAuditRecord
+Frontier.Platform.Audit.SignedAuditRecord.<Clone>$() -> Frontier.Platform.Audit.SignedAuditRecord!
+Frontier.Platform.Audit.SignedAuditRecord.AgentInvocations.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.AgentInvocation!>!
+Frontier.Platform.Audit.SignedAuditRecord.AgentInvocations.init -> void
+Frontier.Platform.Audit.SignedAuditRecord.CacheMetrics.get -> Frontier.Platform.Audit.CacheMetrics!
+Frontier.Platform.Audit.SignedAuditRecord.CacheMetrics.init -> void
+Frontier.Platform.Audit.SignedAuditRecord.ClosedAtUtc.get -> System.DateTime
+Frontier.Platform.Audit.SignedAuditRecord.ClosedAtUtc.init -> void
+Frontier.Platform.Audit.SignedAuditRecord.DefinitionHash.get -> string!
+Frontier.Platform.Audit.SignedAuditRecord.DefinitionHash.init -> void
+Frontier.Platform.Audit.SignedAuditRecord.DefinitionVersion.get -> int
+Frontier.Platform.Audit.SignedAuditRecord.DefinitionVersion.init -> void
+Frontier.Platform.Audit.SignedAuditRecord.EngagementId.get -> string!
+Frontier.Platform.Audit.SignedAuditRecord.EngagementId.init -> void
+Frontier.Platform.Audit.SignedAuditRecord.Equals(Frontier.Platform.Audit.SignedAuditRecord? other) -> bool
+Frontier.Platform.Audit.SignedAuditRecord.ExecutionId.get -> string!
+Frontier.Platform.Audit.SignedAuditRecord.ExecutionId.init -> void
+Frontier.Platform.Audit.SignedAuditRecord.FinalStatus.get -> Frontier.Platform.Abstractions.ExecutionStatus!
+Frontier.Platform.Audit.SignedAuditRecord.FinalStatus.init -> void
+Frontier.Platform.Audit.SignedAuditRecord.HumanDecisions.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.HumanDecisionRecord!>!
+Frontier.Platform.Audit.SignedAuditRecord.HumanDecisions.init -> void
+Frontier.Platform.Audit.SignedAuditRecord.OrchestrationEvents.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.WorkflowEvent!>!
+Frontier.Platform.Audit.SignedAuditRecord.OrchestrationEvents.init -> void
+Frontier.Platform.Audit.SignedAuditRecord.PreviousRecordHash.get -> string!
+Frontier.Platform.Audit.SignedAuditRecord.PreviousRecordHash.init -> void
+Frontier.Platform.Audit.SignedAuditRecord.RecordHash.get -> string!
+Frontier.Platform.Audit.SignedAuditRecord.RecordHash.init -> void
+Frontier.Platform.Audit.SignedAuditRecord.SchemaVersion.get -> string!
+Frontier.Platform.Audit.SignedAuditRecord.SchemaVersion.init -> void
+Frontier.Platform.Audit.SignedAuditRecord.Signature.get -> string!
+Frontier.Platform.Audit.SignedAuditRecord.Signature.init -> void
+Frontier.Platform.Audit.SignedAuditRecord.SignedAuditRecord() -> void
+Frontier.Platform.Audit.SignedAuditRecord.SigningKeyId.get -> string!
+Frontier.Platform.Audit.SignedAuditRecord.SigningKeyId.init -> void
+Frontier.Platform.Audit.SignedAuditRecord.StartedAtUtc.get -> System.DateTime
+Frontier.Platform.Audit.SignedAuditRecord.StartedAtUtc.init -> void
+Frontier.Platform.Audit.SignedAuditRecord.Validate() -> void
+Frontier.Platform.Audit.SignedAuditRecord.ValidatorOutcomes.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.ValidatorOutcome!>!
+Frontier.Platform.Audit.SignedAuditRecord.ValidatorOutcomes.init -> void
+Frontier.Platform.Audit.SignedAuditRecord.WorkflowId.get -> string!
+Frontier.Platform.Audit.SignedAuditRecord.WorkflowId.init -> void
+Frontier.Platform.Audit.SigningKey
+Frontier.Platform.Audit.SigningKey.<Clone>$() -> Frontier.Platform.Audit.SigningKey!
+Frontier.Platform.Audit.SigningKey.Deconstruct(out string! KeyId, out System.ReadOnlyMemory<byte> KeyMaterial) -> void
+Frontier.Platform.Audit.SigningKey.Equals(Frontier.Platform.Audit.SigningKey? other) -> bool
+Frontier.Platform.Audit.SigningKey.KeyId.get -> string!
+Frontier.Platform.Audit.SigningKey.KeyId.init -> void
+Frontier.Platform.Audit.SigningKey.KeyMaterial.get -> System.ReadOnlyMemory<byte>
+Frontier.Platform.Audit.SigningKey.KeyMaterial.init -> void
+Frontier.Platform.Audit.SigningKey.SigningKey(string! KeyId, System.ReadOnlyMemory<byte> KeyMaterial) -> void
+Frontier.Platform.Audit.ToolCall
+Frontier.Platform.Audit.ToolCall.<Clone>$() -> Frontier.Platform.Audit.ToolCall!
+Frontier.Platform.Audit.ToolCall.Equals(Frontier.Platform.Audit.ToolCall? other) -> bool
+Frontier.Platform.Audit.ToolCall.InvokedAtUtc.get -> System.DateTime
+Frontier.Platform.Audit.ToolCall.InvokedAtUtc.init -> void
+Frontier.Platform.Audit.ToolCall.Name.get -> string!
+Frontier.Platform.Audit.ToolCall.Name.init -> void
+Frontier.Platform.Audit.ToolCall.Simulated.get -> bool?
+Frontier.Platform.Audit.ToolCall.Simulated.init -> void
+Frontier.Platform.Audit.ToolCall.ToolCall() -> void
+Frontier.Platform.Audit.ValidatorOutcome
+Frontier.Platform.Audit.ValidatorOutcome.<Clone>$() -> Frontier.Platform.Audit.ValidatorOutcome!
+Frontier.Platform.Audit.ValidatorOutcome.CorrelationId.get -> string!
+Frontier.Platform.Audit.ValidatorOutcome.CorrelationId.init -> void
+Frontier.Platform.Audit.ValidatorOutcome.Equals(Frontier.Platform.Audit.ValidatorOutcome? other) -> bool
+Frontier.Platform.Audit.ValidatorOutcome.FindingCodes.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Frontier.Platform.Audit.ValidatorOutcome.FindingCodes.init -> void
+Frontier.Platform.Audit.ValidatorOutcome.RanAtUtc.get -> System.DateTime
+Frontier.Platform.Audit.ValidatorOutcome.RanAtUtc.init -> void
+Frontier.Platform.Audit.ValidatorOutcome.Status.get -> Frontier.Platform.Audit.ValidatorStatus!
+Frontier.Platform.Audit.ValidatorOutcome.Status.init -> void
+Frontier.Platform.Audit.ValidatorOutcome.TargetSectionKey.get -> string!
+Frontier.Platform.Audit.ValidatorOutcome.TargetSectionKey.init -> void
+Frontier.Platform.Audit.ValidatorOutcome.ValidatorId.get -> string!
+Frontier.Platform.Audit.ValidatorOutcome.ValidatorId.init -> void
+Frontier.Platform.Audit.ValidatorOutcome.ValidatorOutcome() -> void
+Frontier.Platform.Audit.ValidatorStatus
+Frontier.Platform.Audit.VerificationResult
+Frontier.Platform.Audit.VerificationResult.<Clone>$() -> Frontier.Platform.Audit.VerificationResult!
+Frontier.Platform.Audit.VerificationResult.BrokenLinkAt.get -> string?
+Frontier.Platform.Audit.VerificationResult.BrokenLinkAt.init -> void
+Frontier.Platform.Audit.VerificationResult.ChainValid.get -> bool
+Frontier.Platform.Audit.VerificationResult.ChainValid.init -> void
+Frontier.Platform.Audit.VerificationResult.Equals(Frontier.Platform.Audit.VerificationResult? other) -> bool
+Frontier.Platform.Audit.VerificationResult.SignatureValid.get -> bool
+Frontier.Platform.Audit.VerificationResult.SignatureValid.init -> void
+Frontier.Platform.Audit.VerificationResult.VerificationResult() -> void
+Frontier.Platform.Audit.VerificationResult.VerifiedAgainstKeyId.get -> string!
+Frontier.Platform.Audit.VerificationResult.VerifiedAgainstKeyId.init -> void
+Frontier.Platform.Audit.WorkflowEvent
+Frontier.Platform.Audit.WorkflowEvent.<Clone>$() -> Frontier.Platform.Audit.WorkflowEvent!
+Frontier.Platform.Audit.WorkflowEvent.CorrelationId.get -> string?
+Frontier.Platform.Audit.WorkflowEvent.CorrelationId.init -> void
+Frontier.Platform.Audit.WorkflowEvent.Details.get -> string?
+Frontier.Platform.Audit.WorkflowEvent.Details.init -> void
+Frontier.Platform.Audit.WorkflowEvent.Equals(Frontier.Platform.Audit.WorkflowEvent? other) -> bool
+Frontier.Platform.Audit.WorkflowEvent.EventType.get -> Frontier.Platform.Audit.WorkflowEventType!
+Frontier.Platform.Audit.WorkflowEvent.EventType.init -> void
+Frontier.Platform.Audit.WorkflowEvent.NodeId.get -> string?
+Frontier.Platform.Audit.WorkflowEvent.NodeId.init -> void
+Frontier.Platform.Audit.WorkflowEvent.OccurredAtUtc.get -> System.DateTime
+Frontier.Platform.Audit.WorkflowEvent.OccurredAtUtc.init -> void
+Frontier.Platform.Audit.WorkflowEvent.WorkflowEvent() -> void
+Frontier.Platform.Audit.WorkflowEventType
+override Frontier.Platform.Audit.AgentInvocation.Equals(object? obj) -> bool
+override Frontier.Platform.Audit.AgentInvocation.GetHashCode() -> int
+override Frontier.Platform.Audit.AgentInvocation.ToString() -> string!
+override Frontier.Platform.Audit.AuditQuery.Equals(object? obj) -> bool
+override Frontier.Platform.Audit.AuditQuery.GetHashCode() -> int
+override Frontier.Platform.Audit.AuditQuery.ToString() -> string!
+override Frontier.Platform.Audit.AuditRecord.Equals(object? obj) -> bool
+override Frontier.Platform.Audit.AuditRecord.GetHashCode() -> int
+override Frontier.Platform.Audit.AuditRecord.ToString() -> string!
+override Frontier.Platform.Audit.AuditSummary.Equals(object? obj) -> bool
+override Frontier.Platform.Audit.AuditSummary.GetHashCode() -> int
+override Frontier.Platform.Audit.AuditSummary.ToString() -> string!
+override Frontier.Platform.Audit.AuditTelemetryRecord.Equals(object? obj) -> bool
+override Frontier.Platform.Audit.AuditTelemetryRecord.GetHashCode() -> int
+override Frontier.Platform.Audit.AuditTelemetryRecord.ToString() -> string!
+override Frontier.Platform.Audit.CacheMetrics.Equals(object? obj) -> bool
+override Frontier.Platform.Audit.CacheMetrics.GetHashCode() -> int
+override Frontier.Platform.Audit.CacheMetrics.ToString() -> string!
+override Frontier.Platform.Audit.CacheTierMetrics.Equals(object? obj) -> bool
+override Frontier.Platform.Audit.CacheTierMetrics.GetHashCode() -> int
+override Frontier.Platform.Audit.CacheTierMetrics.ToString() -> string!
+override Frontier.Platform.Audit.HumanDecisionRecord.Equals(object? obj) -> bool
+override Frontier.Platform.Audit.HumanDecisionRecord.GetHashCode() -> int
+override Frontier.Platform.Audit.HumanDecisionRecord.ToString() -> string!
+override Frontier.Platform.Audit.SignedAuditRecord.Equals(object? obj) -> bool
+override Frontier.Platform.Audit.SignedAuditRecord.GetHashCode() -> int
+override Frontier.Platform.Audit.SignedAuditRecord.ToString() -> string!
+override Frontier.Platform.Audit.SigningKey.Equals(object? obj) -> bool
+override Frontier.Platform.Audit.SigningKey.GetHashCode() -> int
+override Frontier.Platform.Audit.SigningKey.ToString() -> string!
+override Frontier.Platform.Audit.ToolCall.Equals(object? obj) -> bool
+override Frontier.Platform.Audit.ToolCall.GetHashCode() -> int
+override Frontier.Platform.Audit.ToolCall.ToString() -> string!
+override Frontier.Platform.Audit.ValidatorOutcome.Equals(object? obj) -> bool
+override Frontier.Platform.Audit.ValidatorOutcome.GetHashCode() -> int
+override Frontier.Platform.Audit.ValidatorOutcome.ToString() -> string!
+override Frontier.Platform.Audit.VerificationResult.Equals(object? obj) -> bool
+override Frontier.Platform.Audit.VerificationResult.GetHashCode() -> int
+override Frontier.Platform.Audit.VerificationResult.ToString() -> string!
+override Frontier.Platform.Audit.WorkflowEvent.Equals(object? obj) -> bool
+override Frontier.Platform.Audit.WorkflowEvent.GetHashCode() -> int
+override Frontier.Platform.Audit.WorkflowEvent.ToString() -> string!
+static Frontier.Platform.Audit.AgentInvocation.operator !=(Frontier.Platform.Audit.AgentInvocation? left, Frontier.Platform.Audit.AgentInvocation? right) -> bool
+static Frontier.Platform.Audit.AgentInvocation.operator ==(Frontier.Platform.Audit.AgentInvocation? left, Frontier.Platform.Audit.AgentInvocation? right) -> bool
+static Frontier.Platform.Audit.AuditQuery.operator !=(Frontier.Platform.Audit.AuditQuery? left, Frontier.Platform.Audit.AuditQuery? right) -> bool
+static Frontier.Platform.Audit.AuditQuery.operator ==(Frontier.Platform.Audit.AuditQuery? left, Frontier.Platform.Audit.AuditQuery? right) -> bool
+static Frontier.Platform.Audit.AuditRecord.operator !=(Frontier.Platform.Audit.AuditRecord? left, Frontier.Platform.Audit.AuditRecord? right) -> bool
+static Frontier.Platform.Audit.AuditRecord.operator ==(Frontier.Platform.Audit.AuditRecord? left, Frontier.Platform.Audit.AuditRecord? right) -> bool
+static Frontier.Platform.Audit.AuditServiceCollectionExtensions.AddFrontierAudit(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Microsoft.Extensions.Configuration.IConfiguration! configuration) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Frontier.Platform.Audit.AuditSummary.operator !=(Frontier.Platform.Audit.AuditSummary? left, Frontier.Platform.Audit.AuditSummary? right) -> bool
+static Frontier.Platform.Audit.AuditSummary.operator ==(Frontier.Platform.Audit.AuditSummary? left, Frontier.Platform.Audit.AuditSummary? right) -> bool
+static Frontier.Platform.Audit.AuditTelemetryRecord.operator !=(Frontier.Platform.Audit.AuditTelemetryRecord? left, Frontier.Platform.Audit.AuditTelemetryRecord? right) -> bool
+static Frontier.Platform.Audit.AuditTelemetryRecord.operator ==(Frontier.Platform.Audit.AuditTelemetryRecord? left, Frontier.Platform.Audit.AuditTelemetryRecord? right) -> bool
+static Frontier.Platform.Audit.CacheMetrics.operator !=(Frontier.Platform.Audit.CacheMetrics? left, Frontier.Platform.Audit.CacheMetrics? right) -> bool
+static Frontier.Platform.Audit.CacheMetrics.operator ==(Frontier.Platform.Audit.CacheMetrics? left, Frontier.Platform.Audit.CacheMetrics? right) -> bool
+static Frontier.Platform.Audit.CacheTierMetrics.operator !=(Frontier.Platform.Audit.CacheTierMetrics? left, Frontier.Platform.Audit.CacheTierMetrics? right) -> bool
+static Frontier.Platform.Audit.CacheTierMetrics.operator ==(Frontier.Platform.Audit.CacheTierMetrics? left, Frontier.Platform.Audit.CacheTierMetrics? right) -> bool
+static Frontier.Platform.Audit.HumanDecisionRecord.operator !=(Frontier.Platform.Audit.HumanDecisionRecord? left, Frontier.Platform.Audit.HumanDecisionRecord? right) -> bool
+static Frontier.Platform.Audit.HumanDecisionRecord.operator ==(Frontier.Platform.Audit.HumanDecisionRecord? left, Frontier.Platform.Audit.HumanDecisionRecord? right) -> bool
+static Frontier.Platform.Audit.SignedAuditRecord.operator !=(Frontier.Platform.Audit.SignedAuditRecord? left, Frontier.Platform.Audit.SignedAuditRecord? right) -> bool
+static Frontier.Platform.Audit.SignedAuditRecord.operator ==(Frontier.Platform.Audit.SignedAuditRecord? left, Frontier.Platform.Audit.SignedAuditRecord? right) -> bool
+static Frontier.Platform.Audit.SigningKey.operator !=(Frontier.Platform.Audit.SigningKey? left, Frontier.Platform.Audit.SigningKey? right) -> bool
+static Frontier.Platform.Audit.SigningKey.operator ==(Frontier.Platform.Audit.SigningKey? left, Frontier.Platform.Audit.SigningKey? right) -> bool
+static Frontier.Platform.Audit.ToolCall.operator !=(Frontier.Platform.Audit.ToolCall? left, Frontier.Platform.Audit.ToolCall? right) -> bool
+static Frontier.Platform.Audit.ToolCall.operator ==(Frontier.Platform.Audit.ToolCall? left, Frontier.Platform.Audit.ToolCall? right) -> bool
+static Frontier.Platform.Audit.ValidatorOutcome.operator !=(Frontier.Platform.Audit.ValidatorOutcome? left, Frontier.Platform.Audit.ValidatorOutcome? right) -> bool
+static Frontier.Platform.Audit.ValidatorOutcome.operator ==(Frontier.Platform.Audit.ValidatorOutcome? left, Frontier.Platform.Audit.ValidatorOutcome? right) -> bool
+static Frontier.Platform.Audit.VerificationResult.operator !=(Frontier.Platform.Audit.VerificationResult? left, Frontier.Platform.Audit.VerificationResult? right) -> bool
+static Frontier.Platform.Audit.VerificationResult.operator ==(Frontier.Platform.Audit.VerificationResult? left, Frontier.Platform.Audit.VerificationResult? right) -> bool
+static Frontier.Platform.Audit.WorkflowEvent.operator !=(Frontier.Platform.Audit.WorkflowEvent? left, Frontier.Platform.Audit.WorkflowEvent? right) -> bool
+static Frontier.Platform.Audit.WorkflowEvent.operator ==(Frontier.Platform.Audit.WorkflowEvent? left, Frontier.Platform.Audit.WorkflowEvent? right) -> bool
+static readonly Frontier.Platform.Audit.ValidatorStatus.Fail -> Frontier.Platform.Audit.ValidatorStatus!
+static readonly Frontier.Platform.Audit.ValidatorStatus.Pass -> Frontier.Platform.Audit.ValidatorStatus!
+static readonly Frontier.Platform.Audit.ValidatorStatus.Warn -> Frontier.Platform.Audit.ValidatorStatus!
+static readonly Frontier.Platform.Audit.WorkflowEventType.ExecutionCompleted -> Frontier.Platform.Audit.WorkflowEventType!
+static readonly Frontier.Platform.Audit.WorkflowEventType.ExecutionStarted -> Frontier.Platform.Audit.WorkflowEventType!
+static readonly Frontier.Platform.Audit.WorkflowEventType.ExternalEventRaised -> Frontier.Platform.Audit.WorkflowEventType!
+static readonly Frontier.Platform.Audit.WorkflowEventType.SubOrchestrationCompleted -> Frontier.Platform.Audit.WorkflowEventType!
+static readonly Frontier.Platform.Audit.WorkflowEventType.SubOrchestrationScheduled -> Frontier.Platform.Audit.WorkflowEventType!
+static readonly Frontier.Platform.Audit.WorkflowEventType.TaskCompleted -> Frontier.Platform.Audit.WorkflowEventType!
+static readonly Frontier.Platform.Audit.WorkflowEventType.TaskFailed -> Frontier.Platform.Audit.WorkflowEventType!
+static readonly Frontier.Platform.Audit.WorkflowEventType.TaskRetried -> Frontier.Platform.Audit.WorkflowEventType!
+static readonly Frontier.Platform.Audit.WorkflowEventType.TaskScheduled -> Frontier.Platform.Audit.WorkflowEventType!
+static readonly Frontier.Platform.Audit.WorkflowEventType.TimerFired -> Frontier.Platform.Audit.WorkflowEventType!

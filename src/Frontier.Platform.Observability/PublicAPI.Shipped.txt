@@ -1,0 +1,400 @@
+#nullable enable
+Frontier.Platform.Observability.ContextTierMetrics
+Frontier.Platform.Observability.ContextTierMetrics.<Clone>$() -> Frontier.Platform.Observability.ContextTierMetrics!
+Frontier.Platform.Observability.ContextTierMetrics.BytesSent.get -> int
+Frontier.Platform.Observability.ContextTierMetrics.BytesSent.init -> void
+Frontier.Platform.Observability.ContextTierMetrics.CacheBytesHit.get -> int
+Frontier.Platform.Observability.ContextTierMetrics.CacheBytesHit.init -> void
+Frontier.Platform.Observability.ContextTierMetrics.CacheHit.get -> bool
+Frontier.Platform.Observability.ContextTierMetrics.CacheHit.init -> void
+Frontier.Platform.Observability.ContextTierMetrics.CacheTokensHit.get -> int
+Frontier.Platform.Observability.ContextTierMetrics.CacheTokensHit.init -> void
+Frontier.Platform.Observability.ContextTierMetrics.ContextTierMetrics(string! Tier, int BytesSent, int EstimatedTokensSent, bool CacheHit, int CacheBytesHit, int CacheTokensHit, decimal CostDeltaTokens) -> void
+Frontier.Platform.Observability.ContextTierMetrics.CostDeltaTokens.get -> decimal
+Frontier.Platform.Observability.ContextTierMetrics.CostDeltaTokens.init -> void
+Frontier.Platform.Observability.ContextTierMetrics.Deconstruct(out string! Tier, out int BytesSent, out int EstimatedTokensSent, out bool CacheHit, out int CacheBytesHit, out int CacheTokensHit, out decimal CostDeltaTokens) -> void
+Frontier.Platform.Observability.ContextTierMetrics.Equals(Frontier.Platform.Observability.ContextTierMetrics? other) -> bool
+Frontier.Platform.Observability.ContextTierMetrics.EstimatedTokensSent.get -> int
+Frontier.Platform.Observability.ContextTierMetrics.EstimatedTokensSent.init -> void
+Frontier.Platform.Observability.ContextTierMetrics.HitRatePercent.get -> decimal
+Frontier.Platform.Observability.ContextTierMetrics.Tier.get -> string!
+Frontier.Platform.Observability.ContextTierMetrics.Tier.init -> void
+Frontier.Platform.Observability.ContextTierMetrics.TokenSavings.get -> int
+Frontier.Platform.Observability.DateRange
+Frontier.Platform.Observability.DateRange.<Clone>$() -> Frontier.Platform.Observability.DateRange!
+Frontier.Platform.Observability.DateRange.DateRange(System.DateTimeOffset From, System.DateTimeOffset To) -> void
+Frontier.Platform.Observability.DateRange.Deconstruct(out System.DateTimeOffset From, out System.DateTimeOffset To) -> void
+Frontier.Platform.Observability.DateRange.Equals(Frontier.Platform.Observability.DateRange? other) -> bool
+Frontier.Platform.Observability.DateRange.From.get -> System.DateTimeOffset
+Frontier.Platform.Observability.DateRange.From.init -> void
+Frontier.Platform.Observability.DateRange.To.get -> System.DateTimeOffset
+Frontier.Platform.Observability.DateRange.To.init -> void
+Frontier.Platform.Observability.EmpiricalScope
+Frontier.Platform.Observability.EmpiricalScope.<Clone>$() -> Frontier.Platform.Observability.EmpiricalScope!
+Frontier.Platform.Observability.EmpiricalScope.AgentRole.get -> string?
+Frontier.Platform.Observability.EmpiricalScope.AgentRole.init -> void
+Frontier.Platform.Observability.EmpiricalScope.DateRange.get -> Frontier.Platform.Observability.DateRange?
+Frontier.Platform.Observability.EmpiricalScope.DateRange.init -> void
+Frontier.Platform.Observability.EmpiricalScope.Deconstruct(out string? EngagementType, out string? WorkflowId, out int? DefinitionVersion, out string? AgentRole, out Frontier.Platform.Observability.DateRange? DateRange) -> void
+Frontier.Platform.Observability.EmpiricalScope.DefinitionVersion.get -> int?
+Frontier.Platform.Observability.EmpiricalScope.DefinitionVersion.init -> void
+Frontier.Platform.Observability.EmpiricalScope.EmpiricalScope(string? EngagementType = null, string? WorkflowId = null, int? DefinitionVersion = null, string? AgentRole = null, Frontier.Platform.Observability.DateRange? DateRange = null) -> void
+Frontier.Platform.Observability.EmpiricalScope.EngagementType.get -> string?
+Frontier.Platform.Observability.EmpiricalScope.EngagementType.init -> void
+Frontier.Platform.Observability.EmpiricalScope.Equals(Frontier.Platform.Observability.EmpiricalScope? other) -> bool
+Frontier.Platform.Observability.EmpiricalScope.WorkflowId.get -> string?
+Frontier.Platform.Observability.EmpiricalScope.WorkflowId.init -> void
+Frontier.Platform.Observability.EngagementMetricsSnapshot
+Frontier.Platform.Observability.EngagementMetricsSnapshot.<Clone>$() -> Frontier.Platform.Observability.EngagementMetricsSnapshot!
+Frontier.Platform.Observability.EngagementMetricsSnapshot.CacheHitRatePercent.get -> decimal
+Frontier.Platform.Observability.EngagementMetricsSnapshot.CacheHitRatePercent.init -> void
+Frontier.Platform.Observability.EngagementMetricsSnapshot.CachedTokensPercent.get -> decimal
+Frontier.Platform.Observability.EngagementMetricsSnapshot.CachedTokensTotal.get -> long
+Frontier.Platform.Observability.EngagementMetricsSnapshot.CachedTokensTotal.init -> void
+Frontier.Platform.Observability.EngagementMetricsSnapshot.Deconstruct(out string! EngagementId, out int InvocationCount, out long TotalTokensSent, out long CachedTokensTotal, out decimal CacheHitRatePercent, out decimal EstimatedCostSaved, out System.DateTime SnapshotAtUtc) -> void
+Frontier.Platform.Observability.EngagementMetricsSnapshot.EffectiveCacheHitRate.get -> decimal
+Frontier.Platform.Observability.EngagementMetricsSnapshot.EngagementId.get -> string!
+Frontier.Platform.Observability.EngagementMetricsSnapshot.EngagementId.init -> void
+Frontier.Platform.Observability.EngagementMetricsSnapshot.EngagementMetricsSnapshot(string! EngagementId, int InvocationCount, long TotalTokensSent, long CachedTokensTotal, decimal CacheHitRatePercent, decimal EstimatedCostSaved, System.DateTime SnapshotAtUtc) -> void
+Frontier.Platform.Observability.EngagementMetricsSnapshot.Equals(Frontier.Platform.Observability.EngagementMetricsSnapshot? other) -> bool
+Frontier.Platform.Observability.EngagementMetricsSnapshot.EstimatedCostSaved.get -> decimal
+Frontier.Platform.Observability.EngagementMetricsSnapshot.EstimatedCostSaved.init -> void
+Frontier.Platform.Observability.EngagementMetricsSnapshot.InvocationCount.get -> int
+Frontier.Platform.Observability.EngagementMetricsSnapshot.InvocationCount.init -> void
+Frontier.Platform.Observability.EngagementMetricsSnapshot.SnapshotAtUtc.get -> System.DateTime
+Frontier.Platform.Observability.EngagementMetricsSnapshot.SnapshotAtUtc.init -> void
+Frontier.Platform.Observability.EngagementMetricsSnapshot.TotalTokensSent.get -> long
+Frontier.Platform.Observability.EngagementMetricsSnapshot.TotalTokensSent.init -> void
+Frontier.Platform.Observability.ExecutionMetricEvent
+Frontier.Platform.Observability.ExecutionMetricEvent.<Clone>$() -> Frontier.Platform.Observability.ExecutionMetricEvent!
+Frontier.Platform.Observability.ExecutionMetricEvent.CacheHit.get -> bool?
+Frontier.Platform.Observability.ExecutionMetricEvent.CacheHit.init -> void
+Frontier.Platform.Observability.ExecutionMetricEvent.Deconstruct(out string! NodeId, out Frontier.Platform.Observability.ExecutionMetricEventKind Kind, out System.DateTimeOffset TimestampUtc, out long? DurationMs, out int? TokensConsumed, out bool? CacheHit) -> void
+Frontier.Platform.Observability.ExecutionMetricEvent.DurationMs.get -> long?
+Frontier.Platform.Observability.ExecutionMetricEvent.DurationMs.init -> void
+Frontier.Platform.Observability.ExecutionMetricEvent.Equals(Frontier.Platform.Observability.ExecutionMetricEvent? other) -> bool
+Frontier.Platform.Observability.ExecutionMetricEvent.ExecutionMetricEvent(string! NodeId, Frontier.Platform.Observability.ExecutionMetricEventKind Kind, System.DateTimeOffset TimestampUtc, long? DurationMs, int? TokensConsumed, bool? CacheHit) -> void
+Frontier.Platform.Observability.ExecutionMetricEvent.Kind.get -> Frontier.Platform.Observability.ExecutionMetricEventKind
+Frontier.Platform.Observability.ExecutionMetricEvent.Kind.init -> void
+Frontier.Platform.Observability.ExecutionMetricEvent.NodeId.get -> string!
+Frontier.Platform.Observability.ExecutionMetricEvent.NodeId.init -> void
+Frontier.Platform.Observability.ExecutionMetricEvent.TimestampUtc.get -> System.DateTimeOffset
+Frontier.Platform.Observability.ExecutionMetricEvent.TimestampUtc.init -> void
+Frontier.Platform.Observability.ExecutionMetricEvent.TokensConsumed.get -> int?
+Frontier.Platform.Observability.ExecutionMetricEvent.TokensConsumed.init -> void
+Frontier.Platform.Observability.ExecutionMetricEventKind
+Frontier.Platform.Observability.ExecutionMetricEventKind.GateOpened = 4 -> Frontier.Platform.Observability.ExecutionMetricEventKind
+Frontier.Platform.Observability.ExecutionMetricEventKind.NodeCompleted = 1 -> Frontier.Platform.Observability.ExecutionMetricEventKind
+Frontier.Platform.Observability.ExecutionMetricEventKind.NodeStarted = 0 -> Frontier.Platform.Observability.ExecutionMetricEventKind
+Frontier.Platform.Observability.ExecutionMetricEventKind.RetryIssued = 3 -> Frontier.Platform.Observability.ExecutionMetricEventKind
+Frontier.Platform.Observability.ExecutionMetricEventKind.TokensConsumed = 2 -> Frontier.Platform.Observability.ExecutionMetricEventKind
+Frontier.Platform.Observability.HitlDecisionRow
+Frontier.Platform.Observability.HitlDecisionRow.<Clone>$() -> Frontier.Platform.Observability.HitlDecisionRow!
+Frontier.Platform.Observability.HitlDecisionRow.Count.get -> int
+Frontier.Platform.Observability.HitlDecisionRow.Count.init -> void
+Frontier.Platform.Observability.HitlDecisionRow.Decision.get -> string!
+Frontier.Platform.Observability.HitlDecisionRow.Decision.init -> void
+Frontier.Platform.Observability.HitlDecisionRow.Deconstruct(out string! GateKind, out string! Decision, out int Count, out decimal RatePercent) -> void
+Frontier.Platform.Observability.HitlDecisionRow.Equals(Frontier.Platform.Observability.HitlDecisionRow? other) -> bool
+Frontier.Platform.Observability.HitlDecisionRow.GateKind.get -> string!
+Frontier.Platform.Observability.HitlDecisionRow.GateKind.init -> void
+Frontier.Platform.Observability.HitlDecisionRow.HitlDecisionRow(string! GateKind, string! Decision, int Count, decimal RatePercent) -> void
+Frontier.Platform.Observability.HitlDecisionRow.RatePercent.get -> decimal
+Frontier.Platform.Observability.HitlDecisionRow.RatePercent.init -> void
+Frontier.Platform.Observability.HitlEvidence
+Frontier.Platform.Observability.HitlEvidence.<Clone>$() -> Frontier.Platform.Observability.HitlEvidence!
+Frontier.Platform.Observability.HitlEvidence.Deconstruct(out System.Collections.Generic.IReadOnlyList<Frontier.Platform.Observability.HitlDecisionRow!>! Rows, out decimal MeanTimeToDecisionMs) -> void
+Frontier.Platform.Observability.HitlEvidence.Equals(Frontier.Platform.Observability.HitlEvidence? other) -> bool
+Frontier.Platform.Observability.HitlEvidence.HitlEvidence(System.Collections.Generic.IReadOnlyList<Frontier.Platform.Observability.HitlDecisionRow!>! Rows, decimal MeanTimeToDecisionMs) -> void
+Frontier.Platform.Observability.HitlEvidence.MeanTimeToDecisionMs.get -> decimal
+Frontier.Platform.Observability.HitlEvidence.MeanTimeToDecisionMs.init -> void
+Frontier.Platform.Observability.HitlEvidence.Rows.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Observability.HitlDecisionRow!>!
+Frontier.Platform.Observability.HitlEvidence.Rows.init -> void
+Frontier.Platform.Observability.IContextMetricsEmitter
+Frontier.Platform.Observability.IContextMetricsEmitter.EmitTierMetricsAsync(string! executionId, System.Collections.Generic.IReadOnlyList<Frontier.Platform.Observability.ContextTierMetrics!>! metrics, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Frontier.Platform.Observability.IContextMetricsEmitter.GetEngagementMetricsAsync(string! engagementId, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Frontier.Platform.Observability.EngagementMetricsSnapshot?>!
+Frontier.Platform.Observability.IEmpiricalQueryService
+Frontier.Platform.Observability.IEmpiricalQueryService.GetCacheEconomicsAsync(Frontier.Platform.Observability.EmpiricalScope! scope, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Observability.TierEconomics!>!
+Frontier.Platform.Observability.IEmpiricalQueryService.GetCanvasOverlayAsync(string! workflowId, int definitionVersion, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Observability.NodeMetricsOverlay!>!
+Frontier.Platform.Observability.IEmpiricalQueryService.GetGateEvidenceAsync(Frontier.Platform.Observability.EmpiricalScope! scope, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Observability.HitlEvidence!>!
+Frontier.Platform.Observability.IEmpiricalQueryService.GetRetryDistributionAsync(Frontier.Platform.Observability.EmpiricalScope! scope, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Observability.RetryDistribution!>!
+Frontier.Platform.Observability.IEmpiricalQueryService.GetValidatorOutcomesAsync(Frontier.Platform.Observability.EmpiricalScope! scope, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Observability.ValidatorDistribution!>!
+Frontier.Platform.Observability.IExecutionMonitorFeed
+Frontier.Platform.Observability.IExecutionMonitorFeed.SubscribeAsync(string! executionId, System.Threading.CancellationToken ct) -> System.Collections.Generic.IAsyncEnumerable<Frontier.Platform.Observability.ExecutionMetricEvent!>!
+Frontier.Platform.Observability.IMaturityTracker
+Frontier.Platform.Observability.IMaturityTracker.GetAllAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Frontier.Platform.Observability.MaturityAssessment!>!>!
+Frontier.Platform.Observability.IMaturityTracker.GetAsync(string! agentRole, string! engagementType, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Observability.MaturityAssessment?>!
+Frontier.Platform.Observability.IMetricCatalogue
+Frontier.Platform.Observability.IMetricCatalogue.All.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Observability.MetricDefinition!>!
+Frontier.Platform.Observability.IMetricCatalogue.PlatformMeter.get -> System.Diagnostics.Metrics.Meter!
+Frontier.Platform.Observability.IRecoveryFindingsRecorder
+Frontier.Platform.Observability.IRecoveryFindingsRecorder.RecordFinding(Frontier.Platform.Observability.RecoveryFindingType findingType) -> void
+Frontier.Platform.Observability.MaturityAssessment
+Frontier.Platform.Observability.MaturityAssessment.<Clone>$() -> Frontier.Platform.Observability.MaturityAssessment!
+Frontier.Platform.Observability.MaturityAssessment.AgentRole.get -> string!
+Frontier.Platform.Observability.MaturityAssessment.AgentRole.init -> void
+Frontier.Platform.Observability.MaturityAssessment.Band.get -> Frontier.Platform.Observability.MaturityBand?
+Frontier.Platform.Observability.MaturityAssessment.Band.init -> void
+Frontier.Platform.Observability.MaturityAssessment.Deconstruct(out string! AgentRole, out string! EngagementType, out Frontier.Platform.Observability.MaturityBand? Band, out int SampleSize, out Frontier.Platform.Observability.DateRange! Window, out decimal ValidatorPassRate, out decimal HitlRejectionRate, out decimal OverrideRate, out Frontier.Platform.Observability.MaturityBand? PendingTransition, out string! EvidenceQueryRef) -> void
+Frontier.Platform.Observability.MaturityAssessment.EngagementType.get -> string!
+Frontier.Platform.Observability.MaturityAssessment.EngagementType.init -> void
+Frontier.Platform.Observability.MaturityAssessment.Equals(Frontier.Platform.Observability.MaturityAssessment? other) -> bool
+Frontier.Platform.Observability.MaturityAssessment.EvidenceQueryRef.get -> string!
+Frontier.Platform.Observability.MaturityAssessment.EvidenceQueryRef.init -> void
+Frontier.Platform.Observability.MaturityAssessment.HitlRejectionRate.get -> decimal
+Frontier.Platform.Observability.MaturityAssessment.HitlRejectionRate.init -> void
+Frontier.Platform.Observability.MaturityAssessment.MaturityAssessment(string! AgentRole, string! EngagementType, Frontier.Platform.Observability.MaturityBand? Band, int SampleSize, Frontier.Platform.Observability.DateRange! Window, decimal ValidatorPassRate, decimal HitlRejectionRate, decimal OverrideRate, Frontier.Platform.Observability.MaturityBand? PendingTransition, string! EvidenceQueryRef) -> void
+Frontier.Platform.Observability.MaturityAssessment.OverrideRate.get -> decimal
+Frontier.Platform.Observability.MaturityAssessment.OverrideRate.init -> void
+Frontier.Platform.Observability.MaturityAssessment.PendingTransition.get -> Frontier.Platform.Observability.MaturityBand?
+Frontier.Platform.Observability.MaturityAssessment.PendingTransition.init -> void
+Frontier.Platform.Observability.MaturityAssessment.SampleSize.get -> int
+Frontier.Platform.Observability.MaturityAssessment.SampleSize.init -> void
+Frontier.Platform.Observability.MaturityAssessment.ValidatorPassRate.get -> decimal
+Frontier.Platform.Observability.MaturityAssessment.ValidatorPassRate.init -> void
+Frontier.Platform.Observability.MaturityAssessment.Window.get -> Frontier.Platform.Observability.DateRange!
+Frontier.Platform.Observability.MaturityAssessment.Window.init -> void
+Frontier.Platform.Observability.MaturityBand
+Frontier.Platform.Observability.MaturityBand.Calibrated = 1 -> Frontier.Platform.Observability.MaturityBand
+Frontier.Platform.Observability.MaturityBand.Provisional = 0 -> Frontier.Platform.Observability.MaturityBand
+Frontier.Platform.Observability.MaturityBand.Trusted = 2 -> Frontier.Platform.Observability.MaturityBand
+Frontier.Platform.Observability.MaturityThresholds
+Frontier.Platform.Observability.MaturityThresholds.<Clone>$() -> Frontier.Platform.Observability.MaturityThresholds!
+Frontier.Platform.Observability.MaturityThresholds.CalibratedPassRate.get -> decimal
+Frontier.Platform.Observability.MaturityThresholds.CalibratedPassRate.init -> void
+Frontier.Platform.Observability.MaturityThresholds.CalibratedRejectionRate.get -> decimal
+Frontier.Platform.Observability.MaturityThresholds.CalibratedRejectionRate.init -> void
+Frontier.Platform.Observability.MaturityThresholds.Deconstruct(out decimal TrustedPassRate, out decimal TrustedRejectionRate, out decimal CalibratedPassRate, out decimal CalibratedRejectionRate, out int MinimumSample, out int EvaluationWindowDays) -> void
+Frontier.Platform.Observability.MaturityThresholds.Equals(Frontier.Platform.Observability.MaturityThresholds? other) -> bool
+Frontier.Platform.Observability.MaturityThresholds.EvaluationWindowDays.get -> int
+Frontier.Platform.Observability.MaturityThresholds.EvaluationWindowDays.init -> void
+Frontier.Platform.Observability.MaturityThresholds.MaturityThresholds(decimal TrustedPassRate, decimal TrustedRejectionRate, decimal CalibratedPassRate, decimal CalibratedRejectionRate, int MinimumSample, int EvaluationWindowDays) -> void
+Frontier.Platform.Observability.MaturityThresholds.MinimumSample.get -> int
+Frontier.Platform.Observability.MaturityThresholds.MinimumSample.init -> void
+Frontier.Platform.Observability.MaturityThresholds.TrustedPassRate.get -> decimal
+Frontier.Platform.Observability.MaturityThresholds.TrustedPassRate.init -> void
+Frontier.Platform.Observability.MaturityThresholds.TrustedRejectionRate.get -> decimal
+Frontier.Platform.Observability.MaturityThresholds.TrustedRejectionRate.init -> void
+Frontier.Platform.Observability.MetricDefinition
+Frontier.Platform.Observability.MetricDefinition.<Clone>$() -> Frontier.Platform.Observability.MetricDefinition!
+Frontier.Platform.Observability.MetricDefinition.Deconstruct(out string! Name, out Frontier.Platform.Observability.MetricInstrumentType InstrumentType, out string! Unit, out System.Collections.Generic.IReadOnlyList<string!>! Dimensions, out string! Description) -> void
+Frontier.Platform.Observability.MetricDefinition.Description.get -> string!
+Frontier.Platform.Observability.MetricDefinition.Description.init -> void
+Frontier.Platform.Observability.MetricDefinition.Dimensions.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Frontier.Platform.Observability.MetricDefinition.Dimensions.init -> void
+Frontier.Platform.Observability.MetricDefinition.Equals(Frontier.Platform.Observability.MetricDefinition? other) -> bool
+Frontier.Platform.Observability.MetricDefinition.InstrumentType.get -> Frontier.Platform.Observability.MetricInstrumentType
+Frontier.Platform.Observability.MetricDefinition.InstrumentType.init -> void
+Frontier.Platform.Observability.MetricDefinition.MetricDefinition(string! Name, Frontier.Platform.Observability.MetricInstrumentType InstrumentType, string! Unit, System.Collections.Generic.IReadOnlyList<string!>! Dimensions, string! Description) -> void
+Frontier.Platform.Observability.MetricDefinition.Name.get -> string!
+Frontier.Platform.Observability.MetricDefinition.Name.init -> void
+Frontier.Platform.Observability.MetricDefinition.Unit.get -> string!
+Frontier.Platform.Observability.MetricDefinition.Unit.init -> void
+Frontier.Platform.Observability.MetricInstrumentType
+Frontier.Platform.Observability.MetricInstrumentType.Counter = 0 -> Frontier.Platform.Observability.MetricInstrumentType
+Frontier.Platform.Observability.MetricInstrumentType.Histogram = 2 -> Frontier.Platform.Observability.MetricInstrumentType
+Frontier.Platform.Observability.MetricInstrumentType.ObservableGauge = 1 -> Frontier.Platform.Observability.MetricInstrumentType
+Frontier.Platform.Observability.NodeMetrics
+Frontier.Platform.Observability.NodeMetrics.<Clone>$() -> Frontier.Platform.Observability.NodeMetrics!
+Frontier.Platform.Observability.NodeMetrics.AgentMaturity.get -> Frontier.Platform.Observability.MaturityBand?
+Frontier.Platform.Observability.NodeMetrics.AgentMaturity.init -> void
+Frontier.Platform.Observability.NodeMetrics.BaselineHitRate.get -> decimal?
+Frontier.Platform.Observability.NodeMetrics.BaselineHitRate.init -> void
+Frontier.Platform.Observability.NodeMetrics.Deconstruct(out decimal MeanCostGbp, out long P50LatencyMs, out long P95LatencyMs, out decimal ValidatorPassRate, out decimal MeanRetries, out decimal? BaselineHitRate, out decimal? DynamicHitRate, out decimal? HitlRejectRate, out Frontier.Platform.Observability.MaturityBand? AgentMaturity) -> void
+Frontier.Platform.Observability.NodeMetrics.DynamicHitRate.get -> decimal?
+Frontier.Platform.Observability.NodeMetrics.DynamicHitRate.init -> void
+Frontier.Platform.Observability.NodeMetrics.Equals(Frontier.Platform.Observability.NodeMetrics? other) -> bool
+Frontier.Platform.Observability.NodeMetrics.HitlRejectRate.get -> decimal?
+Frontier.Platform.Observability.NodeMetrics.HitlRejectRate.init -> void
+Frontier.Platform.Observability.NodeMetrics.MeanCostGbp.get -> decimal
+Frontier.Platform.Observability.NodeMetrics.MeanCostGbp.init -> void
+Frontier.Platform.Observability.NodeMetrics.MeanRetries.get -> decimal
+Frontier.Platform.Observability.NodeMetrics.MeanRetries.init -> void
+Frontier.Platform.Observability.NodeMetrics.NodeMetrics(decimal MeanCostGbp, long P50LatencyMs, long P95LatencyMs, decimal ValidatorPassRate, decimal MeanRetries, decimal? BaselineHitRate, decimal? DynamicHitRate, decimal? HitlRejectRate, Frontier.Platform.Observability.MaturityBand? AgentMaturity) -> void
+Frontier.Platform.Observability.NodeMetrics.P50LatencyMs.get -> long
+Frontier.Platform.Observability.NodeMetrics.P50LatencyMs.init -> void
+Frontier.Platform.Observability.NodeMetrics.P95LatencyMs.get -> long
+Frontier.Platform.Observability.NodeMetrics.P95LatencyMs.init -> void
+Frontier.Platform.Observability.NodeMetrics.ValidatorPassRate.get -> decimal
+Frontier.Platform.Observability.NodeMetrics.ValidatorPassRate.init -> void
+Frontier.Platform.Observability.NodeMetricsOverlay
+Frontier.Platform.Observability.NodeMetricsOverlay.<Clone>$() -> Frontier.Platform.Observability.NodeMetricsOverlay!
+Frontier.Platform.Observability.NodeMetricsOverlay.Deconstruct(out string! WorkflowId, out int DefinitionVersion, out int ExecutionsInWindow, out System.Collections.Generic.IReadOnlyDictionary<string!, Frontier.Platform.Observability.NodeMetrics!>! Nodes) -> void
+Frontier.Platform.Observability.NodeMetricsOverlay.DefinitionVersion.get -> int
+Frontier.Platform.Observability.NodeMetricsOverlay.DefinitionVersion.init -> void
+Frontier.Platform.Observability.NodeMetricsOverlay.Equals(Frontier.Platform.Observability.NodeMetricsOverlay? other) -> bool
+Frontier.Platform.Observability.NodeMetricsOverlay.ExecutionsInWindow.get -> int
+Frontier.Platform.Observability.NodeMetricsOverlay.ExecutionsInWindow.init -> void
+Frontier.Platform.Observability.NodeMetricsOverlay.NodeMetricsOverlay(string! WorkflowId, int DefinitionVersion, int ExecutionsInWindow, System.Collections.Generic.IReadOnlyDictionary<string!, Frontier.Platform.Observability.NodeMetrics!>! Nodes) -> void
+Frontier.Platform.Observability.NodeMetricsOverlay.Nodes.get -> System.Collections.Generic.IReadOnlyDictionary<string!, Frontier.Platform.Observability.NodeMetrics!>!
+Frontier.Platform.Observability.NodeMetricsOverlay.Nodes.init -> void
+Frontier.Platform.Observability.NodeMetricsOverlay.WorkflowId.get -> string!
+Frontier.Platform.Observability.NodeMetricsOverlay.WorkflowId.init -> void
+Frontier.Platform.Observability.ObservabilityServiceCollectionExtensions
+Frontier.Platform.Observability.RecoveryFindingType
+Frontier.Platform.Observability.RecoveryFindingType.AuditMissing = 2 -> Frontier.Platform.Observability.RecoveryFindingType
+Frontier.Platform.Observability.RecoveryFindingType.FailedExecutionHealed = 3 -> Frontier.Platform.Observability.RecoveryFindingType
+Frontier.Platform.Observability.RecoveryFindingType.GateReraised = 1 -> Frontier.Platform.Observability.RecoveryFindingType
+Frontier.Platform.Observability.RecoveryFindingType.IsLatestHealed = 0 -> Frontier.Platform.Observability.RecoveryFindingType
+Frontier.Platform.Observability.RetryDistribution
+Frontier.Platform.Observability.RetryDistribution.<Clone>$() -> Frontier.Platform.Observability.RetryDistribution!
+Frontier.Platform.Observability.RetryDistribution.Deconstruct(out System.Collections.Generic.IReadOnlyList<Frontier.Platform.Observability.RetryDistributionRow!>! Rows, out int TotalRetries, out int TotalInvocations) -> void
+Frontier.Platform.Observability.RetryDistribution.Equals(Frontier.Platform.Observability.RetryDistribution? other) -> bool
+Frontier.Platform.Observability.RetryDistribution.RetryDistribution(System.Collections.Generic.IReadOnlyList<Frontier.Platform.Observability.RetryDistributionRow!>! Rows, int TotalRetries, int TotalInvocations) -> void
+Frontier.Platform.Observability.RetryDistribution.Rows.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Observability.RetryDistributionRow!>!
+Frontier.Platform.Observability.RetryDistribution.Rows.init -> void
+Frontier.Platform.Observability.RetryDistribution.TotalInvocations.get -> int
+Frontier.Platform.Observability.RetryDistribution.TotalInvocations.init -> void
+Frontier.Platform.Observability.RetryDistribution.TotalRetries.get -> int
+Frontier.Platform.Observability.RetryDistribution.TotalRetries.init -> void
+Frontier.Platform.Observability.RetryDistributionRow
+Frontier.Platform.Observability.RetryDistributionRow.<Clone>$() -> Frontier.Platform.Observability.RetryDistributionRow!
+Frontier.Platform.Observability.RetryDistributionRow.Count.get -> int
+Frontier.Platform.Observability.RetryDistributionRow.Count.init -> void
+Frontier.Platform.Observability.RetryDistributionRow.Deconstruct(out string! ReasonCode, out string! Model, out int Count, out decimal RatePercent) -> void
+Frontier.Platform.Observability.RetryDistributionRow.Equals(Frontier.Platform.Observability.RetryDistributionRow? other) -> bool
+Frontier.Platform.Observability.RetryDistributionRow.Model.get -> string!
+Frontier.Platform.Observability.RetryDistributionRow.Model.init -> void
+Frontier.Platform.Observability.RetryDistributionRow.RatePercent.get -> decimal
+Frontier.Platform.Observability.RetryDistributionRow.RatePercent.init -> void
+Frontier.Platform.Observability.RetryDistributionRow.ReasonCode.get -> string!
+Frontier.Platform.Observability.RetryDistributionRow.ReasonCode.init -> void
+Frontier.Platform.Observability.RetryDistributionRow.RetryDistributionRow(string! ReasonCode, string! Model, int Count, decimal RatePercent) -> void
+Frontier.Platform.Observability.TierEconomics
+Frontier.Platform.Observability.TierEconomics.<Clone>$() -> Frontier.Platform.Observability.TierEconomics!
+Frontier.Platform.Observability.TierEconomics.Deconstruct(out System.Collections.Generic.IReadOnlyList<Frontier.Platform.Observability.TierEconomicsRow!>! Rows, out decimal TotalCostSavedGbp, out int TotalExecutions) -> void
+Frontier.Platform.Observability.TierEconomics.Equals(Frontier.Platform.Observability.TierEconomics? other) -> bool
+Frontier.Platform.Observability.TierEconomics.Rows.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Observability.TierEconomicsRow!>!
+Frontier.Platform.Observability.TierEconomics.Rows.init -> void
+Frontier.Platform.Observability.TierEconomics.TierEconomics(System.Collections.Generic.IReadOnlyList<Frontier.Platform.Observability.TierEconomicsRow!>! Rows, decimal TotalCostSavedGbp, int TotalExecutions) -> void
+Frontier.Platform.Observability.TierEconomics.TotalCostSavedGbp.get -> decimal
+Frontier.Platform.Observability.TierEconomics.TotalCostSavedGbp.init -> void
+Frontier.Platform.Observability.TierEconomics.TotalExecutions.get -> int
+Frontier.Platform.Observability.TierEconomics.TotalExecutions.init -> void
+Frontier.Platform.Observability.TierEconomicsRow
+Frontier.Platform.Observability.TierEconomicsRow.<Clone>$() -> Frontier.Platform.Observability.TierEconomicsRow!
+Frontier.Platform.Observability.TierEconomicsRow.CostSavedGbp.get -> decimal
+Frontier.Platform.Observability.TierEconomicsRow.CostSavedGbp.init -> void
+Frontier.Platform.Observability.TierEconomicsRow.Deconstruct(out string! Tier, out decimal HitRate, out long TokensTotal, out long TokensCached, out decimal CostSavedGbp) -> void
+Frontier.Platform.Observability.TierEconomicsRow.Equals(Frontier.Platform.Observability.TierEconomicsRow? other) -> bool
+Frontier.Platform.Observability.TierEconomicsRow.HitRate.get -> decimal
+Frontier.Platform.Observability.TierEconomicsRow.HitRate.init -> void
+Frontier.Platform.Observability.TierEconomicsRow.Tier.get -> string!
+Frontier.Platform.Observability.TierEconomicsRow.Tier.init -> void
+Frontier.Platform.Observability.TierEconomicsRow.TierEconomicsRow(string! Tier, decimal HitRate, long TokensTotal, long TokensCached, decimal CostSavedGbp) -> void
+Frontier.Platform.Observability.TierEconomicsRow.TokensCached.get -> long
+Frontier.Platform.Observability.TierEconomicsRow.TokensCached.init -> void
+Frontier.Platform.Observability.TierEconomicsRow.TokensTotal.get -> long
+Frontier.Platform.Observability.TierEconomicsRow.TokensTotal.init -> void
+Frontier.Platform.Observability.ValidatorDistribution
+Frontier.Platform.Observability.ValidatorDistribution.<Clone>$() -> Frontier.Platform.Observability.ValidatorDistribution!
+Frontier.Platform.Observability.ValidatorDistribution.Deconstruct(out System.Collections.Generic.IReadOnlyList<Frontier.Platform.Observability.ValidatorOutcomeRow!>! Rows) -> void
+Frontier.Platform.Observability.ValidatorDistribution.Equals(Frontier.Platform.Observability.ValidatorDistribution? other) -> bool
+Frontier.Platform.Observability.ValidatorDistribution.Rows.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Observability.ValidatorOutcomeRow!>!
+Frontier.Platform.Observability.ValidatorDistribution.Rows.init -> void
+Frontier.Platform.Observability.ValidatorDistribution.ValidatorDistribution(System.Collections.Generic.IReadOnlyList<Frontier.Platform.Observability.ValidatorOutcomeRow!>! Rows) -> void
+Frontier.Platform.Observability.ValidatorOutcomeRow
+Frontier.Platform.Observability.ValidatorOutcomeRow.<Clone>$() -> Frontier.Platform.Observability.ValidatorOutcomeRow!
+Frontier.Platform.Observability.ValidatorOutcomeRow.Count.get -> int
+Frontier.Platform.Observability.ValidatorOutcomeRow.Count.init -> void
+Frontier.Platform.Observability.ValidatorOutcomeRow.Deconstruct(out string! ValidatorId, out string! Status, out int Count, out decimal RatePercent) -> void
+Frontier.Platform.Observability.ValidatorOutcomeRow.Equals(Frontier.Platform.Observability.ValidatorOutcomeRow? other) -> bool
+Frontier.Platform.Observability.ValidatorOutcomeRow.RatePercent.get -> decimal
+Frontier.Platform.Observability.ValidatorOutcomeRow.RatePercent.init -> void
+Frontier.Platform.Observability.ValidatorOutcomeRow.Status.get -> string!
+Frontier.Platform.Observability.ValidatorOutcomeRow.Status.init -> void
+Frontier.Platform.Observability.ValidatorOutcomeRow.ValidatorId.get -> string!
+Frontier.Platform.Observability.ValidatorOutcomeRow.ValidatorId.init -> void
+Frontier.Platform.Observability.ValidatorOutcomeRow.ValidatorOutcomeRow(string! ValidatorId, string! Status, int Count, decimal RatePercent) -> void
+override Frontier.Platform.Observability.ContextTierMetrics.Equals(object? obj) -> bool
+override Frontier.Platform.Observability.ContextTierMetrics.GetHashCode() -> int
+override Frontier.Platform.Observability.ContextTierMetrics.ToString() -> string!
+override Frontier.Platform.Observability.DateRange.Equals(object? obj) -> bool
+override Frontier.Platform.Observability.DateRange.GetHashCode() -> int
+override Frontier.Platform.Observability.DateRange.ToString() -> string!
+override Frontier.Platform.Observability.EmpiricalScope.Equals(object? obj) -> bool
+override Frontier.Platform.Observability.EmpiricalScope.GetHashCode() -> int
+override Frontier.Platform.Observability.EmpiricalScope.ToString() -> string!
+override Frontier.Platform.Observability.EngagementMetricsSnapshot.Equals(object? obj) -> bool
+override Frontier.Platform.Observability.EngagementMetricsSnapshot.GetHashCode() -> int
+override Frontier.Platform.Observability.EngagementMetricsSnapshot.ToString() -> string!
+override Frontier.Platform.Observability.ExecutionMetricEvent.Equals(object? obj) -> bool
+override Frontier.Platform.Observability.ExecutionMetricEvent.GetHashCode() -> int
+override Frontier.Platform.Observability.ExecutionMetricEvent.ToString() -> string!
+override Frontier.Platform.Observability.HitlDecisionRow.Equals(object? obj) -> bool
+override Frontier.Platform.Observability.HitlDecisionRow.GetHashCode() -> int
+override Frontier.Platform.Observability.HitlDecisionRow.ToString() -> string!
+override Frontier.Platform.Observability.HitlEvidence.Equals(object? obj) -> bool
+override Frontier.Platform.Observability.HitlEvidence.GetHashCode() -> int
+override Frontier.Platform.Observability.HitlEvidence.ToString() -> string!
+override Frontier.Platform.Observability.MaturityAssessment.Equals(object? obj) -> bool
+override Frontier.Platform.Observability.MaturityAssessment.GetHashCode() -> int
+override Frontier.Platform.Observability.MaturityAssessment.ToString() -> string!
+override Frontier.Platform.Observability.MaturityThresholds.Equals(object? obj) -> bool
+override Frontier.Platform.Observability.MaturityThresholds.GetHashCode() -> int
+override Frontier.Platform.Observability.MaturityThresholds.ToString() -> string!
+override Frontier.Platform.Observability.MetricDefinition.Equals(object? obj) -> bool
+override Frontier.Platform.Observability.MetricDefinition.GetHashCode() -> int
+override Frontier.Platform.Observability.MetricDefinition.ToString() -> string!
+override Frontier.Platform.Observability.NodeMetrics.Equals(object? obj) -> bool
+override Frontier.Platform.Observability.NodeMetrics.GetHashCode() -> int
+override Frontier.Platform.Observability.NodeMetrics.ToString() -> string!
+override Frontier.Platform.Observability.NodeMetricsOverlay.Equals(object? obj) -> bool
+override Frontier.Platform.Observability.NodeMetricsOverlay.GetHashCode() -> int
+override Frontier.Platform.Observability.NodeMetricsOverlay.ToString() -> string!
+override Frontier.Platform.Observability.RetryDistribution.Equals(object? obj) -> bool
+override Frontier.Platform.Observability.RetryDistribution.GetHashCode() -> int
+override Frontier.Platform.Observability.RetryDistribution.ToString() -> string!
+override Frontier.Platform.Observability.RetryDistributionRow.Equals(object? obj) -> bool
+override Frontier.Platform.Observability.RetryDistributionRow.GetHashCode() -> int
+override Frontier.Platform.Observability.RetryDistributionRow.ToString() -> string!
+override Frontier.Platform.Observability.TierEconomics.Equals(object? obj) -> bool
+override Frontier.Platform.Observability.TierEconomics.GetHashCode() -> int
+override Frontier.Platform.Observability.TierEconomics.ToString() -> string!
+override Frontier.Platform.Observability.TierEconomicsRow.Equals(object? obj) -> bool
+override Frontier.Platform.Observability.TierEconomicsRow.GetHashCode() -> int
+override Frontier.Platform.Observability.TierEconomicsRow.ToString() -> string!
+override Frontier.Platform.Observability.ValidatorDistribution.Equals(object? obj) -> bool
+override Frontier.Platform.Observability.ValidatorDistribution.GetHashCode() -> int
+override Frontier.Platform.Observability.ValidatorDistribution.ToString() -> string!
+override Frontier.Platform.Observability.ValidatorOutcomeRow.Equals(object? obj) -> bool
+override Frontier.Platform.Observability.ValidatorOutcomeRow.GetHashCode() -> int
+override Frontier.Platform.Observability.ValidatorOutcomeRow.ToString() -> string!
+static Frontier.Platform.Observability.ContextTierMetrics.operator !=(Frontier.Platform.Observability.ContextTierMetrics? left, Frontier.Platform.Observability.ContextTierMetrics? right) -> bool
+static Frontier.Platform.Observability.ContextTierMetrics.operator ==(Frontier.Platform.Observability.ContextTierMetrics? left, Frontier.Platform.Observability.ContextTierMetrics? right) -> bool
+static Frontier.Platform.Observability.DateRange.operator !=(Frontier.Platform.Observability.DateRange? left, Frontier.Platform.Observability.DateRange? right) -> bool
+static Frontier.Platform.Observability.DateRange.operator ==(Frontier.Platform.Observability.DateRange? left, Frontier.Platform.Observability.DateRange? right) -> bool
+static Frontier.Platform.Observability.EmpiricalScope.operator !=(Frontier.Platform.Observability.EmpiricalScope? left, Frontier.Platform.Observability.EmpiricalScope? right) -> bool
+static Frontier.Platform.Observability.EmpiricalScope.operator ==(Frontier.Platform.Observability.EmpiricalScope? left, Frontier.Platform.Observability.EmpiricalScope? right) -> bool
+static Frontier.Platform.Observability.EngagementMetricsSnapshot.operator !=(Frontier.Platform.Observability.EngagementMetricsSnapshot? left, Frontier.Platform.Observability.EngagementMetricsSnapshot? right) -> bool
+static Frontier.Platform.Observability.EngagementMetricsSnapshot.operator ==(Frontier.Platform.Observability.EngagementMetricsSnapshot? left, Frontier.Platform.Observability.EngagementMetricsSnapshot? right) -> bool
+static Frontier.Platform.Observability.ExecutionMetricEvent.operator !=(Frontier.Platform.Observability.ExecutionMetricEvent? left, Frontier.Platform.Observability.ExecutionMetricEvent? right) -> bool
+static Frontier.Platform.Observability.ExecutionMetricEvent.operator ==(Frontier.Platform.Observability.ExecutionMetricEvent? left, Frontier.Platform.Observability.ExecutionMetricEvent? right) -> bool
+static Frontier.Platform.Observability.HitlDecisionRow.operator !=(Frontier.Platform.Observability.HitlDecisionRow? left, Frontier.Platform.Observability.HitlDecisionRow? right) -> bool
+static Frontier.Platform.Observability.HitlDecisionRow.operator ==(Frontier.Platform.Observability.HitlDecisionRow? left, Frontier.Platform.Observability.HitlDecisionRow? right) -> bool
+static Frontier.Platform.Observability.HitlEvidence.operator !=(Frontier.Platform.Observability.HitlEvidence? left, Frontier.Platform.Observability.HitlEvidence? right) -> bool
+static Frontier.Platform.Observability.HitlEvidence.operator ==(Frontier.Platform.Observability.HitlEvidence? left, Frontier.Platform.Observability.HitlEvidence? right) -> bool
+static Frontier.Platform.Observability.MaturityAssessment.operator !=(Frontier.Platform.Observability.MaturityAssessment? left, Frontier.Platform.Observability.MaturityAssessment? right) -> bool
+static Frontier.Platform.Observability.MaturityAssessment.operator ==(Frontier.Platform.Observability.MaturityAssessment? left, Frontier.Platform.Observability.MaturityAssessment? right) -> bool
+static Frontier.Platform.Observability.MaturityThresholds.operator !=(Frontier.Platform.Observability.MaturityThresholds? left, Frontier.Platform.Observability.MaturityThresholds? right) -> bool
+static Frontier.Platform.Observability.MaturityThresholds.operator ==(Frontier.Platform.Observability.MaturityThresholds? left, Frontier.Platform.Observability.MaturityThresholds? right) -> bool
+static Frontier.Platform.Observability.MetricDefinition.operator !=(Frontier.Platform.Observability.MetricDefinition? left, Frontier.Platform.Observability.MetricDefinition? right) -> bool
+static Frontier.Platform.Observability.MetricDefinition.operator ==(Frontier.Platform.Observability.MetricDefinition? left, Frontier.Platform.Observability.MetricDefinition? right) -> bool
+static Frontier.Platform.Observability.NodeMetrics.operator !=(Frontier.Platform.Observability.NodeMetrics? left, Frontier.Platform.Observability.NodeMetrics? right) -> bool
+static Frontier.Platform.Observability.NodeMetrics.operator ==(Frontier.Platform.Observability.NodeMetrics? left, Frontier.Platform.Observability.NodeMetrics? right) -> bool
+static Frontier.Platform.Observability.NodeMetricsOverlay.operator !=(Frontier.Platform.Observability.NodeMetricsOverlay? left, Frontier.Platform.Observability.NodeMetricsOverlay? right) -> bool
+static Frontier.Platform.Observability.NodeMetricsOverlay.operator ==(Frontier.Platform.Observability.NodeMetricsOverlay? left, Frontier.Platform.Observability.NodeMetricsOverlay? right) -> bool
+static Frontier.Platform.Observability.ObservabilityServiceCollectionExtensions.AddFrontierObservability(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Microsoft.Extensions.Configuration.IConfiguration! configuration) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Frontier.Platform.Observability.RetryDistribution.operator !=(Frontier.Platform.Observability.RetryDistribution? left, Frontier.Platform.Observability.RetryDistribution? right) -> bool
+static Frontier.Platform.Observability.RetryDistribution.operator ==(Frontier.Platform.Observability.RetryDistribution? left, Frontier.Platform.Observability.RetryDistribution? right) -> bool
+static Frontier.Platform.Observability.RetryDistributionRow.operator !=(Frontier.Platform.Observability.RetryDistributionRow? left, Frontier.Platform.Observability.RetryDistributionRow? right) -> bool
+static Frontier.Platform.Observability.RetryDistributionRow.operator ==(Frontier.Platform.Observability.RetryDistributionRow? left, Frontier.Platform.Observability.RetryDistributionRow? right) -> bool
+static Frontier.Platform.Observability.TierEconomics.operator !=(Frontier.Platform.Observability.TierEconomics? left, Frontier.Platform.Observability.TierEconomics? right) -> bool
+static Frontier.Platform.Observability.TierEconomics.operator ==(Frontier.Platform.Observability.TierEconomics? left, Frontier.Platform.Observability.TierEconomics? right) -> bool
+static Frontier.Platform.Observability.TierEconomicsRow.operator !=(Frontier.Platform.Observability.TierEconomicsRow? left, Frontier.Platform.Observability.TierEconomicsRow? right) -> bool
+static Frontier.Platform.Observability.TierEconomicsRow.operator ==(Frontier.Platform.Observability.TierEconomicsRow? left, Frontier.Platform.Observability.TierEconomicsRow? right) -> bool
+static Frontier.Platform.Observability.ValidatorDistribution.operator !=(Frontier.Platform.Observability.ValidatorDistribution? left, Frontier.Platform.Observability.ValidatorDistribution? right) -> bool
+static Frontier.Platform.Observability.ValidatorDistribution.operator ==(Frontier.Platform.Observability.ValidatorDistribution? left, Frontier.Platform.Observability.ValidatorDistribution? right) -> bool
+static Frontier.Platform.Observability.ValidatorOutcomeRow.operator !=(Frontier.Platform.Observability.ValidatorOutcomeRow? left, Frontier.Platform.Observability.ValidatorOutcomeRow? right) -> bool
+static Frontier.Platform.Observability.ValidatorOutcomeRow.operator ==(Frontier.Platform.Observability.ValidatorOutcomeRow? left, Frontier.Platform.Observability.ValidatorOutcomeRow? right) -> bool
+static readonly Frontier.Platform.Observability.MaturityThresholds.Default -> Frontier.Platform.Observability.MaturityThresholds!
