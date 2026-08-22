@@ -1,0 +1,1 @@
+{"schema_version":"1.0","schema_ref":"schemas/record-batch/1.0","payload_ref":{"schema_version":"1.0","storage_uri":"https://frontierstaging.blob.core.windows.net/staging/SUB-001/extract/rows.json","content_hash":"b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c","content_type":"application/json","size_bytes":7340032},"facts":{"row_count":4812,"sheet_count":3}}

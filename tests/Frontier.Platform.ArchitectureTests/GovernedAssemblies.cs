@@ -23,6 +23,7 @@ internal static class GovernedAssemblies
         "Frontier.Platform.Observability",
         "Frontier.Platform.Resilience",
         SerializationName,
+        "Frontier.Platform.Workflow.Model",
     ];
 
     public static AssemblyName[] ReferencedAssemblyNames(string assemblyName) =>

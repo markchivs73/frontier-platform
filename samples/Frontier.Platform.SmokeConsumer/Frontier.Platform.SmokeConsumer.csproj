@@ -3,6 +3,13 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <RootNamespace>Frontier.Platform.SmokeConsumer</RootNamespace>
+    <!-- NuGet does not copy a package's XML documentation to the output directory by default;
+         it leaves it in the package folder for the IDE. Frontier.Platform.Workflow.Model's
+         docs are read at *runtime* (the design-language schema generator turns them into field
+         descriptions), so a consumer that reads them must opt in. Verified by this sample:
+         without it, the doc file is absent and the failure is silent — descriptions simply
+         become empty. -->
+    <CopyDocumentationFilesFromPackages>true</CopyDocumentationFilesFromPackages>
   </PropertyGroup>
 
   <!--
@@ -20,6 +27,7 @@
     <PackageReference Include="Frontier.Platform.Observability" Version="*-*" />
     <PackageReference Include="Frontier.Platform.Resilience" Version="*-*" />
     <PackageReference Include="Frontier.Platform.Serialization" Version="*-*" />
+    <PackageReference Include="Frontier.Platform.Workflow.Model" Version="*-*" />
   </ItemGroup>
 
   <ItemGroup>
