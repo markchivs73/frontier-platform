@@ -9,6 +9,7 @@
     <Project Path="src/Frontier.Platform.Observability/Frontier.Platform.Observability.csproj" />
     <Project Path="src/Frontier.Platform.Resilience/Frontier.Platform.Resilience.csproj" />
     <Project Path="src/Frontier.Platform.Serialization/Frontier.Platform.Serialization.csproj" />
+    <Project Path="src/Frontier.Platform.Workflow.Model/Frontier.Platform.Workflow.Model.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Frontier.Platform.Abstractions.Tests/Frontier.Platform.Abstractions.Tests.csproj" />
@@ -21,5 +22,6 @@
     <Project Path="tests/Frontier.Platform.Observability.Tests/Frontier.Platform.Observability.Tests.csproj" />
     <Project Path="tests/Frontier.Platform.Resilience.Tests/Frontier.Platform.Resilience.Tests.csproj" />
     <Project Path="tests/Frontier.Platform.Serialization.Tests/Frontier.Platform.Serialization.Tests.csproj" />
+    <Project Path="tests/Frontier.Platform.Workflow.Model.Tests/Frontier.Platform.Workflow.Model.Tests.csproj" />
   </Folder>
 </Solution>

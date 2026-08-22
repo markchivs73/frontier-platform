@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Frontier.Platform.Workflow.Model\Frontier.Platform.Workflow.Model.csproj" />
+    <!-- The model declares canonical wire shape; the profile that writes those bytes lives in
+         Serialization, so the byte-stability tests need it even though the library does not. -->
+    <ProjectReference Include="..\..\src\Frontier.Platform.Serialization\Frontier.Platform.Serialization.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Golden files travel byte-identical with the contracts they pin. Rewriting one to suit
+         the new home would discard the evidence they exist to carry (invariant 6). -->
+    <None Include="GoldenFiles\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Shared canonical round-trip harness (S11.2) -->
+    <Compile Include="..\Shared\ContractRoundTripAssertions.cs" Link="Serialization\ContractRoundTripAssertions.cs" />
+  </ItemGroup>
+
+</Project>

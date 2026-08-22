@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <Description>The workflow definition and execution model: the typed DAG a workflow compiles to (nodes, edges, modes, predicates, retry policy) and the execution vocabulary it runs against (snapshot, artifacts, typed payloads, payload refs, activity names). Workload-neutral by construction — it carries no domain contracts of its own.</Description>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- The design-language schema generator reads these summaries to describe node types and
+         fields to the design agent (doc 14 §7). The XML must therefore travel *in the package*:
+         the reader resolves it as a sibling of the assembly, which holds for a PackageReference
+         only because pack ships lib/<tfm>/*.xml alongside the dll. `XmlDocReader` losing the
+         file is silent — descriptions just become empty — so the consumer keeps a test that
+         asserts it loads. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Doc-comment validation warnings are not why the doc file is enabled; the family is
+         suppressed so doc nits cannot break the build under TreatWarningsAsErrors. Members
+         still carry docs — that is a convention here, enforced by review, not by CS1591. -->
+    <NoWarn>$(NoWarn);CS1570;CS1571;CS1572;CS1573;CS1574;CS1580;CS1581;CS1584;CS1587;CS1591;CS1710;CS1711;CS1712;CS1723</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- ADR-PA1/PA2: the contract kernel is this package's only dependency — SmartEnum<T>,
+         IVersionedContract and ContractMigrator live there. The model deliberately depends on
+         nothing else, including Serialization: it declares canonical wire shape via attributes
+         and leaves the profile that writes those bytes to the consumer. -->
+    <ProjectReference Include="..\Frontier.Platform.Abstractions\Frontier.Platform.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

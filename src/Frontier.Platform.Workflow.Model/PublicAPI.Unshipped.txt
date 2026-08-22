@@ -1,0 +1,504 @@
+Frontier.Platform.Workflow.Model.AgentTaskNode
+Frontier.Platform.Workflow.Model.AgentTaskNode.AgentTaskNode() -> void
+Frontier.Platform.Workflow.Model.AgentTaskNode.ContextRequest.get -> Frontier.Platform.Abstractions.ContextRequest!
+Frontier.Platform.Workflow.Model.AgentTaskNode.ContextRequest.init -> void
+Frontier.Platform.Workflow.Model.AgentTaskNode.Equals(Frontier.Platform.Workflow.Model.AgentTaskNode? other) -> bool
+Frontier.Platform.Workflow.Model.AgentTaskNode.InputContractType.get -> string!
+Frontier.Platform.Workflow.Model.AgentTaskNode.InputContractType.init -> void
+Frontier.Platform.Workflow.Model.AgentTaskNode.InstructionsRef.get -> string!
+Frontier.Platform.Workflow.Model.AgentTaskNode.InstructionsRef.init -> void
+Frontier.Platform.Workflow.Model.AgentTaskNode.OutputContractType.get -> string!
+Frontier.Platform.Workflow.Model.AgentTaskNode.OutputContractType.init -> void
+Frontier.Platform.Workflow.Model.AgentTaskNode.Role.get -> string!
+Frontier.Platform.Workflow.Model.AgentTaskNode.Role.init -> void
+Frontier.Platform.Workflow.Model.AgentTaskNode.ToolRefs.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Frontier.Platform.Workflow.Model.AgentTaskNode.ToolRefs.init -> void
+Frontier.Platform.Workflow.Model.ArtifactStatus
+Frontier.Platform.Workflow.Model.ArtifactStatus.CanTransitionTo(Frontier.Platform.Workflow.Model.ArtifactStatus! target) -> bool
+Frontier.Platform.Workflow.Model.ArtifactVocabularyMigration
+Frontier.Platform.Workflow.Model.CascadeCheckNode
+Frontier.Platform.Workflow.Model.CascadeCheckNode.CascadeCheckNode() -> void
+Frontier.Platform.Workflow.Model.CascadeCheckNode.Equals(Frontier.Platform.Workflow.Model.CascadeCheckNode? other) -> bool
+Frontier.Platform.Workflow.Model.CascadeCheckNode.TriggerArtifactKeys.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Frontier.Platform.Workflow.Model.CascadeCheckNode.TriggerArtifactKeys.init -> void
+Frontier.Platform.Workflow.Model.ChatClientOptionKeys
+Frontier.Platform.Workflow.Model.ComparisonOp
+Frontier.Platform.Workflow.Model.ConditionalBranch
+Frontier.Platform.Workflow.Model.ConditionalBranch.<Clone>$() -> Frontier.Platform.Workflow.Model.ConditionalBranch!
+Frontier.Platform.Workflow.Model.ConditionalBranch.Condition.get -> Frontier.Platform.Workflow.Model.ConditionalPredicate!
+Frontier.Platform.Workflow.Model.ConditionalBranch.Condition.init -> void
+Frontier.Platform.Workflow.Model.ConditionalBranch.ConditionalBranch() -> void
+Frontier.Platform.Workflow.Model.ConditionalBranch.Equals(Frontier.Platform.Workflow.Model.ConditionalBranch? other) -> bool
+Frontier.Platform.Workflow.Model.ConditionalBranch.TargetNodeId.get -> string!
+Frontier.Platform.Workflow.Model.ConditionalBranch.TargetNodeId.init -> void
+Frontier.Platform.Workflow.Model.ConditionalPredicate
+Frontier.Platform.Workflow.Model.ConditionalPredicate.ConditionalPredicate() -> void
+Frontier.Platform.Workflow.Model.ConditionalPredicate.ConditionalPredicate(Frontier.Platform.Workflow.Model.ConditionalPredicate! original) -> void
+Frontier.Platform.Workflow.Model.ConsolidateAuditInput
+Frontier.Platform.Workflow.Model.ConsolidateAuditInput.<Clone>$() -> Frontier.Platform.Workflow.Model.ConsolidateAuditInput!
+Frontier.Platform.Workflow.Model.ConsolidateAuditInput.ConsolidateAuditInput() -> void
+Frontier.Platform.Workflow.Model.ConsolidateAuditInput.DefinitionHash.get -> string!
+Frontier.Platform.Workflow.Model.ConsolidateAuditInput.DefinitionHash.init -> void
+Frontier.Platform.Workflow.Model.ConsolidateAuditInput.Equals(Frontier.Platform.Workflow.Model.ConsolidateAuditInput? other) -> bool
+Frontier.Platform.Workflow.Model.ConsolidateAuditInput.ExecutionId.get -> string!
+Frontier.Platform.Workflow.Model.ConsolidateAuditInput.ExecutionId.init -> void
+Frontier.Platform.Workflow.Model.ConsolidateAuditInput.StartedAtUtc.get -> System.DateTime
+Frontier.Platform.Workflow.Model.ConsolidateAuditInput.StartedAtUtc.init -> void
+Frontier.Platform.Workflow.Model.ContextInjectionNode
+Frontier.Platform.Workflow.Model.ContextInjectionNode.ContextInjectionNode() -> void
+Frontier.Platform.Workflow.Model.ContextInjectionNode.ContextRequest.get -> Frontier.Platform.Abstractions.ContextRequest!
+Frontier.Platform.Workflow.Model.ContextInjectionNode.ContextRequest.init -> void
+Frontier.Platform.Workflow.Model.ContextInjectionNode.Equals(Frontier.Platform.Workflow.Model.ContextInjectionNode? other) -> bool
+Frontier.Platform.Workflow.Model.ContractTypeSet
+Frontier.Platform.Workflow.Model.ContractTypeSet.ContractTypeSet(System.Collections.Generic.IEnumerable<System.Type!>! contractTypes) -> void
+Frontier.Platform.Workflow.Model.ContractTypeSet.Names.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Frontier.Platform.Workflow.Model.ContractTypeSet.Resolve(string! contractTypeName) -> System.Type?
+Frontier.Platform.Workflow.Model.DecisionNode
+Frontier.Platform.Workflow.Model.DecisionNode.Branches.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Workflow.Model.ConditionalBranch!>?
+Frontier.Platform.Workflow.Model.DecisionNode.Branches.init -> void
+Frontier.Platform.Workflow.Model.DecisionNode.DecisionNode() -> void
+Frontier.Platform.Workflow.Model.DecisionNode.DefaultBranchNodeId.get -> string!
+Frontier.Platform.Workflow.Model.DecisionNode.DefaultBranchNodeId.init -> void
+Frontier.Platform.Workflow.Model.DecisionNode.Equals(Frontier.Platform.Workflow.Model.DecisionNode? other) -> bool
+Frontier.Platform.Workflow.Model.DecisionNode.Predicate.get -> string?
+Frontier.Platform.Workflow.Model.DecisionNode.Predicate.init -> void
+Frontier.Platform.Workflow.Model.EdgeKind
+Frontier.Platform.Workflow.Model.ExecutionMode
+Frontier.Platform.Workflow.Model.ExecutionSnapshot
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.<Clone>$() -> Frontier.Platform.Workflow.Model.ExecutionSnapshot!
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.ApprovedSnapshotRefs.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.ApprovedSnapshotRefs.init -> void
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.Artifacts.get -> System.Collections.Generic.IReadOnlyDictionary<string!, Frontier.Platform.Workflow.Model.ArtifactStatus!>!
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.Artifacts.init -> void
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.CheckpointedAtUtc.get -> System.DateTime
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.CheckpointedAtUtc.init -> void
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.CompletedSteps.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Workflow.Model.StepCompletion!>!
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.CompletedSteps.init -> void
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.CurrentNodeId.get -> string?
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.CurrentNodeId.init -> void
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.Decisions.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Abstractions.HitlDecision!>!
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.Decisions.init -> void
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.DefinitionVersion.get -> int
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.DefinitionVersion.init -> void
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.EngagementId.get -> string!
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.EngagementId.init -> void
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.Equals(Frontier.Platform.Workflow.Model.ExecutionSnapshot? other) -> bool
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.ExecutionId.get -> string!
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.ExecutionId.init -> void
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.ExecutionSnapshot() -> void
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.FailureClassification.get -> string?
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.FailureClassification.init -> void
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.InitiatedBy.get -> string?
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.InitiatedBy.init -> void
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.PausedAtGateId.get -> string?
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.PausedAtGateId.init -> void
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.SchemaVersion.get -> string!
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.SchemaVersion.init -> void
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.Sequence.get -> int
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.Sequence.init -> void
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.SkippedNodeIds.get -> System.Collections.Generic.IReadOnlyList<string!>?
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.SkippedNodeIds.init -> void
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.Status.get -> Frontier.Platform.Abstractions.ExecutionStatus!
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.Status.init -> void
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.Validate() -> void
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.WorkflowId.get -> string!
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.WorkflowId.init -> void
+Frontier.Platform.Workflow.Model.ExternalEvent
+Frontier.Platform.Workflow.Model.ExternalEvent.<Clone>$() -> Frontier.Platform.Workflow.Model.ExternalEvent!
+Frontier.Platform.Workflow.Model.ExternalEvent.Actor.get -> string?
+Frontier.Platform.Workflow.Model.ExternalEvent.Actor.init -> void
+Frontier.Platform.Workflow.Model.ExternalEvent.Equals(Frontier.Platform.Workflow.Model.ExternalEvent? other) -> bool
+Frontier.Platform.Workflow.Model.ExternalEvent.EventKind.get -> string!
+Frontier.Platform.Workflow.Model.ExternalEvent.EventKind.init -> void
+Frontier.Platform.Workflow.Model.ExternalEvent.ExternalEvent() -> void
+Frontier.Platform.Workflow.Model.ExternalEvent.ExternalEventId.get -> string!
+Frontier.Platform.Workflow.Model.ExternalEvent.ExternalEventId.init -> void
+Frontier.Platform.Workflow.Model.ExternalEvent.OccurredAtUtc.get -> System.DateTime?
+Frontier.Platform.Workflow.Model.ExternalEvent.OccurredAtUtc.init -> void
+Frontier.Platform.Workflow.Model.ExternalEvent.Payload.get -> System.Collections.Generic.Dictionary<string!, object?>!
+Frontier.Platform.Workflow.Model.ExternalEvent.Payload.init -> void
+Frontier.Platform.Workflow.Model.ExternalEvent.SourceSystem.get -> string!
+Frontier.Platform.Workflow.Model.ExternalEvent.SourceSystem.init -> void
+Frontier.Platform.Workflow.Model.ExternalEvent.Validate() -> void
+Frontier.Platform.Workflow.Model.FieldComparisonPredicate
+Frontier.Platform.Workflow.Model.FieldComparisonPredicate.Equals(Frontier.Platform.Workflow.Model.FieldComparisonPredicate? other) -> bool
+Frontier.Platform.Workflow.Model.FieldComparisonPredicate.FieldComparisonPredicate() -> void
+Frontier.Platform.Workflow.Model.FieldComparisonPredicate.FieldPath.get -> string!
+Frontier.Platform.Workflow.Model.FieldComparisonPredicate.FieldPath.init -> void
+Frontier.Platform.Workflow.Model.FieldComparisonPredicate.Operator.get -> Frontier.Platform.Workflow.Model.ComparisonOp!
+Frontier.Platform.Workflow.Model.FieldComparisonPredicate.Operator.init -> void
+Frontier.Platform.Workflow.Model.FieldComparisonPredicate.Value.get -> string?
+Frontier.Platform.Workflow.Model.FieldComparisonPredicate.Value.init -> void
+Frontier.Platform.Workflow.Model.FieldComparisonPredicate.Values.get -> System.Collections.Generic.IReadOnlyList<string!>?
+Frontier.Platform.Workflow.Model.FieldComparisonPredicate.Values.init -> void
+Frontier.Platform.Workflow.Model.HumanGateNode
+Frontier.Platform.Workflow.Model.HumanGateNode.ApproverRoles.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Frontier.Platform.Workflow.Model.HumanGateNode.ApproverRoles.init -> void
+Frontier.Platform.Workflow.Model.HumanGateNode.Equals(Frontier.Platform.Workflow.Model.HumanGateNode? other) -> bool
+Frontier.Platform.Workflow.Model.HumanGateNode.GateKind.get -> Frontier.Platform.Abstractions.GateKind!
+Frontier.Platform.Workflow.Model.HumanGateNode.GateKind.init -> void
+Frontier.Platform.Workflow.Model.HumanGateNode.HumanGateNode() -> void
+Frontier.Platform.Workflow.Model.HumanGateNode.PromptTemplate.get -> string!
+Frontier.Platform.Workflow.Model.HumanGateNode.PromptTemplate.init -> void
+Frontier.Platform.Workflow.Model.HumanGateNode.ReapproveOnCascade.get -> bool
+Frontier.Platform.Workflow.Model.HumanGateNode.ReapproveOnCascade.init -> void
+Frontier.Platform.Workflow.Model.HumanGateNode.RollbackToNodeId.get -> string?
+Frontier.Platform.Workflow.Model.HumanGateNode.RollbackToNodeId.init -> void
+Frontier.Platform.Workflow.Model.HumanGateNode.TimeoutMinutes.get -> int
+Frontier.Platform.Workflow.Model.HumanGateNode.TimeoutMinutes.init -> void
+Frontier.Platform.Workflow.Model.IContractTypeSet
+Frontier.Platform.Workflow.Model.IContractTypeSet.Names.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Frontier.Platform.Workflow.Model.IContractTypeSet.Resolve(string! contractTypeName) -> System.Type?
+Frontier.Platform.Workflow.Model.LogicalOp
+Frontier.Platform.Workflow.Model.LogicalPredicate
+Frontier.Platform.Workflow.Model.LogicalPredicate.Equals(Frontier.Platform.Workflow.Model.LogicalPredicate? other) -> bool
+Frontier.Platform.Workflow.Model.LogicalPredicate.LogicalPredicate() -> void
+Frontier.Platform.Workflow.Model.LogicalPredicate.Op.get -> Frontier.Platform.Workflow.Model.LogicalOp!
+Frontier.Platform.Workflow.Model.LogicalPredicate.Op.init -> void
+Frontier.Platform.Workflow.Model.LogicalPredicate.Operands.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Workflow.Model.ConditionalPredicate!>!
+Frontier.Platform.Workflow.Model.LogicalPredicate.Operands.init -> void
+Frontier.Platform.Workflow.Model.LoopNode
+Frontier.Platform.Workflow.Model.LoopNode.BodyNodeId.get -> string!
+Frontier.Platform.Workflow.Model.LoopNode.BodyNodeId.init -> void
+Frontier.Platform.Workflow.Model.LoopNode.Equals(Frontier.Platform.Workflow.Model.LoopNode? other) -> bool
+Frontier.Platform.Workflow.Model.LoopNode.LoopNode() -> void
+Frontier.Platform.Workflow.Model.LoopNode.MaxIterations.get -> int
+Frontier.Platform.Workflow.Model.LoopNode.MaxIterations.init -> void
+Frontier.Platform.Workflow.Model.McpToolNode
+Frontier.Platform.Workflow.Model.McpToolNode.Equals(Frontier.Platform.Workflow.Model.McpToolNode? other) -> bool
+Frontier.Platform.Workflow.Model.McpToolNode.IdempotencyKeySpec.get -> string!
+Frontier.Platform.Workflow.Model.McpToolNode.IdempotencyKeySpec.init -> void
+Frontier.Platform.Workflow.Model.McpToolNode.McpToolNode() -> void
+Frontier.Platform.Workflow.Model.McpToolNode.TimeoutSeconds.get -> int
+Frontier.Platform.Workflow.Model.McpToolNode.TimeoutSeconds.init -> void
+Frontier.Platform.Workflow.Model.McpToolNode.ToolRef.get -> string!
+Frontier.Platform.Workflow.Model.McpToolNode.ToolRef.init -> void
+Frontier.Platform.Workflow.Model.NodeType
+Frontier.Platform.Workflow.Model.ParallelNode
+Frontier.Platform.Workflow.Model.ParallelNode.BranchNodeIds.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Frontier.Platform.Workflow.Model.ParallelNode.BranchNodeIds.init -> void
+Frontier.Platform.Workflow.Model.ParallelNode.Equals(Frontier.Platform.Workflow.Model.ParallelNode? other) -> bool
+Frontier.Platform.Workflow.Model.ParallelNode.JoinNodeId.get -> string!
+Frontier.Platform.Workflow.Model.ParallelNode.JoinNodeId.init -> void
+Frontier.Platform.Workflow.Model.ParallelNode.ParallelNode() -> void
+Frontier.Platform.Workflow.Model.PayloadRef
+Frontier.Platform.Workflow.Model.PayloadRef.<Clone>$() -> Frontier.Platform.Workflow.Model.PayloadRef!
+Frontier.Platform.Workflow.Model.PayloadRef.ContentHash.get -> string!
+Frontier.Platform.Workflow.Model.PayloadRef.ContentHash.init -> void
+Frontier.Platform.Workflow.Model.PayloadRef.ContentType.get -> string!
+Frontier.Platform.Workflow.Model.PayloadRef.ContentType.init -> void
+Frontier.Platform.Workflow.Model.PayloadRef.Equals(Frontier.Platform.Workflow.Model.PayloadRef? other) -> bool
+Frontier.Platform.Workflow.Model.PayloadRef.PayloadRef() -> void
+Frontier.Platform.Workflow.Model.PayloadRef.SchemaVersion.get -> string!
+Frontier.Platform.Workflow.Model.PayloadRef.SchemaVersion.init -> void
+Frontier.Platform.Workflow.Model.PayloadRef.SizeBytes.get -> long
+Frontier.Platform.Workflow.Model.PayloadRef.SizeBytes.init -> void
+Frontier.Platform.Workflow.Model.PayloadRef.StorageUri.get -> System.Uri!
+Frontier.Platform.Workflow.Model.PayloadRef.StorageUri.init -> void
+Frontier.Platform.Workflow.Model.PayloadRef.Validate() -> void
+Frontier.Platform.Workflow.Model.RetryPolicySpec
+Frontier.Platform.Workflow.Model.RetryPolicySpec.<Clone>$() -> Frontier.Platform.Workflow.Model.RetryPolicySpec!
+Frontier.Platform.Workflow.Model.RetryPolicySpec.Equals(Frontier.Platform.Workflow.Model.RetryPolicySpec? other) -> bool
+Frontier.Platform.Workflow.Model.RetryPolicySpec.MaxAttemptsOverride.get -> int?
+Frontier.Platform.Workflow.Model.RetryPolicySpec.MaxAttemptsOverride.init -> void
+Frontier.Platform.Workflow.Model.RetryPolicySpec.ProfileName.get -> string!
+Frontier.Platform.Workflow.Model.RetryPolicySpec.ProfileName.init -> void
+Frontier.Platform.Workflow.Model.RetryPolicySpec.RetryPolicySpec() -> void
+Frontier.Platform.Workflow.Model.RetryPolicySpec.TimeoutSecondsOverride.get -> int?
+Frontier.Platform.Workflow.Model.RetryPolicySpec.TimeoutSecondsOverride.init -> void
+Frontier.Platform.Workflow.Model.StepCompletion
+Frontier.Platform.Workflow.Model.StepCompletion.<Clone>$() -> Frontier.Platform.Workflow.Model.StepCompletion!
+Frontier.Platform.Workflow.Model.StepCompletion.ArtifactKey.get -> string?
+Frontier.Platform.Workflow.Model.StepCompletion.ArtifactKey.init -> void
+Frontier.Platform.Workflow.Model.StepCompletion.CompletedAtUtc.get -> System.DateTime
+Frontier.Platform.Workflow.Model.StepCompletion.CompletedAtUtc.init -> void
+Frontier.Platform.Workflow.Model.StepCompletion.CorrelationId.get -> string!
+Frontier.Platform.Workflow.Model.StepCompletion.CorrelationId.init -> void
+Frontier.Platform.Workflow.Model.StepCompletion.Equals(Frontier.Platform.Workflow.Model.StepCompletion? other) -> bool
+Frontier.Platform.Workflow.Model.StepCompletion.HostBuild.get -> string?
+Frontier.Platform.Workflow.Model.StepCompletion.HostBuild.init -> void
+Frontier.Platform.Workflow.Model.StepCompletion.NodeId.get -> string!
+Frontier.Platform.Workflow.Model.StepCompletion.NodeId.init -> void
+Frontier.Platform.Workflow.Model.StepCompletion.NodeType.get -> Frontier.Platform.Workflow.Model.NodeType!
+Frontier.Platform.Workflow.Model.StepCompletion.NodeType.init -> void
+Frontier.Platform.Workflow.Model.StepCompletion.OutputContractType.get -> string!
+Frontier.Platform.Workflow.Model.StepCompletion.OutputContractType.init -> void
+Frontier.Platform.Workflow.Model.StepCompletion.OutputHash.get -> string!
+Frontier.Platform.Workflow.Model.StepCompletion.OutputHash.init -> void
+Frontier.Platform.Workflow.Model.StepCompletion.ResolvedModel.get -> Frontier.Platform.Abstractions.ResolvedModelSummary?
+Frontier.Platform.Workflow.Model.StepCompletion.ResolvedModel.init -> void
+Frontier.Platform.Workflow.Model.StepCompletion.RetryCount.get -> int
+Frontier.Platform.Workflow.Model.StepCompletion.RetryCount.init -> void
+Frontier.Platform.Workflow.Model.StepCompletion.SelectedBranchNodeId.get -> string?
+Frontier.Platform.Workflow.Model.StepCompletion.SelectedBranchNodeId.init -> void
+Frontier.Platform.Workflow.Model.StepCompletion.StepCompletion() -> void
+Frontier.Platform.Workflow.Model.TypedPayload
+Frontier.Platform.Workflow.Model.TypedPayload.<Clone>$() -> Frontier.Platform.Workflow.Model.TypedPayload!
+Frontier.Platform.Workflow.Model.TypedPayload.Equals(Frontier.Platform.Workflow.Model.TypedPayload? other) -> bool
+Frontier.Platform.Workflow.Model.TypedPayload.Facts.get -> System.Text.Json.JsonElement?
+Frontier.Platform.Workflow.Model.TypedPayload.Facts.init -> void
+Frontier.Platform.Workflow.Model.TypedPayload.Payload.get -> System.Text.Json.JsonElement?
+Frontier.Platform.Workflow.Model.TypedPayload.Payload.init -> void
+Frontier.Platform.Workflow.Model.TypedPayload.PayloadRef.get -> Frontier.Platform.Workflow.Model.PayloadRef?
+Frontier.Platform.Workflow.Model.TypedPayload.PayloadRef.init -> void
+Frontier.Platform.Workflow.Model.TypedPayload.SchemaRef.get -> string!
+Frontier.Platform.Workflow.Model.TypedPayload.SchemaRef.init -> void
+Frontier.Platform.Workflow.Model.TypedPayload.SchemaVersion.get -> string!
+Frontier.Platform.Workflow.Model.TypedPayload.SchemaVersion.init -> void
+Frontier.Platform.Workflow.Model.TypedPayload.TypedPayload() -> void
+Frontier.Platform.Workflow.Model.TypedPayload.Validate() -> void
+Frontier.Platform.Workflow.Model.WorkItem
+Frontier.Platform.Workflow.Model.WorkItem.<Clone>$() -> Frontier.Platform.Workflow.Model.WorkItem!
+Frontier.Platform.Workflow.Model.WorkItem.DirectedBy.get -> string?
+Frontier.Platform.Workflow.Model.WorkItem.DirectedBy.init -> void
+Frontier.Platform.Workflow.Model.WorkItem.Equals(Frontier.Platform.Workflow.Model.WorkItem? other) -> bool
+Frontier.Platform.Workflow.Model.WorkItem.Payload.get -> object!
+Frontier.Platform.Workflow.Model.WorkItem.Payload.init -> void
+Frontier.Platform.Workflow.Model.WorkItem.WorkItem() -> void
+Frontier.Platform.Workflow.Model.WorkItem.WorkItemId.get -> string!
+Frontier.Platform.Workflow.Model.WorkItem.WorkItemId.init -> void
+Frontier.Platform.Workflow.Model.WorkflowActivityNames
+Frontier.Platform.Workflow.Model.WorkflowDefinition
+Frontier.Platform.Workflow.Model.WorkflowDefinition.<Clone>$() -> Frontier.Platform.Workflow.Model.WorkflowDefinition!
+Frontier.Platform.Workflow.Model.WorkflowDefinition.DefinitionHash.get -> string!
+Frontier.Platform.Workflow.Model.WorkflowDefinition.DefinitionHash.init -> void
+Frontier.Platform.Workflow.Model.WorkflowDefinition.DefinitionVersion.get -> int
+Frontier.Platform.Workflow.Model.WorkflowDefinition.DefinitionVersion.init -> void
+Frontier.Platform.Workflow.Model.WorkflowDefinition.Edges.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Workflow.Model.WorkflowEdge!>!
+Frontier.Platform.Workflow.Model.WorkflowDefinition.Edges.init -> void
+Frontier.Platform.Workflow.Model.WorkflowDefinition.EngagementType.get -> string!
+Frontier.Platform.Workflow.Model.WorkflowDefinition.EngagementType.init -> void
+Frontier.Platform.Workflow.Model.WorkflowDefinition.Equals(Frontier.Platform.Workflow.Model.WorkflowDefinition? other) -> bool
+Frontier.Platform.Workflow.Model.WorkflowDefinition.Mode.get -> Frontier.Platform.Workflow.Model.ExecutionMode!
+Frontier.Platform.Workflow.Model.WorkflowDefinition.Mode.init -> void
+Frontier.Platform.Workflow.Model.WorkflowDefinition.Name.get -> string!
+Frontier.Platform.Workflow.Model.WorkflowDefinition.Name.init -> void
+Frontier.Platform.Workflow.Model.WorkflowDefinition.Nodes.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Workflow.Model.WorkflowNode!>!
+Frontier.Platform.Workflow.Model.WorkflowDefinition.Nodes.init -> void
+Frontier.Platform.Workflow.Model.WorkflowDefinition.SchemaVersion.get -> string!
+Frontier.Platform.Workflow.Model.WorkflowDefinition.SchemaVersion.init -> void
+Frontier.Platform.Workflow.Model.WorkflowDefinition.Validate() -> void
+Frontier.Platform.Workflow.Model.WorkflowDefinition.WorkflowDefinition() -> void
+Frontier.Platform.Workflow.Model.WorkflowDefinition.WorkflowId.get -> string!
+Frontier.Platform.Workflow.Model.WorkflowDefinition.WorkflowId.init -> void
+Frontier.Platform.Workflow.Model.WorkflowEdge
+Frontier.Platform.Workflow.Model.WorkflowEdge.<Clone>$() -> Frontier.Platform.Workflow.Model.WorkflowEdge!
+Frontier.Platform.Workflow.Model.WorkflowEdge.Condition.get -> string?
+Frontier.Platform.Workflow.Model.WorkflowEdge.Condition.init -> void
+Frontier.Platform.Workflow.Model.WorkflowEdge.ContractType.get -> string?
+Frontier.Platform.Workflow.Model.WorkflowEdge.ContractType.init -> void
+Frontier.Platform.Workflow.Model.WorkflowEdge.Equals(Frontier.Platform.Workflow.Model.WorkflowEdge? other) -> bool
+Frontier.Platform.Workflow.Model.WorkflowEdge.FromNodeId.get -> string!
+Frontier.Platform.Workflow.Model.WorkflowEdge.FromNodeId.init -> void
+Frontier.Platform.Workflow.Model.WorkflowEdge.Kind.get -> Frontier.Platform.Workflow.Model.EdgeKind!
+Frontier.Platform.Workflow.Model.WorkflowEdge.Kind.init -> void
+Frontier.Platform.Workflow.Model.WorkflowEdge.ToNodeId.get -> string!
+Frontier.Platform.Workflow.Model.WorkflowEdge.ToNodeId.init -> void
+Frontier.Platform.Workflow.Model.WorkflowEdge.WorkflowEdge() -> void
+Frontier.Platform.Workflow.Model.WorkflowNode
+Frontier.Platform.Workflow.Model.WorkflowNode.ArtifactKey.get -> string?
+Frontier.Platform.Workflow.Model.WorkflowNode.ArtifactKey.init -> void
+Frontier.Platform.Workflow.Model.WorkflowNode.NodeId.get -> string!
+Frontier.Platform.Workflow.Model.WorkflowNode.NodeId.init -> void
+Frontier.Platform.Workflow.Model.WorkflowNode.Retry.get -> Frontier.Platform.Workflow.Model.RetryPolicySpec?
+Frontier.Platform.Workflow.Model.WorkflowNode.Retry.init -> void
+Frontier.Platform.Workflow.Model.WorkflowNode.WorkflowNode() -> void
+Frontier.Platform.Workflow.Model.WorkflowNode.WorkflowNode(Frontier.Platform.Workflow.Model.WorkflowNode! original) -> void
+abstract Frontier.Platform.Workflow.Model.ConditionalPredicate.<Clone>$() -> Frontier.Platform.Workflow.Model.ConditionalPredicate!
+abstract Frontier.Platform.Workflow.Model.WorkflowNode.<Clone>$() -> Frontier.Platform.Workflow.Model.WorkflowNode!
+abstract Frontier.Platform.Workflow.Model.WorkflowNode.NodeType.get -> Frontier.Platform.Workflow.Model.NodeType!
+const Frontier.Platform.Workflow.Model.ArtifactVocabularyMigration.PreRenameSchemaVersion = "1.0" -> string!
+const Frontier.Platform.Workflow.Model.ArtifactVocabularyMigration.RenamedSchemaVersion = "2.0" -> string!
+const Frontier.Platform.Workflow.Model.ChatClientOptionKeys.AdaptiveThinking = "adaptive_thinking" -> string!
+const Frontier.Platform.Workflow.Model.WorkflowActivityNames.AgentTaskActivity = "AgentTaskActivity" -> string!
+const Frontier.Platform.Workflow.Model.WorkflowActivityNames.ArtifactStateActivity = "ArtifactStateActivity" -> string!
+const Frontier.Platform.Workflow.Model.WorkflowActivityNames.ConsolidateAuditActivity = "ConsolidateAuditActivity" -> string!
+const Frontier.Platform.Workflow.Model.WorkflowActivityNames.DispatcherOrchestrator = "DispatcherOrchestrator" -> string!
+const Frontier.Platform.Workflow.Model.WorkflowActivityNames.EscalateApprovalActivity = "EscalateApprovalActivity" -> string!
+const Frontier.Platform.Workflow.Model.WorkflowActivityNames.EvaluateCascadeActivity = "EvaluateCascadeActivity" -> string!
+const Frontier.Platform.Workflow.Model.WorkflowActivityNames.GraphOrchestrator = "GraphOrchestrator" -> string!
+const Frontier.Platform.Workflow.Model.WorkflowActivityNames.InvokeMcpToolActivity = "InvokeMcpToolActivity" -> string!
+const Frontier.Platform.Workflow.Model.WorkflowActivityNames.RequestApprovalActivity = "RequestApprovalActivity" -> string!
+const Frontier.Platform.Workflow.Model.WorkflowActivityNames.RestoreArtifactsActivity = "RestoreArtifactsActivity" -> string!
+const Frontier.Platform.Workflow.Model.WorkflowActivityNames.SnapshotStateActivity = "SnapshotStateActivity" -> string!
+override Frontier.Platform.Workflow.Model.AgentTaskNode.<Clone>$() -> Frontier.Platform.Workflow.Model.AgentTaskNode!
+override Frontier.Platform.Workflow.Model.AgentTaskNode.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Model.AgentTaskNode.GetHashCode() -> int
+override Frontier.Platform.Workflow.Model.AgentTaskNode.NodeType.get -> Frontier.Platform.Workflow.Model.NodeType!
+override Frontier.Platform.Workflow.Model.AgentTaskNode.ToString() -> string!
+override Frontier.Platform.Workflow.Model.CascadeCheckNode.<Clone>$() -> Frontier.Platform.Workflow.Model.CascadeCheckNode!
+override Frontier.Platform.Workflow.Model.CascadeCheckNode.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Model.CascadeCheckNode.GetHashCode() -> int
+override Frontier.Platform.Workflow.Model.CascadeCheckNode.NodeType.get -> Frontier.Platform.Workflow.Model.NodeType!
+override Frontier.Platform.Workflow.Model.CascadeCheckNode.ToString() -> string!
+override Frontier.Platform.Workflow.Model.ConditionalBranch.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Model.ConditionalBranch.GetHashCode() -> int
+override Frontier.Platform.Workflow.Model.ConditionalBranch.ToString() -> string!
+override Frontier.Platform.Workflow.Model.ConditionalPredicate.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Model.ConditionalPredicate.GetHashCode() -> int
+override Frontier.Platform.Workflow.Model.ConditionalPredicate.ToString() -> string!
+override Frontier.Platform.Workflow.Model.ConsolidateAuditInput.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Model.ConsolidateAuditInput.GetHashCode() -> int
+override Frontier.Platform.Workflow.Model.ConsolidateAuditInput.ToString() -> string!
+override Frontier.Platform.Workflow.Model.ContextInjectionNode.<Clone>$() -> Frontier.Platform.Workflow.Model.ContextInjectionNode!
+override Frontier.Platform.Workflow.Model.ContextInjectionNode.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Model.ContextInjectionNode.GetHashCode() -> int
+override Frontier.Platform.Workflow.Model.ContextInjectionNode.NodeType.get -> Frontier.Platform.Workflow.Model.NodeType!
+override Frontier.Platform.Workflow.Model.ContextInjectionNode.ToString() -> string!
+override Frontier.Platform.Workflow.Model.DecisionNode.<Clone>$() -> Frontier.Platform.Workflow.Model.DecisionNode!
+override Frontier.Platform.Workflow.Model.DecisionNode.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Model.DecisionNode.GetHashCode() -> int
+override Frontier.Platform.Workflow.Model.DecisionNode.NodeType.get -> Frontier.Platform.Workflow.Model.NodeType!
+override Frontier.Platform.Workflow.Model.DecisionNode.ToString() -> string!
+override Frontier.Platform.Workflow.Model.ExecutionSnapshot.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Model.ExecutionSnapshot.GetHashCode() -> int
+override Frontier.Platform.Workflow.Model.ExecutionSnapshot.ToString() -> string!
+override Frontier.Platform.Workflow.Model.ExternalEvent.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Model.ExternalEvent.GetHashCode() -> int
+override Frontier.Platform.Workflow.Model.ExternalEvent.ToString() -> string!
+override Frontier.Platform.Workflow.Model.FieldComparisonPredicate.<Clone>$() -> Frontier.Platform.Workflow.Model.FieldComparisonPredicate!
+override Frontier.Platform.Workflow.Model.FieldComparisonPredicate.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Model.FieldComparisonPredicate.GetHashCode() -> int
+override Frontier.Platform.Workflow.Model.FieldComparisonPredicate.ToString() -> string!
+override Frontier.Platform.Workflow.Model.HumanGateNode.<Clone>$() -> Frontier.Platform.Workflow.Model.HumanGateNode!
+override Frontier.Platform.Workflow.Model.HumanGateNode.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Model.HumanGateNode.GetHashCode() -> int
+override Frontier.Platform.Workflow.Model.HumanGateNode.NodeType.get -> Frontier.Platform.Workflow.Model.NodeType!
+override Frontier.Platform.Workflow.Model.HumanGateNode.ToString() -> string!
+override Frontier.Platform.Workflow.Model.LogicalPredicate.<Clone>$() -> Frontier.Platform.Workflow.Model.LogicalPredicate!
+override Frontier.Platform.Workflow.Model.LogicalPredicate.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Model.LogicalPredicate.GetHashCode() -> int
+override Frontier.Platform.Workflow.Model.LogicalPredicate.ToString() -> string!
+override Frontier.Platform.Workflow.Model.LoopNode.<Clone>$() -> Frontier.Platform.Workflow.Model.LoopNode!
+override Frontier.Platform.Workflow.Model.LoopNode.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Model.LoopNode.GetHashCode() -> int
+override Frontier.Platform.Workflow.Model.LoopNode.NodeType.get -> Frontier.Platform.Workflow.Model.NodeType!
+override Frontier.Platform.Workflow.Model.LoopNode.ToString() -> string!
+override Frontier.Platform.Workflow.Model.McpToolNode.<Clone>$() -> Frontier.Platform.Workflow.Model.McpToolNode!
+override Frontier.Platform.Workflow.Model.McpToolNode.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Model.McpToolNode.GetHashCode() -> int
+override Frontier.Platform.Workflow.Model.McpToolNode.NodeType.get -> Frontier.Platform.Workflow.Model.NodeType!
+override Frontier.Platform.Workflow.Model.McpToolNode.ToString() -> string!
+override Frontier.Platform.Workflow.Model.ParallelNode.<Clone>$() -> Frontier.Platform.Workflow.Model.ParallelNode!
+override Frontier.Platform.Workflow.Model.ParallelNode.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Model.ParallelNode.GetHashCode() -> int
+override Frontier.Platform.Workflow.Model.ParallelNode.NodeType.get -> Frontier.Platform.Workflow.Model.NodeType!
+override Frontier.Platform.Workflow.Model.ParallelNode.ToString() -> string!
+override Frontier.Platform.Workflow.Model.PayloadRef.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Model.PayloadRef.GetHashCode() -> int
+override Frontier.Platform.Workflow.Model.PayloadRef.ToString() -> string!
+override Frontier.Platform.Workflow.Model.RetryPolicySpec.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Model.RetryPolicySpec.GetHashCode() -> int
+override Frontier.Platform.Workflow.Model.RetryPolicySpec.ToString() -> string!
+override Frontier.Platform.Workflow.Model.StepCompletion.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Model.StepCompletion.GetHashCode() -> int
+override Frontier.Platform.Workflow.Model.StepCompletion.ToString() -> string!
+override Frontier.Platform.Workflow.Model.TypedPayload.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Model.TypedPayload.GetHashCode() -> int
+override Frontier.Platform.Workflow.Model.TypedPayload.ToString() -> string!
+override Frontier.Platform.Workflow.Model.WorkItem.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Model.WorkItem.GetHashCode() -> int
+override Frontier.Platform.Workflow.Model.WorkItem.ToString() -> string!
+override Frontier.Platform.Workflow.Model.WorkflowDefinition.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Model.WorkflowDefinition.GetHashCode() -> int
+override Frontier.Platform.Workflow.Model.WorkflowDefinition.ToString() -> string!
+override Frontier.Platform.Workflow.Model.WorkflowEdge.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Model.WorkflowEdge.GetHashCode() -> int
+override Frontier.Platform.Workflow.Model.WorkflowEdge.ToString() -> string!
+override Frontier.Platform.Workflow.Model.WorkflowNode.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Model.WorkflowNode.GetHashCode() -> int
+override Frontier.Platform.Workflow.Model.WorkflowNode.ToString() -> string!
+override sealed Frontier.Platform.Workflow.Model.AgentTaskNode.Equals(Frontier.Platform.Workflow.Model.WorkflowNode? other) -> bool
+override sealed Frontier.Platform.Workflow.Model.CascadeCheckNode.Equals(Frontier.Platform.Workflow.Model.WorkflowNode? other) -> bool
+override sealed Frontier.Platform.Workflow.Model.ContextInjectionNode.Equals(Frontier.Platform.Workflow.Model.WorkflowNode? other) -> bool
+override sealed Frontier.Platform.Workflow.Model.DecisionNode.Equals(Frontier.Platform.Workflow.Model.WorkflowNode? other) -> bool
+override sealed Frontier.Platform.Workflow.Model.FieldComparisonPredicate.Equals(Frontier.Platform.Workflow.Model.ConditionalPredicate? other) -> bool
+override sealed Frontier.Platform.Workflow.Model.HumanGateNode.Equals(Frontier.Platform.Workflow.Model.WorkflowNode? other) -> bool
+override sealed Frontier.Platform.Workflow.Model.LogicalPredicate.Equals(Frontier.Platform.Workflow.Model.ConditionalPredicate? other) -> bool
+override sealed Frontier.Platform.Workflow.Model.LoopNode.Equals(Frontier.Platform.Workflow.Model.WorkflowNode? other) -> bool
+override sealed Frontier.Platform.Workflow.Model.McpToolNode.Equals(Frontier.Platform.Workflow.Model.WorkflowNode? other) -> bool
+override sealed Frontier.Platform.Workflow.Model.ParallelNode.Equals(Frontier.Platform.Workflow.Model.WorkflowNode? other) -> bool
+static Frontier.Platform.Workflow.Model.AgentTaskNode.operator !=(Frontier.Platform.Workflow.Model.AgentTaskNode? left, Frontier.Platform.Workflow.Model.AgentTaskNode? right) -> bool
+static Frontier.Platform.Workflow.Model.AgentTaskNode.operator ==(Frontier.Platform.Workflow.Model.AgentTaskNode? left, Frontier.Platform.Workflow.Model.AgentTaskNode? right) -> bool
+static Frontier.Platform.Workflow.Model.ArtifactVocabularyMigration.DefinitionAdapters.get -> System.Collections.Generic.IReadOnlyDictionary<string!, System.Func<System.Text.Json.JsonElement, System.Text.Json.JsonSerializerOptions!, Frontier.Platform.Workflow.Model.WorkflowDefinition!>!>!
+static Frontier.Platform.Workflow.Model.ArtifactVocabularyMigration.SnapshotAdapters.get -> System.Collections.Generic.IReadOnlyDictionary<string!, System.Func<System.Text.Json.JsonElement, System.Text.Json.JsonSerializerOptions!, Frontier.Platform.Workflow.Model.ExecutionSnapshot!>!>!
+static Frontier.Platform.Workflow.Model.CascadeCheckNode.operator !=(Frontier.Platform.Workflow.Model.CascadeCheckNode? left, Frontier.Platform.Workflow.Model.CascadeCheckNode? right) -> bool
+static Frontier.Platform.Workflow.Model.CascadeCheckNode.operator ==(Frontier.Platform.Workflow.Model.CascadeCheckNode? left, Frontier.Platform.Workflow.Model.CascadeCheckNode? right) -> bool
+static Frontier.Platform.Workflow.Model.ConditionalBranch.operator !=(Frontier.Platform.Workflow.Model.ConditionalBranch? left, Frontier.Platform.Workflow.Model.ConditionalBranch? right) -> bool
+static Frontier.Platform.Workflow.Model.ConditionalBranch.operator ==(Frontier.Platform.Workflow.Model.ConditionalBranch? left, Frontier.Platform.Workflow.Model.ConditionalBranch? right) -> bool
+static Frontier.Platform.Workflow.Model.ConditionalPredicate.operator !=(Frontier.Platform.Workflow.Model.ConditionalPredicate? left, Frontier.Platform.Workflow.Model.ConditionalPredicate? right) -> bool
+static Frontier.Platform.Workflow.Model.ConditionalPredicate.operator ==(Frontier.Platform.Workflow.Model.ConditionalPredicate? left, Frontier.Platform.Workflow.Model.ConditionalPredicate? right) -> bool
+static Frontier.Platform.Workflow.Model.ConsolidateAuditInput.operator !=(Frontier.Platform.Workflow.Model.ConsolidateAuditInput? left, Frontier.Platform.Workflow.Model.ConsolidateAuditInput? right) -> bool
+static Frontier.Platform.Workflow.Model.ConsolidateAuditInput.operator ==(Frontier.Platform.Workflow.Model.ConsolidateAuditInput? left, Frontier.Platform.Workflow.Model.ConsolidateAuditInput? right) -> bool
+static Frontier.Platform.Workflow.Model.ContextInjectionNode.operator !=(Frontier.Platform.Workflow.Model.ContextInjectionNode? left, Frontier.Platform.Workflow.Model.ContextInjectionNode? right) -> bool
+static Frontier.Platform.Workflow.Model.ContextInjectionNode.operator ==(Frontier.Platform.Workflow.Model.ContextInjectionNode? left, Frontier.Platform.Workflow.Model.ContextInjectionNode? right) -> bool
+static Frontier.Platform.Workflow.Model.DecisionNode.operator !=(Frontier.Platform.Workflow.Model.DecisionNode? left, Frontier.Platform.Workflow.Model.DecisionNode? right) -> bool
+static Frontier.Platform.Workflow.Model.DecisionNode.operator ==(Frontier.Platform.Workflow.Model.DecisionNode? left, Frontier.Platform.Workflow.Model.DecisionNode? right) -> bool
+static Frontier.Platform.Workflow.Model.ExecutionSnapshot.operator !=(Frontier.Platform.Workflow.Model.ExecutionSnapshot? left, Frontier.Platform.Workflow.Model.ExecutionSnapshot? right) -> bool
+static Frontier.Platform.Workflow.Model.ExecutionSnapshot.operator ==(Frontier.Platform.Workflow.Model.ExecutionSnapshot? left, Frontier.Platform.Workflow.Model.ExecutionSnapshot? right) -> bool
+static Frontier.Platform.Workflow.Model.ExternalEvent.operator !=(Frontier.Platform.Workflow.Model.ExternalEvent? left, Frontier.Platform.Workflow.Model.ExternalEvent? right) -> bool
+static Frontier.Platform.Workflow.Model.ExternalEvent.operator ==(Frontier.Platform.Workflow.Model.ExternalEvent? left, Frontier.Platform.Workflow.Model.ExternalEvent? right) -> bool
+static Frontier.Platform.Workflow.Model.FieldComparisonPredicate.operator !=(Frontier.Platform.Workflow.Model.FieldComparisonPredicate? left, Frontier.Platform.Workflow.Model.FieldComparisonPredicate? right) -> bool
+static Frontier.Platform.Workflow.Model.FieldComparisonPredicate.operator ==(Frontier.Platform.Workflow.Model.FieldComparisonPredicate? left, Frontier.Platform.Workflow.Model.FieldComparisonPredicate? right) -> bool
+static Frontier.Platform.Workflow.Model.HumanGateNode.operator !=(Frontier.Platform.Workflow.Model.HumanGateNode? left, Frontier.Platform.Workflow.Model.HumanGateNode? right) -> bool
+static Frontier.Platform.Workflow.Model.HumanGateNode.operator ==(Frontier.Platform.Workflow.Model.HumanGateNode? left, Frontier.Platform.Workflow.Model.HumanGateNode? right) -> bool
+static Frontier.Platform.Workflow.Model.LogicalPredicate.operator !=(Frontier.Platform.Workflow.Model.LogicalPredicate? left, Frontier.Platform.Workflow.Model.LogicalPredicate? right) -> bool
+static Frontier.Platform.Workflow.Model.LogicalPredicate.operator ==(Frontier.Platform.Workflow.Model.LogicalPredicate? left, Frontier.Platform.Workflow.Model.LogicalPredicate? right) -> bool
+static Frontier.Platform.Workflow.Model.LoopNode.operator !=(Frontier.Platform.Workflow.Model.LoopNode? left, Frontier.Platform.Workflow.Model.LoopNode? right) -> bool
+static Frontier.Platform.Workflow.Model.LoopNode.operator ==(Frontier.Platform.Workflow.Model.LoopNode? left, Frontier.Platform.Workflow.Model.LoopNode? right) -> bool
+static Frontier.Platform.Workflow.Model.McpToolNode.operator !=(Frontier.Platform.Workflow.Model.McpToolNode? left, Frontier.Platform.Workflow.Model.McpToolNode? right) -> bool
+static Frontier.Platform.Workflow.Model.McpToolNode.operator ==(Frontier.Platform.Workflow.Model.McpToolNode? left, Frontier.Platform.Workflow.Model.McpToolNode? right) -> bool
+static Frontier.Platform.Workflow.Model.ParallelNode.operator !=(Frontier.Platform.Workflow.Model.ParallelNode? left, Frontier.Platform.Workflow.Model.ParallelNode? right) -> bool
+static Frontier.Platform.Workflow.Model.ParallelNode.operator ==(Frontier.Platform.Workflow.Model.ParallelNode? left, Frontier.Platform.Workflow.Model.ParallelNode? right) -> bool
+static Frontier.Platform.Workflow.Model.PayloadRef.operator !=(Frontier.Platform.Workflow.Model.PayloadRef? left, Frontier.Platform.Workflow.Model.PayloadRef? right) -> bool
+static Frontier.Platform.Workflow.Model.PayloadRef.operator ==(Frontier.Platform.Workflow.Model.PayloadRef? left, Frontier.Platform.Workflow.Model.PayloadRef? right) -> bool
+static Frontier.Platform.Workflow.Model.RetryPolicySpec.operator !=(Frontier.Platform.Workflow.Model.RetryPolicySpec? left, Frontier.Platform.Workflow.Model.RetryPolicySpec? right) -> bool
+static Frontier.Platform.Workflow.Model.RetryPolicySpec.operator ==(Frontier.Platform.Workflow.Model.RetryPolicySpec? left, Frontier.Platform.Workflow.Model.RetryPolicySpec? right) -> bool
+static Frontier.Platform.Workflow.Model.StepCompletion.operator !=(Frontier.Platform.Workflow.Model.StepCompletion? left, Frontier.Platform.Workflow.Model.StepCompletion? right) -> bool
+static Frontier.Platform.Workflow.Model.StepCompletion.operator ==(Frontier.Platform.Workflow.Model.StepCompletion? left, Frontier.Platform.Workflow.Model.StepCompletion? right) -> bool
+static Frontier.Platform.Workflow.Model.TypedPayload.operator !=(Frontier.Platform.Workflow.Model.TypedPayload? left, Frontier.Platform.Workflow.Model.TypedPayload? right) -> bool
+static Frontier.Platform.Workflow.Model.TypedPayload.operator ==(Frontier.Platform.Workflow.Model.TypedPayload? left, Frontier.Platform.Workflow.Model.TypedPayload? right) -> bool
+static Frontier.Platform.Workflow.Model.WorkItem.operator !=(Frontier.Platform.Workflow.Model.WorkItem? left, Frontier.Platform.Workflow.Model.WorkItem? right) -> bool
+static Frontier.Platform.Workflow.Model.WorkItem.operator ==(Frontier.Platform.Workflow.Model.WorkItem? left, Frontier.Platform.Workflow.Model.WorkItem? right) -> bool
+static Frontier.Platform.Workflow.Model.WorkflowDefinition.operator !=(Frontier.Platform.Workflow.Model.WorkflowDefinition? left, Frontier.Platform.Workflow.Model.WorkflowDefinition? right) -> bool
+static Frontier.Platform.Workflow.Model.WorkflowDefinition.operator ==(Frontier.Platform.Workflow.Model.WorkflowDefinition? left, Frontier.Platform.Workflow.Model.WorkflowDefinition? right) -> bool
+static Frontier.Platform.Workflow.Model.WorkflowEdge.operator !=(Frontier.Platform.Workflow.Model.WorkflowEdge? left, Frontier.Platform.Workflow.Model.WorkflowEdge? right) -> bool
+static Frontier.Platform.Workflow.Model.WorkflowEdge.operator ==(Frontier.Platform.Workflow.Model.WorkflowEdge? left, Frontier.Platform.Workflow.Model.WorkflowEdge? right) -> bool
+static Frontier.Platform.Workflow.Model.WorkflowNode.operator !=(Frontier.Platform.Workflow.Model.WorkflowNode? left, Frontier.Platform.Workflow.Model.WorkflowNode? right) -> bool
+static Frontier.Platform.Workflow.Model.WorkflowNode.operator ==(Frontier.Platform.Workflow.Model.WorkflowNode? left, Frontier.Platform.Workflow.Model.WorkflowNode? right) -> bool
+static readonly Frontier.Platform.Workflow.Model.ArtifactStatus.Approved -> Frontier.Platform.Workflow.Model.ArtifactStatus!
+static readonly Frontier.Platform.Workflow.Model.ArtifactStatus.Draft -> Frontier.Platform.Workflow.Model.ArtifactStatus!
+static readonly Frontier.Platform.Workflow.Model.ArtifactStatus.Empty -> Frontier.Platform.Workflow.Model.ArtifactStatus!
+static readonly Frontier.Platform.Workflow.Model.ArtifactStatus.Regenerating -> Frontier.Platform.Workflow.Model.ArtifactStatus!
+static readonly Frontier.Platform.Workflow.Model.ArtifactStatus.Waiting -> Frontier.Platform.Workflow.Model.ArtifactStatus!
+static readonly Frontier.Platform.Workflow.Model.ComparisonOp.Contains -> Frontier.Platform.Workflow.Model.ComparisonOp!
+static readonly Frontier.Platform.Workflow.Model.ComparisonOp.EndsWith -> Frontier.Platform.Workflow.Model.ComparisonOp!
+static readonly Frontier.Platform.Workflow.Model.ComparisonOp.Eq -> Frontier.Platform.Workflow.Model.ComparisonOp!
+static readonly Frontier.Platform.Workflow.Model.ComparisonOp.Gt -> Frontier.Platform.Workflow.Model.ComparisonOp!
+static readonly Frontier.Platform.Workflow.Model.ComparisonOp.Gte -> Frontier.Platform.Workflow.Model.ComparisonOp!
+static readonly Frontier.Platform.Workflow.Model.ComparisonOp.In -> Frontier.Platform.Workflow.Model.ComparisonOp!
+static readonly Frontier.Platform.Workflow.Model.ComparisonOp.Lt -> Frontier.Platform.Workflow.Model.ComparisonOp!
+static readonly Frontier.Platform.Workflow.Model.ComparisonOp.Lte -> Frontier.Platform.Workflow.Model.ComparisonOp!
+static readonly Frontier.Platform.Workflow.Model.ComparisonOp.Neq -> Frontier.Platform.Workflow.Model.ComparisonOp!
+static readonly Frontier.Platform.Workflow.Model.ComparisonOp.StartsWith -> Frontier.Platform.Workflow.Model.ComparisonOp!
+static readonly Frontier.Platform.Workflow.Model.EdgeKind.Control -> Frontier.Platform.Workflow.Model.EdgeKind!
+static readonly Frontier.Platform.Workflow.Model.EdgeKind.Data -> Frontier.Platform.Workflow.Model.EdgeKind!
+static readonly Frontier.Platform.Workflow.Model.ExecutionMode.Dispatcher -> Frontier.Platform.Workflow.Model.ExecutionMode!
+static readonly Frontier.Platform.Workflow.Model.ExecutionMode.OneShot -> Frontier.Platform.Workflow.Model.ExecutionMode!
+static readonly Frontier.Platform.Workflow.Model.LogicalOp.And -> Frontier.Platform.Workflow.Model.LogicalOp!
+static readonly Frontier.Platform.Workflow.Model.LogicalOp.Not -> Frontier.Platform.Workflow.Model.LogicalOp!
+static readonly Frontier.Platform.Workflow.Model.LogicalOp.Or -> Frontier.Platform.Workflow.Model.LogicalOp!
+static readonly Frontier.Platform.Workflow.Model.NodeType.AgentTask -> Frontier.Platform.Workflow.Model.NodeType!
+static readonly Frontier.Platform.Workflow.Model.NodeType.CascadeCheck -> Frontier.Platform.Workflow.Model.NodeType!
+static readonly Frontier.Platform.Workflow.Model.NodeType.ContextInjection -> Frontier.Platform.Workflow.Model.NodeType!
+static readonly Frontier.Platform.Workflow.Model.NodeType.Decision -> Frontier.Platform.Workflow.Model.NodeType!
+static readonly Frontier.Platform.Workflow.Model.NodeType.HumanGate -> Frontier.Platform.Workflow.Model.NodeType!
+static readonly Frontier.Platform.Workflow.Model.NodeType.Loop -> Frontier.Platform.Workflow.Model.NodeType!
+static readonly Frontier.Platform.Workflow.Model.NodeType.McpTool -> Frontier.Platform.Workflow.Model.NodeType!
+static readonly Frontier.Platform.Workflow.Model.NodeType.Parallel -> Frontier.Platform.Workflow.Model.NodeType!
+virtual Frontier.Platform.Workflow.Model.ConditionalPredicate.EqualityContract.get -> System.Type!
+virtual Frontier.Platform.Workflow.Model.ConditionalPredicate.Equals(Frontier.Platform.Workflow.Model.ConditionalPredicate? other) -> bool
+virtual Frontier.Platform.Workflow.Model.ConditionalPredicate.PrintMembers(System.Text.StringBuilder! builder) -> bool
+virtual Frontier.Platform.Workflow.Model.WorkflowNode.EqualityContract.get -> System.Type!
+virtual Frontier.Platform.Workflow.Model.WorkflowNode.Equals(Frontier.Platform.Workflow.Model.WorkflowNode? other) -> bool
+virtual Frontier.Platform.Workflow.Model.WorkflowNode.PrintMembers(System.Text.StringBuilder! builder) -> bool

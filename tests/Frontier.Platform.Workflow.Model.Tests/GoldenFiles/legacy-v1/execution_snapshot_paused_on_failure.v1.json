@@ -1,0 +1,1 @@
+{"schema_version":"1.0","execution_id":"eng-1::wf-1","engagement_id":"eng-1","workflow_id":"wf-1","definition_version":1,"sequence":2,"status":"paused_on_failure","current_node_id":"gen-scope","sections":{},"completed_steps":[],"decisions":[],"approved_snapshot_refs":{},"checkpointed_at_utc":"2026-01-01T01:00:00.000Z","failure_classification":"contract_violation"}

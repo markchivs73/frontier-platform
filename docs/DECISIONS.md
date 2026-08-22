@@ -38,6 +38,40 @@ referenced roles are discovered stays solution-owned.
 **Never weaken one of these tests to make a build pass.** If a boundary genuinely needs to
 change, the reason gets recorded here first.
 
+## ADR-PA3 — the engine lands here, and it stays workload-neutral
+
+`Frontier.Platform.Workflow.Model` is the first of the workflow engine's packages to arrive
+(the consuming repo tracks this as ADR-E3a step 3). The platform is no longer only governance:
+it is governance **plus** the engine those workloads run on.
+
+The condition attached to that is not decorative. **No package in this family may name a
+workload's contract type** — not in a signature, not in a doc comment the design agent reads
+back as schema description, not in a test fixture. The first workload's vocabulary reaching a
+platform package would recreate exactly the fusion this move exists to undo, and it would do so
+invisibly, because everything would still compile and every test would still pass.
+
+Three things follow, and each has already caught something real:
+
+- Doc comments are API here. The schema generator reads these XML summaries and hands them to
+  the design agent as field descriptions, so a workload-flavoured example in a `<summary>` ships
+  as guidance to every consumer. Four such examples were neutralised on arrival.
+- Test fixtures are subject to the same rule. `ContractTypeSetTests` arrived using the first
+  workload's contracts as its fixtures and was re-based onto the engine's own.
+- Dead types do not travel. Three types that nothing referenced (`ClientEntity`,
+  `DeadLetterRecord`, `EventResolutionResult`) stayed behind rather than becoming permanent
+  compatibility obligations for a feature nobody has built yet.
+
+The model itself depends only on `Platform.Abstractions` — not on `Serialization`. It declares
+canonical wire shape through attributes and leaves the profile that writes those bytes to the
+consumer, so nothing about adopting the model commits a consumer to a serializer.
+
+Moving these types between assemblies changed no stored byte: `ContractMigrator` keys on the
+stored `schema_version` string, never on a CLR type name (ADR-PA1). The golden files moved
+byte-identical for the same reason — a golden rewritten to suit its new home would discard the
+evidence it exists to carry.
+
+---
+
 ## Lockstep versioning
 
 All nine packages take their version from a single git tag via MinVer. A change to one library
