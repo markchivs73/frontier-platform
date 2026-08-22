@@ -7,6 +7,7 @@ using Frontier.Platform.ModelRoleConfig;
 using Frontier.Platform.Observability;
 using Frontier.Platform.Resilience;
 using Frontier.Platform.Serialization;
+using Frontier.Platform.Workflow.Model;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -75,5 +76,42 @@ using var provider = services.BuildServiceProvider();
 var options = provider.GetRequiredService<System.Text.Json.JsonSerializerOptions>();
 
 Console.WriteLine($"  resolved profile: {options.PropertyNamingPolicy?.GetType().Name ?? "default"}");
+
+// 4. The workflow model has no registration extension — it is types only — so what needs
+//    proving is different: that its canonical wire shape survives packaging, and that the
+//    XML documentation ships *inside* the package. The second matters because the design
+//    agent is handed these summaries as its schema descriptions, and a missing doc file is
+//    silent: descriptions simply become empty.
+var definition = new WorkflowDefinition
+{
+    WorkflowId = "wf-smoke",
+    DefinitionVersion = 1,
+    EngagementType = "smoke",
+    Name = "Smoke",
+    Nodes = [],
+    Edges = [],
+    DefinitionHash = "sha256:smoke",
+    Mode = ExecutionMode.OneShot,
+};
+
+var definitionJson = System.Text.Encoding.UTF8.GetString(CanonicalProfile.SerializeCanonical(definition));
+Console.WriteLine($"  workflow model  : {definitionJson}");
+
+if (!definitionJson.Contains("\"workflow_id\"", StringComparison.Ordinal))
+{
+    throw new InvalidOperationException("Workflow model did not serialize to canonical snake_case wire names.");
+}
+
+var modelXml = Path.ChangeExtension(typeof(WorkflowDefinition).Assembly.Location, ".xml");
+
+if (!File.Exists(modelXml))
+{
+    throw new InvalidOperationException(
+        $"The workflow model's XML documentation is missing from the package ({modelXml}). "
+        + "The design-language schema generator reads it for node and field descriptions, "
+        + "and its absence is silent — descriptions become empty rather than failing.");
+}
+
+Console.WriteLine("  model xml docs  : shipped in package");
 Console.WriteLine();
-Console.WriteLine("PASS - all nine packages restored, loaded and registered.");
+Console.WriteLine("PASS - all ten packages restored, loaded and registered.");

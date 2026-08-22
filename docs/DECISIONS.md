@@ -61,6 +61,14 @@ Three things follow, and each has already caught something real:
   `DeadLetterRecord`, `EventResolutionResult`) stayed behind rather than becoming permanent
   compatibility obligations for a feature nobody has built yet.
 
+**The XML documentation is a runtime artifact, not just IDE comfort.** The schema generator
+reads these summaries and turns them into the design agent's field descriptions, so the doc
+file has to reach the consumer's output directory — and NuGet does not put it there by default.
+Consumers that read it must set `CopyDocumentationFilesFromPackages`. This was found by the
+consumer smoke test, not by reasoning: packing includes the `.xml`, restoring does not deploy
+it, and the failure mode is silent — descriptions become empty and nothing throws. The smoke
+test now asserts the file resolves.
+
 The model itself depends only on `Platform.Abstractions` — not on `Serialization`. It declares
 canonical wire shape through attributes and leaves the profile that writes those bytes to the
 consumer, so nothing about adopting the model commits a consumer to a serializer.

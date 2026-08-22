@@ -23,6 +23,22 @@ Requires a GitHub Packages source with a `read:packages` token — see the
 
 There is no `AddFrontier…()` call: this package is types only, with nothing to register.
 
+### If you read the XML documentation at runtime, opt in
+
+```xml
+<CopyDocumentationFilesFromPackages>true</CopyDocumentationFilesFromPackages>
+```
+
+NuGet does not copy a package's XML documentation into the output directory — it leaves it in
+the package folder for the IDE. That is fine for most packages and **not** fine for this one:
+the design-language schema generator reads these summaries at runtime and turns them into the
+node and field descriptions handed to the design agent.
+
+Getting it wrong fails silently. The assembly still loads, nothing throws, and every
+description is simply empty. If you consume the model for that purpose, set the property and
+keep a test that asserts the doc file resolves — the consumer smoke test in this repo does
+exactly that.
+
 ## What it contains
 
 **The definition**

@@ -178,12 +178,16 @@ jobs:
 
       - run: dotnet pack FrontierPlatform.slnx -c Release --no-build -o ./artifacts
 
-      - name: Verify all nine packages were produced
+      # The count is deliberately exact rather than a lower bound: it fails on a package
+      # silently dropped from the pack *and* on one arriving unannounced. Adding a library is
+      # meant to touch this line — that is the point of it.
+      - name: Verify all ten packages were produced
         run: |
+          expected=10
           count=$(find ./artifacts -name '*.nupkg' | wc -l)
           echo "Packages produced: $count"
-          if [ "$count" -ne 9 ]; then
-            echo "::error::Expected 9 packages, got $count"
+          if [ "$count" -ne "$expected" ]; then
+            echo "::error::Expected $expected packages, got $count"
             find ./artifacts -name '*.nupkg' -print
             exit 1
           fi
