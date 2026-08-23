@@ -201,5 +201,16 @@ if (rules < 20)
 {
     throw new InvalidOperationException($"Expected the structural rule set to register, got {rules} rules.");
 }
+
+// 9. The designer-host surface. A consumer hosting the design agent parses the agent's proposal
+//    and builds the change set it shows the user — both from the compiler, so its view of "what
+//    changed" cannot disagree with the merge and diff services'. The designer itself stays in the
+//    consuming solution until E3b step 5, which is exactly why this has to be reachable now.
+if (AgentProposalParser.TryParse("not a proposal", out _))
+{
+    throw new InvalidOperationException("Malformed proposal text should not parse.");
+}
+
+Console.WriteLine("  designer host   : proposal parser + change-set builder reachable");
 Console.WriteLine();
 Console.WriteLine("PASS - all twelve packages restored, loaded and registered.");
