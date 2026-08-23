@@ -29,6 +29,7 @@
     <PackageReference Include="Frontier.Platform.Serialization" Version="*-*" />
     <PackageReference Include="Frontier.Platform.Workflow.Model" Version="*-*" />
     <PackageReference Include="Frontier.Platform.Workflow.Orchestration" Version="*-*" />
+    <PackageReference Include="Frontier.Platform.Workflow.Compiler" Version="*-*" />
   </ItemGroup>
 
   <ItemGroup>

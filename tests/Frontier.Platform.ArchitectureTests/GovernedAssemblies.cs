@@ -18,6 +18,9 @@ internal static class GovernedAssemblies
     /// <summary>The workflow interpreter, which arrived at ADR-PA5.</summary>
     public const string WorkflowOrchestrationName = "Frontier.Platform.Workflow.Orchestration";
 
+    /// <summary>The workflow compiler, which arrived at E3b step 4.</summary>
+    public const string WorkflowCompilerName = "Frontier.Platform.Workflow.Compiler";
+
     public static readonly IReadOnlyList<string> PlatformLibraryNames =
     [
         PlatformAbstractionsName,
@@ -31,6 +34,7 @@ internal static class GovernedAssemblies
         SerializationName,
         WorkflowModelName,
         WorkflowOrchestrationName,
+        WorkflowCompilerName,
     ];
 
     /// <summary>
@@ -42,6 +46,7 @@ internal static class GovernedAssemblies
     [
         WorkflowModelName,
         WorkflowOrchestrationName,
+        WorkflowCompilerName,
     ];
 
     /// <summary>The **governance tier**: every platform library that is not the engine.</summary>

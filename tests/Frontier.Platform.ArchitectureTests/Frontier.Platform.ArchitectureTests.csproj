@@ -29,6 +29,7 @@
     <ProjectReference Include="..\..\src\Frontier.Platform.Serialization\Frontier.Platform.Serialization.csproj" />
     <ProjectReference Include="..\..\src\Frontier.Platform.Workflow.Model\Frontier.Platform.Workflow.Model.csproj" />
     <ProjectReference Include="..\..\src\Frontier.Platform.Workflow.Orchestration\Frontier.Platform.Workflow.Orchestration.csproj" />
+    <ProjectReference Include="..\..\src\Frontier.Platform.Workflow.Compiler\Frontier.Platform.Workflow.Compiler.csproj" />
   </ItemGroup>
 
 </Project>
