@@ -13,6 +13,8 @@ Three things live here:
   from the thing the interpreter executes.
 - **The publish lifecycle.** Draft → validate → propose → approve → publish, with version
   pinning, proposal merge and diff, test runs and retirement monitoring, over Cosmos.
+- **The design agent.** The conversational protocol that turns a designer's plain-language
+  request into a proposed definition, validates it, and repairs it when validation fails.
 
 ## Install
 
@@ -44,11 +46,29 @@ is a statement about a particular deployment.
 | `IContractTypeCatalog` | Which data contracts this deployment declares |
 | `ICascadeGraphChecker` | Cascade-graph checks at publish |
 | `ITestRunExecutor` and friends | How a test run is executed and read back |
+| `IEntryContractCatalog` | What the entry node is handed, and from which dynamic field |
+| `IChatClient` / `IDesignerModelProvider` | Which model the design agent runs on, and how to call it |
 
 **Workload rule packs register alongside the structural set.** A rule is just an
 `IDefinitionValidationRule` registration, so a deployment adds its own policy without forking
 anything. The set shipped here is deliberately structural only — it encodes what makes a
 workflow *executable*, never what makes one *acceptable to a particular business*.
+
+## The design agent names no contract of yours
+
+`IEntryContractCatalog` exists because the agent's system prompt used to state one deployment's
+entry contract and dynamic field **as string literals**. That is invisible to any architecture
+test working at the type level, and it would have shipped a workload's vocabulary inside this
+package.
+
+The engine now states the rule — the entry node is handed context rather than an upstream data
+payload — and you supply the nouns.
+
+Whatever answers `IEntryContractCatalog` **must agree with whatever builds the entry payload at
+runtime** (`IEntryPayloadBuilder`, in the orchestration package). The agent is told to request a
+field the runtime then reads; if they ever name different things, every workflow the agent
+designs will validate and then fail live. Derive both from one constant rather than stating it
+twice.
 
 ## A note on the definition hash
 

@@ -1,4 +1,5 @@
 using Frontier.Platform.Workflow.Compiler;
+using Microsoft.Extensions.AI;
 using Frontier.Platform.Workflow.Model;
 
 namespace Frontier.Platform.SmokeConsumer;
@@ -42,4 +43,48 @@ internal sealed class SmokeCatalogues :
         Task.FromResult<IReadOnlyList<DesignerToolDescriptor>>([]);
 
     public IReadOnlyList<string> CheckAtPublish(WorkflowDefinition definition) => [];
+}
+
+/// <summary>
+/// The entry convention a deployment declares. Names nothing real: the point is that the design
+/// agent works from whatever it is told, rather than from a contract compiled into its prompt.
+/// </summary>
+internal sealed class SmokeEntryContract : IEntryContractCatalog
+{
+    public Task<EntryContractDescriptor> GetEntryContractAsync(CancellationToken ct) =>
+        Task.FromResult(new EntryContractDescriptor
+        {
+            ContractTypeName = "CaseSummary",
+            DynamicFieldName = "case_summary",
+            Description = "the case summary",
+        });
+}
+
+/// <summary>
+/// The model client the design agent talks through. Supplying it is the consumer's job — the
+/// compiler package references only Microsoft.Extensions.AI.Abstractions and never a provider.
+/// </summary>
+internal sealed class SmokeChatClient : IChatClient
+{
+    public void Dispose() { }
+
+    public object? GetService(Type serviceType, object? serviceKey = null) => null;
+
+    public Task<ChatResponse> GetResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions? options = null, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("Smoke test: never invoked.");
+
+    public IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions? options = null, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("Smoke test: never invoked.");
+}
+
+/// <summary>Which model the design agent runs on — a deployment decision, so a port.</summary>
+internal sealed class SmokeDesignerModel : IDesignerModelProvider
+{
+    public Task<DesignerModelSelection> GetAsync(string workflowId, CancellationToken ct) =>
+        Task.FromResult(new DesignerModelSelection
+        {
+            ModelId = "smoke-model",
+            MaxOutputTokens = 1024,
+            AdaptiveThinking = false,
+        });
 }
