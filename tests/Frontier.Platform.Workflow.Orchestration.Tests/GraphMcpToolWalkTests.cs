@@ -16,12 +16,12 @@ public sealed class GraphMcpToolWalkTests
     [Fact]
     public async Task WriteToolNode_RunsWithIdempotencyKeyAndWriteProfile()
     {
-        var harness = new McpHarness(Definition(toolRef: "io.frontier.demo/autotask/update_ticket"));
+        var harness = new McpHarness(Definition(toolRef: "com.example.crm/tickets/update_ticket"));
 
         var state = await harness.RunWalkAsync();
 
         var activityInput = Assert.Single(harness.ToolInputs);
-        Assert.Equal("io.frontier.demo/autotask/update_ticket", activityInput.ToolRef);
+        Assert.Equal("com.example.crm/tickets/update_ticket", activityInput.ToolRef);
         Assert.EndsWith("::t-tool::0", activityInput.CorrelationId, StringComparison.Ordinal);
         Assert.Equal(activityInput.CorrelationId, activityInput.IdempotencyKey); // write ⇒ key = correlation id
         Assert.Equal(45, activityInput.TimeoutSeconds);
@@ -38,7 +38,7 @@ public sealed class GraphMcpToolWalkTests
     [Fact]
     public async Task ReadToolNode_NoIdempotencyKey_ReadProfile()
     {
-        var harness = new McpHarness(Definition(toolRef: "io.frontier.demo/autotask/get_new_ticket"));
+        var harness = new McpHarness(Definition(toolRef: "com.example.crm/tickets/get_new_ticket"));
 
         await harness.RunWalkAsync();
 
@@ -49,7 +49,7 @@ public sealed class GraphMcpToolWalkTests
     [Fact]
     public async Task NodeRetryProfile_OverridesTheDefault()
     {
-        var definition = Definition(toolRef: "io.frontier.demo/autotask/update_ticket");
+        var definition = Definition(toolRef: "com.example.crm/tickets/update_ticket");
         definition = definition with
         {
             Nodes = [.. definition.Nodes.Select(n => n is McpToolNode tool ? tool with { Retry = new RetryPolicySpec { ProfileName = "custom-mcp" } } : n)],
@@ -66,12 +66,12 @@ public sealed class GraphMcpToolWalkTests
     {
         // a-entry → t-tool → z-after with data edges throughout: the agent after the tool
         // receives the tool's result as its upstream payload.
-        var definition = Definition(toolRef: "io.frontier.demo/autotask/get_new_ticket") with
+        var definition = Definition(toolRef: "com.example.crm/tickets/get_new_ticket") with
         {
             Nodes =
             [
                 Agent("a-entry", "scope", "SummaryArtifact"),
-                Tool("t-tool", "io.frontier.demo/autotask/get_new_ticket"),
+                Tool("t-tool", "com.example.crm/tickets/get_new_ticket"),
                 Agent("z-after", "after", "PlanArtifact"),
             ],
             Edges =

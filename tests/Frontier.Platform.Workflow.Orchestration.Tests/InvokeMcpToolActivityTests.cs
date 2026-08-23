@@ -11,7 +11,7 @@ public sealed class InvokeMcpToolActivityTests
         {
             NodeId = "t-1",
             ArtifactKey = null,
-            ToolRef = "io.frontier.demo/autotask/get_new_ticket",
+            ToolRef = "com.example.crm/tickets/get_new_ticket",
             OutputPayload = "{}",
             OutputHash = "hash",
             Simulated = false,
@@ -21,7 +21,7 @@ public sealed class InvokeMcpToolActivityTests
         var input = new McpToolActivityInput
         {
             NodeId = "t-1",
-            ToolRef = "io.frontier.demo/autotask/get_new_ticket",
+            ToolRef = "com.example.crm/tickets/get_new_ticket",
             TimeoutSeconds = 30,
             CorrelationId = "c-1",
             ExecutionId = "eng-1::wf",

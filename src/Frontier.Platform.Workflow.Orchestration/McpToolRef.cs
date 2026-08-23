@@ -5,7 +5,7 @@ namespace Frontier.Platform.Workflow.Orchestration;
 /// <summary>
 /// Parses an <see cref="Frontier.Platform.Workflow.Model.AgentTaskNode.ToolRefs"/> entry
 /// (ADR-CD9, S13.7b) — <c>"{reverse-dns-server}/{tool}"</c>, e.g.
-/// <c>"io.frontier.demo/autotask/get_new_ticket"</c>, matching
+/// <c>"com.example.crm/tickets/get_ticket"</c>, matching
 /// <see cref="Frontier.Platform.Workflow.Model.ToolCall.Name"/>'s wire convention — into
 /// the registered server name the registry keys on and the tool name the MCP server exposes.
 /// The server name is the registry's reverse-DNS form (<c>{namespace}/{name}</c>), so a full
@@ -31,7 +31,7 @@ public readonly record struct McpToolRef(string Server, string Tool)
 
         if (server.Count(c => c == '/') != 1 || !server.Contains('.', StringComparison.Ordinal) || lastSeparator == reference.Length - 1)
         {
-            throw new InvalidOperationException($"Tool reference '{reference}' must be '{{reverse-dns-namespace}}/{{name}}/{{tool}}' (ADR-CD9), e.g. 'io.frontier.demo/autotask/get_new_ticket'.");
+            throw new InvalidOperationException($"Tool reference '{reference}' must be '{{reverse-dns-namespace}}/{{name}}/{{tool}}' (ADR-CD9), e.g. 'com.example.crm/tickets/get_ticket'.");
         }
 
         return new McpToolRef(server, reference[(lastSeparator + 1)..]);
@@ -52,7 +52,13 @@ public readonly record struct McpToolRef(string Server, string Tool)
     /// and the tool must not contain <c>.</c> (the same assumptions the pre-S13.7b
     /// convention documented for connector ids and tools).
     /// </summary>
-    internal string ToModelSafeName()
+    /// <remarks>
+    /// Public for the same reason as <see cref="CanonicalOutputSchema"/>: an
+    /// <see cref="IMcpToolCatalog"/> implementation presents tools to a model under this
+    /// encoding and maps the model's calls back through <see cref="ParseModelSafeName"/>. Both
+    /// halves must agree, so both live here rather than being reimplemented per adapter.
+    /// </remarks>
+    public string ToModelSafeName()
     {
         var namespaceSeparator = Server.IndexOf('/', StringComparison.Ordinal);
         var safeNamespace = Server[..namespaceSeparator].Replace('.', '_');
@@ -66,7 +72,7 @@ public readonly record struct McpToolRef(string Server, string Tool)
     /// Throws <see cref="InvalidOperationException"/> if <paramref name="safeName"/> isn't
     /// one of our own aliases.
     /// </summary>
-    internal static McpToolRef ParseModelSafeName(string safeName)
+    public static McpToolRef ParseModelSafeName(string safeName)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(safeName);
 

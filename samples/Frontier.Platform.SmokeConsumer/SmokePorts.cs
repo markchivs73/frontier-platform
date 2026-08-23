@@ -22,8 +22,24 @@ internal sealed class SmokeInstructionsResolver : IInstructionsResolver
 
 internal sealed class SmokeToolCatalog : IMcpToolCatalog
 {
-    public Task<IReadOnlyList<AITool>> ResolveAsync(IReadOnlyList<string> toolRefs, string executionId, CancellationToken ct) =>
-        Task.FromResult<IReadOnlyList<AITool>>([]);
+    public Task<IReadOnlyList<AITool>> ResolveAsync(IReadOnlyList<string> toolRefs, string executionId, CancellationToken ct)
+    {
+        // A real catalogue presents tools to the model under the engine's model-safe encoding
+        // and maps the model's calls back through it. Exercising the round trip here is the
+        // point: both halves are engine surface an adapter must be able to reach.
+        foreach (var reference in toolRefs)
+        {
+            var parsed = McpToolRef.Parse(reference);
+            var roundTripped = McpToolRef.ParseModelSafeName(parsed.ToModelSafeName());
+
+            if (roundTripped != parsed)
+            {
+                throw new InvalidOperationException($"Model-safe encoding did not round-trip for '{reference}'.");
+            }
+        }
+
+        return Task.FromResult<IReadOnlyList<AITool>>([]);
+    }
 }
 
 internal sealed class SmokeEndpointResolver : IMcpEndpointResolver

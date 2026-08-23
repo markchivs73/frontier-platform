@@ -132,6 +132,7 @@ Frontier.Platform.Workflow.Orchestration.AssembleContextRequest.Equals(Frontier.
 Frontier.Platform.Workflow.Orchestration.AssembleContextRequest.RealTimeContent.get -> string!
 Frontier.Platform.Workflow.Orchestration.AssembleContextRequest.RealTimeContent.init -> void
 Frontier.Platform.Workflow.Orchestration.AssembleContextRequest.Validate() -> void
+Frontier.Platform.Workflow.Orchestration.CanonicalOutputSchema
 Frontier.Platform.Workflow.Orchestration.CascadeActivityRequest
 Frontier.Platform.Workflow.Orchestration.CascadeActivityRequest.<Clone>$() -> Frontier.Platform.Workflow.Orchestration.CascadeActivityRequest!
 Frontier.Platform.Workflow.Orchestration.CascadeActivityRequest.CascadeActivityRequest() -> void
@@ -257,6 +258,7 @@ Frontier.Platform.Workflow.Orchestration.McpToolRef.McpToolRef() -> void
 Frontier.Platform.Workflow.Orchestration.McpToolRef.McpToolRef(string! Server, string! Tool) -> void
 Frontier.Platform.Workflow.Orchestration.McpToolRef.Server.get -> string!
 Frontier.Platform.Workflow.Orchestration.McpToolRef.Server.init -> void
+Frontier.Platform.Workflow.Orchestration.McpToolRef.ToModelSafeName() -> string!
 Frontier.Platform.Workflow.Orchestration.McpToolRef.ToWireReference() -> string!
 Frontier.Platform.Workflow.Orchestration.McpToolRef.Tool.get -> string!
 Frontier.Platform.Workflow.Orchestration.McpToolRef.Tool.init -> void
@@ -352,6 +354,8 @@ static Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityResponse.op
 static Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityResponse.operator ==(Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityResponse? left, Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityResponse? right) -> bool
 static Frontier.Platform.Workflow.Orchestration.AssembleContextRequest.operator !=(Frontier.Platform.Workflow.Orchestration.AssembleContextRequest? left, Frontier.Platform.Workflow.Orchestration.AssembleContextRequest? right) -> bool
 static Frontier.Platform.Workflow.Orchestration.AssembleContextRequest.operator ==(Frontier.Platform.Workflow.Orchestration.AssembleContextRequest? left, Frontier.Platform.Workflow.Orchestration.AssembleContextRequest? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.CanonicalOutputSchema.For(System.Type! outputType) -> Microsoft.Extensions.AI.ChatResponseFormat!
+static Frontier.Platform.Workflow.Orchestration.CanonicalOutputSchema.For<TOutput>() -> Microsoft.Extensions.AI.ChatResponseFormat!
 static Frontier.Platform.Workflow.Orchestration.CascadeActivityRequest.operator !=(Frontier.Platform.Workflow.Orchestration.CascadeActivityRequest? left, Frontier.Platform.Workflow.Orchestration.CascadeActivityRequest? right) -> bool
 static Frontier.Platform.Workflow.Orchestration.CascadeActivityRequest.operator ==(Frontier.Platform.Workflow.Orchestration.CascadeActivityRequest? left, Frontier.Platform.Workflow.Orchestration.CascadeActivityRequest? right) -> bool
 static Frontier.Platform.Workflow.Orchestration.CascadeActivityResponse.operator !=(Frontier.Platform.Workflow.Orchestration.CascadeActivityResponse? left, Frontier.Platform.Workflow.Orchestration.CascadeActivityResponse? right) -> bool
@@ -367,6 +371,7 @@ static Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.operator ==
 static Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.operator !=(Frontier.Platform.Workflow.Orchestration.McpToolActivityResult? left, Frontier.Platform.Workflow.Orchestration.McpToolActivityResult? right) -> bool
 static Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.operator ==(Frontier.Platform.Workflow.Orchestration.McpToolActivityResult? left, Frontier.Platform.Workflow.Orchestration.McpToolActivityResult? right) -> bool
 static Frontier.Platform.Workflow.Orchestration.McpToolRef.Parse(string! reference) -> Frontier.Platform.Workflow.Orchestration.McpToolRef
+static Frontier.Platform.Workflow.Orchestration.McpToolRef.ParseModelSafeName(string! safeName) -> Frontier.Platform.Workflow.Orchestration.McpToolRef
 static Frontier.Platform.Workflow.Orchestration.McpToolRef.operator !=(Frontier.Platform.Workflow.Orchestration.McpToolRef left, Frontier.Platform.Workflow.Orchestration.McpToolRef right) -> bool
 static Frontier.Platform.Workflow.Orchestration.McpToolRef.operator ==(Frontier.Platform.Workflow.Orchestration.McpToolRef left, Frontier.Platform.Workflow.Orchestration.McpToolRef right) -> bool
 static Frontier.Platform.Workflow.Orchestration.OrchestrationServiceCollectionExtensions.AddFrontierWorkflowOrchestration(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Microsoft.Extensions.Configuration.IConfiguration! configuration) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
