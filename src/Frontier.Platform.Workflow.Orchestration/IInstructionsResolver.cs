@@ -7,7 +7,7 @@ namespace Frontier.Platform.Workflow.Orchestration;
 /// PoC-grade <see cref="FileInstructionsResolver"/> implementation with a Cosmos-backed
 /// store; this interface is the seam.
 /// </summary>
-internal interface IInstructionsResolver
+public interface IInstructionsResolver
 {
     /// <summary>Returns the instructions content referenced by <paramref name="instructionsRef"/>.</summary>
     Task<string> ResolveAsync(string instructionsRef, CancellationToken ct);

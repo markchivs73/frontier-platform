@@ -1,3 +1,39 @@
+Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome<TOutput>
+Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome<TOutput>.<Clone>$() -> Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome<TOutput>!
+Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome<TOutput>.AgentInvocationOutcome() -> void
+Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome<TOutput>.Equals(Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome<TOutput>? other) -> bool
+Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome<TOutput>.Result.get -> TOutput
+Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome<TOutput>.Result.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome<TOutput>.ToolCalls.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.ToolCall!>!
+Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome<TOutput>.ToolCalls.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome<TOutput>.Usage.get -> Microsoft.Extensions.AI.UsageDetails?
+Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome<TOutput>.Usage.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentInvocationRequest
+Frontier.Platform.Workflow.Orchestration.AgentInvocationRequest.<Clone>$() -> Frontier.Platform.Workflow.Orchestration.AgentInvocationRequest!
+Frontier.Platform.Workflow.Orchestration.AgentInvocationRequest.AgentInvocationRequest() -> void
+Frontier.Platform.Workflow.Orchestration.AgentInvocationRequest.Equals(Frontier.Platform.Workflow.Orchestration.AgentInvocationRequest? other) -> bool
+Frontier.Platform.Workflow.Orchestration.AgentInvocationRequest.Instructions.get -> string!
+Frontier.Platform.Workflow.Orchestration.AgentInvocationRequest.Instructions.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentInvocationRequest.MaxOutputTokens.get -> long
+Frontier.Platform.Workflow.Orchestration.AgentInvocationRequest.MaxOutputTokens.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentInvocationRequest.ModelId.get -> string!
+Frontier.Platform.Workflow.Orchestration.AgentInvocationRequest.ModelId.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentInvocationRequest.Prompt.get -> string!
+Frontier.Platform.Workflow.Orchestration.AgentInvocationRequest.Prompt.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentInvocationRequest.Tools.get -> System.Collections.Generic.IReadOnlyList<Microsoft.Extensions.AI.AITool!>!
+Frontier.Platform.Workflow.Orchestration.AgentInvocationRequest.Tools.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentInvocationResult
+Frontier.Platform.Workflow.Orchestration.AgentInvocationResult.<Clone>$() -> Frontier.Platform.Workflow.Orchestration.AgentInvocationResult!
+Frontier.Platform.Workflow.Orchestration.AgentInvocationResult.AgentInvocationResult() -> void
+Frontier.Platform.Workflow.Orchestration.AgentInvocationResult.Equals(Frontier.Platform.Workflow.Orchestration.AgentInvocationResult? other) -> bool
+Frontier.Platform.Workflow.Orchestration.AgentInvocationResult.LatencyMs.get -> long
+Frontier.Platform.Workflow.Orchestration.AgentInvocationResult.LatencyMs.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentInvocationResult.Result.get -> Frontier.Platform.Abstractions.IVersionedContract!
+Frontier.Platform.Workflow.Orchestration.AgentInvocationResult.Result.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentInvocationResult.ToolCalls.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.ToolCall!>!
+Frontier.Platform.Workflow.Orchestration.AgentInvocationResult.ToolCalls.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentInvocationResult.Usage.get -> Microsoft.Extensions.AI.UsageDetails?
+Frontier.Platform.Workflow.Orchestration.AgentInvocationResult.Usage.init -> void
 Frontier.Platform.Workflow.Orchestration.AgentTaskActivity
 Frontier.Platform.Workflow.Orchestration.AgentTaskActivity.AgentTaskActivity(Frontier.Platform.Workflow.Orchestration.IAgentTaskActivityPipeline! pipeline) -> void
 Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput
@@ -152,6 +188,8 @@ Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult.CompletedSteps.
 Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult.CompletedSteps.init -> void
 Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult.Equals(Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult? other) -> bool
 Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult.GraphOrchestratorResult() -> void
+Frontier.Platform.Workflow.Orchestration.IAgentInvoker
+Frontier.Platform.Workflow.Orchestration.IAgentInvoker.InvokeAsync<TOutput>(Frontier.Platform.Workflow.Orchestration.AgentInvocationRequest! request, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome<TOutput>!>!
 Frontier.Platform.Workflow.Orchestration.IAgentTaskActivityPipeline
 Frontier.Platform.Workflow.Orchestration.IAgentTaskActivityPipeline.RunAsync(Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput! input, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult!>!
 Frontier.Platform.Workflow.Orchestration.IAuditConsolidator
@@ -160,8 +198,12 @@ Frontier.Platform.Workflow.Orchestration.IEntryPayloadBuilder
 Frontier.Platform.Workflow.Orchestration.IEntryPayloadBuilder.BuildEntryPayload(string! dynamicContentJson) -> string!
 Frontier.Platform.Workflow.Orchestration.IExecutionSnapshotReader
 Frontier.Platform.Workflow.Orchestration.IExecutionSnapshotReader.GetLatestAsync(string! executionId, string! engagementId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Model.ExecutionSnapshot?>!
+Frontier.Platform.Workflow.Orchestration.IInstructionsResolver
+Frontier.Platform.Workflow.Orchestration.IInstructionsResolver.ResolveAsync(string! instructionsRef, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<string!>!
 Frontier.Platform.Workflow.Orchestration.IMcpEndpointResolver
 Frontier.Platform.Workflow.Orchestration.IMcpEndpointResolver.ResolveAsync(string! serverName, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Uri!>!
+Frontier.Platform.Workflow.Orchestration.IMcpToolCatalog
+Frontier.Platform.Workflow.Orchestration.IMcpToolCatalog.ResolveAsync(System.Collections.Generic.IReadOnlyList<string!>! toolRefs, string! executionId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Microsoft.Extensions.AI.AITool!>!>!
 Frontier.Platform.Workflow.Orchestration.IMcpToolInvocationPipeline
 Frontier.Platform.Workflow.Orchestration.IMcpToolInvocationPipeline.RunAsync(Frontier.Platform.Workflow.Orchestration.McpToolActivityInput! input, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Orchestration.McpToolActivityResult!>!
 Frontier.Platform.Workflow.Orchestration.IMcpWriteClassifier
@@ -222,6 +264,7 @@ Frontier.Platform.Workflow.Orchestration.OrchestrationOptions
 Frontier.Platform.Workflow.Orchestration.OrchestrationOptions.InstructionsRootPath.get -> string!
 Frontier.Platform.Workflow.Orchestration.OrchestrationOptions.InstructionsRootPath.set -> void
 Frontier.Platform.Workflow.Orchestration.OrchestrationOptions.OrchestrationOptions() -> void
+Frontier.Platform.Workflow.Orchestration.OrchestrationServiceCollectionExtensions
 Frontier.Platform.Workflow.Orchestration.OrchestratorCapabilities
 Frontier.Platform.Workflow.Orchestration.RequestApprovalActivity
 Frontier.Platform.Workflow.Orchestration.RequestApprovalActivity.RequestApprovalActivity(Frontier.Platform.Hitl.IApprovalStore! store) -> void
@@ -232,6 +275,15 @@ Frontier.Platform.Workflow.Orchestration.SnapshotActivityResponse.SnapshotActivi
 Frontier.Platform.Workflow.Orchestration.SnapshotActivityResponse.SnapshotId.get -> string!
 Frontier.Platform.Workflow.Orchestration.SnapshotActivityResponse.SnapshotId.init -> void
 const Frontier.Platform.Workflow.Orchestration.OrchestrationOptions.ArtifactName = "Orchestration" -> string!
+override Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome<TOutput>.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome<TOutput>.GetHashCode() -> int
+override Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome<TOutput>.ToString() -> string!
+override Frontier.Platform.Workflow.Orchestration.AgentInvocationRequest.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Orchestration.AgentInvocationRequest.GetHashCode() -> int
+override Frontier.Platform.Workflow.Orchestration.AgentInvocationRequest.ToString() -> string!
+override Frontier.Platform.Workflow.Orchestration.AgentInvocationResult.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Orchestration.AgentInvocationResult.GetHashCode() -> int
+override Frontier.Platform.Workflow.Orchestration.AgentInvocationResult.ToString() -> string!
 override Frontier.Platform.Workflow.Orchestration.AgentTaskActivity.RunAsync(Microsoft.DurableTask.TaskActivityContext! context, Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput! input) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult!>!
 override Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.Equals(object? obj) -> bool
 override Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.GetHashCode() -> int
@@ -282,6 +334,12 @@ override Frontier.Platform.Workflow.Orchestration.RequestApprovalActivity.RunAsy
 override Frontier.Platform.Workflow.Orchestration.SnapshotActivityResponse.Equals(object? obj) -> bool
 override Frontier.Platform.Workflow.Orchestration.SnapshotActivityResponse.GetHashCode() -> int
 override Frontier.Platform.Workflow.Orchestration.SnapshotActivityResponse.ToString() -> string!
+static Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome<TOutput>.operator !=(Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome<TOutput>? left, Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome<TOutput>? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome<TOutput>.operator ==(Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome<TOutput>? left, Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome<TOutput>? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.AgentInvocationRequest.operator !=(Frontier.Platform.Workflow.Orchestration.AgentInvocationRequest? left, Frontier.Platform.Workflow.Orchestration.AgentInvocationRequest? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.AgentInvocationRequest.operator ==(Frontier.Platform.Workflow.Orchestration.AgentInvocationRequest? left, Frontier.Platform.Workflow.Orchestration.AgentInvocationRequest? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.AgentInvocationResult.operator !=(Frontier.Platform.Workflow.Orchestration.AgentInvocationResult? left, Frontier.Platform.Workflow.Orchestration.AgentInvocationResult? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.AgentInvocationResult.operator ==(Frontier.Platform.Workflow.Orchestration.AgentInvocationResult? left, Frontier.Platform.Workflow.Orchestration.AgentInvocationResult? right) -> bool
 static Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.operator !=(Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput? left, Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput? right) -> bool
 static Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.operator ==(Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput? left, Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput? right) -> bool
 static Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult.operator !=(Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult? left, Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult? right) -> bool
@@ -311,6 +369,7 @@ static Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.operator =
 static Frontier.Platform.Workflow.Orchestration.McpToolRef.Parse(string! reference) -> Frontier.Platform.Workflow.Orchestration.McpToolRef
 static Frontier.Platform.Workflow.Orchestration.McpToolRef.operator !=(Frontier.Platform.Workflow.Orchestration.McpToolRef left, Frontier.Platform.Workflow.Orchestration.McpToolRef right) -> bool
 static Frontier.Platform.Workflow.Orchestration.McpToolRef.operator ==(Frontier.Platform.Workflow.Orchestration.McpToolRef left, Frontier.Platform.Workflow.Orchestration.McpToolRef right) -> bool
+static Frontier.Platform.Workflow.Orchestration.OrchestrationServiceCollectionExtensions.AddFrontierWorkflowOrchestration(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Microsoft.Extensions.Configuration.IConfiguration! configuration) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Frontier.Platform.Workflow.Orchestration.OrchestratorCapabilities.SupportedNodeTypes.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Workflow.Model.NodeType!>!
 static Frontier.Platform.Workflow.Orchestration.OrchestratorCapabilities.Supports(Frontier.Platform.Workflow.Model.NodeType! nodeType) -> bool
 static Frontier.Platform.Workflow.Orchestration.SnapshotActivityResponse.operator !=(Frontier.Platform.Workflow.Orchestration.SnapshotActivityResponse? left, Frontier.Platform.Workflow.Orchestration.SnapshotActivityResponse? right) -> bool
