@@ -198,6 +198,34 @@ is not a property you can observe from inside the repo that produces it.**
 
 ---
 
+## ADR-PA7 — the design agent lives here, and names no consumer's contract
+
+The chat-designer protocol joins `Workflow.Compiler`, completing the engine's arrival. Its
+dependency set was already entirely in that package, so it needs no thirteenth library.
+
+`ChatDesignerService` is **internal**: consumers resolve `IChatDesignerService`. A concrete
+class is a permanent obligation, and nothing outside needs to construct this one.
+
+**The condition on it living here is the one ADR-PA3 stated and this move tested.** The agent's
+system prompt used to name one deployment's entry contract and dynamic field as *string
+literals* — invisible to every type-level guard, and about to be published. `IEntryContractCatalog`
+now supplies them, alongside `IChatClient` and `IDesignerModelProvider`.
+
+*The rule that came out of it, worth keeping:* four workload couplings were found across this
+programme — a type reference, a hardcoded classification, a demo connector quoted in an error
+message, and this prompt. Only the first was visible to an architecture test. **The couplings
+that survive a type-level guard are the ones written as strings**, so a move should include a
+literal scan of the moving source for the consumer's contract names and identifiers. Applied to
+this move, it found exactly one remaining instance — a `//` comment in `ExampleSkeletonBuilder`
+that shipped at v0.7.0 — and confirmed the designer itself was clean.
+
+*Agreement matters more than neutrality here.* The agent is told to request a field the runtime
+then reads. If those ever disagree, every workflow the agent designs validates and then fails
+live, in a way that looks like a model problem. The README says plainly: derive both from one
+constant.
+
+---
+
 ## Lockstep versioning
 
 All nine packages take their version from a single git tag via MinVer. A change to one library

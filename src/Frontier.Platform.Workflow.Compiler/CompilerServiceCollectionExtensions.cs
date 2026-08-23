@@ -149,6 +149,24 @@ public static class CompilerServiceCollectionExtensions
             return new ProposalMergeService(store, compiler, diffService);
         });
 
+        services.AddScoped<IChatDesignerService>(sp =>
+        {
+            var store = sp.GetRequiredService<IDefinitionStore>();
+            var mergeService = sp.GetRequiredService<IProposalMergeService>();
+            var chatClient = sp.GetRequiredService<IChatClient>();
+            var schemaProvider = sp.GetRequiredService<IWorkflowSchemaProvider>();
+            var roleCatalog = sp.GetRequiredService<IApproverRoleCatalog>();
+            var toolCatalog = sp.GetRequiredService<IDesignerToolCatalog>();
+            var agentRoleCatalog = sp.GetRequiredService<IAgentRoleCatalog>();
+            var diffService = sp.GetRequiredService<INodeDiffService>();
+            var compiler = sp.GetRequiredService<IDefinitionCompiler>();
+            var modelProvider = sp.GetRequiredService<IDesignerModelProvider>();
+            var instructionCatalog = sp.GetRequiredService<IInstructionCatalog>();
+            var componentCatalog = sp.GetRequiredService<IContextComponentCatalog>();
+            var entryContractCatalog = sp.GetRequiredService<IEntryContractCatalog>();
+            return new ChatDesignerService(store, mergeService, chatClient, schemaProvider, roleCatalog, toolCatalog, agentRoleCatalog, diffService, compiler, modelProvider, instructionCatalog, componentCatalog, entryContractCatalog);
+        });
+
         return services;
     }
 }

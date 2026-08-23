@@ -11,6 +11,7 @@ using Frontier.Platform.SmokeConsumer;
 using Frontier.Platform.Workflow.Model;
 using Frontier.Platform.Workflow.Compiler;
 using Frontier.Platform.Workflow.Orchestration;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -212,5 +213,18 @@ if (AgentProposalParser.TryParse("not a proposal", out _))
 }
 
 Console.WriteLine("  designer host   : proposal parser + change-set builder reachable");
+
+// 10. The design agent itself now lives here, so a consumer must be able to resolve it with the
+//     entry convention supplied from outside. IEntryContractCatalog is the port that made this
+//     possible: the prompt used to name one workload's contract in a string literal, where no
+//     type-level guard could see it.
+engineServices.AddSingleton<IEntryContractCatalog, SmokeEntryContract>();
+engineServices.AddSingleton<IChatClient, SmokeChatClient>();
+engineServices.AddSingleton<IDesignerModelProvider, SmokeDesignerModel>();
+
+using var designerProvider = engineServices.BuildServiceProvider();
+var designer = designerProvider.GetRequiredService<IChatDesignerService>();
+
+Console.WriteLine($"  design agent    : {designer.GetType().Name} resolves with a supplied entry contract");
 Console.WriteLine();
 Console.WriteLine("PASS - all twelve packages restored, loaded and registered.");

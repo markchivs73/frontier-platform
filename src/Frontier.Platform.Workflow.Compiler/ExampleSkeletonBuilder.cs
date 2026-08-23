@@ -62,7 +62,7 @@ internal static class ExampleSkeletonBuilder
     {
         var t = Nullable.GetUnderlyingType(type) ?? type;
         // A non-empty placeholder, not "": several contracts' Validate() reject an empty
-        // required string (e.g. EngagementBriefSection.Narrative), and an example that fails
+        // required string (e.g. a contract's first required string property), and an example that fails
         // the contract's own validation on first Run defeats the point of "valid skeleton".
         if (t == typeof(string)) return "example";
         if (IsSmartEnum(t)) return FirstSmartEnumValue(t);
