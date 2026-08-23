@@ -6,9 +6,9 @@ public sealed class McpToolRefTests
     [Fact]
     public void Parse_WellFormedReference_ReturnsServerAndTool()
     {
-        var toolRef = McpToolRef.Parse("io.frontier.demo/autotask/get_new_ticket");
+        var toolRef = McpToolRef.Parse("com.example.crm/tickets/get_new_ticket");
 
-        Assert.Equal("io.frontier.demo/autotask", toolRef.Server);
+        Assert.Equal("com.example.crm/tickets", toolRef.Server);
         Assert.Equal("get_new_ticket", toolRef.Tool);
     }
 
@@ -33,7 +33,7 @@ public sealed class McpToolRefTests
     [Fact]
     public void Parse_SingleSlash_ThrowsInvalidOperationException()
     {
-        Assert.Throws<InvalidOperationException>(() => McpToolRef.Parse("io.frontier.demo/get_new_ticket"));
+        Assert.Throws<InvalidOperationException>(() => McpToolRef.Parse("com.example/get_new_ticket"));
     }
 
     [Fact]
@@ -47,13 +47,13 @@ public sealed class McpToolRefTests
     {
         // A server name is exactly {namespace}/{name}; a third '/' would make the alias
         // non-round-trippable, so it is rejected outright.
-        Assert.Throws<InvalidOperationException>(() => McpToolRef.Parse("io.frontier.demo/autotask/extra/get_new_ticket"));
+        Assert.Throws<InvalidOperationException>(() => McpToolRef.Parse("com.example.crm/tickets/extra/get_new_ticket"));
     }
 
     [Fact]
     public void Parse_EmptyTool_ThrowsInvalidOperationException()
     {
-        Assert.Throws<InvalidOperationException>(() => McpToolRef.Parse("io.frontier.demo/autotask/"));
+        Assert.Throws<InvalidOperationException>(() => McpToolRef.Parse("com.example.crm/tickets/"));
     }
 
     [Fact]
@@ -65,41 +65,41 @@ public sealed class McpToolRefTests
     [Fact]
     public void ToWireReference_ReturnsCanonicalForm()
     {
-        var toolRef = new McpToolRef("io.frontier.demo/autotask", "get_new_ticket");
+        var toolRef = new McpToolRef("com.example.crm/tickets", "get_new_ticket");
 
-        Assert.Equal("io.frontier.demo/autotask/get_new_ticket", toolRef.ToWireReference());
+        Assert.Equal("com.example.crm/tickets/get_new_ticket", toolRef.ToWireReference());
     }
 
     [Fact]
     public void ToModelSafeName_MapsNamespaceDotsAndSlashesToUnderscores()
     {
-        var toolRef = new McpToolRef("io.frontier.demo/autotask", "get_new_ticket");
+        var toolRef = new McpToolRef("com.example.crm/tickets", "get_new_ticket");
 
-        Assert.Equal("mcp__io_frontier_demo__autotask__get_new_ticket", toolRef.ToModelSafeName());
+        Assert.Equal("mcp__com_example_crm__tickets__get_new_ticket", toolRef.ToModelSafeName());
     }
 
     [Fact]
     public void ParseModelSafeName_WellFormedAlias_ReturnsServerAndTool()
     {
-        var toolRef = McpToolRef.ParseModelSafeName("mcp__io_frontier_demo__autotask__get_new_ticket");
+        var toolRef = McpToolRef.ParseModelSafeName("mcp__com_example_crm__tickets__get_new_ticket");
 
-        Assert.Equal("io.frontier.demo/autotask", toolRef.Server);
+        Assert.Equal("com.example.crm/tickets", toolRef.Server);
         Assert.Equal("get_new_ticket", toolRef.Tool);
     }
 
     [Fact]
     public void ParseModelSafeName_ToolNameContainingSeparator_KeepsToolVerbatim()
     {
-        var toolRef = McpToolRef.ParseModelSafeName("mcp__io_frontier_demo__teamreview__assign__resource");
+        var toolRef = McpToolRef.ParseModelSafeName("mcp__com_example_scheduling__bookings__assign__resource");
 
-        Assert.Equal("io.frontier.demo/teamreview", toolRef.Server);
+        Assert.Equal("com.example.scheduling/bookings", toolRef.Server);
         Assert.Equal("assign__resource", toolRef.Tool);
     }
 
     [Fact]
     public void ParseModelSafeName_IsInverseOfToModelSafeName()
     {
-        var original = new McpToolRef("io.frontier.demo/autotask", "get_new_ticket");
+        var original = new McpToolRef("com.example.crm/tickets", "get_new_ticket");
 
         var roundTripped = McpToolRef.ParseModelSafeName(original.ToModelSafeName());
 
@@ -109,7 +109,7 @@ public sealed class McpToolRefTests
     [Fact]
     public void ParseModelSafeName_MissingPrefix_ThrowsInvalidOperationException()
     {
-        Assert.Throws<InvalidOperationException>(() => McpToolRef.ParseModelSafeName("io_frontier_demo__autotask__get_new_ticket"));
+        Assert.Throws<InvalidOperationException>(() => McpToolRef.ParseModelSafeName("com_example_crm__tickets__get_new_ticket"));
     }
 
     [Fact]

@@ -25,12 +25,17 @@ namespace Frontier.Platform.Workflow.Orchestration;
 /// SOW workflow had the same latent failure. The <see cref="TransformNode"/> hook rewrites
 /// each converter-opaque node into the schema of its canonical wire form.
 /// </summary>
-internal static class CanonicalOutputSchema
+// Public because it is part of what an IAgentInvoker implementation needs (S13.12h). Telling a
+// model "return this contract" is the engine's knowledge — the shape comes from the contract's
+// canonical serialization — but expressing it is the vendor adapter's job, and the adapter lives
+// in the consumer. Deriving the schema independently there would be a second source of truth for
+// the same bytes.
+public static class CanonicalOutputSchema
 {
     private static readonly ConcurrentDictionary<Type, ChatResponseFormat> Cache = new();
 
     /// <summary>The response format for <typeparamref name="TOutput"/>, cached per type (schema generation reflects over the whole type graph).</summary>
-    internal static ChatResponseFormat For<TOutput>() => For(typeof(TOutput));
+    public static ChatResponseFormat For<TOutput>() => For(typeof(TOutput));
 
     /// <summary>Non-generic <see cref="For{TOutput}"/>, keyed for the per-type cache.</summary>
     /// <exception cref="NotSupportedException">
@@ -41,7 +46,7 @@ internal static class CanonicalOutputSchema
     /// E4/E13). Refusing here fails fast at invocation with the design reference, rather
     /// than live at the model API with an opaque 400.
     /// </exception>
-    internal static ChatResponseFormat For(Type outputType)
+    public static ChatResponseFormat For(Type outputType)
     {
         if (outputType == typeof(TypedPayload))
         {

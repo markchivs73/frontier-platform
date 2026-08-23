@@ -106,7 +106,7 @@ public sealed class AgentTaskActivityPipelineTests
     public async Task RunAsync_InvokerReportsToolCalls_RecordsThemOnTelemetry()
     {
         var scope = ScopeSectionFixture();
-        var toolCalls = new[] { new ToolCall { Name = "io.frontier.demo/autotask/get_new_ticket", InvokedAtUtc = DateTime.UtcNow } };
+        var toolCalls = new[] { new ToolCall { Name = "com.example.crm/tickets/get_new_ticket", InvokedAtUtc = DateTime.UtcNow } };
         var d = Dependencies(scope, dynamicContent: """{"engagement_brief":"Design a product scope."}""", toolCalls: toolCalls);
         var pipeline = new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder());
         var input = BuildInput(nameof(BriefArtifact), nameof(SummaryArtifact), upstreamPayload: null);
@@ -176,7 +176,7 @@ public sealed class AgentTaskActivityPipelineTests
         var toolCatalog = new FakeMcpToolCatalog([tool]);
         var d = Dependencies(scope) with { ToolCatalog = toolCatalog, Dispatcher = new AgentInvocationDispatcher(invoker, registry), ContractTypes = registry };
         var pipeline = new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder());
-        var input = BuildInput(nameof(BriefArtifact), nameof(SummaryArtifact), upstreamPayload: null) with { ToolRefs = ["io.frontier.demo/autotask/get_new_ticket"] };
+        var input = BuildInput(nameof(BriefArtifact), nameof(SummaryArtifact), upstreamPayload: null) with { ToolRefs = ["com.example.crm/tickets/get_new_ticket"] };
         var resolved = ResolvedModelFixture();
         var context = Package("{}");
 

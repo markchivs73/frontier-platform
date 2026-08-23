@@ -52,7 +52,7 @@ public sealed class McpToolInvocationPipelineTests
         Assert.Equal("\"ok\"", McpToolInvocationPipeline.Canonicalize("ok"));
         Assert.Equal("""{"n":1}""", McpToolInvocationPipeline.Canonicalize(JsonDocument.Parse("""{"n":1}""").RootElement.Clone()));
         // The sandbox fence's ack serializes to its documented shape and is detected.
-        var ack = McpToolInvocationPipeline.Canonicalize(new SimulatedAck(true, "io.frontier.demo/autotask/update_ticket"));
+        var ack = McpToolInvocationPipeline.Canonicalize(new SimulatedAck(true, "com.example.crm/tickets/update_ticket"));
         Assert.Contains("\"simulated\":true", ack, StringComparison.Ordinal);
         Assert.True(McpToolInvocationPipeline.IsSimulatedAck(ack));
         Assert.False(McpToolInvocationPipeline.IsSimulatedAck("""{"ok":true}"""));
@@ -81,7 +81,7 @@ public sealed class McpToolInvocationPipelineTests
         Assert.Equal(CanonicalProfile.Hash("""{"updated":true}"""), result.OutputHash);
         Assert.False(result.Simulated);
         Assert.Equal("t-update", result.NodeId);
-        Assert.Equal("io.frontier.demo/autotask/update_ticket", result.ToolRef);
+        Assert.Equal("com.example.crm/tickets/update_ticket", result.ToolRef);
         Assert.NotNull(result.HostBuild);
     }
 
@@ -89,7 +89,7 @@ public sealed class McpToolInvocationPipelineTests
     public async Task RunAsync_SimulatedAck_IsFlagged()
     {
         var pipeline = new McpToolInvocationPipeline(new StubCatalog(new StubTool(_ =>
-            new SimulatedAck(true, "io.frontier.demo/autotask/update_ticket"))));
+            new SimulatedAck(true, "com.example.crm/tickets/update_ticket"))));
 
         var result = await pipeline.RunAsync(Input(), CancellationToken.None);
 
@@ -108,7 +108,7 @@ public sealed class McpToolInvocationPipelineTests
     {
         NodeId = "t-update",
         ArtifactKey = "ticket-update",
-        ToolRef = "io.frontier.demo/autotask/update_ticket",
+        ToolRef = "com.example.crm/tickets/update_ticket",
         TimeoutSeconds = 30,
         CorrelationId = "eng-1::wf::t-update::0",
         ExecutionId = "eng-1::wf",

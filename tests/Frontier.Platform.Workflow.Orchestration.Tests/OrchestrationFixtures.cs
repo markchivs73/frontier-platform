@@ -215,6 +215,6 @@ internal static class OrchestrationFixtures
     /// engine: which tools mutate is deployment knowledge (<see cref="IMcpWriteClassifier"/>).
     /// </summary>
     internal static readonly IMcpWriteClassifier WriteClassifier = new FakeMcpWriteClassifier(
-        "io.frontier.demo/autotask/update_ticket",
-        "io.frontier.demo/teamreview/assign_resource_to_booking");
+        "com.example.crm/tickets/update_ticket",
+        "com.example.scheduling/bookings/assign_resource_to_booking");
 }

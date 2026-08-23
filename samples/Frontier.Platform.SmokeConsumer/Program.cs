@@ -166,5 +166,15 @@ var pipeline = engineProvider.GetRequiredService<IAgentTaskActivityPipeline>();
 var consolidator = engineProvider.GetRequiredService<IAuditConsolidator>();
 
 Console.WriteLine($"  engine resolves : {orchestrator.GetType().Name}, {pipeline.GetType().Name}, {consolidator.GetType().Name}");
+
+// 7. The encodings a vendor adapter needs are reachable and agree with each other: the response
+//    format that tells a model which contract to return, and the tool-name round trip. An
+//    adapter that had to reimplement either would become a second source of truth for bytes the
+//    engine already defines.
+_ = CanonicalOutputSchema.For<WorkflowDefinition>();
+await engineProvider.GetRequiredService<IMcpToolCatalog>()
+    .ResolveAsync(["com.example.crm/tickets/get_ticket"], "eng-smoke-001::wf-smoke", CancellationToken.None);
+
+Console.WriteLine("  adapter surface : output schema + tool-name round trip reachable");
 Console.WriteLine();
 Console.WriteLine("PASS - all eleven packages restored, loaded and registered.");
