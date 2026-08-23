@@ -173,6 +173,8 @@ Frontier.Platform.Workflow.Model.McpToolNode.TimeoutSeconds.get -> int
 Frontier.Platform.Workflow.Model.McpToolNode.TimeoutSeconds.init -> void
 Frontier.Platform.Workflow.Model.McpToolNode.ToolRef.get -> string!
 Frontier.Platform.Workflow.Model.McpToolNode.ToolRef.init -> void
+Frontier.Platform.Workflow.Model.MigratingWorkflowDefinitionConverter
+Frontier.Platform.Workflow.Model.MigratingWorkflowDefinitionConverter.MigratingWorkflowDefinitionConverter() -> void
 Frontier.Platform.Workflow.Model.NodeType
 Frontier.Platform.Workflow.Model.ParallelNode
 Frontier.Platform.Workflow.Model.ParallelNode.BranchNodeIds.get -> System.Collections.Generic.IReadOnlyList<string!>!
@@ -379,6 +381,8 @@ override Frontier.Platform.Workflow.Model.McpToolNode.Equals(object? obj) -> boo
 override Frontier.Platform.Workflow.Model.McpToolNode.GetHashCode() -> int
 override Frontier.Platform.Workflow.Model.McpToolNode.NodeType.get -> Frontier.Platform.Workflow.Model.NodeType!
 override Frontier.Platform.Workflow.Model.McpToolNode.ToString() -> string!
+override Frontier.Platform.Workflow.Model.MigratingWorkflowDefinitionConverter.Read(ref System.Text.Json.Utf8JsonReader reader, System.Type! typeToConvert, System.Text.Json.JsonSerializerOptions! options) -> Frontier.Platform.Workflow.Model.WorkflowDefinition!
+override Frontier.Platform.Workflow.Model.MigratingWorkflowDefinitionConverter.Write(System.Text.Json.Utf8JsonWriter! writer, Frontier.Platform.Workflow.Model.WorkflowDefinition! value, System.Text.Json.JsonSerializerOptions! options) -> void
 override Frontier.Platform.Workflow.Model.ParallelNode.<Clone>$() -> Frontier.Platform.Workflow.Model.ParallelNode!
 override Frontier.Platform.Workflow.Model.ParallelNode.Equals(object? obj) -> bool
 override Frontier.Platform.Workflow.Model.ParallelNode.GetHashCode() -> int
@@ -448,6 +452,7 @@ static Frontier.Platform.Workflow.Model.LoopNode.operator !=(Frontier.Platform.W
 static Frontier.Platform.Workflow.Model.LoopNode.operator ==(Frontier.Platform.Workflow.Model.LoopNode? left, Frontier.Platform.Workflow.Model.LoopNode? right) -> bool
 static Frontier.Platform.Workflow.Model.McpToolNode.operator !=(Frontier.Platform.Workflow.Model.McpToolNode? left, Frontier.Platform.Workflow.Model.McpToolNode? right) -> bool
 static Frontier.Platform.Workflow.Model.McpToolNode.operator ==(Frontier.Platform.Workflow.Model.McpToolNode? left, Frontier.Platform.Workflow.Model.McpToolNode? right) -> bool
+static Frontier.Platform.Workflow.Model.MigratingWorkflowDefinitionConverter.ReadMigrated(string! json, System.Text.Json.JsonSerializerOptions! options) -> Frontier.Platform.Workflow.Model.WorkflowDefinition?
 static Frontier.Platform.Workflow.Model.ParallelNode.operator !=(Frontier.Platform.Workflow.Model.ParallelNode? left, Frontier.Platform.Workflow.Model.ParallelNode? right) -> bool
 static Frontier.Platform.Workflow.Model.ParallelNode.operator ==(Frontier.Platform.Workflow.Model.ParallelNode? left, Frontier.Platform.Workflow.Model.ParallelNode? right) -> bool
 static Frontier.Platform.Workflow.Model.PayloadRef.operator !=(Frontier.Platform.Workflow.Model.PayloadRef? left, Frontier.Platform.Workflow.Model.PayloadRef? right) -> bool

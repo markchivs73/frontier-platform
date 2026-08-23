@@ -14,6 +14,7 @@ public sealed record GraphOrchestratorInput
     /// <summary>The pinned workflow definition for this execution.</summary>
     [JsonPropertyOrder(0)]
     [JsonPropertyName("definition")]
+    [JsonConverter(typeof(MigratingWorkflowDefinitionConverter))]
     public required WorkflowDefinition Definition { get; init; }
 
     /// <summary>The engagement this execution belongs to (forms the instance id, doc 12).</summary>

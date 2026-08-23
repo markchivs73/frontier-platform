@@ -226,6 +226,41 @@ constant.
 
 ---
 
+## ADR-PA8 — a definition replayed from history migrates, and that is what keeps replay working
+
+The workflow definition rides inline in the orchestration input (the consuming repo's ADR-2), so
+it lives in durable history and is rehydrated on **every replay**. Snapshots migrated; stored
+definitions migrate as of ADR-PA7's release; history did not.
+
+The consuming repo raised this as a deploy-time fork — *freeze the definition model at
+deployment, or build the history seam first*. Investigation collapsed it: the worker already
+configures `JsonDataConverter(CanonicalProfile.Options)`, System.Text.Json honours property-level
+converters, and the converter's only dependency is the model itself. Moving it from the compiler
+into `Workflow.Model` and attributing one property closes the gap. The expensive option turned
+out to be unnecessary.
+
+**Migrating on a replay path deserves suspicion, so state why it is safe.** Determinism requires
+that identical recorded bytes yield identical decisions. The recorded bytes never change, and the
+adapter is a pure total function of them, so every replay yields the identical definition — pinned
+by a test that rehydrates three times and compares canonical bytes. More importantly the
+migration *restores* the run's own semantics rather than altering them: the value was always
+`"scope"`, only the property carrying it was renamed. Without migration a running execution
+replays with null artifact keys and makes **different** scheduling decisions than the run it is
+replaying, which is the one thing replay may never do. The seam is not a risk to replay; its
+absence was.
+
+**What this does not cover, and must not be read as covering.** This is safe because the change
+was a *rename* — adaptable, value-preserving. A change to what a field **means**, or one that
+drops information, cannot be adapted and remains a drain-and-declare event: a named phase
+boundary, as ADR-PA4 took for audit and the consuming repo's ADR-E15 exception took for activity
+names. The seam widens the class of changes that are cheap; it does not make every change cheap.
+
+Activity inputs and results also travel in history. The pattern established here applies to them,
+but each contract needs its own adapters — nothing here migrates them, and claiming otherwise
+would be worse than the gap.
+
+---
+
 ## Lockstep versioning
 
 All nine packages take their version from a single git tag via MinVer. A change to one library
