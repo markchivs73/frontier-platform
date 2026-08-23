@@ -10,7 +10,7 @@ namespace Frontier.Platform.Audit;
 /// <c>audit-records</c> containers exist with their expected partition keys — the shapes
 /// <see cref="CosmosAuditTelemetryStaging"/> and <see cref="CosmosAuditRecordStore"/> are
 /// built against (canonical snake_case wire names, doc 01). The <c>execution-snapshots</c>
-/// row moved with the reader''s deletion (S11.6, ADR-PA2): SectionState owns that
+/// row moved with the reader''s deletion (S11.6, ADR-PA2): ArtifactState owns that
 /// container and its topology check; the audit consolidator reads snapshots through
 /// Orchestration''s <c>IExecutionSnapshotReader</c> port, adapted in Host.
 /// </summary>

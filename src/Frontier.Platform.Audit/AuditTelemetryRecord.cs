@@ -30,10 +30,10 @@ public sealed record AuditTelemetryRecord
     [JsonPropertyName("node_id")]
     public required string NodeId { get; init; }
 
-    /// <summary>The section this invocation produced output for, if any.</summary>
+    /// <summary>The artifact this invocation produced output for, if any.</summary>
     [JsonPropertyOrder(3)]
-    [JsonPropertyName("section_key")]
-    public string? SectionKey { get; init; }
+    [JsonPropertyName("artifact_key")]
+    public string? ArtifactKey { get; init; }
 
     /// <summary>The Model-Role Config role requested, e.g. <c>"deep-reasoning"</c>.</summary>
     [JsonPropertyOrder(4)]

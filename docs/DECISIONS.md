@@ -80,6 +80,42 @@ evidence it exists to carry.
 
 ---
 
+## ADR-PA4 — the audit family speaks `artifact`, and pre-rename records are refused rather than migrated
+
+`AuditTelemetryRecord.section_key`, `AgentInvocation.section_key` and
+`ValidatorOutcome.target_section_key` become `artifact_key` / `target_artifact_key`.
+`AuditRecord` and `SignedAuditRecord` bump to schema **2.0**. This completes the vocabulary
+decision the consuming repo's ADR-E3a deferred to the point where audit and the interpreter are
+settled together (its D5(a)); it is a **breaking public API change**, shipped as `audit!:`.
+
+**There is deliberately no migration adapter, and that is the whole substance of this ADR.**
+
+Verification here does not hash the stored bytes. `AuditChainVerifier.IsSignatureValid`
+rehydrates the record, recomputes its canonical bytes through `CanonicalProfile`, and compares
+the result to the stored hash and signature. A migration adapter would therefore *not* rescue a
+pre-rename record: it would rehydrate as 2.0, re-serialize to different bytes, and fail its
+signature. The record would read fine and verify as broken — and a broken hash chain is the
+signal this system reserves for **tampering**.
+
+So the choice was never "migrate or not". It was: make a schema change indistinguishable from
+altered evidence, carry a permanently versioned hasher through the most safety-critical code in
+the platform, or refuse to read incompatible records at all. The third is the honest one at this
+point in the project's life, and `AuditRecordSchemaGuard` implements it: an incompatible major
+throws `ContractViolationException` naming the version found, rather than returning degraded
+evidence. Minor versions stay readable — omit-null defaults cover a field a build has not heard
+of; only a major says the bytes mean something different.
+
+**Cost, measured rather than assumed.** Four signed records existed at decision time, all in the
+local emulator, all carrying populated `section_key` (19 occurrences across their agent
+invocations), all reseedable. No deployed environment exists. That is the entire protected
+population, and it is the cheapest this rename will ever be — the moment real evidence is
+retained, the only remaining option is the versioned hasher, and it becomes permanent.
+
+Pre-rename golden files are not preserved as fixtures. With no adapter they would assert nothing
+and imply support that does not exist; git history holds the 1.0 bytes if they are ever needed.
+
+---
+
 ## Lockstep versioning
 
 All nine packages take their version from a single git tag via MinVer. A change to one library

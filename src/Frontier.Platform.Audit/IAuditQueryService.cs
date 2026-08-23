@@ -13,7 +13,7 @@ public interface IAuditQueryService
     /// Returns the full signed record for <paramref name="executionId"/>, or
     /// <see langword="null"/> if no record has been consolidated for it yet (doc 05 §10
     /// <c>GET /api/audit/{executionId}</c>). Answers doc 05 §7 queries 1 ("which model
-    /// produced section X" — <see cref="SignedAuditRecord.AgentInvocations"/>), 2
+    /// produced artifact X" — <see cref="SignedAuditRecord.AgentInvocations"/>), 2
     /// (validator outcomes — <see cref="SignedAuditRecord.ValidatorOutcomes"/>, always
     /// <c>[]</c> until Stage 6), 3 (<see cref="SignedAuditRecord.HumanDecisions"/>), and 5
     /// (<see cref="SignedAuditRecord.CacheMetrics"/>) directly from the returned record.

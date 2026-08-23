@@ -1,0 +1,6 @@
+Frontier.Platform.Audit.AgentInvocation.ArtifactKey.get -> string?
+Frontier.Platform.Audit.AgentInvocation.ArtifactKey.init -> void
+Frontier.Platform.Audit.AuditTelemetryRecord.ArtifactKey.get -> string?
+Frontier.Platform.Audit.AuditTelemetryRecord.ArtifactKey.init -> void
+Frontier.Platform.Audit.ValidatorOutcome.TargetArtifactKey.get -> string!
+Frontier.Platform.Audit.ValidatorOutcome.TargetArtifactKey.init -> void

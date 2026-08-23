@@ -85,7 +85,7 @@ internal static class AuditQueryBuilder
     /// Doc 05 §7 query 4: which executions had a human override a prior automated
     /// outcome. This codebase's <see cref="DecisionKind"/> has no <c>override</c> value;
     /// <see cref="DecisionKind.Reject"/> is the closest analogue (a human declining
-    /// section content that was produced/validated automatically).
+    /// artifact content that was produced/validated automatically).
     /// </summary>
     internal static void AppendOverridesFilter(AuditQuery query, List<string> clauses, List<(string Name, object Value)> parameters)
     {

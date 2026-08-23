@@ -42,7 +42,7 @@ internal static class AuditContractSamples
     {
         CorrelationId = "corr-3",
         ValidatorId = "pricing-qa",
-        TargetSectionKey = "pricing",
+        TargetArtifactKey = "pricing",
         Status = ValidatorStatus.Pass,
         FindingCodes = [],
         RanAtUtc = new DateTime(2026, 1, 1, 0, 30, 0, DateTimeKind.Utc),
@@ -64,7 +64,7 @@ internal static class AuditContractSamples
     {
         CorrelationId = "corr-3",
         NodeId = "pricing-agent",
-        SectionKey = "pricing",
+        ArtifactKey = "pricing",
         AgentRole = "deep-reasoning",
         ResolvedModel = ResolvedModelSummary(),
         InputContractType = "EngagementBriefSection",
@@ -95,7 +95,7 @@ internal static class AuditContractSamples
         ExecutionId = "eng-1::wf-1",
         CorrelationId = "corr-3",
         NodeId = "pricing-agent",
-        SectionKey = "pricing",
+        ArtifactKey = "pricing",
         AgentRole = "deep-reasoning",
         ResolvedModel = ResolvedModelSummary(),
         InputContractType = "EngagementBriefSection",

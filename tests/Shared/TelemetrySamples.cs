@@ -15,7 +15,7 @@ internal static class TelemetrySamples
         ExecutionId = "eng-1::wf-chain",
         CorrelationId = "corr-3",
         NodeId = "pricing-agent",
-        SectionKey = "pricing",
+        ArtifactKey = "pricing",
         AgentRole = "deep-reasoning",
         ResolvedModel = new ResolvedModelSummary
         {

@@ -33,8 +33,6 @@ Frontier.Platform.Audit.AgentInvocation.ResolvedModel.get -> Frontier.Platform.A
 Frontier.Platform.Audit.AgentInvocation.ResolvedModel.init -> void
 Frontier.Platform.Audit.AgentInvocation.RetryCount.get -> int
 Frontier.Platform.Audit.AgentInvocation.RetryCount.init -> void
-Frontier.Platform.Audit.AgentInvocation.SectionKey.get -> string?
-Frontier.Platform.Audit.AgentInvocation.SectionKey.init -> void
 Frontier.Platform.Audit.AgentInvocation.ToolCalls.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.ToolCall!>!
 Frontier.Platform.Audit.AgentInvocation.ToolCalls.init -> void
 Frontier.Platform.Audit.AuditQuery
@@ -153,8 +151,6 @@ Frontier.Platform.Audit.AuditTelemetryRecord.ResolvedModel.get -> Frontier.Platf
 Frontier.Platform.Audit.AuditTelemetryRecord.ResolvedModel.init -> void
 Frontier.Platform.Audit.AuditTelemetryRecord.RetryCount.get -> int
 Frontier.Platform.Audit.AuditTelemetryRecord.RetryCount.init -> void
-Frontier.Platform.Audit.AuditTelemetryRecord.SectionKey.get -> string?
-Frontier.Platform.Audit.AuditTelemetryRecord.SectionKey.init -> void
 Frontier.Platform.Audit.AuditTelemetryRecord.ToolCalls.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.ToolCall!>!
 Frontier.Platform.Audit.AuditTelemetryRecord.ToolCalls.init -> void
 Frontier.Platform.Audit.CacheMetrics
@@ -290,8 +286,6 @@ Frontier.Platform.Audit.ValidatorOutcome.RanAtUtc.get -> System.DateTime
 Frontier.Platform.Audit.ValidatorOutcome.RanAtUtc.init -> void
 Frontier.Platform.Audit.ValidatorOutcome.Status.get -> Frontier.Platform.Audit.ValidatorStatus!
 Frontier.Platform.Audit.ValidatorOutcome.Status.init -> void
-Frontier.Platform.Audit.ValidatorOutcome.TargetSectionKey.get -> string!
-Frontier.Platform.Audit.ValidatorOutcome.TargetSectionKey.init -> void
 Frontier.Platform.Audit.ValidatorOutcome.ValidatorId.get -> string!
 Frontier.Platform.Audit.ValidatorOutcome.ValidatorId.init -> void
 Frontier.Platform.Audit.ValidatorOutcome.ValidatorOutcome() -> void
