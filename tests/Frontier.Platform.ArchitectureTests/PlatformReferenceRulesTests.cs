@@ -32,9 +32,14 @@ public sealed class PlatformReferenceRulesTests
     }
 
     [Theory]
-    [MemberData(nameof(NonSerializationPlatformLibraryNames))]
-    public void PlatformLibrary_OnlyReferencesAbstractionsAndSerializationAmongPlatformLibraries(string libraryName)
+    [MemberData(nameof(NonSerializationGovernanceLibraryNames))]
+    public void GovernanceLibrary_OnlyReferencesAbstractionsAndSerializationAmongPlatformLibraries(string libraryName)
     {
+        // ADR-PA5 narrowed this from "every platform library" to "every governance library".
+        // Governance stays flat, so each library is independently consumable and adding one
+        // never drags in a sibling. The engine tier is exempt because composing governance
+        // through its interfaces is precisely what an interpreter does — the direction test
+        // below is what keeps the tiering meaningful.
         var referenced = GovernedAssemblies.ReferencedAssemblyNames(libraryName);
 
         Assert.All(referenced, name => Assert.True(
@@ -59,6 +64,22 @@ public sealed class PlatformReferenceRulesTests
             $"{libraryName} must never reference a Frontier.Reason.* assembly (ADR-PA2), but references {name.Name}"));
     }
 
+    [Theory]
+    [MemberData(nameof(GovernanceLibraryNames))]
+    public void GovernanceLibrary_DoesNotDependOnTheEngine(string libraryName)
+    {
+        // ADR-PA5, and the half that carries the weight. A two-tier graph is only worth having
+        // if the dependency runs one way: governance must stay consumable by a solution that
+        // wants audit or HITL and no interpreter at all. A single reference in this direction
+        // would collapse the tiers back into one graph — and it would compile perfectly.
+        var referenced = GovernedAssemblies.ReferencedAssemblyNames(libraryName);
+
+        Assert.All(referenced, name => Assert.False(
+            GovernedAssemblies.IsEngineAssembly(name.Name),
+            $"{libraryName} is governance-tier and must not depend on the engine tier (ADR-PA5), but references {name.Name}. "
+            + "If the engine needs something from here it takes it through an interface; governance never reaches forward."));
+    }
+
     public static TheoryData<string> AllPlatformLibraryNames()
     {
         var data = new TheoryData<string>();
@@ -70,10 +91,21 @@ public sealed class PlatformReferenceRulesTests
         return data;
     }
 
-    public static TheoryData<string> NonSerializationPlatformLibraryNames()
+    public static TheoryData<string> NonSerializationGovernanceLibraryNames()
     {
         var data = new TheoryData<string>();
-        foreach (var name in GovernedAssemblies.PlatformLibraryNames.Where(n => n != GovernedAssemblies.SerializationName))
+        foreach (var name in GovernedAssemblies.GovernanceLibraries.Where(n => n != GovernedAssemblies.SerializationName))
+        {
+            data.Add(name);
+        }
+
+        return data;
+    }
+
+    public static TheoryData<string> GovernanceLibraryNames()
+    {
+        var data = new TheoryData<string>();
+        foreach (var name in GovernedAssemblies.GovernanceLibraries)
         {
             data.Add(name);
         }

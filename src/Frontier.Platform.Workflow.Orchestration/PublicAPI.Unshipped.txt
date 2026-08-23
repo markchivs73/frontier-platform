@@ -1,0 +1,319 @@
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivity
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivity.AgentTaskActivity(Frontier.Platform.Workflow.Orchestration.IAgentTaskActivityPipeline! pipeline) -> void
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.<Clone>$() -> Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput!
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.AgentTaskActivityInput() -> void
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.ArtifactKey.get -> string?
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.ArtifactKey.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.ContextRequest.get -> Frontier.Platform.Abstractions.ContextRequest!
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.ContextRequest.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.CorrelationId.get -> string!
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.CorrelationId.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.EngagementId.get -> string!
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.EngagementId.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.Equals(Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput? other) -> bool
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.ExecutionId.get -> string!
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.ExecutionId.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.InputContractType.get -> string!
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.InputContractType.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.InstructionsRef.get -> string!
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.InstructionsRef.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.NodeId.get -> string!
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.NodeId.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.OutputContractType.get -> string!
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.OutputContractType.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.RevisionNote.get -> string?
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.RevisionNote.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.Role.get -> string!
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.Role.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.ToolRefs.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.ToolRefs.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.UpstreamPayload.get -> string?
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.UpstreamPayload.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult.<Clone>$() -> Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult!
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult.AgentTaskActivityResult() -> void
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult.ArtifactKey.get -> string?
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult.ArtifactKey.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult.Equals(Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult? other) -> bool
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult.HostBuild.get -> string?
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult.HostBuild.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult.NodeId.get -> string!
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult.NodeId.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult.OutputContractType.get -> string!
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult.OutputContractType.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult.OutputHash.get -> string!
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult.OutputHash.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult.OutputPayload.get -> string!
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult.OutputPayload.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult.ResolvedModel.get -> Frontier.Platform.Abstractions.ResolvedModelSummary!
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult.ResolvedModel.init -> void
+Frontier.Platform.Workflow.Orchestration.ArtifactRestoreActivityRequest
+Frontier.Platform.Workflow.Orchestration.ArtifactRestoreActivityRequest.<Clone>$() -> Frontier.Platform.Workflow.Orchestration.ArtifactRestoreActivityRequest!
+Frontier.Platform.Workflow.Orchestration.ArtifactRestoreActivityRequest.ArtifactRestoreActivityRequest() -> void
+Frontier.Platform.Workflow.Orchestration.ArtifactRestoreActivityRequest.EngagementId.get -> string!
+Frontier.Platform.Workflow.Orchestration.ArtifactRestoreActivityRequest.EngagementId.init -> void
+Frontier.Platform.Workflow.Orchestration.ArtifactRestoreActivityRequest.Equals(Frontier.Platform.Workflow.Orchestration.ArtifactRestoreActivityRequest? other) -> bool
+Frontier.Platform.Workflow.Orchestration.ArtifactRestoreActivityRequest.RestoreRef.get -> string!
+Frontier.Platform.Workflow.Orchestration.ArtifactRestoreActivityRequest.RestoreRef.init -> void
+Frontier.Platform.Workflow.Orchestration.ArtifactRestoreActivityRequest.RestoredAtUtc.get -> System.DateTime
+Frontier.Platform.Workflow.Orchestration.ArtifactRestoreActivityRequest.RestoredAtUtc.init -> void
+Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityRequest
+Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityRequest.<Clone>$() -> Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityRequest!
+Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityRequest.ArtifactKey.get -> string!
+Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityRequest.ArtifactKey.init -> void
+Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityRequest.ArtifactStateActivityRequest() -> void
+Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityRequest.Content.get -> string!
+Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityRequest.Content.init -> void
+Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityRequest.ContentHash.get -> string!
+Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityRequest.ContentHash.init -> void
+Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityRequest.EngagementId.get -> string!
+Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityRequest.EngagementId.init -> void
+Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityRequest.Equals(Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityRequest? other) -> bool
+Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityRequest.ExecutionId.get -> string!
+Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityRequest.ExecutionId.init -> void
+Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityRequest.UpdatedAtUtc.get -> System.DateTime
+Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityRequest.UpdatedAtUtc.init -> void
+Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityRequest.Version.get -> int
+Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityRequest.Version.init -> void
+Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityResponse
+Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityResponse.<Clone>$() -> Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityResponse!
+Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityResponse.ArtifactStateActivityResponse() -> void
+Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityResponse.Equals(Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityResponse? other) -> bool
+Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityResponse.SectionRef.get -> string!
+Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityResponse.SectionRef.init -> void
+Frontier.Platform.Workflow.Orchestration.AssembleContextRequest
+Frontier.Platform.Workflow.Orchestration.AssembleContextRequest.<Clone>$() -> Frontier.Platform.Workflow.Orchestration.AssembleContextRequest!
+Frontier.Platform.Workflow.Orchestration.AssembleContextRequest.AssembleContextRequest(Frontier.Platform.ContextAssembly.CachingMetadata! CachingMetadata, string! BaselineContent, string! DynamicContent, string! RealTimeContent) -> void
+Frontier.Platform.Workflow.Orchestration.AssembleContextRequest.BaselineContent.get -> string!
+Frontier.Platform.Workflow.Orchestration.AssembleContextRequest.BaselineContent.init -> void
+Frontier.Platform.Workflow.Orchestration.AssembleContextRequest.CachingMetadata.get -> Frontier.Platform.ContextAssembly.CachingMetadata!
+Frontier.Platform.Workflow.Orchestration.AssembleContextRequest.CachingMetadata.init -> void
+Frontier.Platform.Workflow.Orchestration.AssembleContextRequest.Deconstruct(out Frontier.Platform.ContextAssembly.CachingMetadata! CachingMetadata, out string! BaselineContent, out string! DynamicContent, out string! RealTimeContent) -> void
+Frontier.Platform.Workflow.Orchestration.AssembleContextRequest.DynamicContent.get -> string!
+Frontier.Platform.Workflow.Orchestration.AssembleContextRequest.DynamicContent.init -> void
+Frontier.Platform.Workflow.Orchestration.AssembleContextRequest.Equals(Frontier.Platform.Workflow.Orchestration.AssembleContextRequest? other) -> bool
+Frontier.Platform.Workflow.Orchestration.AssembleContextRequest.RealTimeContent.get -> string!
+Frontier.Platform.Workflow.Orchestration.AssembleContextRequest.RealTimeContent.init -> void
+Frontier.Platform.Workflow.Orchestration.AssembleContextRequest.Validate() -> void
+Frontier.Platform.Workflow.Orchestration.CascadeActivityRequest
+Frontier.Platform.Workflow.Orchestration.CascadeActivityRequest.<Clone>$() -> Frontier.Platform.Workflow.Orchestration.CascadeActivityRequest!
+Frontier.Platform.Workflow.Orchestration.CascadeActivityRequest.CascadeActivityRequest() -> void
+Frontier.Platform.Workflow.Orchestration.CascadeActivityRequest.Definition.get -> Frontier.Platform.Workflow.Model.WorkflowDefinition!
+Frontier.Platform.Workflow.Orchestration.CascadeActivityRequest.Definition.init -> void
+Frontier.Platform.Workflow.Orchestration.CascadeActivityRequest.Equals(Frontier.Platform.Workflow.Orchestration.CascadeActivityRequest? other) -> bool
+Frontier.Platform.Workflow.Orchestration.CascadeActivityRequest.Request.get -> Frontier.Platform.Workflow.Orchestration.CascadeEvalRequestPayload!
+Frontier.Platform.Workflow.Orchestration.CascadeActivityRequest.Request.init -> void
+Frontier.Platform.Workflow.Orchestration.CascadeActivityResponse
+Frontier.Platform.Workflow.Orchestration.CascadeActivityResponse.<Clone>$() -> Frontier.Platform.Workflow.Orchestration.CascadeActivityResponse!
+Frontier.Platform.Workflow.Orchestration.CascadeActivityResponse.CascadeActivityResponse() -> void
+Frontier.Platform.Workflow.Orchestration.CascadeActivityResponse.ChangedArtifact.get -> string!
+Frontier.Platform.Workflow.Orchestration.CascadeActivityResponse.ChangedArtifact.init -> void
+Frontier.Platform.Workflow.Orchestration.CascadeActivityResponse.DownstreamArtifacts.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Frontier.Platform.Workflow.Orchestration.CascadeActivityResponse.DownstreamArtifacts.init -> void
+Frontier.Platform.Workflow.Orchestration.CascadeActivityResponse.Equals(Frontier.Platform.Workflow.Orchestration.CascadeActivityResponse? other) -> bool
+Frontier.Platform.Workflow.Orchestration.CascadeActivityResponse.SkippedArtifacts.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Frontier.Platform.Workflow.Orchestration.CascadeActivityResponse.SkippedArtifacts.init -> void
+Frontier.Platform.Workflow.Orchestration.CascadeEvalRequestPayload
+Frontier.Platform.Workflow.Orchestration.CascadeEvalRequestPayload.<Clone>$() -> Frontier.Platform.Workflow.Orchestration.CascadeEvalRequestPayload!
+Frontier.Platform.Workflow.Orchestration.CascadeEvalRequestPayload.CascadeEvalRequestPayload() -> void
+Frontier.Platform.Workflow.Orchestration.CascadeEvalRequestPayload.ChangedArtifact.get -> string!
+Frontier.Platform.Workflow.Orchestration.CascadeEvalRequestPayload.ChangedArtifact.init -> void
+Frontier.Platform.Workflow.Orchestration.CascadeEvalRequestPayload.CurrentArtifactStatuses.get -> System.Collections.Generic.IReadOnlyDictionary<string!, Frontier.Platform.Workflow.Model.ArtifactStatus!>!
+Frontier.Platform.Workflow.Orchestration.CascadeEvalRequestPayload.CurrentArtifactStatuses.init -> void
+Frontier.Platform.Workflow.Orchestration.CascadeEvalRequestPayload.Equals(Frontier.Platform.Workflow.Orchestration.CascadeEvalRequestPayload? other) -> bool
+Frontier.Platform.Workflow.Orchestration.CascadeEvalRequestPayload.ExecutionId.get -> string!
+Frontier.Platform.Workflow.Orchestration.CascadeEvalRequestPayload.ExecutionId.init -> void
+Frontier.Platform.Workflow.Orchestration.ConsolidateAuditActivity
+Frontier.Platform.Workflow.Orchestration.ConsolidateAuditActivity.ConsolidateAuditActivity(Frontier.Platform.Workflow.Orchestration.IAuditConsolidator! consolidator, Frontier.Platform.Audit.IAuditSigner! signer) -> void
+Frontier.Platform.Workflow.Orchestration.DispatcherOrchestrator
+Frontier.Platform.Workflow.Orchestration.DispatcherOrchestrator.DispatcherOrchestrator() -> void
+Frontier.Platform.Workflow.Orchestration.EscalateApprovalActivity
+Frontier.Platform.Workflow.Orchestration.EscalateApprovalActivity.EscalateApprovalActivity(Frontier.Platform.Hitl.IApprovalStore! store) -> void
+Frontier.Platform.Workflow.Orchestration.GraphOrchestrator
+Frontier.Platform.Workflow.Orchestration.GraphOrchestrator.GraphOrchestrator(Frontier.Platform.Resilience.IResiliencePolicyProvider! policyProvider, Frontier.Platform.Hitl.IRollbackPlanner! rollbackPlanner, Frontier.Platform.Workflow.Orchestration.IMcpWriteClassifier! mcpWriteClassifier) -> void
+Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput
+Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.<Clone>$() -> Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput!
+Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.Definition.get -> Frontier.Platform.Workflow.Model.WorkflowDefinition!
+Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.Definition.init -> void
+Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.EngagementId.get -> string!
+Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.EngagementId.init -> void
+Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.Equals(Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput? other) -> bool
+Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.GraphOrchestratorInput() -> void
+Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.InitiatedBy.get -> string?
+Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.InitiatedBy.init -> void
+Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.WorkItemId.get -> string?
+Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.WorkItemId.init -> void
+Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult
+Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult.<Clone>$() -> Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult!
+Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult.ArtifactStatuses.get -> System.Collections.Generic.IReadOnlyDictionary<string!, Frontier.Platform.Workflow.Model.ArtifactStatus!>!
+Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult.ArtifactStatuses.init -> void
+Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult.CompletedSteps.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Workflow.Model.StepCompletion!>!
+Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult.CompletedSteps.init -> void
+Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult.Equals(Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult? other) -> bool
+Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult.GraphOrchestratorResult() -> void
+Frontier.Platform.Workflow.Orchestration.IAgentTaskActivityPipeline
+Frontier.Platform.Workflow.Orchestration.IAgentTaskActivityPipeline.RunAsync(Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput! input, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult!>!
+Frontier.Platform.Workflow.Orchestration.IAuditConsolidator
+Frontier.Platform.Workflow.Orchestration.IAuditConsolidator.ConsolidateAsync(Frontier.Platform.Workflow.Model.ConsolidateAuditInput! input, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Audit.AuditRecord!>!
+Frontier.Platform.Workflow.Orchestration.IEntryPayloadBuilder
+Frontier.Platform.Workflow.Orchestration.IEntryPayloadBuilder.BuildEntryPayload(string! dynamicContentJson) -> string!
+Frontier.Platform.Workflow.Orchestration.IExecutionSnapshotReader
+Frontier.Platform.Workflow.Orchestration.IExecutionSnapshotReader.GetLatestAsync(string! executionId, string! engagementId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Model.ExecutionSnapshot?>!
+Frontier.Platform.Workflow.Orchestration.IMcpEndpointResolver
+Frontier.Platform.Workflow.Orchestration.IMcpEndpointResolver.ResolveAsync(string! serverName, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Uri!>!
+Frontier.Platform.Workflow.Orchestration.IMcpToolInvocationPipeline
+Frontier.Platform.Workflow.Orchestration.IMcpToolInvocationPipeline.RunAsync(Frontier.Platform.Workflow.Orchestration.McpToolActivityInput! input, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Orchestration.McpToolActivityResult!>!
+Frontier.Platform.Workflow.Orchestration.IMcpWriteClassifier
+Frontier.Platform.Workflow.Orchestration.IMcpWriteClassifier.IsWrite(Frontier.Platform.Workflow.Orchestration.McpToolRef toolRef) -> bool
+Frontier.Platform.Workflow.Orchestration.InvokeMcpToolActivity
+Frontier.Platform.Workflow.Orchestration.InvokeMcpToolActivity.InvokeMcpToolActivity(Frontier.Platform.Workflow.Orchestration.IMcpToolInvocationPipeline! pipeline) -> void
+Frontier.Platform.Workflow.Orchestration.McpToolActivityInput
+Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.<Clone>$() -> Frontier.Platform.Workflow.Orchestration.McpToolActivityInput!
+Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.ArtifactKey.get -> string?
+Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.ArtifactKey.init -> void
+Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.CorrelationId.get -> string!
+Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.CorrelationId.init -> void
+Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.EngagementId.get -> string!
+Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.EngagementId.init -> void
+Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.Equals(Frontier.Platform.Workflow.Orchestration.McpToolActivityInput? other) -> bool
+Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.ExecutionId.get -> string!
+Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.ExecutionId.init -> void
+Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.IdempotencyKey.get -> string?
+Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.IdempotencyKey.init -> void
+Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.InputPayload.get -> string?
+Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.InputPayload.init -> void
+Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.McpToolActivityInput() -> void
+Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.NodeId.get -> string!
+Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.NodeId.init -> void
+Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.TimeoutSeconds.get -> int
+Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.TimeoutSeconds.init -> void
+Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.ToolRef.get -> string!
+Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.ToolRef.init -> void
+Frontier.Platform.Workflow.Orchestration.McpToolActivityResult
+Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.<Clone>$() -> Frontier.Platform.Workflow.Orchestration.McpToolActivityResult!
+Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.ArtifactKey.get -> string?
+Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.ArtifactKey.init -> void
+Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.Equals(Frontier.Platform.Workflow.Orchestration.McpToolActivityResult? other) -> bool
+Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.HostBuild.get -> string?
+Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.HostBuild.init -> void
+Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.McpToolActivityResult() -> void
+Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.NodeId.get -> string!
+Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.NodeId.init -> void
+Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.OutputHash.get -> string!
+Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.OutputHash.init -> void
+Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.OutputPayload.get -> string!
+Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.OutputPayload.init -> void
+Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.Simulated.get -> bool
+Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.Simulated.init -> void
+Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.ToolRef.get -> string!
+Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.ToolRef.init -> void
+Frontier.Platform.Workflow.Orchestration.McpToolRef
+Frontier.Platform.Workflow.Orchestration.McpToolRef.Deconstruct(out string! Server, out string! Tool) -> void
+Frontier.Platform.Workflow.Orchestration.McpToolRef.Equals(Frontier.Platform.Workflow.Orchestration.McpToolRef other) -> bool
+Frontier.Platform.Workflow.Orchestration.McpToolRef.McpToolRef() -> void
+Frontier.Platform.Workflow.Orchestration.McpToolRef.McpToolRef(string! Server, string! Tool) -> void
+Frontier.Platform.Workflow.Orchestration.McpToolRef.Server.get -> string!
+Frontier.Platform.Workflow.Orchestration.McpToolRef.Server.init -> void
+Frontier.Platform.Workflow.Orchestration.McpToolRef.ToWireReference() -> string!
+Frontier.Platform.Workflow.Orchestration.McpToolRef.Tool.get -> string!
+Frontier.Platform.Workflow.Orchestration.McpToolRef.Tool.init -> void
+Frontier.Platform.Workflow.Orchestration.OrchestrationOptions
+Frontier.Platform.Workflow.Orchestration.OrchestrationOptions.InstructionsRootPath.get -> string!
+Frontier.Platform.Workflow.Orchestration.OrchestrationOptions.InstructionsRootPath.set -> void
+Frontier.Platform.Workflow.Orchestration.OrchestrationOptions.OrchestrationOptions() -> void
+Frontier.Platform.Workflow.Orchestration.OrchestratorCapabilities
+Frontier.Platform.Workflow.Orchestration.RequestApprovalActivity
+Frontier.Platform.Workflow.Orchestration.RequestApprovalActivity.RequestApprovalActivity(Frontier.Platform.Hitl.IApprovalStore! store) -> void
+Frontier.Platform.Workflow.Orchestration.SnapshotActivityResponse
+Frontier.Platform.Workflow.Orchestration.SnapshotActivityResponse.<Clone>$() -> Frontier.Platform.Workflow.Orchestration.SnapshotActivityResponse!
+Frontier.Platform.Workflow.Orchestration.SnapshotActivityResponse.Equals(Frontier.Platform.Workflow.Orchestration.SnapshotActivityResponse? other) -> bool
+Frontier.Platform.Workflow.Orchestration.SnapshotActivityResponse.SnapshotActivityResponse() -> void
+Frontier.Platform.Workflow.Orchestration.SnapshotActivityResponse.SnapshotId.get -> string!
+Frontier.Platform.Workflow.Orchestration.SnapshotActivityResponse.SnapshotId.init -> void
+const Frontier.Platform.Workflow.Orchestration.OrchestrationOptions.ArtifactName = "Orchestration" -> string!
+override Frontier.Platform.Workflow.Orchestration.AgentTaskActivity.RunAsync(Microsoft.DurableTask.TaskActivityContext! context, Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput! input) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult!>!
+override Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.GetHashCode() -> int
+override Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.ToString() -> string!
+override Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult.GetHashCode() -> int
+override Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult.ToString() -> string!
+override Frontier.Platform.Workflow.Orchestration.ArtifactRestoreActivityRequest.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Orchestration.ArtifactRestoreActivityRequest.GetHashCode() -> int
+override Frontier.Platform.Workflow.Orchestration.ArtifactRestoreActivityRequest.ToString() -> string!
+override Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityRequest.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityRequest.GetHashCode() -> int
+override Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityRequest.ToString() -> string!
+override Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityResponse.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityResponse.GetHashCode() -> int
+override Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityResponse.ToString() -> string!
+override Frontier.Platform.Workflow.Orchestration.AssembleContextRequest.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Orchestration.AssembleContextRequest.GetHashCode() -> int
+override Frontier.Platform.Workflow.Orchestration.AssembleContextRequest.ToString() -> string!
+override Frontier.Platform.Workflow.Orchestration.CascadeActivityRequest.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Orchestration.CascadeActivityRequest.GetHashCode() -> int
+override Frontier.Platform.Workflow.Orchestration.CascadeActivityRequest.ToString() -> string!
+override Frontier.Platform.Workflow.Orchestration.CascadeActivityResponse.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Orchestration.CascadeActivityResponse.GetHashCode() -> int
+override Frontier.Platform.Workflow.Orchestration.CascadeActivityResponse.ToString() -> string!
+override Frontier.Platform.Workflow.Orchestration.CascadeEvalRequestPayload.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Orchestration.CascadeEvalRequestPayload.GetHashCode() -> int
+override Frontier.Platform.Workflow.Orchestration.CascadeEvalRequestPayload.ToString() -> string!
+override Frontier.Platform.Workflow.Orchestration.ConsolidateAuditActivity.RunAsync(Microsoft.DurableTask.TaskActivityContext! context, Frontier.Platform.Workflow.Model.ConsolidateAuditInput! input) -> System.Threading.Tasks.Task<Frontier.Platform.Audit.SignedAuditRecord!>!
+override Frontier.Platform.Workflow.Orchestration.DispatcherOrchestrator.RunAsync(Microsoft.DurableTask.TaskOrchestrationContext! context, Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput! input) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult!>!
+override Frontier.Platform.Workflow.Orchestration.EscalateApprovalActivity.RunAsync(Microsoft.DurableTask.TaskActivityContext! context, Frontier.Platform.Hitl.ApprovalRequest! input) -> System.Threading.Tasks.Task<Frontier.Platform.Hitl.ApprovalRequest!>!
+override Frontier.Platform.Workflow.Orchestration.GraphOrchestrator.RunAsync(Microsoft.DurableTask.TaskOrchestrationContext! context, Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput! input) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult!>!
+override Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.GetHashCode() -> int
+override Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.ToString() -> string!
+override Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult.GetHashCode() -> int
+override Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult.ToString() -> string!
+override Frontier.Platform.Workflow.Orchestration.InvokeMcpToolActivity.RunAsync(Microsoft.DurableTask.TaskActivityContext! context, Frontier.Platform.Workflow.Orchestration.McpToolActivityInput! input) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Orchestration.McpToolActivityResult!>!
+override Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.GetHashCode() -> int
+override Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.ToString() -> string!
+override Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.GetHashCode() -> int
+override Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.ToString() -> string!
+override Frontier.Platform.Workflow.Orchestration.McpToolRef.GetHashCode() -> int
+override Frontier.Platform.Workflow.Orchestration.RequestApprovalActivity.RunAsync(Microsoft.DurableTask.TaskActivityContext! context, Frontier.Platform.Hitl.GateOpenRequest! input) -> System.Threading.Tasks.Task<Frontier.Platform.Hitl.ApprovalRequest!>!
+override Frontier.Platform.Workflow.Orchestration.SnapshotActivityResponse.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Orchestration.SnapshotActivityResponse.GetHashCode() -> int
+override Frontier.Platform.Workflow.Orchestration.SnapshotActivityResponse.ToString() -> string!
+static Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.operator !=(Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput? left, Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.operator ==(Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput? left, Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult.operator !=(Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult? left, Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult.operator ==(Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult? left, Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.ArtifactRestoreActivityRequest.operator !=(Frontier.Platform.Workflow.Orchestration.ArtifactRestoreActivityRequest? left, Frontier.Platform.Workflow.Orchestration.ArtifactRestoreActivityRequest? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.ArtifactRestoreActivityRequest.operator ==(Frontier.Platform.Workflow.Orchestration.ArtifactRestoreActivityRequest? left, Frontier.Platform.Workflow.Orchestration.ArtifactRestoreActivityRequest? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityRequest.operator !=(Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityRequest? left, Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityRequest? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityRequest.operator ==(Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityRequest? left, Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityRequest? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityResponse.operator !=(Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityResponse? left, Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityResponse? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityResponse.operator ==(Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityResponse? left, Frontier.Platform.Workflow.Orchestration.ArtifactStateActivityResponse? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.AssembleContextRequest.operator !=(Frontier.Platform.Workflow.Orchestration.AssembleContextRequest? left, Frontier.Platform.Workflow.Orchestration.AssembleContextRequest? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.AssembleContextRequest.operator ==(Frontier.Platform.Workflow.Orchestration.AssembleContextRequest? left, Frontier.Platform.Workflow.Orchestration.AssembleContextRequest? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.CascadeActivityRequest.operator !=(Frontier.Platform.Workflow.Orchestration.CascadeActivityRequest? left, Frontier.Platform.Workflow.Orchestration.CascadeActivityRequest? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.CascadeActivityRequest.operator ==(Frontier.Platform.Workflow.Orchestration.CascadeActivityRequest? left, Frontier.Platform.Workflow.Orchestration.CascadeActivityRequest? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.CascadeActivityResponse.operator !=(Frontier.Platform.Workflow.Orchestration.CascadeActivityResponse? left, Frontier.Platform.Workflow.Orchestration.CascadeActivityResponse? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.CascadeActivityResponse.operator ==(Frontier.Platform.Workflow.Orchestration.CascadeActivityResponse? left, Frontier.Platform.Workflow.Orchestration.CascadeActivityResponse? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.CascadeEvalRequestPayload.operator !=(Frontier.Platform.Workflow.Orchestration.CascadeEvalRequestPayload? left, Frontier.Platform.Workflow.Orchestration.CascadeEvalRequestPayload? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.CascadeEvalRequestPayload.operator ==(Frontier.Platform.Workflow.Orchestration.CascadeEvalRequestPayload? left, Frontier.Platform.Workflow.Orchestration.CascadeEvalRequestPayload? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.operator !=(Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput? left, Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.operator ==(Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput? left, Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult.operator !=(Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult? left, Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult.operator ==(Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult? left, Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.operator !=(Frontier.Platform.Workflow.Orchestration.McpToolActivityInput? left, Frontier.Platform.Workflow.Orchestration.McpToolActivityInput? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.operator ==(Frontier.Platform.Workflow.Orchestration.McpToolActivityInput? left, Frontier.Platform.Workflow.Orchestration.McpToolActivityInput? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.operator !=(Frontier.Platform.Workflow.Orchestration.McpToolActivityResult? left, Frontier.Platform.Workflow.Orchestration.McpToolActivityResult? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.operator ==(Frontier.Platform.Workflow.Orchestration.McpToolActivityResult? left, Frontier.Platform.Workflow.Orchestration.McpToolActivityResult? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.McpToolRef.Parse(string! reference) -> Frontier.Platform.Workflow.Orchestration.McpToolRef
+static Frontier.Platform.Workflow.Orchestration.McpToolRef.operator !=(Frontier.Platform.Workflow.Orchestration.McpToolRef left, Frontier.Platform.Workflow.Orchestration.McpToolRef right) -> bool
+static Frontier.Platform.Workflow.Orchestration.McpToolRef.operator ==(Frontier.Platform.Workflow.Orchestration.McpToolRef left, Frontier.Platform.Workflow.Orchestration.McpToolRef right) -> bool
+static Frontier.Platform.Workflow.Orchestration.OrchestratorCapabilities.SupportedNodeTypes.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Workflow.Model.NodeType!>!
+static Frontier.Platform.Workflow.Orchestration.OrchestratorCapabilities.Supports(Frontier.Platform.Workflow.Model.NodeType! nodeType) -> bool
+static Frontier.Platform.Workflow.Orchestration.SnapshotActivityResponse.operator !=(Frontier.Platform.Workflow.Orchestration.SnapshotActivityResponse? left, Frontier.Platform.Workflow.Orchestration.SnapshotActivityResponse? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.SnapshotActivityResponse.operator ==(Frontier.Platform.Workflow.Orchestration.SnapshotActivityResponse? left, Frontier.Platform.Workflow.Orchestration.SnapshotActivityResponse? right) -> bool
+~override Frontier.Platform.Workflow.Orchestration.McpToolRef.Equals(object obj) -> bool
+~override Frontier.Platform.Workflow.Orchestration.McpToolRef.ToString() -> string

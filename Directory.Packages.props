@@ -47,6 +47,7 @@
   <!-- Microsoft.Extensions.AI + provider SDKs for context-assembly caching (TD-7) -->
   <ItemGroup>
     <PackageVersion Include="Microsoft.Extensions.AI" Version="10.7.0" />
+    <PackageVersion Include="Microsoft.Extensions.AI.Abstractions" Version="10.7.0" />
     <PackageVersion Include="Anthropic" Version="12.35.1" />
     <PackageVersion Include="OpenAI" Version="2.5.0" />
   </ItemGroup>

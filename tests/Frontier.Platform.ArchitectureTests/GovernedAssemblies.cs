@@ -12,6 +12,12 @@ internal static class GovernedAssemblies
     public const string PlatformAbstractionsName = "Frontier.Platform.Abstractions";
     public const string SerializationName = "Frontier.Platform.Serialization";
 
+    /// <summary>The workflow definition/execution model, which arrived at ADR-PA3.</summary>
+    public const string WorkflowModelName = "Frontier.Platform.Workflow.Model";
+
+    /// <summary>The workflow interpreter, which arrived at ADR-PA5.</summary>
+    public const string WorkflowOrchestrationName = "Frontier.Platform.Workflow.Orchestration";
+
     public static readonly IReadOnlyList<string> PlatformLibraryNames =
     [
         PlatformAbstractionsName,
@@ -23,8 +29,28 @@ internal static class GovernedAssemblies
         "Frontier.Platform.Observability",
         "Frontier.Platform.Resilience",
         SerializationName,
-        "Frontier.Platform.Workflow.Model",
+        WorkflowModelName,
+        WorkflowOrchestrationName,
     ];
+
+    /// <summary>
+    /// The **engine tier** (ADR-PA5). These may depend on the governance tier — composing it is
+    /// what an interpreter does. Nothing in governance may depend back on them, which is the
+    /// property that keeps governance independently consumable.
+    /// </summary>
+    public static readonly IReadOnlyList<string> EngineLibraryNames =
+    [
+        WorkflowModelName,
+        WorkflowOrchestrationName,
+    ];
+
+    /// <summary>The **governance tier**: every platform library that is not the engine.</summary>
+    public static readonly IReadOnlyList<string> GovernanceLibraries =
+        [.. PlatformLibraryNames.Where(name => !EngineLibraryNames.Contains(name))];
+
+    /// <summary>Whether <paramref name="name"/> is an engine-tier assembly.</summary>
+    public static bool IsEngineAssembly(string? name) =>
+        name is not null && EngineLibraryNames.Contains(name);
 
     public static AssemblyName[] ReferencedAssemblyNames(string assemblyName) =>
         Assembly.Load(assemblyName).GetReferencedAssemblies();

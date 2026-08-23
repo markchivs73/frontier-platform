@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <Description>The workflow interpreter: the durable orchestrator that walks a compiled DAG, the activity shells it schedules, the agent and MCP invocation pipelines, and the audit consolidation that turns a finished run into signed evidence. Vendor-neutral — model providers and tool transports arrive through consumer-owned ports.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The durable substrate (K2). Abstractions only: this package declares orchestrators and
+         activities, it does not host a worker — the consumer's composition root does that. -->
+    <PackageReference Include="Microsoft.DurableTask.Abstractions" />
+    <!-- The vendor-neutral AI abstraction, not a provider SDK. No Anthropic, no Microsoft.Agents.AI,
+         no ModelContextProtocol reference lives here: those adapters stay with the consumer
+         (ADR-E3a D2), reached through IAgentInvoker and IMcpToolCatalog. -->
+    <PackageReference Include="Microsoft.Extensions.AI.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- ADR-PA5: this is the engine tier. It composes the governance libraries through their
+         interfaces — that is what an interpreter does — and none of them may depend back on it.
+         The direction is enforced by PlatformLibrary_GovernanceTierDoesNotDependOnTheEngine. -->
+    <ProjectReference Include="..\Frontier.Platform.Abstractions\Frontier.Platform.Abstractions.csproj" />
+    <ProjectReference Include="..\Frontier.Platform.Serialization\Frontier.Platform.Serialization.csproj" />
+    <ProjectReference Include="..\Frontier.Platform.Workflow.Model\Frontier.Platform.Workflow.Model.csproj" />
+    <ProjectReference Include="..\Frontier.Platform.Audit\Frontier.Platform.Audit.csproj" />
+    <ProjectReference Include="..\Frontier.Platform.ContextAssembly\Frontier.Platform.ContextAssembly.csproj" />
+    <ProjectReference Include="..\Frontier.Platform.Guardrails\Frontier.Platform.Guardrails.csproj" />
+    <ProjectReference Include="..\Frontier.Platform.Hitl\Frontier.Platform.Hitl.csproj" />
+    <ProjectReference Include="..\Frontier.Platform.ModelRoleConfig\Frontier.Platform.ModelRoleConfig.csproj" />
+    <ProjectReference Include="..\Frontier.Platform.Resilience\Frontier.Platform.Resilience.csproj" />
+  </ItemGroup>
+
+</Project>
