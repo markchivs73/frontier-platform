@@ -219,7 +219,9 @@ public sealed class ProposalMergeService : IProposalMergeService
 
         try
         {
-            return JsonSerializer.Deserialize<WorkflowDefinition>(latest.AgentProposalJson, CanonicalProfile.Options);
+            // Migrated on read: a proposal persisted before a schema change would otherwise
+            // merge nulls into a draft and block the write it was meant to unblock.
+            return MigratingWorkflowDefinitionConverter.ReadMigrated(latest.AgentProposalJson, CanonicalProfile.Options);
         }
         catch (JsonException)
         {

@@ -21,6 +21,7 @@ public sealed record DefinitionDraftDocument
     [JsonPropertyName("draftRevision")]
     public required string DraftRevision { get; init; }
     [JsonPropertyName("definition")]
+    [JsonConverter(typeof(MigratingWorkflowDefinitionConverter))]
     public required WorkflowDefinition Definition { get; init; }
     [JsonPropertyName("lastEditedBy")]
     public required string LastEditedBy { get; init; }
@@ -43,6 +44,7 @@ public sealed record DefinitionVersionDocument
     [JsonPropertyName("definitionHash")]
     public required string DefinitionHash { get; init; }
     [JsonPropertyName("definition")]
+    [JsonConverter(typeof(MigratingWorkflowDefinitionConverter))]
     public required WorkflowDefinition Definition { get; init; }
     [JsonPropertyName("proposedBy")]
     public required string ProposedBy { get; init; }
