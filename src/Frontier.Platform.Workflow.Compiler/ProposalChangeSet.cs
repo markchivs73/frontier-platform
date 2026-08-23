@@ -63,7 +63,7 @@ public static class ProposalChangeSetBuilder
     /// <paramref name="to"/> (S9.33: node type is looked up from whichever side still has the
     /// node — <paramref name="to"/> for added/modified, <paramref name="from"/> for removed).
     /// </summary>
-    internal static IReadOnlyList<ProposalChangeItem> Build(WorkflowDefinitionDiff diff, WorkflowDefinition from, WorkflowDefinition to)
+    public static IReadOnlyList<ProposalChangeItem> Build(WorkflowDefinitionDiff diff, WorkflowDefinition from, WorkflowDefinition to)
     {
         ArgumentNullException.ThrowIfNull(diff);
         ArgumentNullException.ThrowIfNull(from);
