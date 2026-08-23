@@ -9,6 +9,7 @@ using Frontier.Platform.Resilience;
 using Frontier.Platform.Serialization;
 using Frontier.Platform.SmokeConsumer;
 using Frontier.Platform.Workflow.Model;
+using Frontier.Platform.Workflow.Compiler;
 using Frontier.Platform.Workflow.Orchestration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -176,5 +177,29 @@ await engineProvider.GetRequiredService<IMcpToolCatalog>()
     .ResolveAsync(["com.example.crm/tickets/get_ticket"], "eng-smoke-001::wf-smoke", CancellationToken.None);
 
 Console.WriteLine("  adapter surface : output schema + tool-name round trip reachable");
+
+// 8. The compiler registers and resolves the same way, with the consumer supplying every
+//    catalogue port. This is the check that cost three round trips when the interpreter moved
+//    without it: a package can be complete, packed and green and still be unimplementable from
+//    another assembly.
+engineServices.AddFrontierWorkflowCompiler();
+engineServices.AddSingleton<IAgentRoleCatalog, SmokeCatalogues>();
+engineServices.AddSingleton<IApproverRoleCatalog, SmokeCatalogues>();
+engineServices.AddSingleton<IInstructionCatalog, SmokeCatalogues>();
+engineServices.AddSingleton<IContextComponentCatalog, SmokeCatalogues>();
+engineServices.AddSingleton<IRetryProfileCatalog, SmokeCatalogues>();
+engineServices.AddSingleton<IDesignerToolCatalog, SmokeCatalogues>();
+engineServices.AddSingleton<ICascadeGraphChecker, SmokeCatalogues>();
+
+using var compilerProvider = engineServices.BuildServiceProvider();
+var compiler = compilerProvider.GetRequiredService<IDefinitionCompiler>();
+var rules = compilerProvider.GetServices<IDefinitionValidationRule>().Count();
+
+Console.WriteLine($"  compiler        : {compiler.GetType().Name}, {rules} validation rules registered");
+
+if (rules < 20)
+{
+    throw new InvalidOperationException($"Expected the structural rule set to register, got {rules} rules.");
+}
 Console.WriteLine();
-Console.WriteLine("PASS - all eleven packages restored, loaded and registered.");
+Console.WriteLine("PASS - all twelve packages restored, loaded and registered.");

@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <Description>The workflow compiler: structural validation of a designed DAG against the design-language rules, the design-language schema the agent works from, and the publish lifecycle — draft, validate, propose, approve, publish, pin, retire — over Cosmos. Workload rule-packs register alongside the structural set.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Azure.Cosmos" />
+    <PackageReference Include="Newtonsoft.Json" />
+    <PackageReference Include="Microsoft.Extensions.AI.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- ADR-PA5 engine tier: composes governance through its interfaces, and nothing in
+         governance depends back on it. -->
+    <ProjectReference Include="..\Frontier.Platform.Abstractions\Frontier.Platform.Abstractions.csproj" />
+    <ProjectReference Include="..\Frontier.Platform.Serialization\Frontier.Platform.Serialization.csproj" />
+    <ProjectReference Include="..\Frontier.Platform.Workflow.Model\Frontier.Platform.Workflow.Model.csproj" />
+    <ProjectReference Include="..\Frontier.Platform.Workflow.Orchestration\Frontier.Platform.Workflow.Orchestration.csproj" />
+    <ProjectReference Include="..\Frontier.Platform.Hitl\Frontier.Platform.Hitl.csproj" />
+    <ProjectReference Include="..\Frontier.Platform.ModelRoleConfig\Frontier.Platform.ModelRoleConfig.csproj" />
+    <ProjectReference Include="..\Frontier.Platform.Resilience\Frontier.Platform.Resilience.csproj" />
+  </ItemGroup>
+
+</Project>

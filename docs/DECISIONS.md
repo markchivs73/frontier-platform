@@ -160,6 +160,44 @@ are the ones written as strings.**
 
 ---
 
+## ADR-PA6 — the compiler joins the engine tier, and publish governance comes with it
+
+`Frontier.Platform.Workflow.Compiler` completes the engine tier: structural validation, the
+design-language schema, and the publish lifecycle — draft, validate, propose, approve, publish,
+pin, retire — over Cosmos.
+
+**Publish governance moved deliberately, and it was not obvious.** The consuming repo's ADR-E3a
+named "the DefinitionCompiler engine + structural rules" and said nothing about the lifecycle,
+so it could equally have stayed. It moved because none of it names a workload: versioned publish
+with approval and pinning is what *any* deployment needs, and leaving it behind would mean a
+second workload reimplementing draft/propose/approve from scratch — the exact fusion the
+severability work exists to undo. The precedent settled it: `Platform.Hitl` is already a
+Cosmos-backed, solution-agnostic store driven by its callers, so the platform owning a store is
+established rather than novel.
+
+**There were no workload rule packs to leave behind.** ADR-E3a anticipated them; all 29 rules
+turned out to be structural — graph shape, data-edge agreement, determinism, versioning,
+retention. What stays registerable is the *extension point*: a rule is an
+`IDefinitionValidationRule` registration, so a deployment adds its own policy without forking
+anything. The shipped set encodes what makes a workflow **executable**, never what makes one
+acceptable to a particular business.
+
+*The stricter analyzers here caught something the consuming repo did not run.* `AnalysisLevel`
+is `latest-all`, and `ComputeDefinitionHash` tripped CA1850 and CA1308. CA1850 was adopted —
+behaviour-identical. **CA1308 is suppressed on purpose**: the hash is wire-visible, stored on
+every published definition, pinned by running executions and used as a cache key, so switching
+to upper-case hex would silently invalidate every stored hash and every pin. The rule guards
+locale-sensitive normalisation of user text; this is hex from a digest. Worth stating plainly,
+because "satisfy the analyzer" is the obvious and wrong move.
+
+*Consumability was checked before the move this time.* When the interpreter moved it took three
+PRs to become implementable from another assembly (ADR-PA5). Here the four types a consumer
+reaches were identified up front, and the smoke test wires the compiler and implements every
+catalogue port — so it passed first time. The lesson generalises: **a package's public surface
+is not a property you can observe from inside the repo that produces it.**
+
+---
+
 ## Lockstep versioning
 
 All nine packages take their version from a single git tag via MinVer. A change to one library
