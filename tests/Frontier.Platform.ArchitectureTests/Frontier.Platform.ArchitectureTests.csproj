@@ -28,6 +28,7 @@
     <ProjectReference Include="..\..\src\Frontier.Platform.Resilience\Frontier.Platform.Resilience.csproj" />
     <ProjectReference Include="..\..\src\Frontier.Platform.Serialization\Frontier.Platform.Serialization.csproj" />
     <ProjectReference Include="..\..\src\Frontier.Platform.Workflow.Model\Frontier.Platform.Workflow.Model.csproj" />
+    <ProjectReference Include="..\..\src\Frontier.Platform.Workflow.Orchestration\Frontier.Platform.Workflow.Orchestration.csproj" />
   </ItemGroup>
 
 </Project>

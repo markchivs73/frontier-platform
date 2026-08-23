@@ -116,6 +116,50 @@ and imply support that does not exist; git history holds the 1.0 bytes if they a
 
 ---
 
+## ADR-PA5 — the platform is two tiers now, and the dependency runs one way
+
+`Frontier.Platform.Workflow.Orchestration` — the interpreter — depends on Audit, HITL,
+ContextAssembly, ModelRoleConfig, Guardrails and Resilience. Until now every platform library
+referenced only Abstractions and Serialization, and an architecture test said so of *all* of
+them.
+
+That flat rule was written when the platform was only governance. The engine is a **composition
+layer**: walking a DAG means calling an approval store, assembling context, resolving a model,
+staging audit telemetry. Re-abstracting the platform's own interfaces behind a second set of
+ports to preserve flatness would be ceremony, not design — `IApprovalStore` is already an
+interface, and wrapping it would buy nothing.
+
+So the graph gains a tier:
+
+- **Governance tier** — Abstractions, Serialization, Audit, ContextAssembly, Guardrails, Hitl,
+  ModelRoleConfig, Observability, Resilience. Still flat: each references only Abstractions and
+  Serialization among platform libraries, so each stays independently consumable and adding one
+  never drags in a sibling.
+- **Engine tier** — Workflow.Model, Workflow.Orchestration. May depend on governance.
+
+**The half that carries the weight is the direction.** `GovernanceLibrary_DoesNotDependOnTheEngine`
+asserts that no governance library references an engine assembly. A two-tier graph is only worth
+having if the dependency runs one way: a solution that wants audit or approvals and no
+interpreter at all must still be able to take them. A single reference in the wrong direction
+would collapse the tiers back into one graph — and it would compile perfectly, which is why it
+is a test rather than a convention.
+
+This is not a new decision so much as the consequence of one already taken: the consuming repo's
+ADR-E3a D1 put the engine in this repo. The tiering is what that means structurally, written
+down rather than left implicit.
+
+*Found while doing it — the second invisible workload coupling.* The orchestrator body decided
+whether an MCP tool was a write by consulting a hardcoded set of two demo connectors' tool
+names. No type-based architecture test could see it: the coupling was in string literals. It is
+now `IMcpWriteClassifier`, a consumer-owned port, and — because it is consulted from inside the
+orchestrator body — its contract requires a pure, replay-stable answer, the same requirement
+`IResiliencePolicyProvider` already carries. The first such coupling was `EntryContractBuilder`;
+a third is known and scheduled in the consuming repo (a design prompt naming the workload's
+entry contract). The pattern is worth stating: **the couplings that survive a type-level guard
+are the ones written as strings.**
+
+---
+
 ## Lockstep versioning
 
 All nine packages take their version from a single git tag via MinVer. A change to one library

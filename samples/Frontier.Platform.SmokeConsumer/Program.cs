@@ -8,6 +8,7 @@ using Frontier.Platform.Observability;
 using Frontier.Platform.Resilience;
 using Frontier.Platform.Serialization;
 using Frontier.Platform.Workflow.Model;
+using Frontier.Platform.Workflow.Orchestration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -114,4 +115,26 @@ if (!File.Exists(modelXml))
 
 Console.WriteLine("  model xml docs  : shipped in package");
 Console.WriteLine();
-Console.WriteLine("PASS - all ten packages restored, loaded and registered.");
+// 5. The interpreter is reachable and, more importantly, vendor-neutral: its assembly must
+//    not drag a model provider or tool transport into a consumer's graph. Asserting the
+//    absence is the point — a stray PackageReference would restore silently and only show up
+//    as an unexpected dependency in someone else's build.
+var engineRefs = typeof(GraphOrchestrator).Assembly.GetReferencedAssemblies()
+    .Select(a => a.Name ?? string.Empty)
+    .ToList();
+
+var vendorRefs = engineRefs
+    .Where(n => n.StartsWith("Anthropic", StringComparison.Ordinal)
+             || n.StartsWith("Microsoft.Agents.AI", StringComparison.Ordinal)
+             || n.StartsWith("ModelContextProtocol", StringComparison.Ordinal))
+    .ToList();
+
+if (vendorRefs.Count > 0)
+{
+    throw new InvalidOperationException(
+        $"The interpreter must stay vendor-neutral, but references: {string.Join(", ", vendorRefs)}.");
+}
+
+Console.WriteLine($"  interpreter     : {engineRefs.Count} assembly refs, no vendor SDK");
+Console.WriteLine();
+Console.WriteLine("PASS - all eleven packages restored, loaded and registered.");
