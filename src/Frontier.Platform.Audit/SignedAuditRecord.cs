@@ -14,7 +14,7 @@ public sealed record SignedAuditRecord : IVersionedContract
     /// <inheritdoc />
     [JsonPropertyOrder(0)]
     [JsonPropertyName("schema_version")]
-    public string SchemaVersion { get; init; } = "1.0";
+    public string SchemaVersion { get; init; } = "2.0";
 
     /// <summary>The DTF instance id this record was consolidated from: <c>{engagementId}::{workflowId}</c>.</summary>
     [JsonPropertyOrder(1)]

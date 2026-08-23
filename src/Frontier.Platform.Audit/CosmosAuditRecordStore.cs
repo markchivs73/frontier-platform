@@ -25,7 +25,7 @@ internal sealed class CosmosAuditRecordStore(CosmosClient client, IOptions<Cosmo
         try
         {
             var response = await container.ReadItemAsync<SignedAuditRecordDocument>(id, new PartitionKey(engagementId), cancellationToken: cancellationToken);
-            return response.Resource.Record;
+            return AuditRecordSchemaGuard.EnsureReadable(response.Resource.Record);
         }
         catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
@@ -46,7 +46,7 @@ internal sealed class CosmosAuditRecordStore(CosmosClient client, IOptions<Cosmo
         {
             foreach (var document in await iterator.ReadNextAsync(cancellationToken))
             {
-                records.Add(document.Record);
+                records.Add(AuditRecordSchemaGuard.EnsureReadable(document.Record));
             }
         }
 
