@@ -36,7 +36,7 @@ public sealed record AgentProposal
 public static class AgentProposalParser
 {
     /// <summary>Attempts to parse a structured proposal; returns <c>false</c> if absent or malformed.</summary>
-    internal static bool TryParse(string? raw, out AgentProposal? proposal)
+    public static bool TryParse(string? raw, out AgentProposal? proposal)
     {
         proposal = null;
         if (string.IsNullOrWhiteSpace(raw)) return false;

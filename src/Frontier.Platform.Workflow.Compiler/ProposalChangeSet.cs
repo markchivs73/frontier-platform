@@ -47,7 +47,10 @@ public sealed record ProposalChangeItem
 /// The single source of the <c>changeId</c> vocabulary — invoked at turn time (to surface the diff)
 /// and at merge time (to interpret approved ids), so the two sides agree by construction.
 /// </summary>
-internal static class ProposalChangeSetBuilder
+// Public for the designer, which stays with the consumer until E3b step 5. A designer host
+// builds the change set it shows the user from the same builder the merge and diff services
+// use, so the two never disagree about what changed.
+public static class ProposalChangeSetBuilder
 {
     internal const string Node = "node";
     internal const string Edge = "edge";

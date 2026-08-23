@@ -243,6 +243,7 @@ Frontier.Platform.Workflow.Compiler.ProposalChangeItem.NodeId.init -> void
 Frontier.Platform.Workflow.Compiler.ProposalChangeItem.NodeType.get -> string?
 Frontier.Platform.Workflow.Compiler.ProposalChangeItem.NodeType.init -> void
 Frontier.Platform.Workflow.Compiler.ProposalChangeItem.ProposalChangeItem() -> void
+Frontier.Platform.Workflow.Compiler.ProposalChangeSetBuilder
 Frontier.Platform.Workflow.Compiler.ProposalMergeOutcome
 Frontier.Platform.Workflow.Compiler.ProposalMergeOutcome.DraftRevisionAfterMerge.get -> string!
 Frontier.Platform.Workflow.Compiler.ProposalMergeOutcome.DraftRevisionAfterMerge.init -> void
@@ -1463,6 +1464,7 @@ override sealed Frontier.Platform.Workflow.Compiler.Storage.SaveDraftResultConfl
 override sealed Frontier.Platform.Workflow.Compiler.Storage.SaveDraftResultSuccess.Equals(Frontier.Platform.Workflow.Compiler.Storage.SaveDraftResult? other) -> bool
 static Frontier.Platform.Workflow.Compiler.AgentProposal.operator !=(Frontier.Platform.Workflow.Compiler.AgentProposal? left, Frontier.Platform.Workflow.Compiler.AgentProposal? right) -> bool
 static Frontier.Platform.Workflow.Compiler.AgentProposal.operator ==(Frontier.Platform.Workflow.Compiler.AgentProposal? left, Frontier.Platform.Workflow.Compiler.AgentProposal? right) -> bool
+static Frontier.Platform.Workflow.Compiler.AgentProposalParser.TryParse(string? raw, out Frontier.Platform.Workflow.Compiler.AgentProposal? proposal) -> bool
 static Frontier.Platform.Workflow.Compiler.AgentRoleDescriptor.operator !=(Frontier.Platform.Workflow.Compiler.AgentRoleDescriptor? left, Frontier.Platform.Workflow.Compiler.AgentRoleDescriptor? right) -> bool
 static Frontier.Platform.Workflow.Compiler.AgentRoleDescriptor.operator ==(Frontier.Platform.Workflow.Compiler.AgentRoleDescriptor? left, Frontier.Platform.Workflow.Compiler.AgentRoleDescriptor? right) -> bool
 static Frontier.Platform.Workflow.Compiler.ApproverRoleDescriptor.operator !=(Frontier.Platform.Workflow.Compiler.ApproverRoleDescriptor? left, Frontier.Platform.Workflow.Compiler.ApproverRoleDescriptor? right) -> bool
