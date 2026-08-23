@@ -53,10 +53,23 @@ jobs:
         with:
           fetch-depth: 0
 
+      # On a pull request this validates the branch commits AND the PR title. The title is
+      # not cosmetic: this repo squash-merges, so the PR title becomes the subject of the
+      # commit that actually lands on main. Validating only the branch commits leaves the
+      # one subject that reaches main unchecked — which is exactly how a non-conforming
+      # subject reached main at v0.2.0, after the branch commits were renamed and the title
+      # was not.
       - name: Validate commit messages
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             subjects=$(git log --format=%s "${{ github.event.pull_request.base.sha }}..${{ github.sha }}")
+            # Checked with the " (#N)" GitHub appends on squash, so the 72-character limit is
+            # applied to the subject as it will actually land — a title that is exactly 72
+            # would otherwise pass here and overflow on main.
+            subjects=$(printf '%s\n%s (#%s)' "$subjects" "$PR_TITLE" "$PR_NUMBER")
           else
             subjects=$(git log -1 --format=%s)
           fi
