@@ -7,6 +7,7 @@ using Frontier.Platform.ModelRoleConfig;
 using Frontier.Platform.Observability;
 using Frontier.Platform.Resilience;
 using Frontier.Platform.Serialization;
+using Frontier.Platform.SmokeConsumer;
 using Frontier.Platform.Workflow.Model;
 using Frontier.Platform.Workflow.Orchestration;
 using Microsoft.Extensions.Configuration;
@@ -136,5 +137,34 @@ if (vendorRefs.Count > 0)
 }
 
 Console.WriteLine($"  interpreter     : {engineRefs.Count} assembly refs, no vendor SDK");
+
+// 6. The interpreter registers and *resolves* as a consumer wires it: engine internals from
+//    AddFrontierWorkflowOrchestration, every port supplied from outside. This is the check that
+//    would have caught the ports shipping internal — the package compiled and packed perfectly,
+//    and only a consumer implementing IAgentInvoker could discover it could not.
+var engineServices = new ServiceCollection();
+engineServices.AddFrontierSerialization();
+engineServices.AddFrontierResilience();
+engineServices.AddFrontierGuardrails();
+engineServices.AddFrontierContextAssembly();
+engineServices.AddFrontierAudit(configuration);
+engineServices.AddFrontierHitl(configuration);
+engineServices.AddFrontierModelRoleConfig(configuration);
+engineServices.AddFrontierWorkflowOrchestration(configuration);
+engineServices.AddSingleton<IAgentInvoker, SmokeAgentInvoker>();
+engineServices.AddSingleton<IInstructionsResolver, SmokeInstructionsResolver>();
+engineServices.AddSingleton<IMcpToolCatalog, SmokeToolCatalog>();
+engineServices.AddSingleton<IMcpEndpointResolver, SmokeEndpointResolver>();
+engineServices.AddSingleton<IMcpWriteClassifier, SmokeWriteClassifier>();
+engineServices.AddSingleton<IExecutionSnapshotReader, SmokeSnapshotReader>();
+engineServices.AddSingleton<IEntryPayloadBuilder, SmokeEntryPayloadBuilder>();
+engineServices.AddSingleton<IContractTypeSet>(new ContractTypeSet([typeof(WorkflowDefinition)]));
+
+using var engineProvider = engineServices.BuildServiceProvider();
+var orchestrator = engineProvider.GetRequiredService<GraphOrchestrator>();
+var pipeline = engineProvider.GetRequiredService<IAgentTaskActivityPipeline>();
+var consolidator = engineProvider.GetRequiredService<IAuditConsolidator>();
+
+Console.WriteLine($"  engine resolves : {orchestrator.GetType().Name}, {pipeline.GetType().Name}, {consolidator.GetType().Name}");
 Console.WriteLine();
 Console.WriteLine("PASS - all eleven packages restored, loaded and registered.");

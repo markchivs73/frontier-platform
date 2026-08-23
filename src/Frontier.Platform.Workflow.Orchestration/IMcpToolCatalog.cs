@@ -9,7 +9,7 @@ namespace Frontier.Platform.Workflow.Orchestration;
 /// against a hardcoded two-connector map; S9.26 replaces the lookup mechanism behind this
 /// same interface.
 /// </summary>
-internal interface IMcpToolCatalog
+public interface IMcpToolCatalog
 {
     /// <summary>
     /// Resolves each <c>"{reverse-dns-server}/{tool}"</c> entry in <paramref name="toolRefs"/>

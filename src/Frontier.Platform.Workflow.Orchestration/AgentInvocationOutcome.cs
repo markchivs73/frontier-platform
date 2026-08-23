@@ -10,7 +10,7 @@ namespace Frontier.Platform.Workflow.Orchestration;
 /// <see cref="UsageDetails"/> (S5.3, doc 05 §3), needed by
 /// <see cref="AgentTaskActivityPipeline"/> to build an <see cref="AuditTelemetryRecord"/>.
 /// </summary>
-internal sealed record AgentInvocationOutcome<TOutput>
+public sealed record AgentInvocationOutcome<TOutput>
     where TOutput : IVersionedContract
 {
     /// <summary>
@@ -40,17 +40,17 @@ internal sealed record AgentInvocationOutcome<TOutput>
 /// bridged across the reflection boundary (ADR-AG1), plus the wall-clock
 /// <see cref="LatencyMs"/> of the MAF call (S5.3).
 /// </summary>
-internal sealed record AgentInvocationResult
+public sealed record AgentInvocationResult
 {
     /// <summary>The validated output contract MAF returned.</summary>
-    internal required IVersionedContract Result { get; init; }
+    public required IVersionedContract Result { get; init; }
 
     /// <summary>Token usage reported by the provider for this turn, or <see langword="null"/> if unavailable.</summary>
-    internal required UsageDetails? Usage { get; init; }
+    public required UsageDetails? Usage { get; init; }
 
     /// <summary>MCP tools this invocation called (ADR-CD6, S9.25).</summary>
-    internal required IReadOnlyList<ToolCall> ToolCalls { get; init; }
+    public required IReadOnlyList<ToolCall> ToolCalls { get; init; }
 
     /// <summary>Wall-clock duration of the MAF invocation.</summary>
-    internal required long LatencyMs { get; init; }
+    public required long LatencyMs { get; init; }
 }

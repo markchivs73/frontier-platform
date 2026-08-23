@@ -9,7 +9,7 @@ namespace Frontier.Platform.Workflow.Orchestration;
 /// validate <typeparamref name="TOutput"/> — that is <see cref="IContractTypeRegistry"/>'s
 /// job once the typed result is returned.
 /// </summary>
-internal interface IAgentInvoker
+public interface IAgentInvoker
 {
     /// <summary>
     /// Invokes the agent described by <paramref name="request"/> and deserializes its
