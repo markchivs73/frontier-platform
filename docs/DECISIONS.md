@@ -386,6 +386,52 @@ Additive: the deleted copies were `internal`, so no published surface changed.
 
 ---
 
+## ADR-PA12 — an execution id is read from the right, and reading it from the left was a live defect
+
+`ExecutionId.Parse` splits at the **last** separator. Everything before it is the engagement id;
+the final segment is the workflow id.
+
+This is what doc 16 §3 has always specified — *"the workflow suffix is always the final `::`
+segment of an instance ID, so instance-ID parsing stays unambiguous regardless of how many segments
+the engagement ID itself has"* — and it is not what any implementation did. Both retired
+`ExecutionIdParser` copies took `parts[0]` and `parts[1]`, as did the consuming repo's two
+hand-rolled splits.
+
+**That was wrong in production shape, not merely in theory.** Engagement ids are composite and
+config-templated (doc 16 ADR-E2: `{type}::{client}::{site}`, e.g. `E2E::Acme::Admin-Website`), so a
+real execution id has four or more segments. Reading from the left returns `("E2E", "Acme")`: wrong
+engagement, wrong workflow. The three callers are the audit spine —
+
+- `AuditSigner` derives the audit record's **partition key** from it,
+- `CosmosAuditRecordStore` derives the partition key it reads by,
+- `AuditConsolidator` writes both identity fields into the consolidated record.
+
+So every audit record for a composite-engagement execution would have been written to a partition
+named after the engagement's *type*, carrying a workflow id that was actually the client name. On
+the evidence chain this system treats as its moat.
+
+**Why it survived.** Every test in both suites used `eng-1::wf-1`. A single-segment engagement id
+makes reading from the left and reading from the right the same operation, so the bug was invisible
+to a suite that never wrote down a realistic id. It surfaced only because `Mint` validated its
+arguments and the consuming repo's E2E fixtures — which *do* use `E2E::Acme::HQ` — began failing.
+The fixtures had been carrying the counter-example all along; nothing asked them.
+
+The lesson is narrower and more useful than "test more": **an identifier's test data has to have the
+shape production gives it.** A simplified id is not a simplified test, it is a different function.
+
+*What stays ambiguous, deliberately.* A dispatcher child appends `::{workItemId}`, and
+`eng-1::wf-1::item-1` cannot be told from a two-segment engagement id running `item-1`. `Parse` is
+therefore defined for top-level ids — which is all three callers hold, audit consolidation running
+only against top-level executions — and a child id read here yields the work-item id as its final
+segment. That is pinned by a test rather than left to be discovered, and doc 16's own two
+statements (§3's "always terminal" and §4's child format) do not agree; the consuming repo owns
+reconciling them.
+
+Behavioural change to a published package, in the direction of the specification. Signatures are
+unchanged.
+
+---
+
 ## Lockstep versioning
 
 All nine packages take their version from a single git tag via MinVer. A change to one library

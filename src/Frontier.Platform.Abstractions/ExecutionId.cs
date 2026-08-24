@@ -23,6 +23,19 @@ namespace Frontier.Platform.Abstractions;
 /// small; a record carrying two strings would have added fourteen public symbols here to say what
 /// a tuple says with none.
 /// </para>
+/// <para>
+/// <b>The engagement id is composite; the workflow id is the last segment.</b> Engagement ids are
+/// config-templated (<c>{type}::{client}::{site}</c>, e.g. <c>E2E::Acme::Admin-Website</c>), so an
+/// execution id routinely has four or more segments and only the <em>final</em> one is the
+/// workflow. Reading from the left returns <c>("E2E", "Acme")</c> — which is what every predecessor
+/// of this type did. See ADR-PA12.
+/// </para>
+/// <para>
+/// A dispatcher child appends <c>::{workItemId}</c>, which cannot be told apart from a longer
+/// engagement id by inspection. <see cref="Parse"/> is therefore defined for top-level ids only —
+/// which is all its callers hold, audit consolidation running against top-level executions — and
+/// a child id read here yields the work-item id as its final segment.
+/// </para>
 /// </summary>
 public static class ExecutionId
 {
@@ -30,17 +43,21 @@ public static class ExecutionId
     public const string Separator = "::";
 
     /// <summary>
-    /// Builds the execution id for an engagement's workflow. Neither segment may itself contain
-    /// <see cref="Separator"/>: the id would still be well-formed to look at, but would parse
-    /// back to different values than were minted.
+    /// Builds the execution id for an engagement's workflow.
+    /// <para>
+    /// The engagement id may itself contain <see cref="Separator"/> and usually does — engagement
+    /// ids are composite and config-templated (<c>{type}::{client}::{site}</c>). The workflow id
+    /// may not, because it is what makes the id readable back: it is the final segment, and a
+    /// workflow id containing the separator would move that boundary.
+    /// </para>
     /// </summary>
-    /// <param name="engagementId">The engagement the execution belongs to.</param>
-    /// <param name="workflowId">The workflow being executed.</param>
+    /// <param name="engagementId">The engagement the execution belongs to; may be composite.</param>
+    /// <param name="workflowId">The workflow being executed; a single segment.</param>
     /// <returns>The <c>{engagementId}::{workflowId}</c> instance id.</returns>
     public static string Mint(string engagementId, string workflowId)
     {
-        ThrowIfNotASegment(engagementId, nameof(engagementId));
-        ThrowIfNotASegment(workflowId, nameof(workflowId));
+        ArgumentException.ThrowIfNullOrWhiteSpace(engagementId);
+        ThrowIfNotASingleSegment(workflowId, nameof(workflowId));
 
         return string.Concat(engagementId, Separator, workflowId);
     }
@@ -71,20 +88,24 @@ public static class ExecutionId
             return null;
         }
 
-        // A dispatcher child appends ::{workItemId}; the extra segment is deliberately ignored,
-        // so a child id resolves to the same engagement and workflow as its parent.
-        var parts = executionId.Split(Separator);
-        return parts.Length < 2 ? null : (parts[0], parts[1]);
+        // Split at the LAST separator, per doc 16 §3: "the workflow suffix is always the final
+        // :: segment of an instance ID, so instance-ID parsing stays unambiguous regardless of
+        // how many segments the engagement ID itself has". Reading from the left instead is the
+        // defect this type was written to end -- see ADR-PA12.
+        var boundary = executionId.LastIndexOf(Separator, StringComparison.Ordinal);
+        return boundary <= 0 || boundary + Separator.Length == executionId.Length
+            ? null
+            : (executionId[..boundary], executionId[(boundary + Separator.Length)..]);
     }
 
-    internal static void ThrowIfNotASegment(string value, string parameterName)
+    internal static void ThrowIfNotASingleSegment(string value, string parameterName)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(value, parameterName);
 
         if (value.Contains(Separator, StringComparison.Ordinal))
         {
             throw new ArgumentException(
-                $"'{value}' cannot be part of an execution id: it contains the '{Separator}' separator.",
+                $"'{value}' cannot be the final segment of an execution id: it contains the '{Separator}' separator.",
                 parameterName);
         }
     }
