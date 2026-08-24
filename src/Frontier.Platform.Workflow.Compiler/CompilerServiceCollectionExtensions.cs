@@ -84,7 +84,6 @@ public static class CompilerServiceCollectionExtensions
 
         // S9.30: Runtime-tier catalogue row — executes only in the sandbox test-run channel
         // (S9.38 wires it); ValidateAsync filters to Pure + Resourced.
-        services.AddSingleton<IDefinitionValidationRule, DeterminismSampleEvalRule>();
 
         // S9.7: Register the workflow design-language schema provider (doc 14 §7, ADR-CD3).
         // Singleton: the schema is generated once from the loaded Abstractions assembly and cached.

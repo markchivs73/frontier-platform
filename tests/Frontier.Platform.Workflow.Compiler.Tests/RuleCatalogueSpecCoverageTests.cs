@@ -38,7 +38,6 @@ public sealed class RuleCatalogueSpecCoverageTests
         "graph.decision-edges",
         "structure.node-type-supported",
         "determinism.predicates-compile",
-        "determinism.sample-eval",
         "data.contract-types-resolve",
         "data.edge-type-match",
         "data.single-data-predecessor",
@@ -80,10 +79,11 @@ public sealed class RuleCatalogueSpecCoverageTests
         // resolution activates), 13 Resourced (2 at S9.27c + 9 at S9.30 +
         // 2 at S13.7h: structure.node-type-supported and data.output-contract-bindable, both
         // resourced because they depend on deployment capability, not the definition alone),
-        // 1 Runtime (determinism.sample-eval — executes in the sandbox channel, S9.38).
+        // and 0 Runtime — determinism.sample-eval was retired at S13.23. It was the tier's only
+        // member, and nothing executes that tier, so it could never have produced a finding.
         Assert.Equal(17, CurrentlyRegisteredRules.Count(r => r.Tier == RuleTier.Pure));
         Assert.Equal(13, CurrentlyRegisteredRules.Count(r => r.Tier == RuleTier.Resourced));
-        Assert.Equal(1, CurrentlyRegisteredRules.Count(r => r.Tier == RuleTier.Runtime));
+        Assert.Equal(0, CurrentlyRegisteredRules.Count(r => r.Tier == RuleTier.Runtime));
     }
 
     [Fact]
@@ -101,11 +101,24 @@ public sealed class RuleCatalogueSpecCoverageTests
     public void RegisteredRules_DeclareAValidDefaultSeverity()
     {
         // Severities are data a deployment may override (ADR-DC2) — every rule must declare a
-        // well-formed default. Only retention.fits-window and determinism.sample-eval are
-        // non-Error by doc 13 §4.2.
+        // well-formed default. Only retention.fits-window is non-Error by doc 13 §4.2 among the
+        // registered set (determinism.sample-eval was the other, retired at S13.23).
         Assert.All(CurrentlyRegisteredRules, rule => Assert.True(Enum.IsDefined(rule.DefaultSeverity)));
         Assert.Equal(ValidationSeverity.Warning, CurrentlyRegisteredRules.Single(r => r.RuleId == "retention.fits-window").DefaultSeverity);
-        Assert.Equal(ValidationSeverity.Info, CurrentlyRegisteredRules.Single(r => r.RuleId == "determinism.sample-eval").DefaultSeverity);
+    }
+
+    [Fact]
+    public void NoRuleIsRegisteredIntoATierNothingExecutes()
+    {
+        // S13.23: DefinitionValidator runs Pure and Resourced. Nothing runs Runtime. A rule
+        // registered there is silently inert — it appears in the catalogue, claims to govern
+        // something, and can never produce a finding. That happened once and is easy to repeat,
+        // because registering a rule looks identical whichever tier it declares.
+        var inert = CurrentlyRegisteredRules.Where(r => r.Tier == RuleTier.Runtime).Select(r => r.RuleId).ToList();
+
+        Assert.True(inert.Count == 0,
+            $"Registered into RuleTier.Runtime, which nothing executes: {string.Join(", ", inert)}. "
+            + "Either build the Runtime executor or register into a tier that runs.");
     }
 
     private static List<IDefinitionValidationRule> ResolveRegisteredRules()

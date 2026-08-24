@@ -482,12 +482,6 @@ Frontier.Platform.Workflow.Compiler.Rules.DeterminismPredicatesCompileRule.Deter
 Frontier.Platform.Workflow.Compiler.Rules.DeterminismPredicatesCompileRule.EvaluateAsync(Frontier.Platform.Workflow.Compiler.DefinitionValidationContext! ctx, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Frontier.Platform.Workflow.Compiler.ValidationFinding!>!>!
 Frontier.Platform.Workflow.Compiler.Rules.DeterminismPredicatesCompileRule.RuleId.get -> string!
 Frontier.Platform.Workflow.Compiler.Rules.DeterminismPredicatesCompileRule.Tier.get -> Frontier.Platform.Workflow.Compiler.RuleTier
-Frontier.Platform.Workflow.Compiler.Rules.DeterminismSampleEvalRule
-Frontier.Platform.Workflow.Compiler.Rules.DeterminismSampleEvalRule.DefaultSeverity.get -> Frontier.Platform.Workflow.Compiler.ValidationSeverity
-Frontier.Platform.Workflow.Compiler.Rules.DeterminismSampleEvalRule.DeterminismSampleEvalRule() -> void
-Frontier.Platform.Workflow.Compiler.Rules.DeterminismSampleEvalRule.EvaluateAsync(Frontier.Platform.Workflow.Compiler.DefinitionValidationContext! ctx, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Frontier.Platform.Workflow.Compiler.ValidationFinding!>!>!
-Frontier.Platform.Workflow.Compiler.Rules.DeterminismSampleEvalRule.RuleId.get -> string!
-Frontier.Platform.Workflow.Compiler.Rules.DeterminismSampleEvalRule.Tier.get -> Frontier.Platform.Workflow.Compiler.RuleTier
 Frontier.Platform.Workflow.Compiler.Rules.GraphDecisionEdgesRule
 Frontier.Platform.Workflow.Compiler.Rules.GraphDecisionEdgesRule.GraphDecisionEdgesRule() -> void
 Frontier.Platform.Workflow.Compiler.Rules.GraphFanOutFanInRule

@@ -27,7 +27,15 @@ public enum ValidationOutcome
 
 /// <summary>
 /// Tier of validation: Pure (no I/O, runs in-circuit per edit), Resourced (reads registries/stores, on-demand),
-/// or Runtime (executes—sandbox test-run, advisory only).
+/// or Runtime (executes — sandbox test-run, advisory only).
+///
+/// <para><b><see cref="Runtime"/> has no executor.</b> <see cref="DefinitionValidator"/> runs Pure
+/// and Resourced; nothing runs Runtime. The tier is the declared seam for advisory rules that
+/// need a real execution to say anything — evaluating a decision's predicates against sample
+/// data, for instance — and building that seam is a feature, not wiring. It is named here so a
+/// rule is not registered into it in the belief that something will pick it up: until an
+/// executor exists, a Runtime-tier rule is silently inert. One was, and was retired for exactly
+/// that reason (doc 13 §4.2 R4 remains specified and unbuilt).</para>
 /// </summary>
 public enum RuleTier
 {

@@ -445,25 +445,6 @@ public sealed class S930ResourcedRuleTests
         }
     }
 
-    public sealed class DeterminismSampleEvalRuleTests
-    {
-        [Fact]
-        public async Task NoSampleDataChannelInPhase1_ReturnsEmpty()
-        {
-            var rule = new DeterminismSampleEvalRule();
-
-            Assert.Equal(RuleTier.Runtime, rule.Tier);
-            Assert.Equal(ValidationSeverity.Info, rule.DefaultSeverity);
-            Assert.Empty(await rule.EvaluateAsync(
-                new DefinitionValidationContext(S930Fixtures.Build([S930Fixtures.Agent("a")])), CancellationToken.None));
-        }
-
-        [Fact]
-        public async Task NullContext_Throws() =>
-            await Assert.ThrowsAsync<ArgumentNullException>(() =>
-                new DeterminismSampleEvalRule().EvaluateAsync(null!, CancellationToken.None));
-    }
-
     private sealed class FakeContracts(params string[] names) : IContractTypeCatalog
     {
         public bool Resolves(string contractTypeName) => names.Contains(contractTypeName, StringComparer.Ordinal);

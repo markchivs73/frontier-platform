@@ -261,6 +261,39 @@ would be worse than the gap.
 
 ---
 
+## ADR-PA9 — a rule registered into a tier nothing executes is worse than no rule
+
+`determinism.sample-eval` is retired. It was the compiler's only `RuleTier.Runtime` rule, and
+**nothing executes that tier** — `DefinitionValidator` runs Pure and Resourced, and no other code
+references Runtime at all. The rule body also returned no findings unconditionally. So it was
+inert twice over, while appearing in the catalogue as a governance rule the product performs.
+
+That is the failure worth naming: **the catalogue is a claim.** A row in it says "this is
+checked". A rule that cannot fire makes the claim false in a way that no test catches, because
+every test of an empty rule passes.
+
+Its own doc comment compounded it by citing a blocker that had been removed — "Phase 1 has no
+designer sample-data channel yet; wiring lands with S9.38". S9.38 shipped, `ITestRunService`
+exposes `SampleInputs`, and the comment still read as pending work. A stale rationale is how an
+inert rule survives review.
+
+*Retired rather than built, deliberately.* Building it means a design-time overload of
+`PredicateEvaluator` (the live decision-routing code used inside the orchestrator body) **and** an
+executor for the Runtime tier inside the test-run channel. That is a feature, for an Info-severity
+convenience, and the decision legibility it would provide was already delivered another way — test
+runs surface the selected branch and skipped nodes. Doc 13 §4.2 R4 stays specified and unbuilt,
+with the first workload wanting predicate previews as its trigger.
+
+*What replaces it is a guard, not a comment.* `NoRuleIsRegisteredIntoATierNothingExecutes` fails if
+anything is registered into Runtime again. `RuleTier.Runtime` keeps its place as the declared seam
+— removing it would hide the gap rather than close it — but now says in its own documentation that
+it has no executor, so the next person registering into it learns that at the point of the mistake.
+
+**This is the first breaking change to a published package here.** Everything since v0.1.0 has been
+additive. `DeterminismSampleEvalRule` was public and is gone.
+
+---
+
 ## Lockstep versioning
 
 All nine packages take their version from a single git tag via MinVer. A change to one library
