@@ -24,7 +24,14 @@ public sealed class ArtifactVocabularyMigrationTests
 
         var snapshot = ContractMigrator.Rehydrate(bytes, CanonicalProfile.Options, ArtifactVocabularyMigration.SnapshotAdapters);
 
-        Assert.Equal(ArtifactVocabularyMigration.RenamedSchemaVersion, snapshot.SchemaVersion);
+        // Compared against the type's current version, not against
+        // ArtifactVocabularyMigration.RenamedSchemaVersion — which is the adapter's own constant,
+        // so asserting on it compares the adapter to itself and keeps passing after the next bump
+        // leaves this adapter behind. MigrationReachesCurrentSchemaTests owns that guarantee; this
+        // line just stops being a booby trap.
+        Assert.Equal(
+            MigrationReachesCurrentSchemaTests.CurrentSchemaVersionOf<ExecutionSnapshot>("execution_snapshot.json"),
+            snapshot.SchemaVersion);
 
         // The map survived the key rename with its contents intact — compared against the
         // legacy file's own `sections` object rather than a hardcoded expectation, so this
@@ -62,7 +69,10 @@ public sealed class ArtifactVocabularyMigrationTests
 
         var definition = ContractMigrator.Rehydrate(LegacyBytes("workflow_definition.v1.json"), CanonicalProfile.Options, ArtifactVocabularyMigration.DefinitionAdapters);
 
-        Assert.Equal(ArtifactVocabularyMigration.RenamedSchemaVersion, definition.SchemaVersion);
+        // The type's current version, not the adapter's own constant — see the note above.
+        Assert.Equal(
+            MigrationReachesCurrentSchemaTests.CurrentSchemaVersionOf<WorkflowDefinition>("workflow_definition.json"),
+            definition.SchemaVersion);
         Assert.Equal(expected, definition.Nodes.Select(n => n.ArtifactKey));
         Assert.Contains(definition.Nodes, n => n.ArtifactKey is not null); // the fixture really does carry keys
     }

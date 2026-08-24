@@ -432,6 +432,40 @@ unchanged.
 
 ---
 
+## ADR-PA13 — migration adapters go direct to current, so each one must be brought forward at every bump
+
+`ContractMigrator` **does not chain**. It reads the stored `schema_version`, looks it up once, and
+calls that single adapter. There is no 1.0 → 2.0 → 3.0 walk, and none is planned: a chain needs
+every intermediate CLR shape kept alive as a type, which is a permanent tax for a rare event.
+
+The consequence is the thing to record, because it is not visible from the code. **Every registered
+adapter must reach the current schema by itself**, so a bump to 3.0 obliges someone to revisit the
+adapter written for 1.0 back when current was 2.0. If they do not, it does not break — it keeps
+producing a 2.0-shaped object which is then deserialized as the 3.0 type with the new fields left
+at their defaults. Nothing throws. An execution paused at a gate long enough to cross two versions
+is exactly what meets it, which is why the consuming repo tracks this as E15b.
+
+*The guard is generic and self-updating.* `MigrationReachesCurrentSchemaTests` runs every registered
+adapter over the real legacy goldens and asserts the result carries **the contract type's** current
+version — obtained by deserializing a current golden with its `schema_version` removed and letting
+the property initializer answer. Nothing in the test needs editing at the next bump; it simply
+starts failing until each adapter is brought forward. Two companion rules: no adapter may be
+registered for the current version, and the snapshot and definition tables must cover the same
+stored versions, since they describe one wire break and a version adapted for only one of them
+leaves half a paused execution readable.
+
+**The existing tests could not have caught this, and the reason generalises.**
+`ArtifactVocabularyMigrationTests` asserted the migrated version equalled
+`ArtifactVocabularyMigration.RenamedSchemaVersion` — *the adapter's own constant*. At 3.0 that
+constant still reads "2.0", so the assertion passes while the adapter is wrong. Verified rather
+than argued: with `ExecutionSnapshot` temporarily moved to 3.0, the new test fails with
+`Expected: "3.0", Actual: "2.0"` and the old one passes five for five. Both sites now compare
+against the type. **An assertion that compares a thing to its own constant survives the change it
+appears to guard** — the same shape as ADR-PA9's inert rule and ADR-PA10's decorative guard, which
+is three times in one batch that a green test was the camouflage.
+
+---
+
 ## Lockstep versioning
 
 All nine packages take their version from a single git tag via MinVer. A change to one library
