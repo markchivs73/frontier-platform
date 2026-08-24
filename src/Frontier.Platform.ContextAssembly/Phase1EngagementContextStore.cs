@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
 using Frontier.Platform.Abstractions;
+using Frontier.Platform.Serialization;
 
 namespace Frontier.Platform.ContextAssembly;
 
@@ -44,7 +45,7 @@ internal sealed class Phase1EngagementContextStore : IEngagementContextStore
 
         if (key.StartsWith(SandboxEngagementPrefix, StringComparison.Ordinal))
             return Task.FromResult<string?>(
-                $$"""{"engagement_brief":{{JsonSerializer.Serialize(SandboxDefaultBrief)}}}""");
+                $$"""{"engagement_brief":{{JsonSerializer.Serialize(SandboxDefaultBrief, CanonicalProfile.Options)}}}""");
 
         return Task.FromResult<string?>(null);
     }

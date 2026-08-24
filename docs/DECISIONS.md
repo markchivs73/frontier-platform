@@ -294,6 +294,52 @@ additive. `DeterminismSampleEvalRule` was public and is gone.
 
 ---
 
+## ADR-PA10 — orchestrator purity is checked by walking what replay executes, not what the source says
+
+Hard invariant 2 — orchestrator bodies are pure, no `DateTime.Now`, no GUIDs, no I/O — had no
+mechanism. `GraphOrchestrator`'s own doc comment states the rule, the behavioural orchestrator
+tests are thorough, and nothing failed the build when a body broke it. This is the same shape as
+ADR-PA9: a claim written where a check should be. It is the more dangerous instance, because a
+non-deterministic body does not throw. It replays, diverges from the recorded history, and
+corrupts the execution quietly and later.
+
+**The guard reads IL, not source, and follows the call closure.** `GraphOrchestrator.RunAsync` is
+four delegating lines; the walk it governs lives in `GraphOrchestratorSteps`. A check scoped to the
+orchestrator type would have passed while inspecting nothing. Orchestrators are discovered by their
+Durable Task interface rather than listed, so a second orchestrator is covered on arrival — the
+property the P1 backlog item asked for.
+
+*The finding that justifies the whole approach.* The first working version passed against a
+`DateTime.UtcNow` deliberately planted in `GraphOrchestratorSteps`. An `async` method's body
+compiles into a generated state-machine type that **no call instruction points at** — the stub
+hands it to a builder — so a call-following walk sails past every asynchronous body, which here is
+nearly all of them. The guard reported success while checking almost nothing. It now follows
+`StateMachineAttribute` into the generated type, and a regression test pins that it reaches a
+`MoveNext` body rather than only the stub that launches it.
+
+The lesson generalises past this test: **a guard's own green result is evidence of nothing until it
+has been shown to fail.** Planting a real violation, in the real code, is the cheapest way to learn
+that a mechanism is decorative — and it is the second time in this batch that the check needed
+checking.
+
+**What it deliberately does not cover, stated rather than implied.** The traversal stops at the
+platform boundary, so an impure implementation of an injected port — `IMcpWriteClassifier`,
+`IRollbackPlanner`, `IResiliencePolicyProvider`, all consulted inside the body — is invisible to
+it. Those carry a documented purity contract instead, which is a weaker guarantee honestly stated.
+Activities are invisible for the right reason: they are reached by name through the durable
+context, never by a call instruction, and doing I/O is their job.
+
+**K10 gets the same treatment.** One shared `JsonSerializerOptions` profile is invariant 1, and it
+too was unenforced. Two source rules now hold it: only `Frontier.Platform.Serialization` may
+construct the options, and every `JsonSerializer` call must pass the canonical profile. This found
+one real fork — `Phase1EngagementContextStore` serialized with framework defaults — fixed here
+rather than allowlisted, since for a bare string the bytes are identical and the exception would
+have outlived its reason. A passed-through `options` parameter is tolerated, because
+`ContractMigrator` and the migrating converters take the live options and must honour them; that
+tolerance is the rule's stated limit, not an oversight.
+
+---
+
 ## Lockstep versioning
 
 All nine packages take their version from a single git tag via MinVer. A change to one library
