@@ -1,0 +1,5 @@
+const Frontier.Platform.Abstractions.ExecutionId.Separator = "::" -> string!
+Frontier.Platform.Abstractions.ExecutionId
+static Frontier.Platform.Abstractions.ExecutionId.Mint(string! engagementId, string! workflowId) -> string!
+static Frontier.Platform.Abstractions.ExecutionId.Parse(string! executionId) -> (string! EngagementId, string! WorkflowId)
+static Frontier.Platform.Abstractions.ExecutionId.ParseOrNull(string! executionId) -> (string! EngagementId, string! WorkflowId)?
