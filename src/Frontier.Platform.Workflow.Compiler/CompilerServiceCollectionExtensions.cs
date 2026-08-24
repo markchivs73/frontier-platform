@@ -66,7 +66,9 @@ public static class CompilerServiceCollectionExtensions
         services.AddSingleton<IContractTypeCatalog, ReflectionContractTypeCatalog>();
         // S13.7h (ADR-DC7): permissive default so a compiler composed without a runtime behaves as
         // it did before; the Host replaces it with the orchestrator's own capability list.
-        services.AddSingleton<IExecutableNodeTypeCatalog, PermissiveExecutableNodeTypeCatalog>();
+        // S13.25: fail closed. The default is what the interpreter actually executes, not
+        // everything — a missed registration must not silently reopen the S13.7h hole.
+        services.AddSingleton<IExecutableNodeTypeCatalog, OrchestratorExecutableNodeTypeCatalog>();
         services.TryAddSingleton(new RetentionWindowConfig());
 
         // S9.43 (doc 19 §A4-R2/C-31): A4 "Expected shape" panel + "Use example" prefill.

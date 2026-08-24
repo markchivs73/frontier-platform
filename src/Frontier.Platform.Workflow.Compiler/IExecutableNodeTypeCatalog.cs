@@ -1,5 +1,6 @@
 
 using Frontier.Platform.Workflow.Model;
+using Frontier.Platform.Workflow.Orchestration;
 
 namespace Frontier.Platform.Workflow.Compiler;
 
@@ -27,6 +28,8 @@ public interface IExecutableNodeTypeCatalog
 /// preserves pre-S13.7h behaviour rather than silently rejecting definitions a real runtime might
 /// well support. The Host replaces it with the orchestrator-backed adapter.
 /// </summary>
+// Retained for tests and for a consumer that deliberately wants validation decoupled from any
+// runtime. It is no longer the default: see OrchestratorExecutableNodeTypeCatalog below.
 public sealed class PermissiveExecutableNodeTypeCatalog : IExecutableNodeTypeCatalog
 {
     /// <inheritdoc />
@@ -35,4 +38,30 @@ public sealed class PermissiveExecutableNodeTypeCatalog : IExecutableNodeTypeCat
     /// <inheritdoc />
     public IReadOnlyList<string> ExecutableNodeTypeNames { get; } =
         [.. NodeType.List.Select(t => t.Name).OrderBy(n => n, StringComparer.Ordinal)];
+}
+
+/// <summary>
+/// The default <see cref="IExecutableNodeTypeCatalog"/>: what the interpreter in this same
+/// release actually executes, read from <see cref="OrchestratorCapabilities"/>.
+///
+/// <para>The default used to be <see cref="PermissiveExecutableNodeTypeCatalog"/> — everything
+/// validates — because the compiler could not see the interpreter's capabilities when the two
+/// lived in separate solutions. It can now, so the safe answer is the default rather than
+/// something a consumer has to remember to register. That matters because the failure mode was
+/// silent and fail-**open**: a missed registration meant the compiler happily published
+/// workflows the runtime would reject at execution, which is the S13.7h hole reopening without
+/// anything going red.</para>
+///
+/// <para>A deployment whose runtime executes a different set still overrides this — the port
+/// exists for exactly that — but it now overrides a correct default rather than supplying the
+/// only correct answer.</para>
+/// </summary>
+public sealed class OrchestratorExecutableNodeTypeCatalog : IExecutableNodeTypeCatalog
+{
+    /// <inheritdoc />
+    public bool IsExecutable(NodeType nodeType) => OrchestratorCapabilities.Supports(nodeType);
+
+    /// <inheritdoc />
+    public IReadOnlyList<string> ExecutableNodeTypeNames { get; } =
+        [.. OrchestratorCapabilities.SupportedNodeTypes.Select(t => t.Name).OrderBy(n => n, StringComparer.Ordinal)];
 }
