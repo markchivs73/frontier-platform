@@ -1,8 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Frontier.Platform.Workflow.Model;
 
-namespace Frontier.Platform.Workflow.Compiler.Storage;
+namespace Frontier.Platform.Workflow.Model;
 
 /// <summary>
 /// Reads a stored <see cref="WorkflowDefinition"/> forward from an older schema major.
@@ -18,15 +17,24 @@ namespace Frontier.Platform.Workflow.Compiler.Storage;
 ///
 /// <para>This closes that. It is a property-level converter rather than a change to the shared
 /// canonical profile, deliberately: the profile is governance-tier and must not learn about
-/// engine types (ADR-PA5), and one converter on the storage contracts covers every read path —
-/// drafts, versions, proposals — without restructuring any of them.</para>
+/// engine types (ADR-PA5), and one converter covers every path a stored definition arrives
+/// through — drafts, versions, persisted proposals, and the orchestration input replayed from
+/// durable history — without restructuring any of them.</para>
+///
+/// <para><b>It lives in the model rather than the compiler because history is the other reader.</b>
+/// A definition rides inline in the orchestration input (ADR-2), so it is rehydrated from
+/// recorded history on every replay. Migration there is deterministic by construction: the
+/// recorded bytes never change and the adapter is a pure total function of them, so every replay
+/// yields the identical definition. It does not weaken replay — it is what keeps replay working
+/// across a schema change, since the alternative is a definition that rehydrates with null
+/// artifact keys and makes different scheduling decisions than the run being replayed.</para>
 ///
 /// <para><b>Writes are untouched.</b> Serialization always emits the current schema, so a
 /// migrated document is written back in current form the next time it is saved, and the
 /// definition hash of anything already published is unaffected because nothing is rewritten
 /// behind the caller's back.</para>
 /// </summary>
-internal sealed class MigratingWorkflowDefinitionConverter : JsonConverter<WorkflowDefinition>
+public sealed class MigratingWorkflowDefinitionConverter : JsonConverter<WorkflowDefinition>
 {
     /// <inheritdoc />
     public override WorkflowDefinition Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -53,7 +61,7 @@ internal sealed class MigratingWorkflowDefinitionConverter : JsonConverter<Workf
     /// deserialize a definition by hand rather than through a stored document — the agent's
     /// persisted proposal being the one that can then be merged and written.
     /// </summary>
-    internal static WorkflowDefinition? ReadMigrated(string json, JsonSerializerOptions options)
+    public static WorkflowDefinition? ReadMigrated(string json, JsonSerializerOptions options)
     {
         using var document = JsonDocument.Parse(json);
         var element = document.RootElement;
