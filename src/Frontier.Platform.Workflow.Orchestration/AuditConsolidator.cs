@@ -20,7 +20,7 @@ internal sealed class AuditConsolidator(IExecutionSnapshotReader snapshotReader,
     {
         ArgumentNullException.ThrowIfNull(input);
 
-        var (engagementId, workflowId) = ExecutionIdParser.Parse(input.ExecutionId);
+        var (engagementId, workflowId) = ExecutionId.Parse(input.ExecutionId);
         var snapshot = await snapshotReader.GetLatestAsync(input.ExecutionId, engagementId, cancellationToken)
             ?? throw new InvalidOperationException($"No execution snapshot found for '{input.ExecutionId}' (doc 05 §4 step 4 requires the final checkpoint).");
         var telemetry = await telemetryStaging.GetForExecutionAsync(input.ExecutionId, cancellationToken);

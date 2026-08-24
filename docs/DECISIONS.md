@@ -340,6 +340,52 @@ tolerance is the rule's stated limit, not an oversight.
 
 ---
 
+## ADR-PA11 — the execution-id format is kernel vocabulary, because `internal` did not survive the splits
+
+`ExecutionId` joins `Frontier.Platform.Abstractions`: `Mint`, `Parse`, `ParseOrNull` and the
+`Separator` constant for the `{engagementId}::{workflowId}` instance-id format (invariant 3).
+
+**The reason it belongs in the kernel is the count.** The format was written out in *eight* places
+across two repositories — twice in this one. Two helper copies (`Workflow.Orchestration` and
+`Audit`), two identical test suites covering them, one sanctioned mint site in the consuming
+repo's composition root, one duplicate mint, and two hand-rolled splits in its controllers, one of
+which had already drifted (it returns everything after the first separator, so a dispatcher child
+id would yield `{workflowId}::{workItemId}`).
+
+None of that was carelessness, which is the part worth recording. Each copy was created at an
+**assembly boundary**, by someone with no other option: `Audit`'s copy appeared when it was severed
+from `Orchestration` at S11.6 — the note of the day says so plainly ("Audit keeps its own") — and
+the consuming repo's four appeared when the engine moved out at E3b. An `internal` helper is a
+correct decision inside one assembly and a silent instruction to duplicate after a split. This
+codebase has now split twice, and the format duplicated both times.
+
+So the generalisable rule is not "make things public". It is that **a repo split converts every
+`internal` shared helper into a fork waiting to happen**, and the ones to promote are those whose
+callers ended up on both sides of the new wall. That test names this one exactly.
+
+*Kept deliberately small.* The segments come back as a named tuple, not a declared type. ADR-PA1's
+whole argument is that the kernel is inherited by every package and every consumer, so a record
+carrying two strings — fourteen public symbols once the analyzer enumerated them — would have been
+a poor trade for what a tuple says with none.
+
+*Two readings, because the callers genuinely differ.* `Parse` throws: the platform's own sites
+receive ids the platform minted, so a malformed one is a programming error. `ParseOrNull` returns
+null: both controllers hold identifiers that may legitimately not be execution ids and fall back to
+using the value as-is. Collapsing them onto the throwing form would have changed API behaviour
+silently, which is the failure this ADR is about.
+
+`Mint` additionally refuses a segment containing the separator. Such an id looks well-formed and
+parses back to values other than those minted — visible only downstream, if at all.
+
+*Publishing `Mint` does not loosen invariant 3.* The invariant governs who mints an id **for
+scheduling**, not who may know the format, and the consuming repo's guard gets stronger for it: it
+currently matches an interpolated-string shape and cannot distinguish `{engagementId}::{workflowId}`
+from any other two-part key, so it carries an allowlist. A named call site needs no such heuristic.
+
+Additive: the deleted copies were `internal`, so no published surface changed.
+
+---
+
 ## Lockstep versioning
 
 All nine packages take their version from a single git tag via MinVer. A change to one library
