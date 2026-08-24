@@ -28,16 +28,44 @@ public sealed class ExecutionIdTests
     }
 
     /// <summary>
-    /// A segment containing the separator would produce an id that still looks well-formed but
-    /// parses back to different values than were minted — silent, and only visible downstream.
+    /// A workflow id containing the separator would move the boundary the id is read back from,
+    /// producing something that still looks well-formed and parses to different values.
     /// </summary>
     [Fact]
-    public void Mint_WithASegmentContainingTheSeparator_Throws()
+    public void Mint_WithAWorkflowIdContainingTheSeparator_Throws()
     {
         var ex = Assert.Throws<ArgumentException>(() => ExecutionId.Mint("eng-1", "wf::1"));
 
         Assert.Equal("workflowId", ex.ParamName);
         Assert.Contains("separator", ex.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The engagement id is composite by design (doc 16 ADR-E2: <c>{type}::{client}::{site}</c>), so
+    /// containing the separator is normal and must not be refused.
+    /// </summary>
+    [Fact]
+    public void Mint_WithACompositeEngagementId_IsAccepted()
+    {
+        Assert.Equal("E2E::Acme::HQ::wf-sow", ExecutionId.Mint("E2E::Acme::HQ", "wf-sow"));
+    }
+
+    /// <summary>
+    /// The regression this type exists to end. Every predecessor split from the left and returned
+    /// ("E2E", "Acme") for this id — wrong engagement, wrong workflow — feeding the audit record's
+    /// partition key and identity fields. It survived because every test used a single-segment
+    /// engagement id, which production ids are not.
+    /// </summary>
+    [Theory]
+    [InlineData("E2E::Acme::HQ::wf-sow", "E2E::Acme::HQ", "wf-sow")]
+    [InlineData("E2E::Acme::Admin-Website::wf-1", "E2E::Acme::Admin-Website", "wf-1")]
+    [InlineData("eng-1::wf-1", "eng-1", "wf-1")]
+    public void Parse_TakesTheWorkflowFromTheFinalSegment(string executionId, string expectedEngagement, string expectedWorkflow)
+    {
+        var (engagementId, workflowId) = ExecutionId.Parse(executionId);
+
+        Assert.Equal(expectedEngagement, engagementId);
+        Assert.Equal(expectedWorkflow, workflowId);
     }
 
     [Fact]
@@ -49,20 +77,27 @@ public sealed class ExecutionIdTests
         Assert.Equal("wf-1", workflowId);
     }
 
-    /// <summary>A dispatcher child appends <c>::{workItemId}</c> and resolves to its parent's pair.</summary>
+    /// <summary>
+    /// A dispatcher child id is genuinely ambiguous — <c>eng-1::wf-1::item-1</c> is indistinguishable
+    /// from a two-segment engagement id running <c>item-1</c>. Pinned as the documented behaviour
+    /// rather than left to be discovered: <see cref="ExecutionId.Parse"/> is for top-level ids, which
+    /// is what all three callers hold.
+    /// </summary>
     [Fact]
-    public void Parse_DispatcherChildId_IgnoresTheThirdSegment()
+    public void Parse_DispatcherChildId_ReadsTheWorkItemAsTheFinalSegment()
     {
         var (engagementId, workflowId) = ExecutionId.Parse("eng-1::wf-1::item-1");
 
-        Assert.Equal("eng-1", engagementId);
-        Assert.Equal("wf-1", workflowId);
+        Assert.Equal("eng-1::wf-1", engagementId);
+        Assert.Equal("item-1", workflowId);
     }
 
     [Theory]
     [InlineData("eng-1")]
     [InlineData("")]
-    public void Parse_WithoutTheSeparator_Throws(string executionId)
+    [InlineData("::wf-1")]
+    [InlineData("eng-1::")]
+    public void Parse_WithoutTwoUsableSegments_Throws(string executionId)
     {
         var ex = Assert.Throws<ArgumentException>(() => ExecutionId.Parse(executionId));
 
@@ -83,7 +118,7 @@ public sealed class ExecutionIdTests
     [Theory]
     [InlineData("eng-1")]
     [InlineData("")]
-    public void ParseOrNull_WithoutTheSeparator_ReturnsNull(string executionId)
+    public void ParseOrNull_WithoutTwoUsableSegments_ReturnsNull(string executionId)
     {
         Assert.Null(ExecutionId.ParseOrNull(executionId));
     }
