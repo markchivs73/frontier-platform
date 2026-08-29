@@ -466,6 +466,28 @@ is three times in one batch that a green test was the camouflage.
 
 ---
 
+## ADR-PA14 — the durable engagement-context store is registrable, not just present
+
+Shipping an implementation nothing can register is the same as not shipping it. `ContextAssembly`
+carried `CosmosEngagementContextStore` — epoch-versioned, tested against the emulator — as an
+`internal` type that no registration path reached, while `AddFrontierContextAssembly` hardwired the
+compiled-in `Phase1EngagementContextStore` (two hard-coded engagement ids). A consumer running real
+engagements therefore resolved **no dynamic context at all** for anything outside that catalogue,
+and its entry nodes contract-violated permanently. frontier-workflow found this the first time an
+automated test started an execution on a freshly created engagement (its S13.50).
+
+**Decision.** `AddFrontierCosmosEngagementContext(IConfiguration)` is public and opt-in: it binds
+this library's own `CosmosOptions` (each Cosmos-using library binds its own, so none depends on
+another's registration order), `TryAdd`s the `CosmosClient` so a consumer's shared client wins, and
+**replaces** rather than appends the `IEngagementContextStore` registration — leaving both would
+make the resolved implementation depend on call order, which is true in one head and false in the
+other. `AddFrontierContextAssembly` still needs no Cosmos configuration, so composing context
+assembly in a test or a tool stays free of a database.
+
+**Consequences.** The store's `Container` constructor is unchanged, so its integration tests are
+untouched. Consumers opt in explicitly; those that do not keep today's behaviour exactly. Public
+surface grows by one extension method and one options type, both tracked in `PublicAPI`.
+
 ## Lockstep versioning
 
 All nine packages take their version from a single git tag via MinVer. A change to one library

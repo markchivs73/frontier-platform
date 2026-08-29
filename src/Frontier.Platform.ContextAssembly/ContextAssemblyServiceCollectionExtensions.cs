@@ -1,4 +1,8 @@
+using Frontier.Platform.Serialization;
+using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
 namespace Frontier.Platform.ContextAssembly;
@@ -66,4 +70,78 @@ public static class ContextAssemblyServiceCollectionExtensions
 
         return services;
     }
+    /// <summary>
+    /// Replaces the compiled-in Phase-1 engagement-context store with the durable Cosmos-backed
+    /// one (doc 04, doc 18; epoch-versioned, <c>engagement-context</c> container).
+    /// <para>
+    /// <b>Why this is opt-in rather than the default:</b> <see cref="AddFrontierContextAssembly"/>
+    /// deliberately needs no Cosmos configuration, so a consumer can compose context assembly in a
+    /// test or a tool without a database. A solution that runs real engagements calls this as well.
+    /// Until it existed the Cosmos store was <c>internal</c> and registered nowhere — the durable
+    /// half of the design shipped unreachable, and every engagement outside the compiled-in
+    /// catalogue resolved to no dynamic context at all (frontier-workflow S13.50).
+    /// </para>
+    /// <para>
+    /// The <see cref="CosmosClient"/> is registered with <c>TryAdd</c>, so a consumer that already
+    /// shares one keeps it; the container is resolved from <see cref="CosmosOptions.Database"/>.
+    /// </para>
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="configuration">Configuration carrying the <c>Cosmos</c> section.</param>
+    public static IServiceCollection AddFrontierCosmosEngagementContext(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(configuration);
+
+        services.AddOptions<CosmosOptions>()
+            .Bind(configuration.GetSection("Cosmos"))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.TryAddSingleton(CreateCosmosClient);
+
+        // Replace, not append: leaving the Phase-1 store registered would make the resolved
+        // implementation depend on call order, which is exactly the kind of thing that is true
+        // in one head and false in the other.
+        services.Replace(ServiceDescriptor.Singleton<IEngagementContextStore>(provider =>
+        {
+            var client = provider.GetRequiredService<CosmosClient>();
+            var options = provider.GetRequiredService<IOptions<CosmosOptions>>().Value;
+            return new CosmosEngagementContextStore(
+                client.GetContainer(options.Database, CosmosEngagementContextStore.ContainerName));
+        }));
+
+        return services;
+    }
+
+    /// <summary>
+    /// Builds the <see cref="CosmosClient"/> wired to the shared <see cref="CanonicalProfile"/>
+    /// (canonical-serialization: no other <c>JsonSerializerOptions</c> instance may be constructed
+    /// anywhere). <see cref="ConnectionMode.Gateway"/> matches every other Cosmos client here and
+    /// is required by the Linux emulator, which exposes no Direct/TCP port range.
+    /// </summary>
+    internal static CosmosClient CreateCosmosClient(IServiceProvider provider)
+    {
+        var options = provider.GetRequiredService<IOptions<CosmosOptions>>().Value;
+        var clientOptions = new CosmosClientOptions
+        {
+            UseSystemTextJsonSerializerWithOptions = CanonicalProfile.Options,
+            ConnectionMode = ConnectionMode.Gateway,
+            HttpClientFactory = IsLocalEmulator(options.Endpoint)
+                ? () => new HttpClient(new HttpClientHandler { CheckCertificateRevocationList = true, ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator })
+                : null,
+        };
+
+        return new CosmosClient(options.Endpoint, options.Key, clientOptions);
+    }
+
+    /// <summary>The emulator's self-signed certificate is not in the OS trust store; validation is bypassed for localhost only.</summary>
+    internal static bool IsLocalEmulator(string endpoint) =>
+        endpoint.StartsWith("https://localhost", StringComparison.OrdinalIgnoreCase) ||
+        endpoint.StartsWith("https://127.0.0.1", StringComparison.OrdinalIgnoreCase) ||
+        endpoint.StartsWith("http://localhost", StringComparison.OrdinalIgnoreCase) ||
+        endpoint.StartsWith("http://127.0.0.1", StringComparison.OrdinalIgnoreCase);
+
 }
