@@ -1,0 +1,9 @@
+Frontier.Platform.ContextAssembly.CosmosOptions
+Frontier.Platform.ContextAssembly.CosmosOptions.CosmosOptions() -> void
+Frontier.Platform.ContextAssembly.CosmosOptions.Database.get -> string!
+Frontier.Platform.ContextAssembly.CosmosOptions.Database.init -> void
+Frontier.Platform.ContextAssembly.CosmosOptions.Endpoint.get -> string!
+Frontier.Platform.ContextAssembly.CosmosOptions.Endpoint.init -> void
+Frontier.Platform.ContextAssembly.CosmosOptions.Key.get -> string!
+Frontier.Platform.ContextAssembly.CosmosOptions.Key.init -> void
+static Frontier.Platform.ContextAssembly.ContextAssemblyServiceCollectionExtensions.AddFrontierCosmosEngagementContext(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Microsoft.Extensions.Configuration.IConfiguration! configuration) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!

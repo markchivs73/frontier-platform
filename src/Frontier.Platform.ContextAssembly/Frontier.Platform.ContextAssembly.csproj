@@ -11,6 +11,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Options" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" />
 
     <!-- Cosmos DB for engagement and baseline stores. Newtonsoft.Json is not used in code:
          Microsoft.Azure.Cosmos's build targets require the explicit reference (S11.2 verified —
