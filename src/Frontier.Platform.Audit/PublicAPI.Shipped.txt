@@ -200,16 +200,13 @@ Frontier.Platform.Audit.HumanDecisionRecord.Notes.init -> void
 Frontier.Platform.Audit.HumanDecisionRecord.RequestId.get -> string!
 Frontier.Platform.Audit.HumanDecisionRecord.RequestId.init -> void
 Frontier.Platform.Audit.IAuditQueryService
-Frontier.Platform.Audit.IAuditQueryService.GetAsync(string! executionId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Audit.SignedAuditRecord?>!
 Frontier.Platform.Audit.IAuditQueryService.GetChainAsync(string! engagementId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.SignedAuditRecord!>!>!
 Frontier.Platform.Audit.IAuditQueryService.QueryAsync(Frontier.Platform.Audit.AuditQuery! query, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.AuditSummary!>!>!
 Frontier.Platform.Audit.IAuditRecordStore
 Frontier.Platform.Audit.IAuditRecordStore.CreateAsync(Frontier.Platform.Audit.SignedAuditRecord! record, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
-Frontier.Platform.Audit.IAuditRecordStore.GetAsync(string! executionId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Audit.SignedAuditRecord?>!
 Frontier.Platform.Audit.IAuditRecordStore.GetChainAsync(string! engagementId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.SignedAuditRecord!>!>!
 Frontier.Platform.Audit.IAuditSigner
 Frontier.Platform.Audit.IAuditSigner.SignAsync(Frontier.Platform.Audit.AuditRecord! record, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Audit.SignedAuditRecord!>!
-Frontier.Platform.Audit.IAuditSigner.VerifyAsync(string! executionId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Audit.VerificationResult!>!
 Frontier.Platform.Audit.IAuditTelemetryStaging
 Frontier.Platform.Audit.IAuditTelemetryStaging.GetForExecutionAsync(string! executionId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.AuditTelemetryRecord!>!>!
 Frontier.Platform.Audit.IAuditTelemetryStaging.RecordInvocationAsync(Frontier.Platform.Audit.AuditTelemetryRecord! record, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!

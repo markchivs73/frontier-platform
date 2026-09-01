@@ -22,6 +22,6 @@ internal sealed class FakeAuditSigner : IAuditSigner
     }
 
     /// <inheritdoc />
-    public Task<VerificationResult> VerifyAsync(string executionId, CancellationToken cancellationToken) =>
+    public Task<VerificationResult> VerifyAsync(string executionId, string engagementId, CancellationToken cancellationToken) =>
         throw new NotSupportedException("Not exercised by ConsolidateAuditActivity (S5.6).");
 }

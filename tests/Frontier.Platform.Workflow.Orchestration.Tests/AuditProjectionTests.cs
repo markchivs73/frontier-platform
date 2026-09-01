@@ -180,6 +180,8 @@ public sealed class AuditProjectionTests
         var input = new ConsolidateAuditInput
         {
             ExecutionId = "exec-1",
+            EngagementId = "eng-1",
+            WorkflowId = "wf-1",
             DefinitionHash = "sha256:hash123",
             StartedAtUtc = timestamp
         };
@@ -196,6 +198,8 @@ public sealed class AuditProjectionTests
         var input1 = new ConsolidateAuditInput
         {
             ExecutionId = "exec-1",
+            EngagementId = "eng-1",
+            WorkflowId = "wf-1",
             DefinitionHash = "sha256:abc",
             StartedAtUtc = timestamp
         };
@@ -203,6 +207,8 @@ public sealed class AuditProjectionTests
         var input2 = new ConsolidateAuditInput
         {
             ExecutionId = "exec-1",
+            EngagementId = "eng-1",
+            WorkflowId = "wf-1",
             DefinitionHash = "sha256:abc",
             StartedAtUtc = timestamp
         };

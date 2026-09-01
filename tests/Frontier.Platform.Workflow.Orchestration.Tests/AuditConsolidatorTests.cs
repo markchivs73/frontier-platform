@@ -12,7 +12,9 @@ public sealed class AuditConsolidatorTests
 {
     private static readonly ConsolidateAuditInput Input = new()
     {
-        ExecutionId = "eng-1::wf-1",
+        ExecutionId = "E2E::Acme::Admin-Website::wf-1",
+        EngagementId = "E2E::Acme::Admin-Website",
+        WorkflowId = "wf-1",
         DefinitionHash = "abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567",
         StartedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
     };
@@ -38,15 +40,24 @@ public sealed class AuditConsolidatorTests
     [Fact]
     public async Task ConsolidateAsync_BuildsAuditRecordFromSnapshotAndTelemetry()
     {
-        var snapshot = WorkflowEventProjectorTests.Snapshot();
+        // The snapshot an execution writes carries the same identity its input did; the fixture
+        // says so explicitly now that the record's identity comes from the input rather than from
+        // parsing the id (ADR-PA15), so a divergence here would be a fixture bug, not a behaviour.
+        var snapshot = WorkflowEventProjectorTests.Snapshot() with
+        {
+            ExecutionId = Input.ExecutionId,
+            EngagementId = Input.EngagementId,
+            WorkflowId = Input.WorkflowId,
+        };
         var telemetry = TelemetrySamples.Record() with { ExecutionId = snapshot.ExecutionId };
         var consolidator = new AuditConsolidator(new FakeExecutionSnapshotReader(snapshot), new FakeAuditTelemetryStaging([telemetry]));
 
         var record = await consolidator.ConsolidateAsync(Input, CancellationToken.None);
 
-        Assert.Equal(snapshot.ExecutionId, record.ExecutionId);
-        Assert.Equal(snapshot.EngagementId, record.EngagementId);
-        Assert.Equal(snapshot.WorkflowId, record.WorkflowId);
+        // Identity is asserted against the *input*: that is where ADR-PA15 says it comes from.
+        Assert.Equal(Input.ExecutionId, record.ExecutionId);
+        Assert.Equal(Input.EngagementId, record.EngagementId);
+        Assert.Equal(Input.WorkflowId, record.WorkflowId);
         Assert.Equal(snapshot.DefinitionVersion, record.DefinitionVersion);
         Assert.Equal(Input.DefinitionHash, record.DefinitionHash);
         Assert.Equal(Input.StartedAtUtc, record.StartedAtUtc);

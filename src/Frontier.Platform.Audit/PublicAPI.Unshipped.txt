@@ -4,3 +4,6 @@ Frontier.Platform.Audit.AuditTelemetryRecord.ArtifactKey.get -> string?
 Frontier.Platform.Audit.AuditTelemetryRecord.ArtifactKey.init -> void
 Frontier.Platform.Audit.ValidatorOutcome.TargetArtifactKey.get -> string!
 Frontier.Platform.Audit.ValidatorOutcome.TargetArtifactKey.init -> void
+Frontier.Platform.Audit.IAuditRecordStore.GetAsync(string! executionId, string! engagementId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Audit.SignedAuditRecord?>!
+Frontier.Platform.Audit.IAuditSigner.VerifyAsync(string! executionId, string! engagementId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Audit.VerificationResult!>!
+Frontier.Platform.Audit.IAuditQueryService.GetAsync(string! executionId, string! engagementId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Audit.SignedAuditRecord?>!

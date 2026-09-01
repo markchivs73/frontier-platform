@@ -22,5 +22,5 @@ public interface IAuditSigner
     /// recomputes each record's hash and signature, and reports whether the target record's
     /// signature is valid and the chain is unbroken back to genesis.
     /// </summary>
-    Task<VerificationResult> VerifyAsync(string executionId, CancellationToken cancellationToken);
+    Task<VerificationResult> VerifyAsync(string executionId, string engagementId, CancellationToken cancellationToken);
 }

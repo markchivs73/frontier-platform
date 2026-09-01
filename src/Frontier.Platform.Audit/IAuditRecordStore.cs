@@ -14,7 +14,7 @@ public interface IAuditRecordStore
     /// (doc 05 §10 <c>GET /api/audit/{executionId}</c>). Point-read by the deterministic
     /// id and the engagement partition key derived from <paramref name="executionId"/>.
     /// </summary>
-    Task<SignedAuditRecord?> GetAsync(string executionId, CancellationToken cancellationToken);
+    Task<SignedAuditRecord?> GetAsync(string executionId, string engagementId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Returns every <see cref="SignedAuditRecord"/> for <paramref name="engagementId"/>,

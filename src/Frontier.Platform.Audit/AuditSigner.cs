@@ -1,5 +1,3 @@
-using Frontier.Platform.Abstractions;
-
 namespace Frontier.Platform.Audit;
 
 /// <summary>
@@ -30,9 +28,8 @@ internal sealed class AuditSigner(IAuditRecordStore recordStore, IKeyProvider ke
     }
 
     /// <inheritdoc />
-    public async Task<VerificationResult> VerifyAsync(string executionId, CancellationToken cancellationToken)
+    public async Task<VerificationResult> VerifyAsync(string executionId, string engagementId, CancellationToken cancellationToken)
     {
-        var (engagementId, _) = ExecutionId.Parse(executionId);
         var chain = await recordStore.GetChainAsync(engagementId, cancellationToken);
         var key = await keyProvider.GetCurrentKeyAsync(cancellationToken);
 

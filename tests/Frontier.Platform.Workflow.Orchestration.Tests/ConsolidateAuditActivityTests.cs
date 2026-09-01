@@ -15,6 +15,8 @@ public sealed class ConsolidateAuditActivityTests
         var input = new ConsolidateAuditInput
         {
             ExecutionId = "eng-1::wf-chain",
+            EngagementId = "eng-1",
+            WorkflowId = "wf-chain",
             DefinitionHash = "definition-hash",
             StartedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
         };

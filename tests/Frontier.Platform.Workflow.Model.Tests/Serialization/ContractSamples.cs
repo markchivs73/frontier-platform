@@ -250,7 +250,9 @@ internal static class ContractSamples
     /// <summary>A well-formed <see cref="ConsolidateAuditInput"/> (S5.4 activity input).</summary>
     public static ConsolidateAuditInput ConsolidateAuditInput() => new()
     {
-        ExecutionId = "eng-1::wf-1",
+        ExecutionId = "E2E::Acme::Admin-Website::wf-1",
+        EngagementId = "E2E::Acme::Admin-Website",
+        WorkflowId = "wf-1",
         DefinitionHash = "abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567",
         StartedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
     };

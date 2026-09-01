@@ -298,6 +298,8 @@ internal static class GraphOrchestratorSteps
         var request = new ConsolidateAuditInput
         {
             ExecutionId = context.InstanceId,
+            EngagementId = input.EngagementId,
+            WorkflowId = input.Definition.WorkflowId,
             DefinitionHash = input.Definition.DefinitionHash,
             StartedAtUtc = startedAtUtc,
         };

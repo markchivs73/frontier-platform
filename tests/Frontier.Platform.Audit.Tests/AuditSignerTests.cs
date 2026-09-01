@@ -82,7 +82,7 @@ public sealed class AuditSignerTests
         var signer = new AuditSigner(store, KeyProvider);
         var signed = await signer.SignAsync(AuditRecordHasherTests.Sample(), CancellationToken.None);
 
-        var result = await signer.VerifyAsync(signed.ExecutionId, CancellationToken.None);
+        var result = await signer.VerifyAsync(signed.ExecutionId, signed.EngagementId, CancellationToken.None);
 
         Assert.True(result.SignatureValid);
         Assert.True(result.ChainValid);
@@ -98,7 +98,7 @@ public sealed class AuditSignerTests
         var signed = await signer.SignAsync(AuditRecordHasherTests.Sample(), CancellationToken.None);
         store.Replace(signed with { FinalStatus = ExecutionStatus.Failed });
 
-        var result = await signer.VerifyAsync(signed.ExecutionId, CancellationToken.None);
+        var result = await signer.VerifyAsync(signed.ExecutionId, signed.EngagementId, CancellationToken.None);
 
         Assert.False(result.SignatureValid);
         Assert.False(result.ChainValid);
@@ -110,6 +110,6 @@ public sealed class AuditSignerTests
     {
         var signer = new AuditSigner(new FakeAuditRecordStore(), KeyProvider);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => signer.VerifyAsync("eng-1::wf-1", CancellationToken.None));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => signer.VerifyAsync("eng-1::wf-1", "eng-1", CancellationToken.None));
     }
 }

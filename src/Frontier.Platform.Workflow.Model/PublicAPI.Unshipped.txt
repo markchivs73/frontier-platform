@@ -507,3 +507,7 @@ virtual Frontier.Platform.Workflow.Model.ConditionalPredicate.PrintMembers(Syste
 virtual Frontier.Platform.Workflow.Model.WorkflowNode.EqualityContract.get -> System.Type!
 virtual Frontier.Platform.Workflow.Model.WorkflowNode.Equals(Frontier.Platform.Workflow.Model.WorkflowNode? other) -> bool
 virtual Frontier.Platform.Workflow.Model.WorkflowNode.PrintMembers(System.Text.StringBuilder! builder) -> bool
+Frontier.Platform.Workflow.Model.ConsolidateAuditInput.EngagementId.get -> string!
+Frontier.Platform.Workflow.Model.ConsolidateAuditInput.EngagementId.init -> void
+Frontier.Platform.Workflow.Model.ConsolidateAuditInput.WorkflowId.get -> string!
+Frontier.Platform.Workflow.Model.ConsolidateAuditInput.WorkflowId.init -> void
