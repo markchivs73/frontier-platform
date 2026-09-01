@@ -7,8 +7,8 @@ internal sealed class FakeAuditRecordStore : IAuditRecordStore
     private readonly List<SignedAuditRecord> records = [];
 
     /// <inheritdoc />
-    public Task<SignedAuditRecord?> GetAsync(string executionId, CancellationToken cancellationToken) =>
-        Task.FromResult(records.FirstOrDefault(record => record.ExecutionId == executionId));
+    public Task<SignedAuditRecord?> GetAsync(string executionId, string engagementId, CancellationToken cancellationToken) =>
+        Task.FromResult(records.FirstOrDefault(record => record.ExecutionId == executionId && record.EngagementId == engagementId));
 
     /// <inheritdoc />
     public Task<IReadOnlyList<SignedAuditRecord>> GetChainAsync(string engagementId, CancellationToken cancellationToken) =>

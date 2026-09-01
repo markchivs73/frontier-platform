@@ -18,7 +18,7 @@ public interface IAuditQueryService
     /// <c>[]</c> until Stage 6), 3 (<see cref="SignedAuditRecord.HumanDecisions"/>), and 5
     /// (<see cref="SignedAuditRecord.CacheMetrics"/>) directly from the returned record.
     /// </summary>
-    Task<SignedAuditRecord?> GetAsync(string executionId, CancellationToken cancellationToken);
+    Task<SignedAuditRecord?> GetAsync(string executionId, string engagementId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Returns an <see cref="AuditSummary"/> for every <c>audit-records</c> document

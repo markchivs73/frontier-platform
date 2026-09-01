@@ -20,12 +20,11 @@ internal sealed class AuditConsolidator(IExecutionSnapshotReader snapshotReader,
     {
         ArgumentNullException.ThrowIfNull(input);
 
-        var (engagementId, workflowId) = ExecutionId.Parse(input.ExecutionId);
-        var snapshot = await snapshotReader.GetLatestAsync(input.ExecutionId, engagementId, cancellationToken)
+        var snapshot = await snapshotReader.GetLatestAsync(input.ExecutionId, input.EngagementId, cancellationToken)
             ?? throw new InvalidOperationException($"No execution snapshot found for '{input.ExecutionId}' (doc 05 §4 step 4 requires the final checkpoint).");
         var telemetry = await telemetryStaging.GetForExecutionAsync(input.ExecutionId, cancellationToken);
 
-        return BuildAuditRecord(input, engagementId, workflowId, snapshot, telemetry);
+        return BuildAuditRecord(input, input.EngagementId, input.WorkflowId, snapshot, telemetry);
     }
 
     private const string SandboxEngagementIdPrefix = "SANDBOX-";

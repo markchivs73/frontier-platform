@@ -51,76 +51,23 @@ public sealed class ExecutionIdTests
     }
 
     /// <summary>
-    /// The regression this type exists to end. Every predecessor split from the left and returned
-    /// ("E2E", "Acme") for this id — wrong engagement, wrong workflow — feeding the audit record's
-    /// partition key and identity fields. It survived because every test used a single-segment
-    /// engagement id, which production ids are not.
+    /// ADR-PA15 removed <c>Parse</c>/<c>ParseOrNull</c>: an execution id is an addressing key that
+    /// is written and never read. The tests that stood here pinned the reading — ADR-PA12's
+    /// "the workflow is the final segment" rule, and the deliberately-ambiguous dispatcher child
+    /// id — and went with the readers they protected.
+    /// <para>
+    /// What replaces them is the guarantee that still matters: minting is exact for a
+    /// <b>composite</b> engagement id, which is the shape production has and whose absence from
+    /// the old suite is exactly what let ADR-PA12's defect live.
+    /// </para>
     /// </summary>
     [Theory]
-    [InlineData("E2E::Acme::HQ::wf-sow", "E2E::Acme::HQ", "wf-sow")]
-    [InlineData("E2E::Acme::Admin-Website::wf-1", "E2E::Acme::Admin-Website", "wf-1")]
-    [InlineData("eng-1::wf-1", "eng-1", "wf-1")]
-    public void Parse_TakesTheWorkflowFromTheFinalSegment(string executionId, string expectedEngagement, string expectedWorkflow)
+    [InlineData("E2E::Acme::HQ", "wf-sow", "E2E::Acme::HQ::wf-sow")]
+    [InlineData("E2E::Acme::Admin-Website", "wf-1", "E2E::Acme::Admin-Website::wf-1")]
+    [InlineData("eng-1", "wf-1", "eng-1::wf-1")]
+    public void Mint_CompositeEngagementId_AppendsTheWorkflowAsTheFinalSegment(string engagementId, string workflowId, string expected)
     {
-        var (engagementId, workflowId) = ExecutionId.Parse(executionId);
-
-        Assert.Equal(expectedEngagement, engagementId);
-        Assert.Equal(expectedWorkflow, workflowId);
-    }
-
-    [Fact]
-    public void MintAndParse_RoundTrip()
-    {
-        var (engagementId, workflowId) = ExecutionId.Parse(ExecutionId.Mint("eng-1", "wf-1"));
-
-        Assert.Equal("eng-1", engagementId);
-        Assert.Equal("wf-1", workflowId);
-    }
-
-    /// <summary>
-    /// A dispatcher child id is genuinely ambiguous — <c>eng-1::wf-1::item-1</c> is indistinguishable
-    /// from a two-segment engagement id running <c>item-1</c>. Pinned as the documented behaviour
-    /// rather than left to be discovered: <see cref="ExecutionId.Parse"/> is for top-level ids, which
-    /// is what all three callers hold.
-    /// </summary>
-    [Fact]
-    public void Parse_DispatcherChildId_ReadsTheWorkItemAsTheFinalSegment()
-    {
-        var (engagementId, workflowId) = ExecutionId.Parse("eng-1::wf-1::item-1");
-
-        Assert.Equal("eng-1::wf-1", engagementId);
-        Assert.Equal("item-1", workflowId);
-    }
-
-    [Theory]
-    [InlineData("eng-1")]
-    [InlineData("")]
-    [InlineData("::wf-1")]
-    [InlineData("eng-1::")]
-    public void Parse_WithoutTwoUsableSegments_Throws(string executionId)
-    {
-        var ex = Assert.Throws<ArgumentException>(() => ExecutionId.Parse(executionId));
-
-        Assert.Equal("executionId", ex.ParamName);
-        Assert.Contains("engagementId", ex.Message, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void ParseOrNull_WellFormedId_ReturnsTheSegments()
-    {
-        Assert.Equal(("eng-1", "wf-1"), ExecutionId.ParseOrNull("eng-1::wf-1"));
-    }
-
-    /// <summary>
-    /// The tolerant reading exists for callers holding an identifier that may legitimately be
-    /// something else, so a malformed value is a branch rather than an exception.
-    /// </summary>
-    [Theory]
-    [InlineData("eng-1")]
-    [InlineData("")]
-    public void ParseOrNull_WithoutTwoUsableSegments_ReturnsNull(string executionId)
-    {
-        Assert.Null(ExecutionId.ParseOrNull(executionId));
+        Assert.Equal(expected, ExecutionId.Mint(engagementId, workflowId));
     }
 
     [Fact]

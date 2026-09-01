@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
-using Frontier.Platform.Abstractions;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Options;
 
@@ -17,9 +16,8 @@ internal sealed class CosmosAuditRecordStore(CosmosClient client, IOptions<Cosmo
     internal const string ContainerName = "audit-records";
 
     /// <inheritdoc />
-    public async Task<SignedAuditRecord?> GetAsync(string executionId, CancellationToken cancellationToken)
+    public async Task<SignedAuditRecord?> GetAsync(string executionId, string engagementId, CancellationToken cancellationToken)
     {
-        var (engagementId, _) = ExecutionId.Parse(executionId);
         var container = client.GetContainer(options.Value.Database, ContainerName);
         var id = AuditRecordDocumentId.ForExecution(executionId);
 

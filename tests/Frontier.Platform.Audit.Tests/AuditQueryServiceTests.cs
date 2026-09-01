@@ -25,7 +25,7 @@ public sealed class AuditQueryServiceTests : IDisposable
         var record = await Sign(store, "eng-1", "wf-1");
         var service = CreateService(store);
 
-        var result = await service.GetAsync(record.ExecutionId, CancellationToken.None);
+        var result = await service.GetAsync(record.ExecutionId, record.EngagementId, CancellationToken.None);
 
         Assert.Equal(record, result);
     }
@@ -35,7 +35,7 @@ public sealed class AuditQueryServiceTests : IDisposable
     {
         var service = CreateService(new FakeAuditRecordStore());
 
-        var result = await service.GetAsync("eng-1::wf-1", CancellationToken.None);
+        var result = await service.GetAsync("eng-1::wf-1", "eng-1", CancellationToken.None);
 
         Assert.Null(result);
     }

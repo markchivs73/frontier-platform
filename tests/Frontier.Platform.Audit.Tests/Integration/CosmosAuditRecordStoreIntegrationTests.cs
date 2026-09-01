@@ -91,7 +91,8 @@ public sealed class CosmosAuditRecordStoreIntegrationTests : IAsyncLifetime, IDi
     [Fact]
     public async Task GetAsync_NoRecordForExecutionId_ReturnsNull()
     {
-        var result = await store.GetAsync($"eng-{Guid.NewGuid():N}::wf-1", CancellationToken.None);
+        var engagementId = $"eng-{Guid.NewGuid():N}";
+        var result = await store.GetAsync($"{engagementId}::wf-1", engagementId, CancellationToken.None);
 
         Assert.Null(result);
     }
@@ -103,7 +104,7 @@ public sealed class CosmosAuditRecordStoreIntegrationTests : IAsyncLifetime, IDi
         var record = await Sign(engagementId, "wf-1");
         await store.CreateAsync(record, CancellationToken.None);
 
-        var result = await store.GetAsync(record.ExecutionId, CancellationToken.None);
+        var result = await store.GetAsync(record.ExecutionId, record.EngagementId, CancellationToken.None);
 
         CanonicalAssert.Equal(record, result);
     }

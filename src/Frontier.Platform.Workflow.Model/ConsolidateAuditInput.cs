@@ -18,18 +18,33 @@ namespace Frontier.Platform.Workflow.Model;
 [ExcludeFromCodeCoverage(Justification = "Plain data contract; properties are exercised by round-trip/byte-stability tests.")]
 public sealed record ConsolidateAuditInput
 {
-    /// <summary>The DTF instance id: <c>{engagementId}::{workflowId}</c> (rule 3).</summary>
+    /// <summary>The DTF instance id — an addressing key, never read for its parts (ADR-PA15).</summary>
     [JsonPropertyOrder(0)]
     [JsonPropertyName("execution_id")]
     public required string ExecutionId { get; init; }
 
-    /// <summary>The pinned definition's <c>DefinitionHash</c> (ADR-2: rides inline as orchestration input).</summary>
+    /// <summary>
+    /// The engagement this execution belongs to, carried explicitly (ADR-PA15). The consolidator
+    /// needs it before it can read the snapshot — it is the snapshot container's partition key —
+    /// so it cannot come from the snapshot it is used to fetch, which is why the id used to be
+    /// parsed for it.
+    /// </summary>
     [JsonPropertyOrder(1)]
+    [JsonPropertyName("engagement_id")]
+    public required string EngagementId { get; init; }
+
+    /// <summary>The workflow's stable identity, carried explicitly (ADR-PA15).</summary>
+    [JsonPropertyOrder(2)]
+    [JsonPropertyName("workflow_id")]
+    public required string WorkflowId { get; init; }
+
+    /// <summary>The pinned definition's <c>DefinitionHash</c> (ADR-2: rides inline as orchestration input).</summary>
+    [JsonPropertyOrder(3)]
     [JsonPropertyName("definition_hash")]
     public required string DefinitionHash { get; init; }
 
     /// <summary>UTC timestamp at which the orchestration started, captured once via <c>context.CurrentUtcDateTime</c>.</summary>
-    [JsonPropertyOrder(2)]
+    [JsonPropertyOrder(4)]
     [JsonPropertyName("started_at_utc")]
     public required DateTime StartedAtUtc { get; init; }
 }

@@ -388,6 +388,10 @@ Additive: the deleted copies were `internal`, so no published surface changed.
 
 ## ADR-PA12 — an execution id is read from the right, and reading it from the left was a live defect
 
+> **Superseded by ADR-PA15 (2026-09-01):** the readers this rule governed are gone. It remains the
+> correct reading of any id written under it, and its lesson about production-shaped test data is
+> carried forward rather than retired.
+
 `ExecutionId.Parse` splits at the **last** separator. Everything before it is the engagement id;
 the final segment is the workflow id.
 
@@ -541,6 +545,54 @@ Do not "clean up" these references. Microsoft intends to migrate the Cosmos SDK 
 System.Text.Json in a future major version, with no published timeline; the references can go
 then. An abstraction layer isolating Cosmos-facing serialization was considered and deferred as
 not yet worth its cost.
+
+---
+
+## ADR-PA15 — an execution id is written, never read; identity travels as fields
+
+`ExecutionId.Parse` and `ExecutionId.ParseOrNull` are removed. `Mint` stays. Nothing splits,
+slices or pattern-matches an execution id to recover the parts that went into it; the engagement
+and workflow travel as typed fields on the contracts that need them —
+`ConsolidateAuditInput.EngagementId`/`WorkflowId`, and the `engagementId` parameter now taken by
+`IAuditSigner.VerifyAsync`, `IAuditRecordStore.GetAsync` and `IAuditQueryService.GetAsync`.
+
+**The id was doing two unrelated jobs.** As an addressing key it must be unique per run and may be
+opaque; as a metadata carrier it must be structured and unambiguous. Every recurring defect here
+came from the second job, never the first. ADR-PA12 was a parse bug: splitting from the left on a
+composite engagement id (`E2E::Acme::Admin-Website::wf-sow`) returned the engagement's *type* as
+the engagement and the client as the workflow, mis-partitioning every audit record for a real
+engagement. The dispatcher child id (`::{workItemId}`) is indistinguishable from a longer
+engagement id by inspection, so `Parse` had to be *documented around* rather than fixed. Both are
+readings of a format that was never itself wrong.
+
+**The evidence that this is a subtraction, not a redesign.** All five readers across the two
+repositories wanted a single value between them — the engagement id, for a Cosmos partition key —
+and two discarded the rest outright (`var (engagementId, _) = …`). Every caller already held it as
+a typed value before it called. `AuditConsolidator` was the clearest case: it parsed the engagement
+and workflow out of the string, *then* loaded the `ExecutionSnapshot` that has carried both as
+required typed fields all along, and wrote the parsed values rather than the snapshot's.
+
+No behaviour changes. The same values reach the same fields by a route that cannot silently be
+wrong — and a mis-set field is a compile error or a validation failure, where a mis-parsed id was
+neither.
+
+*What this costs.* A public-surface break on the kernel (ADR-PA11) and on three audit interfaces,
+so consumers update in lockstep. `ConsolidateAuditInput` gains two required properties, which is a
+wire change to a DTF activity input — in-flight orchestrations replay the shape they recorded, so
+this must not be deployed alongside a mid-flight execution that started before it. That is the
+ADR-E15 accept-and-record posture, flagged rather than assumed.
+
+*What it does not settle.* Whether the id gains a per-run discriminator, which is the consuming
+repo's S13.51 and its ADR-EX1. This decision is a prerequisite for it: a run token in the id is
+only safe once nothing is reading the id for its parts. `ExecutionId.Mint` therefore still requires
+a single-segment workflow id, because the minted `{engagementId}::{workflowId}` remains the
+derivable key that the affinity claim will be built on.
+
+*Supersedes ADR-PA12* — not by contradicting it. "Read from the right" remains the correct reading
+of any id written under it, and its lesson outlives its rule: **an identifier's test data has to
+have the shape production gives it.** A single-segment engagement id made reading from the left and
+from the right the same operation, which is why a whole suite missed the defect. The replacement
+tests mint against composite engagement ids for exactly that reason.
 
 ---
 

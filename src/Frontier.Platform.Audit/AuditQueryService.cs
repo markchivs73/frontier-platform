@@ -14,8 +14,8 @@ namespace Frontier.Platform.Audit;
 internal sealed class AuditQueryService(IAuditRecordStore recordStore, CosmosClient client, IOptions<CosmosOptions> options) : IAuditQueryService
 {
     /// <inheritdoc />
-    public Task<SignedAuditRecord?> GetAsync(string executionId, CancellationToken cancellationToken) =>
-        recordStore.GetAsync(executionId, cancellationToken);
+    public Task<SignedAuditRecord?> GetAsync(string executionId, string engagementId, CancellationToken cancellationToken) =>
+        recordStore.GetAsync(executionId, engagementId, cancellationToken);
 
     /// <inheritdoc />
     public Task<IReadOnlyList<SignedAuditRecord>> GetChainAsync(string engagementId, CancellationToken cancellationToken) =>
