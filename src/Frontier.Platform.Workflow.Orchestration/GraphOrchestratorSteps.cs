@@ -51,7 +51,7 @@ internal static class GraphOrchestratorSteps
     {
         EnsureSupported(input.Definition);
 
-        var state = new GraphExecutionState();
+        var state = new GraphExecutionState { StartedAtUtc = context.CurrentUtcDateTime };
         var walk = GraphWalk.Create(input.Definition);
 
         while (walk.HasWork)
@@ -302,6 +302,7 @@ internal static class GraphOrchestratorSteps
             WorkflowId = input.Definition.WorkflowId,
             DefinitionHash = input.Definition.DefinitionHash,
             StartedAtUtc = startedAtUtc,
+            RunId = input.RunId,
         };
 
         var taskOptions = policyProvider.GetTaskOptions(SnapshotPersistenceProfile);
@@ -522,6 +523,8 @@ internal static class GraphOrchestratorSteps
         ApprovedSnapshotRefs = new Dictionary<string, string>(state.ApprovedSnapshotRefs),
         CheckpointedAtUtc = context.CurrentUtcDateTime,
         InitiatedBy = input.InitiatedBy,
+        RunId = input.RunId,
+        StartedAtUtc = state.StartedAtUtc,
     };
 
     /// <summary>

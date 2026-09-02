@@ -113,6 +113,32 @@ public sealed record ExecutionSnapshot : IVersionedContract
     [JsonPropertyName("skipped_node_ids")]
     public IReadOnlyList<string>? SkippedNodeIds { get; init; }
 
+    /// <summary>
+    /// Discriminates this run from every other run of the same engagement-workflow (ADR-EX1).
+    /// <b>Additive and optional</b> per the ADR-E15 compatibility floor: inputs and documents
+    /// recorded before this field existed replay and read as <see langword="null"/>, which means
+    /// "the single run of a pre-change execution" — never "unknown".
+    /// </summary>
+    [JsonPropertyOrder(17)]
+    [JsonPropertyName("run_id")]
+    public string? RunId { get; init; }
+
+    /// <summary>
+    /// When this execution actually started, as opposed to when this checkpoint was written
+    /// (ADR-EX1). Captured once from <c>context.CurrentUtcDateTime</c> at the start of the walk, so
+    /// it is deterministic under replay and identical on every checkpoint of the run.
+    /// <para>
+    /// It exists because <see cref="CheckpointedAtUtc"/> was standing in for it on the B3 surface.
+    /// With one run per engagement-workflow that was merely imprecise; with several it orders a
+    /// runs list by *last activity*, so a long first run appears to start after a quick second one.
+    /// </para>
+    /// <b>Additive and optional</b> per the ADR-E15 floor: snapshots written before this field
+    /// read as <see langword="null"/>, and callers fall back to <see cref="CheckpointedAtUtc"/>.
+    /// </summary>
+    [JsonPropertyOrder(18)]
+    [JsonPropertyName("started_at_utc")]
+    public DateTime? StartedAtUtc { get; init; }
+
     /// <inheritdoc />
     public void Validate()
     {

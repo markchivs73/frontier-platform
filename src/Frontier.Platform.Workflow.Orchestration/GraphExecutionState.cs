@@ -10,6 +10,13 @@ namespace Frontier.Platform.Workflow.Orchestration;
 /// </summary>
 internal sealed class GraphExecutionState
 {
+    /// <summary>
+    /// When the walk started, from <c>context.CurrentUtcDateTime</c> — deterministic under replay
+    /// and stamped onto every checkpoint so a runs list can order by start rather than by last
+    /// activity (ADR-EX1).
+    /// </summary>
+    internal required DateTime StartedAtUtc { get; init; }
+
     /// <summary>Completed steps, in execution order.</summary>
     internal List<StepCompletion> CompletedSteps { get; } = [];
 

@@ -41,6 +41,14 @@ public static class ExecutionId
     public const string Separator = "::";
 
     /// <summary>
+    /// Separates the run token from the engagement-workflow key it discriminates. Deliberately not
+    /// <see cref="Separator"/>: the run is not another level of the engagement hierarchy, and a
+    /// distinct mark keeps a dispatcher child id legible beside it. Because nothing parses an
+    /// execution id (ADR-PA15), this is a readability choice rather than a correctness one.
+    /// </summary>
+    public const string RunSeparator = "#";
+
+    /// <summary>
     /// Builds the execution id for an engagement's workflow.
     /// <para>
     /// The engagement id may itself contain <see cref="Separator"/> and usually does — engagement
@@ -58,6 +66,51 @@ public static class ExecutionId
         ThrowIfNotASingleSegment(workflowId, nameof(workflowId));
 
         return string.Concat(engagementId, Separator, workflowId);
+    }
+
+    /// <summary>
+    /// Builds the execution id for one <b>run</b> of an engagement's workflow:
+    /// <c>{engagementId}::{workflowId}#{runToken}</c>.
+    /// <para>
+    /// The two-argument <see cref="Mint(string, string)"/> remains the <b>affinity key</b> — the
+    /// derivable value a claim is taken on to enforce one *live* run per engagement-workflow. This
+    /// overload produces the addressing key DTF schedules against, which must differ per run so a
+    /// re-run cannot collide with its predecessor's history, snapshot document or gate events.
+    /// </para>
+    /// <para>
+    /// The token is supplied rather than generated here: <see cref="Frontier.Platform.Abstractions"/>
+    /// is the zero-dependency kernel (ADR-PA1), and generation is the composition root's job — it
+    /// must happen before scheduling and never inside an orchestrator body, where
+    /// non-deterministic values are banned outright.
+    /// </para>
+    /// </summary>
+    /// <param name="engagementId">The engagement the execution belongs to; may be composite.</param>
+    /// <param name="workflowId">The workflow being executed; a single segment.</param>
+    /// <param name="runToken">Discriminates this run from every other run of the same engagement-workflow. Must be a single segment and contain no <see cref="RunSeparator"/>.</param>
+    /// <returns>The <c>{engagementId}::{workflowId}#{runToken}</c> instance id.</returns>
+    public static string MintRun(string engagementId, string workflowId, string runToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(runToken);
+        ThrowIfNotARunToken(runToken);
+
+        return string.Concat(Mint(engagementId, workflowId), RunSeparator, runToken);
+    }
+
+    /// <summary>
+    /// Rejects a run token that would blur the boundary it exists to mark. A token carrying either
+    /// separator makes the id ambiguous to a human reading a dashboard — the only reader an
+    /// execution id now has.
+    /// </summary>
+    internal static void ThrowIfNotARunToken(string runToken)
+    {
+        ThrowIfNotASingleSegment(runToken, nameof(runToken));
+
+        if (runToken.Contains(RunSeparator, StringComparison.Ordinal))
+        {
+            throw new ArgumentException(
+                $"'{runToken}' cannot be a run token: it contains the '{RunSeparator}' separator.",
+                nameof(runToken));
+        }
     }
 
     internal static void ThrowIfNotASingleSegment(string value, string parameterName)

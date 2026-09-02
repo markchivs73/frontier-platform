@@ -70,6 +70,63 @@ public sealed class ExecutionIdTests
         Assert.Equal(expected, ExecutionId.Mint(engagementId, workflowId));
     }
 
+    /// <summary>
+    /// ADR-EX1: the run token is what lets a second run of the same engagement-workflow exist at
+    /// all — without it the id collides with its predecessor's history, snapshot document and gate
+    /// events. Minted against a composite engagement id, since that is the production shape.
+    /// </summary>
+    [Theory]
+    [InlineData("E2E::Acme::Admin-Website", "wf-1", "0199f0c2", "E2E::Acme::Admin-Website::wf-1#0199f0c2")]
+    [InlineData("eng-1", "wf-1", "0199f0c3", "eng-1::wf-1#0199f0c3")]
+    public void MintRun_AppendsTheRunTokenAfterTheAffinityKey(string engagementId, string workflowId, string runToken, string expected)
+    {
+        Assert.Equal(expected, ExecutionId.MintRun(engagementId, workflowId, runToken));
+    }
+
+    /// <summary>
+    /// The two-argument mint stays the <b>affinity key</b> — the derivable value the claim is taken
+    /// on. `MintRun` must extend it rather than replace it, or one live run per engagement-workflow
+    /// stops being enforceable.
+    /// </summary>
+    [Fact]
+    public void MintRun_ExtendsTheAffinityKeyRatherThanReplacingIt()
+    {
+        var affinityKey = ExecutionId.Mint("E2E::Acme::HQ", "wf-sow");
+
+        var runId = ExecutionId.MintRun("E2E::Acme::HQ", "wf-sow", "0199f0c4");
+
+        Assert.StartsWith(affinityKey + ExecutionId.RunSeparator, runId, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void MintRun_TwoRuns_ProduceDistinctIds()
+    {
+        var first = ExecutionId.MintRun("eng-1", "wf-1", "0199f0c5");
+        var second = ExecutionId.MintRun("eng-1", "wf-1", "0199f0c6");
+
+        Assert.NotEqual(first, second);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("run::2")]
+    [InlineData("run#2")]
+    public void MintRun_TokenThatWouldBlurTheBoundary_Throws(string runToken)
+    {
+        var ex = Assert.Throws<ArgumentException>(() => ExecutionId.MintRun("eng-1", "wf-1", runToken));
+
+        Assert.Equal("runToken", ex.ParamName);
+    }
+
+    [Fact]
+    public void RunSeparator_IsNotTheSegmentSeparator()
+    {
+        // The run is not another level of the engagement hierarchy — S13.40's child-id ambiguity is
+        // exactly what sharing one mark for both would recreate.
+        Assert.NotEqual(ExecutionId.Separator, ExecutionId.RunSeparator);
+    }
+
     [Fact]
     public void Separator_IsTheDocumentedFormat()
     {
