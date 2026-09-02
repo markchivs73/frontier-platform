@@ -47,4 +47,14 @@ public sealed record ConsolidateAuditInput
     [JsonPropertyOrder(4)]
     [JsonPropertyName("started_at_utc")]
     public required DateTime StartedAtUtc { get; init; }
+
+    /// <summary>
+    /// Discriminates this run from every other run of the same engagement-workflow (ADR-EX1).
+    /// <b>Additive and optional</b> per the ADR-E15 compatibility floor: inputs and documents
+    /// recorded before this field existed replay and read as <see langword="null"/>, which means
+    /// "the single run of a pre-change execution" — never "unknown".
+    /// </summary>
+    [JsonPropertyOrder(5)]
+    [JsonPropertyName("run_id")]
+    public string? RunId { get; init; }
 }

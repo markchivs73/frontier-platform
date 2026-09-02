@@ -381,3 +381,5 @@ static Frontier.Platform.Workflow.Orchestration.SnapshotActivityResponse.operato
 static Frontier.Platform.Workflow.Orchestration.SnapshotActivityResponse.operator ==(Frontier.Platform.Workflow.Orchestration.SnapshotActivityResponse? left, Frontier.Platform.Workflow.Orchestration.SnapshotActivityResponse? right) -> bool
 ~override Frontier.Platform.Workflow.Orchestration.McpToolRef.Equals(object obj) -> bool
 ~override Frontier.Platform.Workflow.Orchestration.McpToolRef.ToString() -> string
+Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.RunId.get -> string?
+Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.RunId.init -> void

@@ -174,7 +174,7 @@ public sealed class PredicateEvaluatorTests
     public void SelectBranch_FirstMatchWins_DefaultOtherwise_ThrowsWhenBranchless()
     {
         var definition = DefinitionWithArtifact("scope", "producer-1");
-        var state = new GraphExecutionState();
+        var state = new GraphExecutionState { StartedAtUtc = OrchestrationFixtures.StartedAtUtc };
         state.NodeOutputPayloads["producer-1"] = """{"priority":"urgent"}""";
 
         var decision = new DecisionNode

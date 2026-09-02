@@ -596,6 +596,49 @@ tests mint against composite engagement ids for exactly that reason.
 
 ---
 
+## ADR-PA16 — a run is a field and a suffix, and the affinity key is what it extends
+
+`ExecutionId.MintRun(engagementId, workflowId, runToken)` produces
+`{engagementId}::{workflowId}#{runToken}`. `RunId` joins `GraphOrchestratorInput`,
+`ExecutionSnapshot`, `ConsolidateAuditInput` — and `ExecutionSnapshot` also gains a real
+`StartedAtUtc`.
+
+**Why a suffix and not a new format.** The two-argument `Mint` stays exactly as it was, because it
+is no longer the addressing key alone: it is the **affinity key**, the derivable value the consumer
+takes a claim on to enforce one *live* run per engagement-workflow. `MintRun` extends it rather
+than replacing it, and a test pins that relationship — if the run token were folded into the middle
+of the id, or the two-argument form were retired, the claim would have nothing deterministic to key
+on and the K9 guarantee would have no mechanism at all.
+
+**Why `#`.** The run is not another level of the engagement hierarchy. Sharing `::` for both would
+recreate precisely the ambiguity that makes a dispatcher child id unreadable. Because nothing parses
+an execution id (ADR-PA15), this is a readability choice rather than a correctness one — which is
+the point: the previous separator question was load-bearing only because a parser existed.
+
+**Why the token is supplied, not generated here.** `Platform.Abstractions` is the zero-dependency
+kernel (ADR-PA1), so it cannot take a ULID package; and generation must happen in the composition
+root before scheduling, never inside an orchestrator body where non-deterministic values are banned
+outright. The kernel validates the token's shape and refuses one carrying either separator.
+
+**Every field is additive and optional, and that is a rule now.** `RunId` and `StartedAtUtc` are
+nullable: inputs and documents written before them replay and read as `null`, meaning "the single
+run of a pre-change execution". This is the ADR-E15 compatibility floor honoured rather than
+excepted — the consuming repo's S13.51/ADR-PA15 exception was a breach worth recording and the last
+of its kind, and S10.7 makes the rule mechanical. `GraphExecutionState.StartedAtUtc` is `required`
+by contrast, because it is internal orchestrator state and never a wire shape.
+
+**Why `StartedAtUtc` is here rather than deferred.** The B3 surface was returning
+`CheckpointedAtUtc` as the start time under a standing note. With one run per engagement-workflow
+that is merely imprecise; with several it orders a runs list by *last activity*, so a long first run
+appears to start after a quick second one. It is captured once from `context.CurrentUtcDateTime` at
+the start of the walk, so it is deterministic under replay and identical on every checkpoint.
+
+*What this does not do.* It does not mint run ids, take the affinity claim, or make anything
+re-runnable — those are the consumer's (ADR-EX1). This is the vocabulary that makes them
+expressible, shipped first so the consumer has something to build against.
+
+---
+
 ## Drift ownership
 
 Some concerns exist in both this repo and `frontier-workflow`. The principle: **split by

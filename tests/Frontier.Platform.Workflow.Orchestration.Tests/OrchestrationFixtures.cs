@@ -10,6 +10,9 @@ namespace Frontier.Platform.Workflow.Orchestration.Tests;
 /// </summary>
 internal static class OrchestrationFixtures
 {
+    /// <summary>A fixed walk-start instant, so a snapshot's <c>StartedAtUtc</c> is assertable.</summary>
+    internal static readonly DateTime StartedAtUtc = new(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
     private const string PlaceholderHash = "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
 
     /// <summary>A minimal Scope → Approach → Pricing chain of <see cref="AgentTaskNode"/>s, all <see cref="EdgeKind.Data"/> (S2.2 PoC seed). Execution mode is configurable for testing both OneShot and Dispatcher modes (S6.10).</summary>

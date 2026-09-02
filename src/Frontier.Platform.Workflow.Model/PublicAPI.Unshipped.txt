@@ -511,3 +511,9 @@ Frontier.Platform.Workflow.Model.ConsolidateAuditInput.EngagementId.get -> strin
 Frontier.Platform.Workflow.Model.ConsolidateAuditInput.EngagementId.init -> void
 Frontier.Platform.Workflow.Model.ConsolidateAuditInput.WorkflowId.get -> string!
 Frontier.Platform.Workflow.Model.ConsolidateAuditInput.WorkflowId.init -> void
+Frontier.Platform.Workflow.Model.ConsolidateAuditInput.RunId.get -> string?
+Frontier.Platform.Workflow.Model.ConsolidateAuditInput.RunId.init -> void
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.RunId.get -> string?
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.RunId.init -> void
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.StartedAtUtc.get -> System.DateTime?
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.StartedAtUtc.init -> void

@@ -51,7 +51,7 @@ public sealed class GraphOrchestratorStepsTests
         var definition = OrchestrationFixtures.ThreeArtifactChain();
         var input = OrchestrationFixtures.Input(definition);
         var node = (AgentTaskNode)definition.Nodes[0];
-        var state = new GraphExecutionState();
+        var state = new GraphExecutionState { StartedAtUtc = OrchestrationFixtures.StartedAtUtc };
 
         var activityInput = GraphOrchestratorSteps.BuildActivityInput(input, node, "correlation-1", "eng-1::wf-chain", state);
 
@@ -84,7 +84,7 @@ public sealed class GraphOrchestratorStepsTests
         var definition = OrchestrationFixtures.ThreeArtifactChain();
         var input = OrchestrationFixtures.Input(definition, engagementId: "eng-999");
         var node = (AgentTaskNode)definition.Nodes[0];
-        var state = new GraphExecutionState();
+        var state = new GraphExecutionState { StartedAtUtc = OrchestrationFixtures.StartedAtUtc };
 
         var activityInput = GraphOrchestratorSteps.BuildActivityInput(input, node, "correlation-1", "eng-999::wf-chain", state);
 
@@ -98,7 +98,7 @@ public sealed class GraphOrchestratorStepsTests
         var definition = OrchestrationFixtures.ThreeArtifactChain();
         var input = OrchestrationFixtures.Input(definition);
         var node = (AgentTaskNode)definition.Nodes[1];
-        var state = new GraphExecutionState();
+        var state = new GraphExecutionState { StartedAtUtc = OrchestrationFixtures.StartedAtUtc };
         state.NodeOutputPayloads["scope-agent"] = "scope-payload";
 
         var activityInput = GraphOrchestratorSteps.BuildActivityInput(input, node, "correlation-2", "eng-1::wf-chain", state);
@@ -156,7 +156,7 @@ public sealed class GraphOrchestratorStepsTests
             InitiatedBy = "user:oid-mark",
         };
 
-        var snapshot = GraphOrchestratorSteps.BuildSnapshot(context, input, new GraphExecutionState(), ExecutionStatus.Running, currentNodeId: null);
+        var snapshot = GraphOrchestratorSteps.BuildSnapshot(context, input, new GraphExecutionState { StartedAtUtc = OrchestrationFixtures.StartedAtUtc }, ExecutionStatus.Running, currentNodeId: null);
 
         Assert.Equal("user:oid-mark", snapshot.InitiatedBy);
         Assert.Equal("eng-1", snapshot.EngagementId);
@@ -172,7 +172,7 @@ public sealed class GraphOrchestratorStepsTests
         var definition = OrchestrationFixtures.ThreeArtifactChain();
         var input = OrchestrationFixtures.Input(definition);
         var node = (AgentTaskNode)definition.Nodes[0];
-        var state = new GraphExecutionState();
+        var state = new GraphExecutionState { StartedAtUtc = OrchestrationFixtures.StartedAtUtc };
 
         await GraphOrchestratorSteps.RunNodeAsync(context, input, node, state, PolicyProvider);
 
@@ -194,7 +194,7 @@ public sealed class GraphOrchestratorStepsTests
         var input = OrchestrationFixtures.Input(definition);
         var template = (AgentTaskNode)definition.Nodes[0];
         var node = template with { Retry = new RetryPolicySpec { ProfileName = "custom-profile" } };
-        var state = new GraphExecutionState();
+        var state = new GraphExecutionState { StartedAtUtc = OrchestrationFixtures.StartedAtUtc };
         var policyProvider = new FakeResiliencePolicyProvider();
 
         await GraphOrchestratorSteps.RunNodeAsync(context, input, node, state, policyProvider);
@@ -213,7 +213,7 @@ public sealed class GraphOrchestratorStepsTests
         var input = OrchestrationFixtures.Input(definition);
         var template = (AgentTaskNode)definition.Nodes[0];
         var node = template with { NodeId = "scope-agent", ArtifactKey = null };
-        var state = new GraphExecutionState();
+        var state = new GraphExecutionState { StartedAtUtc = OrchestrationFixtures.StartedAtUtc };
 
         await GraphOrchestratorSteps.RunNodeAsync(context, input, node, state, PolicyProvider);
 
@@ -295,7 +295,7 @@ public sealed class GraphOrchestratorStepsTests
     {
         var context = new FakeTaskOrchestrationContext();
         var definition = OrchestrationFixtures.ThreeArtifactChain();
-        var state = new GraphExecutionState();
+        var state = new GraphExecutionState { StartedAtUtc = OrchestrationFixtures.StartedAtUtc };
         state.ArtifactStatuses["scope"] = ArtifactStatus.Approved;
         state.ArtifactStatuses["approach"] = ArtifactStatus.Approved;
         state.ArtifactStatuses["pricing"] = ArtifactStatus.Approved;
@@ -331,7 +331,7 @@ public sealed class GraphOrchestratorStepsTests
         RegisterSnapshotStateActivity(context);
         RegisterArtifactStateActivity(context);
         var input = OrchestrationFixtures.Input(OrchestrationFixtures.ThreeArtifactChain());
-        var state = new GraphExecutionState();
+        var state = new GraphExecutionState { StartedAtUtc = OrchestrationFixtures.StartedAtUtc };
         state.NodeOutputPayloads["scope-agent"] = "scope-payload";
 
         await GraphOrchestratorSteps.RegenerateDownstreamAsync(context, input, state, ["approach", "pricing"], PolicyProvider);
@@ -347,7 +347,7 @@ public sealed class GraphOrchestratorStepsTests
         RegisterSnapshotStateActivity(context);
         RegisterArtifactStateActivity(context);
         var input = OrchestrationFixtures.Input(OrchestrationFixtures.ThreeArtifactChain());
-        var state = new GraphExecutionState();
+        var state = new GraphExecutionState { StartedAtUtc = OrchestrationFixtures.StartedAtUtc };
         state.NodeOutputPayloads["approach-agent"] = "approach-payload";
 
         await GraphOrchestratorSteps.RegenerateDownstreamAsync(context, input, state, ["no-such-section", "pricing"], PolicyProvider);
@@ -361,7 +361,7 @@ public sealed class GraphOrchestratorStepsTests
         var context = new FakeTaskOrchestrationContext();
         RegisterAgentTaskActivity(context);
         var input = OrchestrationFixtures.Input(OrchestrationFixtures.ThreeArtifactChain());
-        var state = new GraphExecutionState();
+        var state = new GraphExecutionState { StartedAtUtc = OrchestrationFixtures.StartedAtUtc };
 
         await GraphOrchestratorSteps.RunCascadeWalkAsync(context, input, state, PolicyProvider, OrchestrationFixtures.WriteClassifier);
 
@@ -383,7 +383,7 @@ public sealed class GraphOrchestratorStepsTests
             SkippedArtifacts = [],
         };
         var input = OrchestrationFixtures.Input(OrchestrationFixtures.ThreeArtifactChain());
-        var state = new GraphExecutionState();
+        var state = new GraphExecutionState { StartedAtUtc = OrchestrationFixtures.StartedAtUtc };
         state.NodeOutputPayloads["scope-agent"] = "scope-payload";
 
         await GraphOrchestratorSteps.RunCascadeWalkAsync(context, input, state, PolicyProvider, OrchestrationFixtures.WriteClassifier);
@@ -513,7 +513,7 @@ public sealed class GraphOrchestratorStepsTests
         var definition = OrchestrationFixtures.ChainWithBusinessGate();
         var gate = (HumanGateNode)definition.Nodes[3];
         var input = OrchestrationFixtures.Input(definition);
-        var state = new GraphExecutionState();
+        var state = new GraphExecutionState { StartedAtUtc = OrchestrationFixtures.StartedAtUtc };
         state.SectionRefs["scope"] = "scope-ref-v1";
 
         await GraphOrchestratorSteps.OpenGateAsync(context, input, gate, state);
@@ -535,7 +535,7 @@ public sealed class GraphOrchestratorStepsTests
         var definition = OrchestrationFixtures.ChainWithBusinessGate();
         var gate = (HumanGateNode)definition.Nodes[3];
         var input = OrchestrationFixtures.Input(definition);
-        var state = new GraphExecutionState();
+        var state = new GraphExecutionState { StartedAtUtc = OrchestrationFixtures.StartedAtUtc };
         state.GateOccurrences[gate.NodeId] = 1;
 
         await GraphOrchestratorSteps.OpenGateAsync(context, input, gate, state);
@@ -547,7 +547,7 @@ public sealed class GraphOrchestratorStepsTests
     [Fact]
     public void RecordApprovals_DraftArtifacts_BecomeApprovedAndCapturedInApprovedSnapshotRefs()
     {
-        var state = new GraphExecutionState();
+        var state = new GraphExecutionState { StartedAtUtc = OrchestrationFixtures.StartedAtUtc };
         state.ArtifactStatuses["scope"] = ArtifactStatus.Draft;
         state.ArtifactStatuses["approach"] = ArtifactStatus.Approved;
         state.SectionRefs["scope"] = "scope-ref-v1";
@@ -588,7 +588,7 @@ public sealed class GraphOrchestratorStepsTests
     {
         var context = new FakeTaskOrchestrationContext();
         var input = OrchestrationFixtures.Input(OrchestrationFixtures.ChainWithBusinessGate());
-        var state = new GraphExecutionState();
+        var state = new GraphExecutionState { StartedAtUtc = OrchestrationFixtures.StartedAtUtc };
         state.SectionRefs["scope"] = "scope-ref-v1";
 
         await GraphOrchestratorSteps.RestoreArtifactsAsync(context, input, new Dictionary<string, string>(), state);
@@ -602,7 +602,7 @@ public sealed class GraphOrchestratorStepsTests
         var context = new FakeTaskOrchestrationContext();
         RegisterRestoreArtifactsActivity(context);
         var input = OrchestrationFixtures.Input(OrchestrationFixtures.ChainWithBusinessGate());
-        var state = new GraphExecutionState();
+        var state = new GraphExecutionState { StartedAtUtc = OrchestrationFixtures.StartedAtUtc };
         state.SectionRefs["approach"] = "approach-ref-v2";
         var restoreSet = new Dictionary<string, string> { ["approach"] = "approach-ref-v1" };
 
@@ -614,7 +614,7 @@ public sealed class GraphOrchestratorStepsTests
     [Fact]
     public void MarkInvalidSetRegenerating_SetsEachArtifactToRegenerating()
     {
-        var state = new GraphExecutionState();
+        var state = new GraphExecutionState { StartedAtUtc = OrchestrationFixtures.StartedAtUtc };
         state.ArtifactStatuses["scope"] = ArtifactStatus.Approved;
         state.ArtifactStatuses["approach"] = ArtifactStatus.Approved;
         state.ArtifactStatuses["pricing"] = ArtifactStatus.Approved;
@@ -637,7 +637,7 @@ public sealed class GraphOrchestratorStepsTests
         var definition = OrchestrationFixtures.ChainWithBusinessGate();
         var gate = (HumanGateNode)definition.Nodes[3];
         var input = OrchestrationFixtures.Input(definition);
-        var state = new GraphExecutionState();
+        var state = new GraphExecutionState { StartedAtUtc = OrchestrationFixtures.StartedAtUtc };
         foreach (var section in new[] { "scope", "approach", "pricing" })
         {
             state.ArtifactStatuses[section] = ArtifactStatus.Draft;
