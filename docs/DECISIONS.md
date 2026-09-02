@@ -610,10 +610,22 @@ than replacing it, and a test pins that relationship — if the run token were f
 of the id, or the two-argument form were retired, the claim would have nothing deterministic to key
 on and the K9 guarantee would have no mechanism at all.
 
-**Why `#`.** The run is not another level of the engagement hierarchy. Sharing `::` for both would
-recreate precisely the ambiguity that makes a dispatcher child id unreadable. Because nothing parses
-an execution id (ADR-PA15), this is a readability choice rather than a correctness one — which is
-the point: the previous separator question was load-bearing only because a parser existed.
+**Why `~`.** The run is not another level of the engagement hierarchy. Sharing `::` for both would
+recreate precisely the ambiguity that makes a dispatcher child id unreadable.
+
+*The mark was `#` for one commit, and `#` was wrong on two counts that no amount of taste would have
+caught.* An execution id is carried **verbatim** into Cosmos document ids — the consumer's
+`execution-snapshots` ids are `{executionId}:{sequence}` — and Cosmos forbids `/ \ ? #` in an item
+id, so every snapshot write for a run-scoped execution would have failed. It is also carried in URL
+path segments (`/api/gates/{executionId}/{nodeId}`), where `#` begins a fragment and truncates the
+path. `~` is unreserved in RFC 3986, legal in a Cosmos id, and already this estate's sanitisation
+target (the consumer's registry ids map `/` to `~`). Caught while writing the consumer's affinity
+store, before anything minted a run-scoped id — the cheapest moment it could have been caught, and
+a test now pins both properties.
+
+Because nothing parses an execution id (ADR-PA15), the *choice* of mark is a readability question —
+but its legality in the stores and routes that carry the id is not, and that distinction is what
+the first choice missed.
 
 **Why the token is supplied, not generated here.** `Platform.Abstractions` is the zero-dependency
 kernel (ADR-PA1), so it cannot take a ULID package; and generation must happen in the composition
