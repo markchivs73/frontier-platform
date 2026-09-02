@@ -1,5 +1,5 @@
 const Frontier.Platform.Abstractions.ExecutionId.Separator = "::" -> string!
 Frontier.Platform.Abstractions.ExecutionId
 static Frontier.Platform.Abstractions.ExecutionId.Mint(string! engagementId, string! workflowId) -> string!
-const Frontier.Platform.Abstractions.ExecutionId.RunSeparator = "#" -> string!
+const Frontier.Platform.Abstractions.ExecutionId.RunSeparator = "~" -> string!
 static Frontier.Platform.Abstractions.ExecutionId.MintRun(string! engagementId, string! workflowId, string! runToken) -> string!

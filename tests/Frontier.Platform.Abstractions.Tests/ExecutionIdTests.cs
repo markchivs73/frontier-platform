@@ -9,6 +9,9 @@ namespace Frontier.Platform.Abstractions.Tests;
 /// </summary>
 public sealed class ExecutionIdTests
 {
+    /// <summary>The characters Cosmos rejects in an item <c>id</c>.</summary>
+    private static readonly string[] CosmosForbiddenIdCharacters = ["/", "\\", "?", "#"];
+
     [Fact]
     public void Mint_JoinsTheSegmentsWithTheSeparator()
     {
@@ -76,8 +79,8 @@ public sealed class ExecutionIdTests
     /// events. Minted against a composite engagement id, since that is the production shape.
     /// </summary>
     [Theory]
-    [InlineData("E2E::Acme::Admin-Website", "wf-1", "0199f0c2", "E2E::Acme::Admin-Website::wf-1#0199f0c2")]
-    [InlineData("eng-1", "wf-1", "0199f0c3", "eng-1::wf-1#0199f0c3")]
+    [InlineData("E2E::Acme::Admin-Website", "wf-1", "0199f0c2", "E2E::Acme::Admin-Website::wf-1~0199f0c2")]
+    [InlineData("eng-1", "wf-1", "0199f0c3", "eng-1::wf-1~0199f0c3")]
     public void MintRun_AppendsTheRunTokenAfterTheAffinityKey(string engagementId, string workflowId, string runToken, string expected)
     {
         Assert.Equal(expected, ExecutionId.MintRun(engagementId, workflowId, runToken));
@@ -111,7 +114,7 @@ public sealed class ExecutionIdTests
     [InlineData("")]
     [InlineData("   ")]
     [InlineData("run::2")]
-    [InlineData("run#2")]
+    [InlineData("run~2")]
     public void MintRun_TokenThatWouldBlurTheBoundary_Throws(string runToken)
     {
         var ex = Assert.Throws<ArgumentException>(() => ExecutionId.MintRun("eng-1", "wf-1", runToken));
@@ -125,6 +128,19 @@ public sealed class ExecutionIdTests
         // The run is not another level of the engagement hierarchy — S13.40's child-id ambiguity is
         // exactly what sharing one mark for both would recreate.
         Assert.NotEqual(ExecutionId.Separator, ExecutionId.RunSeparator);
+    }
+
+    /// <summary>
+    /// The separator has to survive the two places an execution id is carried verbatim: a Cosmos
+    /// item id (which forbids <c>/ \ ? #</c>) and a URL path segment (where <c>#</c> starts a
+    /// fragment). Pinned as a test because the first choice failed both and neither store nor route
+    /// would have reported it as a separator problem.
+    /// </summary>
+    [Fact]
+    public void RunSeparator_IsLegalInACosmosIdAndAUrlPathSegment()
+    {
+        Assert.DoesNotContain(ExecutionId.RunSeparator, CosmosForbiddenIdCharacters);
+        Assert.Equal(ExecutionId.RunSeparator, Uri.EscapeDataString(ExecutionId.RunSeparator));
     }
 
     [Fact]

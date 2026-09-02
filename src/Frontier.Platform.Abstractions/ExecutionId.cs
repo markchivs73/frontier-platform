@@ -43,10 +43,20 @@ public static class ExecutionId
     /// <summary>
     /// Separates the run token from the engagement-workflow key it discriminates. Deliberately not
     /// <see cref="Separator"/>: the run is not another level of the engagement hierarchy, and a
-    /// distinct mark keeps a dispatcher child id legible beside it. Because nothing parses an
-    /// execution id (ADR-PA15), this is a readability choice rather than a correctness one.
+    /// distinct mark keeps a dispatcher child id legible beside it.
+    /// <para>
+    /// <b><c>~</c> and not <c>#</c>, for two hard reasons rather than taste.</b> An execution id is
+    /// embedded verbatim in Cosmos document ids (the consumer's <c>execution-snapshots</c> ids are
+    /// <c>{executionId}:{sequence}</c>), and Cosmos forbids <c>/ \ ? #</c> in an item id — every
+    /// snapshot write for a run-scoped execution would have failed. It also appears in URL path
+    /// segments (<c>/api/gates/{executionId}/{nodeId}</c>), where <c>#</c> begins a fragment and
+    /// truncates the path. <c>~</c> is unreserved in RFC 3986, legal in a Cosmos id, and already
+    /// this estate's sanitisation target (the consumer's registry ids map <c>/</c> to <c>~</c>).
+    /// </para>
+    /// Because nothing parses an execution id (ADR-PA15), the *choice* of mark is a readability
+    /// question — but its legality in the stores and routes that carry the id is not.
     /// </summary>
-    public const string RunSeparator = "#";
+    public const string RunSeparator = "~";
 
     /// <summary>
     /// Builds the execution id for an engagement's workflow.
