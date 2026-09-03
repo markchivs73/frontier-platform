@@ -651,6 +651,38 @@ expressible, shipped first so the consumer has something to build against.
 
 ---
 
+## ADR-PA17 — what a workflow needs before it runs is asked, not re-derived
+
+`IWorkflowEntryInspector.GetEntry(definition)` returns the entry node's id, its input contract type,
+and **the dynamic context fields its `ContextRequest` declares**. It declines (`null`) on exactly the
+conditions `ITestRunInputSchemaProvider` declines: no single resolvable `AgentTaskNode` entry.
+
+**Why it is here rather than in the consumer.** Entry detection is control-graph knowledge —
+`ControlGraphWalker.FindEntryNodeIds`, nodes with no incoming control edge — and that walker is
+`internal` to this package because it exists for the validation rules. A consumer needing "which node
+runs first, and what does it require" would otherwise re-derive the walk from `Edges` and
+`EdgeKind.Control`. That is how one rule ends up written in six places, which is the defect ADR-PA11
+was written about; publishing the question is cheaper than policing the copies.
+
+**Why `RequiredDynamicFields` and not the input contract.** The consuming repo's start path was about
+to be built on the entry *contract* schema, and that would have been wrong: a caller does not supply
+the entry node's payload. Context assembly builds it, from baseline components plus the dynamic
+fields the node requests, and the caller's "input" writes that **engagement context**. So the
+question a trigger must answer before scheduling is *"which dynamic fields does the first node ask
+for, and does this engagement already hold them?"* — the first half of which is this type. A workflow
+declaring fields here can still start with **no input at all** where the engagement already holds
+them, which is how the consumer's seeded PoC engagement runs and would have been broken by keying on
+the contract instead.
+
+*Additive only.* A new interface and a new record; nothing existing changes shape, so the ADR-E15
+compatibility floor is honoured rather than excepted (the S10.7 rule).
+
+*What it deliberately does not do.* It reports requirements; it does not resolve them. Whether an
+engagement satisfies them is the consumer's question, because the context store is the consumer's
+composition-root concern and this package must not reach for it (ADR-PA2, and the port rule).
+
+---
+
 ## Drift ownership
 
 Some concerns exist in both this repo and `frontier-workflow`. The principle: **split by
