@@ -74,6 +74,7 @@ public static class CompilerServiceCollectionExtensions
         // S9.43 (doc 19 §A4-R2/C-31): A4 "Expected shape" panel + "Use example" prefill.
         // Stateless over the singleton contract catalog above.
         services.AddSingleton<ITestRunInputSchemaProvider, TestRunInputSchemaProvider>();
+        services.AddSingleton<IWorkflowEntryInspector, WorkflowEntryInspector>();
         services.AddScoped<IDefinitionValidationRule, DataContractTypesResolveRule>();
         services.AddScoped<IDefinitionValidationRule, DataEdgeTypeMatchRule>();
         services.AddScoped<IDefinitionValidationRule, ContextKnownComponentsRule>();
