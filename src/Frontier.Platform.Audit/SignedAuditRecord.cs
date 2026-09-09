@@ -105,6 +105,25 @@ public sealed record SignedAuditRecord : IVersionedContract
     [JsonPropertyName("signing_key_id")]
     public required string SigningKeyId { get; init; }
 
+    /// <summary>
+    /// <see cref="AuditRecord.Sandbox"/>, carried through to the persisted, signed record (S13.65 —
+    /// it had been dropped at <c>ToSignedShape</c> since S9.38e). Optional and omit-null, placed after
+    /// the chain fields so no existing record's canonical bytes change.
+    /// </summary>
+    [JsonPropertyOrder(18)]
+    [JsonPropertyName("sandbox")]
+    public bool? Sandbox { get; init; }
+
+    /// <summary><see cref="AuditRecord.DynamicContextEpoch"/>, carried through and covered by <see cref="RecordHash"/> (S13.60 / S13.65).</summary>
+    [JsonPropertyOrder(19)]
+    [JsonPropertyName("dynamic_context_epoch")]
+    public int? DynamicContextEpoch { get; init; }
+
+    /// <summary><see cref="AuditRecord.DynamicContextHash"/>, carried through and covered by <see cref="RecordHash"/> (S13.60 / S13.65).</summary>
+    [JsonPropertyOrder(20)]
+    [JsonPropertyName("dynamic_context_hash")]
+    public string? DynamicContextHash { get; init; }
+
     /// <inheritdoc />
     public void Validate()
     {

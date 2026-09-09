@@ -46,6 +46,9 @@ internal static class AuditRecordHasher
         ValidatorOutcomes = record.ValidatorOutcomes,
         HumanDecisions = record.HumanDecisions,
         CacheMetrics = record.CacheMetrics,
+        Sandbox = record.Sandbox,
+        DynamicContextEpoch = record.DynamicContextEpoch,
+        DynamicContextHash = record.DynamicContextHash,
         PreviousRecordHash = previousRecordHash,
         RecordHash = recordHash,
         Signature = signature,
@@ -69,5 +72,8 @@ internal static class AuditRecordHasher
         ValidatorOutcomes = record.ValidatorOutcomes,
         HumanDecisions = record.HumanDecisions,
         CacheMetrics = record.CacheMetrics,
+        Sandbox = record.Sandbox,
+        DynamicContextEpoch = record.DynamicContextEpoch,
+        DynamicContextHash = record.DynamicContextHash,
     };
 }
