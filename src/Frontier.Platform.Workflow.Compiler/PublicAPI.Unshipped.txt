@@ -224,6 +224,8 @@ Frontier.Platform.Workflow.Compiler.ITestRunService.ReconcileAsync(string! testR
 Frontier.Platform.Workflow.Compiler.ITestRunService.StartAsync(string! workflowId, Frontier.Platform.Workflow.Compiler.TestRunRequest! request, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.TestRunHandle!>!
 Frontier.Platform.Workflow.Compiler.ITestRunTelemetryReader
 Frontier.Platform.Workflow.Compiler.ITestRunTelemetryReader.GetCostMetricsAsync(string! executionId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.TestRunCostMetrics!>!
+Frontier.Platform.Workflow.Compiler.IWorkflowEntryInspector
+Frontier.Platform.Workflow.Compiler.IWorkflowEntryInspector.GetEntry(Frontier.Platform.Workflow.Model.WorkflowDefinition! definition) -> Frontier.Platform.Workflow.Compiler.WorkflowEntry?
 Frontier.Platform.Workflow.Compiler.MentionKind
 Frontier.Platform.Workflow.Compiler.MergeOutcome
 Frontier.Platform.Workflow.Compiler.MergeOutcome.MergeOutcome() -> void
@@ -1225,6 +1227,17 @@ Frontier.Platform.Workflow.Compiler.WorkflowDefinitionDiff.NodesModified.init ->
 Frontier.Platform.Workflow.Compiler.WorkflowDefinitionDiff.NodesRemoved.get -> System.Collections.Generic.IReadOnlyList<string!>!
 Frontier.Platform.Workflow.Compiler.WorkflowDefinitionDiff.NodesRemoved.init -> void
 Frontier.Platform.Workflow.Compiler.WorkflowDefinitionDiff.WorkflowDefinitionDiff() -> void
+Frontier.Platform.Workflow.Compiler.WorkflowEntry
+Frontier.Platform.Workflow.Compiler.WorkflowEntry.<Clone>$() -> Frontier.Platform.Workflow.Compiler.WorkflowEntry!
+Frontier.Platform.Workflow.Compiler.WorkflowEntry.Deconstruct(out string! NodeId, out string! InputContractType, out System.Collections.Generic.IReadOnlyList<string!>! RequiredDynamicFields) -> void
+Frontier.Platform.Workflow.Compiler.WorkflowEntry.Equals(Frontier.Platform.Workflow.Compiler.WorkflowEntry? other) -> bool
+Frontier.Platform.Workflow.Compiler.WorkflowEntry.InputContractType.get -> string!
+Frontier.Platform.Workflow.Compiler.WorkflowEntry.InputContractType.init -> void
+Frontier.Platform.Workflow.Compiler.WorkflowEntry.NodeId.get -> string!
+Frontier.Platform.Workflow.Compiler.WorkflowEntry.NodeId.init -> void
+Frontier.Platform.Workflow.Compiler.WorkflowEntry.RequiredDynamicFields.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Frontier.Platform.Workflow.Compiler.WorkflowEntry.RequiredDynamicFields.init -> void
+Frontier.Platform.Workflow.Compiler.WorkflowEntry.WorkflowEntry(string! NodeId, string! InputContractType, System.Collections.Generic.IReadOnlyList<string!>! RequiredDynamicFields) -> void
 abstract Frontier.Platform.Workflow.Compiler.DeleteDraftResult.<Clone>$() -> Frontier.Platform.Workflow.Compiler.DeleteDraftResult!
 abstract Frontier.Platform.Workflow.Compiler.MergeOutcome.<Clone>$() -> Frontier.Platform.Workflow.Compiler.MergeOutcome!
 abstract Frontier.Platform.Workflow.Compiler.ProposalMergeOutcome.<Clone>$() -> Frontier.Platform.Workflow.Compiler.ProposalMergeOutcome!
@@ -1500,6 +1513,9 @@ override Frontier.Platform.Workflow.Compiler.VersionHistory.ToString() -> string
 override Frontier.Platform.Workflow.Compiler.WorkflowDefinitionDiff.Equals(object? obj) -> bool
 override Frontier.Platform.Workflow.Compiler.WorkflowDefinitionDiff.GetHashCode() -> int
 override Frontier.Platform.Workflow.Compiler.WorkflowDefinitionDiff.ToString() -> string!
+override Frontier.Platform.Workflow.Compiler.WorkflowEntry.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Compiler.WorkflowEntry.GetHashCode() -> int
+override Frontier.Platform.Workflow.Compiler.WorkflowEntry.ToString() -> string!
 override sealed Frontier.Platform.Workflow.Compiler.DeleteDraftResultInReview.Equals(Frontier.Platform.Workflow.Compiler.DeleteDraftResult? other) -> bool
 override sealed Frontier.Platform.Workflow.Compiler.DeleteDraftResultNotFound.Equals(Frontier.Platform.Workflow.Compiler.DeleteDraftResult? other) -> bool
 override sealed Frontier.Platform.Workflow.Compiler.DeleteDraftResultSuccess.Equals(Frontier.Platform.Workflow.Compiler.DeleteDraftResult? other) -> bool
@@ -1658,6 +1674,8 @@ static Frontier.Platform.Workflow.Compiler.VersionHistory.operator !=(Frontier.P
 static Frontier.Platform.Workflow.Compiler.VersionHistory.operator ==(Frontier.Platform.Workflow.Compiler.VersionHistory? left, Frontier.Platform.Workflow.Compiler.VersionHistory? right) -> bool
 static Frontier.Platform.Workflow.Compiler.WorkflowDefinitionDiff.operator !=(Frontier.Platform.Workflow.Compiler.WorkflowDefinitionDiff? left, Frontier.Platform.Workflow.Compiler.WorkflowDefinitionDiff? right) -> bool
 static Frontier.Platform.Workflow.Compiler.WorkflowDefinitionDiff.operator ==(Frontier.Platform.Workflow.Compiler.WorkflowDefinitionDiff? left, Frontier.Platform.Workflow.Compiler.WorkflowDefinitionDiff? right) -> bool
+static Frontier.Platform.Workflow.Compiler.WorkflowEntry.operator !=(Frontier.Platform.Workflow.Compiler.WorkflowEntry? left, Frontier.Platform.Workflow.Compiler.WorkflowEntry? right) -> bool
+static Frontier.Platform.Workflow.Compiler.WorkflowEntry.operator ==(Frontier.Platform.Workflow.Compiler.WorkflowEntry? left, Frontier.Platform.Workflow.Compiler.WorkflowEntry? right) -> bool
 static readonly Frontier.Platform.Workflow.Compiler.ProposalState.Approved -> Frontier.Platform.Workflow.Compiler.ProposalState!
 static readonly Frontier.Platform.Workflow.Compiler.ProposalState.InReview -> Frontier.Platform.Workflow.Compiler.ProposalState!
 static readonly Frontier.Platform.Workflow.Compiler.ProposalState.Rejected -> Frontier.Platform.Workflow.Compiler.ProposalState!
