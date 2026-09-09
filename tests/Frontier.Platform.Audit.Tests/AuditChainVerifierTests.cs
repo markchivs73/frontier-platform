@@ -31,6 +31,37 @@ public sealed class AuditChainVerifierTests
     }
 
     [Fact]
+    public void Verify_RecordWithOptionalFields_CarriesThemAndVerifies()
+    {
+        // S13.65: sandbox and the provenance stamp must survive ToSignedShape AND ToAuditRecord — an
+        // asymmetric mapping re-hashes without them on verify and every new record reads as tampered.
+        var key = CurrentKey();
+        var unsigned = AuditRecordHasherTests.Sample() with { Sandbox = true, DynamicContextEpoch = 3, DynamicContextHash = "ctx-hash" };
+        var record = Sign(unsigned, AuditRecordHasher.ComputeGenesisHash("eng-1"), key);
+
+        Assert.True(record.Sandbox);
+        Assert.Equal(3, record.DynamicContextEpoch);
+        Assert.Equal("ctx-hash", record.DynamicContextHash);
+        var result = AuditChainVerifier.Verify([record], record.ExecutionId, "eng-1", key);
+        Assert.True(result.SignatureValid);
+        Assert.True(result.ChainValid);
+    }
+
+    [Fact]
+    public void Verify_OptionalFieldTampered_SignatureInvalid()
+    {
+        // The new fields are inside the hashed bytes: editing one after signing is detectable.
+        var key = CurrentKey();
+        var record = Sign(AuditRecordHasherTests.Sample() with { DynamicContextEpoch = 3, DynamicContextHash = "ctx-hash" }, AuditRecordHasher.ComputeGenesisHash("eng-1"), key);
+        var tampered = record with { DynamicContextHash = "forged" };
+
+        var result = AuditChainVerifier.Verify([tampered], tampered.ExecutionId, "eng-1", key);
+
+        Assert.False(result.SignatureValid);
+        Assert.Equal(tampered.ExecutionId, result.BrokenLinkAt);
+    }
+
+    [Fact]
     public void Verify_TwoRecordChain_SecondLinksToFirst()
     {
         var key = CurrentKey();

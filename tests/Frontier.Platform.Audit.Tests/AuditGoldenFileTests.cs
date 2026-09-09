@@ -20,4 +20,8 @@ public sealed class AuditGoldenFileTests
     [Fact]
     public void SignedAuditRecord_SerializesStablyAndRoundTrips() =>
         ContractRoundTripAssertions.AssertStableAndRoundTrips(AuditContractSamples.SignedAuditRecord(), "signed_audit_record.json");
+
+    [Fact]
+    public void SignedAuditRecordWithOptionalFields_IsByteStableAndRoundTrips() =>
+        ContractRoundTripAssertions.AssertStableAndRoundTrips(AuditContractSamples.SignedAuditRecordWithOptionalFields(), "signed_audit_record_optional_fields.json");
 }

@@ -11,3 +11,9 @@ Frontier.Platform.Audit.AuditRecord.DynamicContextEpoch.get -> int?
 Frontier.Platform.Audit.AuditRecord.DynamicContextEpoch.init -> void
 Frontier.Platform.Audit.AuditRecord.DynamicContextHash.get -> string?
 Frontier.Platform.Audit.AuditRecord.DynamicContextHash.init -> void
+Frontier.Platform.Audit.SignedAuditRecord.DynamicContextEpoch.get -> int?
+Frontier.Platform.Audit.SignedAuditRecord.DynamicContextEpoch.init -> void
+Frontier.Platform.Audit.SignedAuditRecord.DynamicContextHash.get -> string?
+Frontier.Platform.Audit.SignedAuditRecord.DynamicContextHash.init -> void
+Frontier.Platform.Audit.SignedAuditRecord.Sandbox.get -> bool?
+Frontier.Platform.Audit.SignedAuditRecord.Sandbox.init -> void
