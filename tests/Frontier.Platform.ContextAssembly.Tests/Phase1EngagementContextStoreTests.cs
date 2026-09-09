@@ -14,6 +14,51 @@ public sealed class Phase1EngagementContextStoreTests
     }
 
     [Fact]
+    public async Task GetDynamicContextSnapshotAsync_SeededEngagement_ReportsCurrentEpochRefAndHash()
+    {
+        var store = new Phase1EngagementContextStore();
+
+        var snapshot = await store.GetDynamicContextSnapshotAsync(Phase1ContextCatalogue.SeedEngagementId, null, CancellationToken.None);
+
+        Assert.NotNull(snapshot);
+        Assert.Equal(0, snapshot.Epoch);
+        Assert.Equal($"{Phase1ContextCatalogue.SeedEngagementId}:ctx:e000000", snapshot.Ref);
+        Assert.Equal(Frontier.Platform.Serialization.CanonicalProfile.Hash(snapshot.Content), snapshot.ContentHash);
+    }
+
+    [Fact]
+    public async Task GetDynamicContextSnapshotAsync_AfterUpsert_ReportsTheNewEpoch()
+    {
+        var store = new Phase1EngagementContextStore();
+        var epoch = await store.UpsertDynamicContextAsync("eng-x", """{"a":1}""", CancellationToken.None);
+
+        var snapshot = await store.GetDynamicContextSnapshotAsync("eng-x", epoch, CancellationToken.None);
+
+        Assert.NotNull(snapshot);
+        Assert.Equal(epoch, snapshot.Epoch);
+        Assert.Equal("""{"a":1}""", snapshot.Content);
+    }
+
+    [Fact]
+    public async Task GetDynamicContextSnapshotAsync_NonCurrentEpoch_ReturnsNullRatherThanLatest()
+    {
+        // S13.60: this store keeps no history; serving "latest" for a pinned read would make the pin a lie.
+        var store = new Phase1EngagementContextStore();
+
+        var snapshot = await store.GetDynamicContextSnapshotAsync(Phase1ContextCatalogue.SeedEngagementId, 4, CancellationToken.None);
+
+        Assert.Null(snapshot);
+    }
+
+    [Fact]
+    public async Task GetDynamicContextSnapshotAsync_UnknownEngagement_ReturnsNull()
+    {
+        var store = new Phase1EngagementContextStore();
+
+        Assert.Null(await store.GetDynamicContextSnapshotAsync("eng-unknown", null, CancellationToken.None));
+    }
+
+    [Fact]
     public async Task GetDynamicContextAsync_UnknownEngagement_ReturnsNull()
     {
         var store = new Phase1EngagementContextStore();

@@ -100,9 +100,12 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
     /// <summary>Composes and assembles the three-tier context package for <paramref name="input"/>, using <paramref name="resolved"/> for cache-strategy metadata.</summary>
     internal async Task<ContextPackageContract> AssembleAsync(AgentTaskActivityInput input, ResolvedModel resolved, CancellationToken ct)
     {
-        var composed = await composer.ComposeAsync(input.ContextRequest, input.RevisionNote, ct).ConfigureAwait(false);
+        var composed = await composer.ComposeAsync(input.ContextRequest, input.RevisionNote, input.DynamicContextEpoch, ct).ConfigureAwait(false);
         var metadata = new CachingMetadata(resolved.Provider, resolved.ModelId, resolved.ModelVersion, resolved.Entry.ContextWindow, DateTime.UtcNow);
-        var request = new AssembleContextRequest(metadata, composed.BaselineContent, composed.DynamicContent, composed.RealTimeContent);
+        var provenance = composed.DynamicEpoch is { } epoch
+            ? new DynamicTierProvenance(input.EngagementId, epoch, composed.DynamicRef!)
+            : null;
+        var request = new AssembleContextRequest(metadata, composed.BaselineContent, composed.DynamicContent, composed.RealTimeContent, provenance);
 
         return await assembleContext.RunAsync(request, ct).ConfigureAwait(false);
     }

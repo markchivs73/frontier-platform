@@ -167,6 +167,9 @@ internal static class AuditContractSamples
         CacheMetrics = CacheMetrics(),
     };
 
+    /// <summary>S13.60: an audit record citing the dynamic-context epoch and hash the execution was assembled from.</summary>
+    public static AuditRecord AuditRecordWithContextPin() => AuditRecord() with { DynamicContextEpoch = 3, DynamicContextHash = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" };
+
     /// <summary>A well-formed <see cref="SignedAuditRecord"/> (doc 05 §3, all 18 fields).</summary>
     public static SignedAuditRecord SignedAuditRecord() => new()
     {

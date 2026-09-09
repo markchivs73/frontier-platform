@@ -517,3 +517,7 @@ Frontier.Platform.Workflow.Model.ExecutionSnapshot.RunId.get -> string?
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.RunId.init -> void
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.StartedAtUtc.get -> System.DateTime?
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.StartedAtUtc.init -> void
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.DynamicContextEpoch.get -> int?
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.DynamicContextEpoch.init -> void
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.DynamicContextHash.get -> string?
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.DynamicContextHash.init -> void

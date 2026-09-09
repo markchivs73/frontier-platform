@@ -130,6 +130,39 @@ public sealed class CosmosEngagementContextStoreTests : IAsyncLifetime, IDisposa
     }
 
     [Fact]
+    public async Task GetDynamicContextSnapshotAsync_PinnedToPriorEpoch_ReadsThatEpochNotCurrent()
+    {
+        // S13.60 (doc 04 §4 step 3): a run pinned to epoch 0 reads epoch 0's bytes after epoch 1 has become current.
+        var store = new CosmosEngagementContextStore(container);
+        var engagementId = "eng-pin";
+        await store.UpsertDynamicContextAsync(engagementId, """{"v":1}""", CancellationToken.None);
+        await store.UpsertDynamicContextAsync(engagementId, """{"v":2}""", CancellationToken.None);
+
+        var pinned = await store.GetDynamicContextSnapshotAsync(engagementId, 0, CancellationToken.None);
+        var current = await store.GetDynamicContextSnapshotAsync(engagementId, null, CancellationToken.None);
+
+        Assert.NotNull(pinned);
+        Assert.Equal(0, pinned.Epoch);
+        Assert.Equal($"{engagementId}:ctx:e000000", pinned.Ref);
+        Assert.Equal("""{"v":1}""", pinned.Content);
+        Assert.Equal(Frontier.Platform.Serialization.CanonicalProfile.Hash("""{"v":1}"""), pinned.ContentHash);
+        Assert.NotNull(current);
+        Assert.Equal(1, current.Epoch);
+        Assert.Equal("""{"v":2}""", current.Content);
+    }
+
+    [Fact]
+    public async Task GetDynamicContextSnapshotAsync_MissingEpochOrEngagement_ReturnsNull()
+    {
+        var store = new CosmosEngagementContextStore(container);
+        await store.UpsertDynamicContextAsync("eng-one-epoch", """{"v":1}""", CancellationToken.None);
+
+        Assert.Null(await store.GetDynamicContextSnapshotAsync("eng-one-epoch", 7, CancellationToken.None));
+        Assert.Null(await store.GetDynamicContextSnapshotAsync("eng-never", null, CancellationToken.None));
+        Assert.Null(await store.GetDynamicContextSnapshotAsync("eng-never", 0, CancellationToken.None));
+    }
+
+    [Fact]
     public async Task UpsertDynamicContextAsync_ComputesContentHashCorrectly()
     {
         var store = new CosmosEngagementContextStore(container);

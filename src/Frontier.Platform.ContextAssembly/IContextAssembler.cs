@@ -16,6 +16,11 @@ public interface IContextAssembler
     /// <param name="baselineContent">Fleet-wide stable context content (pre-composed).</param>
     /// <param name="dynamicContent">Engagement-specific content (pre-composed).</param>
     /// <param name="realTimeContent">Per-invocation signals (pre-composed).</param>
+    /// <param name="dynamicProvenance">
+    /// Where <paramref name="dynamicContent"/> was read from (S13.60, doc 04 §4 step 3), so the
+    /// package's <see cref="DynamicTier"/> cites the engagement, epoch and epoch document; or
+    /// <see langword="null"/> when nothing was stored to cite.
+    /// </param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Package with provider-specific cache directives applied.</returns>
     Task<ContextPackage> AssembleAsync(
@@ -23,5 +28,6 @@ public interface IContextAssembler
         string baselineContent,
         string dynamicContent,
         string realTimeContent,
+        DynamicTierProvenance? dynamicProvenance = null,
         CancellationToken ct = default);
 }

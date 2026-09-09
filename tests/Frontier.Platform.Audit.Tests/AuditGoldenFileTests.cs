@@ -14,6 +14,10 @@ public sealed class AuditGoldenFileTests
         ContractRoundTripAssertions.AssertStableAndRoundTrips(AuditContractSamples.AuditRecord(), "audit_record.json");
 
     [Fact]
+    public void AuditRecordWithContextPin_IsByteStableAndRoundTrips() =>
+        ContractRoundTripAssertions.AssertStableAndRoundTrips(AuditContractSamples.AuditRecordWithContextPin(), "audit_record_context_pin.json");
+
+    [Fact]
     public void SignedAuditRecord_SerializesStablyAndRoundTrips() =>
         ContractRoundTripAssertions.AssertStableAndRoundTrips(AuditContractSamples.SignedAuditRecord(), "signed_audit_record.json");
 }

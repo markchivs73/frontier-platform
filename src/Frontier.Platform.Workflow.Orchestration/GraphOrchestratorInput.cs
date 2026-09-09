@@ -51,4 +51,23 @@ public sealed record GraphOrchestratorInput
     [JsonPropertyOrder(4)]
     [JsonPropertyName("run_id")]
     public string? RunId { get; init; }
+
+    /// <summary>
+    /// The dynamic-context epoch this run is pinned to (S13.60, doc 04 §4 step 3 / §8), resolved
+    /// by the Host before scheduling — exactly as the definition is (ADR-2) — and carried inline
+    /// so the orchestrator body reads no store. <b>Additive and optional</b> per the ADR-E15 floor:
+    /// inputs recorded before this field replay as <see langword="null"/> ("read current"), which
+    /// is what they did.
+    /// </summary>
+    [JsonPropertyOrder(5)]
+    [JsonPropertyName("dynamic_context_epoch")]
+    public int? DynamicContextEpoch { get; init; }
+
+    /// <summary>
+    /// The store's content hash of that epoch, resolved alongside it, so the run's evidence is
+    /// self-verifying without a store read (the definition's <c>definition_hash</c> shape).
+    /// </summary>
+    [JsonPropertyOrder(6)]
+    [JsonPropertyName("dynamic_context_hash")]
+    public string? DynamicContextHash { get; init; }
 }

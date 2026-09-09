@@ -12,10 +12,14 @@ internal sealed class FakeContextContentComposer(ComposedContext result) : ICont
     /// <summary>The most recent revision note passed to <see cref="ComposeAsync"/>.</summary>
     internal string? ReceivedRevisionNote { get; private set; }
 
-    public Task<ComposedContext> ComposeAsync(ContextRequest request, string? revisionNote, CancellationToken ct)
+    /// <summary>The most recent pinned epoch passed to <see cref="ComposeAsync"/> (S13.60).</summary>
+    internal int? ReceivedPinnedEpoch { get; private set; }
+
+    public Task<ComposedContext> ComposeAsync(ContextRequest request, string? revisionNote, int? pinnedEpoch, CancellationToken ct)
     {
         ReceivedRequest = request;
         ReceivedRevisionNote = revisionNote;
+        ReceivedPinnedEpoch = pinnedEpoch;
         return Task.FromResult(result);
     }
 }

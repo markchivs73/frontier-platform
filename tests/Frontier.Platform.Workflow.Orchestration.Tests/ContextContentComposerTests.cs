@@ -22,11 +22,66 @@ public sealed class ContextContentComposerTests
             DynamicFields = ["engagement_brief"],
         };
 
-        var composed = await composer.ComposeAsync(request, null, CancellationToken.None);
+        var composed = await composer.ComposeAsync(request, null, null, CancellationToken.None);
 
         Assert.Equal("""{"firm-standards":"standards content"}""", composed.BaselineContent);
         Assert.Equal("""{"engagement_brief":"narrative"}""", composed.DynamicContent);
         Assert.Equal("{}", composed.RealTimeContent);
+    }
+
+    [Fact]
+    public async Task ComposeAsync_PinnedEpoch_ReadsThatEpochAndReportsProvenance()
+    {
+        var dynamic = new FakeEngagementContextStore("""{"engagement_brief":"narrative"}""") { CurrentEpoch = 3 };
+        var composer = new ContextContentComposer(new FakeBaselineCatalogueStore("""{"firm-standards":"s"}"""), dynamic, BuildOptions());
+        var request = new ContextRequest { EngagementId = "eng-1", AgentRole = "deep-reasoning", BaselineComponents = ["firm-standards"], DynamicFields = ["engagement_brief"] };
+
+        var composed = await composer.ComposeAsync(request, null, pinnedEpoch: 3, CancellationToken.None);
+
+        Assert.Equal(3, dynamic.ReceivedEpoch);
+        Assert.Equal(3, composed.DynamicEpoch);
+        Assert.Equal("eng-1:ctx:e000003", composed.DynamicRef);
+        Assert.Equal(Frontier.Platform.Serialization.CanonicalProfile.Hash("""{"engagement_brief":"narrative"}"""), composed.DynamicContentHash);
+    }
+
+    [Fact]
+    public async Task ComposeAsync_PinnedEpochDoesNotResolve_ThrowsRatherThanFallingBackToCurrent()
+    {
+        // S13.60: a run pinned to bytes the store cannot produce is an evidential failure, not a case for "latest".
+        var dynamic = new FakeEngagementContextStore("""{"engagement_brief":"narrative"}""") { CurrentEpoch = 3 };
+        var composer = new ContextContentComposer(new FakeBaselineCatalogueStore("""{"firm-standards":"s"}"""), dynamic, BuildOptions());
+        var request = new ContextRequest { EngagementId = "eng-1", AgentRole = "deep-reasoning", BaselineComponents = ["firm-standards"], DynamicFields = ["engagement_brief"] };
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => composer.ComposeAsync(request, null, pinnedEpoch: 2, CancellationToken.None));
+
+        Assert.Contains("epoch 2", ex.Message, StringComparison.Ordinal);
+        Assert.Contains("eng-1", ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ComposeAsync_Unpinned_ReadsCurrentAndReportsItsProvenance()
+    {
+        var dynamic = new FakeEngagementContextStore("""{"engagement_brief":"narrative"}""") { CurrentEpoch = 5 };
+        var composer = new ContextContentComposer(new FakeBaselineCatalogueStore("""{"firm-standards":"s"}"""), dynamic, BuildOptions());
+        var request = new ContextRequest { EngagementId = "eng-1", AgentRole = "deep-reasoning", BaselineComponents = ["firm-standards"], DynamicFields = ["engagement_brief"] };
+
+        var composed = await composer.ComposeAsync(request, null, null, CancellationToken.None);
+
+        Assert.Null(dynamic.ReceivedEpoch);
+        Assert.Equal(5, composed.DynamicEpoch);
+    }
+
+    [Fact]
+    public async Task ComposeAsync_NoDynamicContextStored_ReportsNoProvenance()
+    {
+        var composer = new ContextContentComposer(new FakeBaselineCatalogueStore("""{"firm-standards":"s"}"""), new FakeEngagementContextStore(null), BuildOptions());
+        var request = new ContextRequest { EngagementId = "eng-1", AgentRole = "deep-reasoning", BaselineComponents = ["firm-standards"], DynamicFields = [] };
+
+        var composed = await composer.ComposeAsync(request, null, null, CancellationToken.None);
+
+        Assert.Null(composed.DynamicEpoch);
+        Assert.Null(composed.DynamicRef);
+        Assert.Null(composed.DynamicContentHash);
     }
 
     [Fact]
@@ -43,7 +98,7 @@ public sealed class ContextContentComposerTests
             DynamicFields = [],
         };
 
-        var composed = await composer.ComposeAsync(request, null, CancellationToken.None);
+        var composed = await composer.ComposeAsync(request, null, null, CancellationToken.None);
 
         Assert.Equal("{}", composed.DynamicContent);
     }
@@ -62,7 +117,7 @@ public sealed class ContextContentComposerTests
             DynamicFields = [],
         };
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => composer.ComposeAsync(request, null, CancellationToken.None));
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => composer.ComposeAsync(request, null, null, CancellationToken.None));
 
         Assert.Contains("2026-q2", exception.Message, StringComparison.Ordinal);
     }
@@ -72,7 +127,7 @@ public sealed class ContextContentComposerTests
     {
         var composer = new ContextContentComposer(new FakeBaselineCatalogueStore("{}"), new FakeEngagementContextStore("{}"), BuildOptions());
 
-        await Assert.ThrowsAsync<ArgumentNullException>(() => composer.ComposeAsync(null!, null, CancellationToken.None));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => composer.ComposeAsync(null!, null, null, CancellationToken.None));
     }
 
     [Fact]
@@ -87,7 +142,7 @@ public sealed class ContextContentComposerTests
             DynamicFields = [],
         };
 
-        await Assert.ThrowsAsync<ContractViolationException>(() => composer.ComposeAsync(request, null, CancellationToken.None));
+        await Assert.ThrowsAsync<ContractViolationException>(() => composer.ComposeAsync(request, null, null, CancellationToken.None));
     }
 
     [Fact]
@@ -104,7 +159,7 @@ public sealed class ContextContentComposerTests
             RealTimeSources = ["hitl-revision-note"],
         };
 
-        var composed = await composer.ComposeAsync(request, "redo scope", CancellationToken.None);
+        var composed = await composer.ComposeAsync(request, "redo scope", null, CancellationToken.None);
 
         Assert.Equal("""{"hitl_revision_note":"redo scope"}""", composed.RealTimeContent);
     }
@@ -123,7 +178,7 @@ public sealed class ContextContentComposerTests
             RealTimeSources = ["hitl-revision-note"],
         };
 
-        var composed = await composer.ComposeAsync(request, null, CancellationToken.None);
+        var composed = await composer.ComposeAsync(request, null, null, CancellationToken.None);
 
         Assert.Equal("{}", composed.RealTimeContent);
     }
@@ -140,7 +195,7 @@ public sealed class ContextContentComposerTests
             DynamicFields = [],
         };
 
-        var composed = await composer.ComposeAsync(request, "redo scope", CancellationToken.None);
+        var composed = await composer.ComposeAsync(request, "redo scope", null, CancellationToken.None);
 
         Assert.Equal("{}", composed.RealTimeContent);
     }

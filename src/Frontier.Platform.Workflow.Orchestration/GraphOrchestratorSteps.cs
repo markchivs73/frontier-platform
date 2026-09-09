@@ -51,7 +51,12 @@ internal static class GraphOrchestratorSteps
     {
         EnsureSupported(input.Definition);
 
-        var state = new GraphExecutionState { StartedAtUtc = context.CurrentUtcDateTime };
+        var state = new GraphExecutionState
+        {
+            StartedAtUtc = context.CurrentUtcDateTime,
+            DynamicContextEpoch = input.DynamicContextEpoch,
+            DynamicContextHash = input.DynamicContextHash,
+        };
         var walk = GraphWalk.Create(input.Definition);
 
         while (walk.HasWork)
@@ -378,6 +383,7 @@ internal static class GraphOrchestratorSteps
         UpstreamPayload = ResolveUpstreamPayload(input.Definition, node, state),
         RevisionNote = revisionNote,
         ToolRefs = node.ToolRefs,
+        DynamicContextEpoch = state.DynamicContextEpoch,
     };
 
     /// <summary>
@@ -525,6 +531,8 @@ internal static class GraphOrchestratorSteps
         InitiatedBy = input.InitiatedBy,
         RunId = input.RunId,
         StartedAtUtc = state.StartedAtUtc,
+        DynamicContextEpoch = state.DynamicContextEpoch,
+        DynamicContextHash = state.DynamicContextHash,
     };
 
     /// <summary>

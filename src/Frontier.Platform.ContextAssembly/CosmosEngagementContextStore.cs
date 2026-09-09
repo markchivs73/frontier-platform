@@ -63,6 +63,50 @@ internal sealed class CosmosEngagementContextStore : IEngagementContextStore
     }
 
     /// <inheritdoc />
+    public async Task<EngagementContextSnapshot?> GetDynamicContextSnapshotAsync(EngagementId engagementId, int? epoch, CancellationToken ct)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(engagementId);
+
+        try
+        {
+            var resolvedEpoch = epoch ?? await ReadCurrentEpochAsync(engagementId, ct);
+            if (resolvedEpoch is null)
+                return null;
+
+            var epochId = $"{engagementId}{EpochPrefix}{resolvedEpoch.Value:D6}";
+            var epochResponse = await container.ReadItemAsync<EngagementContextEpoch>(
+                epochId,
+                new PartitionKey(engagementId),
+                cancellationToken: ct);
+
+            return epochResponse.Resource is { } doc
+                ? new EngagementContextSnapshot(doc.Epoch, doc.Id, doc.ContentHash, doc.Content)
+                : null;
+        }
+        catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Reads the <c>:current</c> pointer's epoch, or <see langword="null"/> when the engagement has no context.</summary>
+    internal async Task<int?> ReadCurrentEpochAsync(EngagementId engagementId, CancellationToken ct)
+    {
+        try
+        {
+            var pointerResponse = await container.ReadItemAsync<EngagementContextPointer>(
+                $"{engagementId}{CurrentPointerSuffix}",
+                new PartitionKey(engagementId),
+                cancellationToken: ct);
+            return pointerResponse.Resource?.Epoch;
+        }
+        catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+    }
+
+    /// <inheritdoc />
     public async Task<int> UpsertDynamicContextAsync(EngagementId engagementId, string dynamicContent, CancellationToken ct)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(engagementId);

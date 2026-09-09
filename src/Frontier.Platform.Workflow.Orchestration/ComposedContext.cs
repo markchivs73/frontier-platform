@@ -24,4 +24,13 @@ internal sealed record ComposedContext
     /// future work.
     /// </summary>
     internal required string RealTimeContent { get; init; }
+
+    /// <summary>The dynamic-context epoch that was read (S13.60), or <see langword="null"/> when the engagement had none stored.</summary>
+    internal int? DynamicEpoch { get; init; }
+
+    /// <summary>The epoch document id the dynamic tier was read from, or <see langword="null"/> when none was stored.</summary>
+    internal string? DynamicRef { get; init; }
+
+    /// <summary>The store's content hash of the dynamic context read, or <see langword="null"/> when none was stored.</summary>
+    internal string? DynamicContentHash { get; init; }
 }

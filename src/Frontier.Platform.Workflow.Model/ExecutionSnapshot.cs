@@ -139,6 +139,22 @@ public sealed record ExecutionSnapshot : IVersionedContract
     [JsonPropertyName("started_at_utc")]
     public DateTime? StartedAtUtc { get; init; }
 
+    /// <summary>
+    /// The dynamic-context epoch this run was assembled from (S13.60, doc 04 §4 step 3 / §8) —
+    /// the pin, so "which inputs produced this output" resolves to an epoch document in
+    /// <c>engagement-context</c>. <b>Additive and optional</b> per the ADR-E15 floor: snapshots
+    /// written before this field read as <see langword="null"/>, meaning the run read whatever
+    /// was current, which is what it did.
+    /// </summary>
+    [JsonPropertyOrder(19)]
+    [JsonPropertyName("dynamic_context_epoch")]
+    public int? DynamicContextEpoch { get; init; }
+
+    /// <summary>The store's content hash of that epoch, so the evidence is self-verifying without a store read.</summary>
+    [JsonPropertyOrder(20)]
+    [JsonPropertyName("dynamic_context_hash")]
+    public string? DynamicContextHash { get; init; }
+
     /// <inheritdoc />
     public void Validate()
     {

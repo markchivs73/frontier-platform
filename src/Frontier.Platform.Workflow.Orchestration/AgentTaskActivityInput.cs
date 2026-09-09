@@ -83,4 +83,14 @@ public sealed record AgentTaskActivityInput
     [JsonPropertyOrder(12)]
     [JsonPropertyName("tool_refs")]
     public IReadOnlyList<string> ToolRefs { get; init; } = [];
+
+    /// <summary>
+    /// The dynamic-context epoch this run is pinned to (S13.60, doc 04 §8): the activity reads
+    /// that epoch, never <c>:current</c>. <b>Additive and optional</b> per the ADR-E15 floor —
+    /// inputs recorded before this field replay as <see langword="null"/>, which means "read
+    /// current", exactly what they did.
+    /// </summary>
+    [JsonPropertyOrder(13)]
+    [JsonPropertyName("dynamic_context_epoch")]
+    public int? DynamicContextEpoch { get; init; }
 }

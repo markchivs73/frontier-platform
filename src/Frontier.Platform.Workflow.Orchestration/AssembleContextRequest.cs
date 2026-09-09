@@ -20,7 +20,9 @@ public sealed record AssembleContextRequest(
     string DynamicContent,
 
     [property: JsonPropertyName("real_time_content"), JsonPropertyOrder(3)]
-    string RealTimeContent)
+    string RealTimeContent,
+    [property: JsonPropertyName("dynamic_provenance"), JsonPropertyOrder(4)]
+    DynamicTierProvenance? DynamicProvenance = null)
 {
     /// <summary>Validates that all content strings are non-null.</summary>
     public void Validate()

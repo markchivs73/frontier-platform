@@ -18,5 +18,13 @@ internal interface IContextContentComposer
     /// <paramref name="revisionNote"/> feeds the <c>"hitl-revision-note"</c> real-time
     /// source (doc 06 §13, S4.6c) when <paramref name="request"/> asks for it.
     /// </summary>
-    Task<ComposedContext> ComposeAsync(ContextRequest request, string? revisionNote, CancellationToken ct);
+    /// <param name="request">The node's context request.</param>
+    /// <param name="revisionNote">A gate rejection's revision note, if the node is re-running after one.</param>
+    /// <param name="pinnedEpoch">
+    /// The dynamic-context epoch the run is pinned to (S13.60, doc 04 §8 "epoch N (frozen)"), or
+    /// <see langword="null"/> to read whatever is current — the unpinned case, which after
+    /// S13.60 means the run started with nothing stored.
+    /// </param>
+    /// <param name="ct">Cancellation token.</param>
+    Task<ComposedContext> ComposeAsync(ContextRequest request, string? revisionNote, int? pinnedEpoch, CancellationToken ct);
 }

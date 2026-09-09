@@ -46,6 +46,10 @@ public sealed class ContractGoldenFileTests
         ContractRoundTripAssertions.AssertStableAndRoundTrips(ContractSamples.ExecutionSnapshotInitiated(), "execution_snapshot_initiated.json");
 
     [Fact]
+    public void ExecutionSnapshotWithContextPin_IsByteStableAndRoundTrips() =>
+        ContractRoundTripAssertions.AssertStableAndRoundTrips(ContractSamples.ExecutionSnapshotWithContextPin(), "execution_snapshot_context_pin.json");
+
+    [Fact]
     public void ExecutionSnapshotWithHostBuild_SerializesStablyAndRoundTrips() =>
         ContractRoundTripAssertions.AssertStableAndRoundTrips(ContractSamples.ExecutionSnapshotWithHostBuild(), "execution_snapshot_host_build.json");
 

@@ -51,6 +51,31 @@ internal sealed class Phase1EngagementContextStore : IEngagementContextStore
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// This store keeps no history — one content slot and a counter per engagement — so it can
+    /// serve only the current version. A request for any other <paramref name="epoch"/> returns
+    /// <see langword="null"/> rather than silently serving the latest, which would make a pinned
+    /// read a lie. Host never resolves this store (ADR-PA14 replaces it with Cosmos), so no
+    /// pinned production read arrives here; the honest answer costs nothing.
+    /// </remarks>
+    public async Task<EngagementContextSnapshot?> GetDynamicContextSnapshotAsync(EngagementId engagementId, int? epoch, CancellationToken ct)
+    {
+        var content = await GetDynamicContextAsync(engagementId, ct);
+        if (content is null)
+            return null;
+
+        var currentEpoch = _epochs.GetValueOrDefault(engagementId.Value, 0);
+        if (epoch is not null && epoch.Value != currentEpoch)
+            return null;
+
+        return new EngagementContextSnapshot(
+            currentEpoch,
+            $"{engagementId.Value}:ctx:e{currentEpoch:D6}",
+            CanonicalProfile.Hash(content),
+            content);
+    }
+
+    /// <inheritdoc />
     public Task<int> UpsertDynamicContextAsync(EngagementId engagementId, string dynamicContent, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(engagementId);
