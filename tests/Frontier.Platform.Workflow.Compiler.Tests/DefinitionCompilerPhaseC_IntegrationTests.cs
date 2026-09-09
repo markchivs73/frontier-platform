@@ -1,6 +1,7 @@
 #pragma warning disable CA2000  // HttpClient/Handler disposal: CosmosClientOptions takes ownership
 using System.Net;
 using System.Net.Http;
+using Frontier.Platform.Abstractions;
 using Frontier.Platform.Workflow.Model;
 using Frontier.Platform.Workflow.Compiler.Storage;
 using Microsoft.Azure.Cosmos;
@@ -332,14 +333,54 @@ public sealed class DefinitionCompilerPhaseC_IntegrationTests : IAsyncLifetime, 
 
     // ── S9.55 version-health projection (doc 13 ADR-DC5) ─────────────────────────
 
-    private static DefinitionVersionDocument VersionDoc(string workflowId, int version, string state) => new()
+    private static DefinitionVersionDocument VersionDoc(string workflowId, int version, string state) =>
+        VersionDoc(workflowId, version, state, WorkflowDefinitionFixture.MinimalDefinition());
+
+    /// <summary>A definition with one <see cref="AgentTaskNode"/> — <see cref="WorkflowDefinitionFixture.MinimalDefinition"/> carries none, so it never exercises a polymorphic read.</summary>
+    private static WorkflowDefinition DefinitionWithAgentTaskNode(string workflowId) => new()
+    {
+        WorkflowId = workflowId,
+        DefinitionVersion = 1,
+        EngagementType = "test-type",
+        Name = "Typed",
+        Nodes = [new AgentTaskNode
+            {
+                NodeId = "n1",
+                Role = "deep-reasoning",
+                InstructionsRef = "instr",
+                InputContractType = "In",
+                OutputContractType = "Out",
+                ContextRequest = new ContextRequest { EngagementId = "e1", AgentRole = "deep-reasoning", BaselineComponents = [], DynamicFields = [] },
+            }],
+        Edges = [],
+        DefinitionHash = "",
+        Mode = ExecutionMode.OneShot,
+    };
+
+    [Fact]
+    public async Task ListPublishedVersionsAsync_DefinitionWithAgentTaskNode_ReadsBackTyped()
+    {
+        // ADR-PA19 / consumer S13.64: the 2026-09 emulator's SELECT * returns keys in jsonb order, so
+        // node_type comes back third; under STJ defaults this read throws. The sibling listing test
+        // never saw it because MinimalDefinition has no nodes. This is the read that was exposed.
+        ArgumentNullException.ThrowIfNull(_store);
+        ArgumentNullException.ThrowIfNull(_container);
+        await _container.UpsertItemAsync(VersionDoc("wf-typed", 1, "published", DefinitionWithAgentTaskNode("wf-typed")), new PartitionKey("wf-typed"), cancellationToken: CancellationToken.None);
+
+        var published = await _store.ListPublishedVersionsAsync(CancellationToken.None);
+
+        var doc = Assert.Single(published, d => d.WorkflowId == "wf-typed");
+        Assert.IsType<AgentTaskNode>(Assert.Single(doc.Definition.Nodes));
+    }
+
+    private static DefinitionVersionDocument VersionDoc(string workflowId, int version, string state, WorkflowDefinition definition) => new()
     {
         Id = $"{workflowId}:v{version}",
         WorkflowId = workflowId,
         State = state,
         DefinitionVersion = version,
         DefinitionHash = "sha256:abc",
-        Definition = WorkflowDefinitionFixture.MinimalDefinition(),
+        Definition = definition,
         ProposedBy = "user:mark",
         ApprovedBy = "user:sarah",
         ProposedUtc = DateTime.UtcNow,
