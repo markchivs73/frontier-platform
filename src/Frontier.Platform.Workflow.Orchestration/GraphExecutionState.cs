@@ -17,6 +17,17 @@ internal sealed class GraphExecutionState
     /// </summary>
     internal required DateTime StartedAtUtc { get; init; }
 
+    /// <summary>
+    /// The dynamic-context epoch every assembly in this run reads (S13.60, doc 04 §8): seeded from
+    /// <see cref="GraphOrchestratorInput.DynamicContextEpoch"/> and moved only by an explicit
+    /// refresh the orchestrator decides on (ADR-CR1 — S13.62). Read from here, never from the
+    /// input, so a moved pin is what the activity inputs and the snapshot see.
+    /// </summary>
+    internal int? DynamicContextEpoch { get; set; }
+
+    /// <summary>The store's content hash of <see cref="DynamicContextEpoch"/>, kept beside it for the evidence records.</summary>
+    internal string? DynamicContextHash { get; set; }
+
     /// <summary>Completed steps, in execution order.</summary>
     internal List<StepCompletion> CompletedSteps { get; } = [];
 

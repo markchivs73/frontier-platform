@@ -39,7 +39,8 @@ internal sealed class AssembleContextActivity
             baselineContent: request.BaselineContent,
             dynamicContent: request.DynamicContent,
             realTimeContent: request.RealTimeContent,
-            ct);
+            dynamicProvenance: request.DynamicProvenance,
+            ct: ct);
 
         return package;
     }

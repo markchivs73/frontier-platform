@@ -703,3 +703,34 @@ that says the same thing in both always will.
 `dtf-determinism` (no DTF here), `implementation-plan` (no plan file), `local-dev` (no Aspire,
 DTS or Playwright). `definition-of-done` was folded into `code-review` and the PR template
 rather than kept separate.
+
+## ADR-PA18 — a run reads the dynamic-context epoch it was pinned to, and its evidence names it
+
+`DynamicTier` has always carried `EngagementId`, `DynamicEpoch` and `AssembledFromSnapshotRef`, and
+`ContextAssemblerSimple` has always filled them with `"unknown"`, `0`, `"unknown"`. The store
+(`CosmosEngagementContextStore`) is append-only and versioned by epoch; the read path resolved
+`:current` and threw the epoch away before the caller saw it. So two runs of one engagement-workflow
+with different context produced evidence that could not say which version either read — a linkage
+gap, not a retention one. The consumer's doc 04 §4 step 3 specifies the read as
+`DynamicTier(engagementId, snapshot.Epoch, snapshot.Ref, …)` from a snapshot "frozen-at-init or last
+refresh"; this restores that. (frontier-workflow S13.60 / C-42.)
+
+**Decision.** `IEngagementContextStore` gains an epoch-addressed read that returns the version with
+its provenance (`EngagementContextSnapshot`: epoch, document id, content hash, content). The
+orchestrator carries the pin inline as `GraphOrchestratorInput.DynamicContextEpoch` /
+`DynamicContextHash` — resolved by the Host before scheduling, exactly as the definition is — seeds
+`GraphExecutionState` from it, and every `AgentTaskActivityInput` reads `state`, never the input, so
+an explicit refresh (ADR-CR1) can move the pin without the snapshot lying. The composer reads the
+pinned epoch and **throws** if it does not resolve: a run pinned to bytes the store cannot produce is
+an evidential failure, not a fallback case. `ExecutionSnapshot` and `AuditRecord` gain
+`dynamic_context_epoch` / `dynamic_context_hash` beside the definition version and hash they have
+always carried; the audit record copies from the snapshot, which holds the final pin. All additions
+are optional and omit-null, so existing goldens and signed bytes are byte-identical.
+
+**What is not decided here.** Nothing moves the pin yet — the refresh signal loop is the consumer's
+S13.62. `Phase1EngagementContextStore` keeps no history and answers a non-current epoch with
+`null` rather than the latest; Host never resolves it (ADR-PA14), so that honesty is free.
+
+Breaking for implementors of `IEngagementContextStore` and `IContextAssembler` (both gain a member);
+no consumer implements either outside test fakes. *ADR-PA17 is claimed by #26, in flight; this is
+numbered past it deliberately.*

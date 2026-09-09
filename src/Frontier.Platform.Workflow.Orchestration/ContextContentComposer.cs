@@ -35,7 +35,7 @@ internal sealed class ContextContentComposer : IContextContentComposer
     }
 
     /// <inheritdoc />
-    public async Task<ComposedContext> ComposeAsync(ContextRequest request, string? revisionNote, CancellationToken ct)
+    public async Task<ComposedContext> ComposeAsync(ContextRequest request, string? revisionNote, int? pinnedEpoch, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(request);
         request.Validate();
@@ -44,13 +44,26 @@ internal sealed class ContextContentComposer : IContextContentComposer
         var baselineJson = await baselineStore.GetBaselineCatalogueAsync(catalogueId, ct)
             ?? throw new InvalidOperationException($"Baseline catalogue '{catalogueId}' is not registered.");
 
-        var dynamicJson = await engagementStore.GetDynamicContextAsync(request.EngagementId, ct) ?? "{}";
+        // S13.60 (doc 04 §4 step 3): read the pinned epoch, never ":current", when the run carries
+        // one. A pin that no longer resolves is an evidential failure, not a fallback case — the
+        // run was assembled from bytes the store can no longer produce.
+        var snapshot = await engagementStore.GetDynamicContextSnapshotAsync(request.EngagementId, pinnedEpoch, ct);
+        if (pinnedEpoch is not null && snapshot is null)
+        {
+            throw new InvalidOperationException(
+                $"Dynamic context epoch {pinnedEpoch} for engagement '{request.EngagementId}' does not resolve; the run is pinned to a version the store cannot produce.");
+        }
+
+        var dynamicJson = snapshot?.Content ?? "{}";
 
         return new ComposedContext
         {
             BaselineContent = ContextContentFilter.Filter(baselineJson, request.BaselineComponents, "baseline_components"),
             DynamicContent = ContextContentFilter.Filter(dynamicJson, request.DynamicFields, "dynamic_fields"),
             RealTimeContent = BuildRealTimeContent(request, revisionNote),
+            DynamicEpoch = snapshot?.Epoch,
+            DynamicRef = snapshot?.Ref,
+            DynamicContentHash = snapshot?.ContentHash,
         };
     }
 

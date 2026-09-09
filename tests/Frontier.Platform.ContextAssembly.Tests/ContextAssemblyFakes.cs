@@ -27,6 +27,15 @@ internal sealed class FakeEngagementContextStore(string? content) : IEngagementC
         return Task.FromResult(content);
     }
 
+    public Task<EngagementContextSnapshot?> GetDynamicContextSnapshotAsync(EngagementId engagementId, int? epoch, CancellationToken ct)
+    {
+        RequestedEngagementId = engagementId;
+        if (content is null || (epoch is not null && epoch.Value != currentEpoch))
+            return Task.FromResult<EngagementContextSnapshot?>(null);
+        return Task.FromResult<EngagementContextSnapshot?>(new EngagementContextSnapshot(
+            currentEpoch, $"{engagementId.Value}:ctx:e{currentEpoch:D6}", Frontier.Platform.Serialization.CanonicalProfile.Hash(content), content));
+    }
+
     public Task<int> UpsertDynamicContextAsync(EngagementId engagementId, string dynamicContent, CancellationToken ct)
     {
         return Task.FromResult(++currentEpoch);

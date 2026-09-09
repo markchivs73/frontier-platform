@@ -102,6 +102,32 @@ public sealed class ContextAssemblerSimpleTests
     }
 
     [Fact]
+    public async Task AssembleAsync_WithProvenance_PopulatesDynamicTierFromIt()
+    {
+        // S13.60 (doc 04 §4 step 3): DynamicTier(engagementId, snapshot.Epoch, snapshot.Ref, …) — no placeholders.
+        var assembler = new ContextAssemblerSimple(new FakeCachingStrategyRegistry(NoCachingStrategy.Instance));
+        var provenance = new DynamicTierProvenance("eng-1", 7, "eng-1:ctx:e000007");
+
+        var package = await assembler.AssembleAsync(ContextAssemblyTestData.Metadata(), "baseline", "dynamic", "", provenance);
+
+        Assert.Equal("eng-1", package.Dynamic.EngagementId.Value);
+        Assert.Equal(7, package.Dynamic.DynamicEpoch);
+        Assert.Equal("eng-1:ctx:e000007", package.Dynamic.AssembledFromSnapshotRef);
+    }
+
+    [Fact]
+    public async Task AssembleAsync_WithoutProvenance_KeepsPlaceholdersForTheNothingStoredCase()
+    {
+        var assembler = new ContextAssemblerSimple(new FakeCachingStrategyRegistry(NoCachingStrategy.Instance));
+
+        var package = await assembler.AssembleAsync(ContextAssemblyTestData.Metadata(), "baseline", "dynamic", "");
+
+        Assert.Equal("unknown", package.Dynamic.EngagementId.Value);
+        Assert.Equal(0, package.Dynamic.DynamicEpoch);
+        Assert.Equal("unknown", package.Dynamic.AssembledFromSnapshotRef);
+    }
+
+    [Fact]
     public async Task AssembleAsync_WithNonEmptyRealTimeContent_SetsRealTimeTier()
     {
         var assembler = new ContextAssemblerSimple(new FakeCachingStrategyRegistry(NoCachingStrategy.Instance));

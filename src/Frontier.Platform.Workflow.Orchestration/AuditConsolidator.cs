@@ -50,6 +50,10 @@ internal sealed class AuditConsolidator(IExecutionSnapshotReader snapshotReader,
         ValidatorOutcomes = [],
         HumanDecisions = HumanDecisionProjector.Project(snapshot.Decisions),
         CacheMetrics = CacheMetricsAggregator.Aggregate(telemetry),
+        // S13.60: the context the run was assembled from, copied from the snapshot (which carries the
+        // final pin), beside the definition hash it has always carried.
+        DynamicContextEpoch = snapshot.DynamicContextEpoch,
+        DynamicContextHash = snapshot.DynamicContextHash,
         // S9.38e: SANDBOX-{guid} engagement ids are minted only by S9.38a's TestRunExecutorAdapter.
         Sandbox = engagementId.StartsWith(SandboxEngagementIdPrefix, StringComparison.Ordinal) ? true : null,
     };

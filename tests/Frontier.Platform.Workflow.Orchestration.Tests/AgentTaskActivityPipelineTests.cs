@@ -153,6 +153,35 @@ public sealed class AgentTaskActivityPipelineTests
     }
 
     [Fact]
+    public async Task AssembleAsync_PinnedEpochOnInput_PassedToComposer()
+    {
+        // S13.60: the activity reads the epoch the run is pinned to, never ":current".
+        var d = Dependencies();
+        var composer = (FakeContextContentComposer)d.Composer;
+        var pipeline = new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder());
+        var input = BuildInput(nameof(BriefArtifact), nameof(SummaryArtifact), upstreamPayload: null) with { DynamicContextEpoch = 3 };
+        var resolved = ResolvedModelFixture();
+        await pipeline.AssembleAsync(input, resolved, CancellationToken.None);
+        Assert.Equal(3, composer.ReceivedPinnedEpoch);
+    }
+
+    [Fact]
+    public async Task AssembleAsync_ComposerReportsEpoch_ProvenanceReachesTheAssembler()
+    {
+        // S13.60 (doc 04 §4 step 3): the tier cites the engagement, epoch and epoch document the composer actually read.
+        var assembler = new FakeContextAssembler(Package("{}"));
+        var d = Dependencies() with
+        {
+            Composer = new FakeContextContentComposer(new ComposedContext { BaselineContent = "{}", DynamicContent = "{}", RealTimeContent = "{}", DynamicEpoch = 3, DynamicRef = "eng-1:ctx:e000003", DynamicContentHash = "h" }),
+            AssembleContext = new AssembleContextActivity(assembler),
+        };
+        var pipeline = new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder());
+        var input = BuildInput(nameof(BriefArtifact), nameof(SummaryArtifact), upstreamPayload: null);
+        await pipeline.AssembleAsync(input, ResolvedModelFixture(), CancellationToken.None);
+        Assert.Equal(new DynamicTierProvenance(input.EngagementId, 3, "eng-1:ctx:e000003"), assembler.ReceivedDynamicProvenance);
+    }
+
+    [Fact]
     public async Task AssembleAsync_RevisionNoteProvided_PassedToComposer()
     {
         var d = Dependencies();

@@ -269,6 +269,9 @@ internal static class ContractSamples
     /// <summary>S13.19: a snapshot carrying the execution's directing human (ADR-E8) — new golden, existing snapshot goldens untouched.</summary>
     public static ExecutionSnapshot ExecutionSnapshotInitiated() => ExecutionSnapshot() with { InitiatedBy = "user:oid-mark" };
 
+    /// <summary>S13.60: a snapshot citing the dynamic-context epoch and hash the run was pinned to.</summary>
+    public static ExecutionSnapshot ExecutionSnapshotWithContextPin() => ExecutionSnapshot() with { DynamicContextEpoch = 3, DynamicContextHash = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" };
+
     /// <summary>S13.17: a snapshot whose completed step carries the host-build stamp (ADR-E15 pin set) — new golden, existing snapshot goldens untouched.</summary>
     public static ExecutionSnapshot ExecutionSnapshotWithHostBuild()
     {

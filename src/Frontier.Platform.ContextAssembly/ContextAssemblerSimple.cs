@@ -26,6 +26,7 @@ internal sealed class ContextAssemblerSimple : IContextAssembler
         string baselineContent,
         string dynamicContent,
         string realTimeContent,
+        DynamicTierProvenance? dynamicProvenance = null,
         CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(metadata);
@@ -43,11 +44,14 @@ internal sealed class ContextAssemblerSimple : IContextAssembler
             Content = baselineContent
         };
 
+        // S13.60 (doc 04 §4 step 3): the tier cites the epoch it was read from. The placeholders
+        // remain only for an assembly with nothing stored to cite — they are not a default, and
+        // a pinned read never arrives here without provenance.
         var dynamicTier = new DynamicTier
         {
-            EngagementId = "unknown",
-            DynamicEpoch = 0,
-            AssembledFromSnapshotRef = "unknown",
+            EngagementId = dynamicProvenance?.EngagementId.Value ?? "unknown",
+            DynamicEpoch = dynamicProvenance?.Epoch ?? 0,
+            AssembledFromSnapshotRef = dynamicProvenance?.AssembledFromSnapshotRef ?? "unknown",
             Content = dynamicContent
         };
 

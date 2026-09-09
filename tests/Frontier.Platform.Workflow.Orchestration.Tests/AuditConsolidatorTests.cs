@@ -99,4 +99,16 @@ public sealed class AuditConsolidatorTests
 
         Assert.Null(record.Sandbox);
     }
+
+    [Fact]
+    public void BuildAuditRecord_CopiesDynamicContextPinFromSnapshot()
+    {
+        // S13.60: the input-side half of "traceability of results to inputs", beside definition_hash.
+        var snapshot = WorkflowEventProjectorTests.Snapshot() with { DynamicContextEpoch = 2, DynamicContextHash = "deadbeef" };
+
+        var record = AuditConsolidator.BuildAuditRecord(Input, Input.EngagementId, Input.WorkflowId, snapshot, []);
+
+        Assert.Equal(2, record.DynamicContextEpoch);
+        Assert.Equal("deadbeef", record.DynamicContextHash);
+    }
 }

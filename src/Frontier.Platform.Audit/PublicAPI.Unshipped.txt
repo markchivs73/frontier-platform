@@ -7,3 +7,7 @@ Frontier.Platform.Audit.ValidatorOutcome.TargetArtifactKey.init -> void
 Frontier.Platform.Audit.IAuditRecordStore.GetAsync(string! executionId, string! engagementId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Audit.SignedAuditRecord?>!
 Frontier.Platform.Audit.IAuditSigner.VerifyAsync(string! executionId, string! engagementId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Audit.VerificationResult!>!
 Frontier.Platform.Audit.IAuditQueryService.GetAsync(string! executionId, string! engagementId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Audit.SignedAuditRecord?>!
+Frontier.Platform.Audit.AuditRecord.DynamicContextEpoch.get -> int?
+Frontier.Platform.Audit.AuditRecord.DynamicContextEpoch.init -> void
+Frontier.Platform.Audit.AuditRecord.DynamicContextHash.get -> string?
+Frontier.Platform.Audit.AuditRecord.DynamicContextHash.init -> void

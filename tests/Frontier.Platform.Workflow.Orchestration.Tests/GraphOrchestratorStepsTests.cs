@@ -144,6 +144,33 @@ public sealed class GraphOrchestratorStepsTests
     }
 
     [Fact]
+    public void BuildSnapshot_StampsDynamicContextPinFromState()
+    {
+        // S13.60: the snapshot cites the pin the run holds in state — the final pin, not the input's — so a moved pin (S13.62) is what the evidence sees.
+        var context = new FakeTaskOrchestrationContext();
+        var input = OrchestrationFixtures.Input(OrchestrationFixtures.ThreeArtifactChain());
+        var state = new GraphExecutionState { StartedAtUtc = OrchestrationFixtures.StartedAtUtc, DynamicContextEpoch = 4, DynamicContextHash = "abc" };
+
+        var snapshot = GraphOrchestratorSteps.BuildSnapshot(context, input, state, ExecutionStatus.Running, currentNodeId: null);
+
+        Assert.Equal(4, snapshot.DynamicContextEpoch);
+        Assert.Equal("abc", snapshot.DynamicContextHash);
+    }
+
+    [Fact]
+    public void BuildActivityInput_ThreadsDynamicContextEpochFromState()
+    {
+        var definition = OrchestrationFixtures.ThreeArtifactChain();
+        var input = OrchestrationFixtures.Input(definition);
+        var node = (AgentTaskNode)definition.Nodes[0];
+        var state = new GraphExecutionState { StartedAtUtc = OrchestrationFixtures.StartedAtUtc, DynamicContextEpoch = 4 };
+
+        var activityInput = GraphOrchestratorSteps.BuildActivityInput(input, node, "correlation-1", "eng-1::wf-chain", state);
+
+        Assert.Equal(4, activityInput.DynamicContextEpoch);
+    }
+
+    [Fact]
     public void BuildSnapshot_ThreadsInitiatedByFromInput()
     {
         // ADR-E8/S13.19: the threshold identity rides every checkpoint — the root of the

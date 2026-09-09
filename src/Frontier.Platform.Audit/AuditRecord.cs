@@ -94,6 +94,21 @@ public sealed record AuditRecord : IVersionedContract
     [JsonPropertyName("sandbox")]
     public bool? Sandbox { get; init; }
 
+    /// <summary>
+    /// The dynamic-context epoch the execution was assembled from (S13.60): the input-side half of
+    /// Article 12's "traceability of results to inputs", beside <see cref="DefinitionHash"/>'s
+    /// system-version half. <see langword="null"/> (omitted on the wire) for records written before
+    /// the pin existed, so existing golden and signed bytes are unaffected.
+    /// </summary>
+    [JsonPropertyOrder(15)]
+    [JsonPropertyName("dynamic_context_epoch")]
+    public int? DynamicContextEpoch { get; init; }
+
+    /// <summary>The store's content hash of that epoch — self-verifying against the <c>engagement-context</c> document it names.</summary>
+    [JsonPropertyOrder(16)]
+    [JsonPropertyName("dynamic_context_hash")]
+    public string? DynamicContextHash { get; init; }
+
     /// <inheritdoc />
     public void Validate()
     {
