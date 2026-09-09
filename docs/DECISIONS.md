@@ -734,3 +734,31 @@ S13.62. `Phase1EngagementContextStore` keeps no history and answers a non-curren
 Breaking for implementors of `IEngagementContextStore` and `IContextAssembler` (both gain a member);
 no consumer implements either outside test fakes. *ADR-PA17 is claimed by #26, in flight; this is
 numbered past it deliberately.*
+
+## ADR-PA19 — the canonical profile reads a polymorphic document in any key order, and still writes it in one
+
+System.Text.Json's polymorphic reader requires the type discriminator to be the first property of
+the object. That is a streaming-performance choice in the library, not a property of JSON, and it
+made every query read of a `[JsonPolymorphic]` document in this platform depend on the store
+returning keys in written order — a property no store documents. The Azure service happens to
+preserve order; the Cosmos emulator's June 2026 build happened to; its September build's query path
+does not: its query path returns every object's keys in Postgres `jsonb` order — shortest key
+first, then bytewise — with `id` appended last. A discriminator therefore stays first only when it is
+the shortest key in its object, so the same read survives for one document shape and throws for
+another.
+`CosmosDefinitionStore`'s `SELECT *` listings of `DefinitionVersionDocument` (polymorphic
+`WorkflowNode`s inside) are exposed; the existing PhaseC listing test happened to pass against the
+September build because that fixture's node keys came back with `node_type` still first. The
+consumer's engagement-event store did not get that luck and failed. (frontier-workflow S13.64.)
+
+**Decision.** `CanonicalProfile.Options` sets `AllowOutOfOrderMetadataProperties = true`. It is
+**read-side only**: the profile still writes the discriminator first, so canonical bytes — and every
+definition hash, cache key and audit signature computed over them — are byte-identical before and
+after. The one profile stays one profile. The documented cost is buffering on very large objects;
+ADR-E1 keeps payload tonnage off the graph, so documents here are small by construction.
+
+**Consequences.** A test proves a discriminator-last graph deserialises to the same canonical bytes
+and that the profile's own writes still lead with the discriminator. Pinning the emulator image is
+the consumer's concern and is about CI determinism, not correctness — after this change the
+platform reads correctly against any build.
+

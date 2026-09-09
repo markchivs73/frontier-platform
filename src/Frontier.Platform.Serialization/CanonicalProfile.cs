@@ -39,6 +39,14 @@ public static class CanonicalProfile
             AllowTrailingCommas = false,
             NumberHandling = JsonNumberHandling.Strict,
             TypeInfoResolver = new DefaultJsonTypeInfoResolver(),
+            // ADR-PA19: read-side only. STJ's default requires a polymorphic type discriminator to
+            // be the FIRST property, which made every query read depend on the store returning
+            // JSON in written order — an undocumented property no store promises, and one the
+            // Cosmos emulator stopped honouring in its 2026-09 build. Writing is unchanged: the
+            // profile still emits the discriminator first, so canonical bytes, hashes and
+            // signatures are byte-identical. Buffering cost is bounded because ADR-E1 keeps
+            // payload tonnage off the graph.
+            AllowOutOfOrderMetadataProperties = true,
         };
 
         options.Converters.Add(new Iso8601UtcDateTimeConverter());
