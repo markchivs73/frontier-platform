@@ -598,6 +598,12 @@ tests mint against composite engagement ids for exactly that reason.
 
 ## ADR-PA16 — a run is a field and a suffix, and the affinity key is what it extends
 
+> **Superseded in part by ADR-PA20 (2026-09-10):** the suffix is gone — the run token is the whole
+> instance id. Everything else here stands: the affinity key is still `Mint(engagementId, workflowId)`,
+> still what the claim is taken on, and still not the instance id; `RunId` and `StartedAtUtc` are
+> still fields. The `~` reasoning is kept as the record of why a separator has to survive Cosmos ids
+> and URL paths, which is exactly the class of constraint ADR-PA20 hit next.
+
 `ExecutionId.MintRun(engagementId, workflowId, runToken)` produces
 `{engagementId}::{workflowId}#{runToken}`. `RunId` joins `GraphOrchestratorInput`,
 `ExecutionSnapshot`, `ConsolidateAuditInput` — and `ExecutionSnapshot` also gains a real
@@ -772,3 +778,61 @@ is "nothing"). The executor writes it before scheduling; what a run with no cont
 implementation's call — the consumer seeds a default brief when the entry node needs one.
 Breaking for implementors of `ITestRunExecutor`; the consumer's adapter is the only one.
 
+
+---
+
+## ADR-PA20 — the instance id is the run token; the affinity key stays a key
+
+`ExecutionId.ForRun(runToken)` returns the token: a DTF instance id is the run's opaque token and
+nothing else. `ExecutionId.MintRun` and `RunSeparator` are removed. `ExecutionId.Mint(engagementId,
+workflowId)` is unchanged and is now named for what it always was — the **affinity key**, a Cosmos
+document id the one-live-run claim is taken on, never an instance id. `ExecutionId.MaxInstanceIdLength`
+(100) states the scheduler's cap once.
+
+**The defect.** Durable Task Scheduler caps orchestration instance ids at 1–100 printable-ASCII
+characters, and `Microsoft.DurableTask.Client` (1.24) enforces it before the request leaves the
+process: *"Instance IDs must be between 1 and 100 characters; actual length is 111."* ADR-PA16's
+`{engagementId}::{workflowId}~{runToken}` spent 32 of those on a v7-GUID token and left the rest to
+two ids that are both caller-shaped: a UI-authored workflow id is a 36-character GUID, an engagement
+id is composite and config-templated (`{type}::{client}::{site}`), and a sandbox engagement is
+`SANDBOX-` + 32 hex. A sandbox run of any UI-authored workflow could not start (111 characters); a
+real run on any templated engagement id longer than 29 characters could not either. Found 2026-09-10
+by the first test run of a UI-authored workflow; every live proof before it ran the seeded
+`advisory-sow` (12 characters) on `ENGAGEMENT-12345` (16) and fitted at 63.
+
+**Why removing the prefix is the fix and not a workaround.** ADR-PA15 established that an execution
+id is written and never read: identity travels as fields (`EngagementId`, `WorkflowId`, `RunId`) on
+every contract that needs it, and nothing parses the id. The composite prefix was therefore
+metadata riding in an address — legible on a dashboard, load-bearing nowhere. An address that carries
+nothing cannot overflow, and the token's length is the composition root's to fix (32 characters
+today; the cap is now a named rule the kernel checks). Shortening the tokens instead would have moved
+the cliff, not removed it: engagement id templates are administrator-configured, so any fixed budget
+is one config change from being exceeded.
+
+**What is still keyed on the composite.** The affinity key — because the claim needs a *derivable*
+key for "this engagement-workflow", and that is exactly what `Mint` produces. It is a Cosmos id
+(255-character limit) and never reaches DTS. The relationship ADR-PA16 pinned ("`MintRun` extends the
+affinity key") is retired with `MintRun`; the relationship that matters is pinned instead: `ForRun`
+returns a value that contains no affinity key.
+
+**What read the id and now reads a field.** `ApprovalRequestFactory` set a sandbox gate's TTL by the
+execution id's `SANDBOX-` prefix; it reads `GateOpenRequest.EngagementId`. `IMcpToolCatalog.ResolveAsync`
+took an `executionId` whose only use was the same prefix test; it takes the `engagementId`. Both
+pipelines already held it. Consumer-side readers (the approvals inbox filter, the tool catalogue's
+sandbox fencing, the orchestration factory) change in the same way in the consumer's S13.68.
+
+**Dispatcher children.** `DispatcherOrchestrator` never set a child instance id — DTF assigns one —
+so the `{engagementId}::{workflowId}::{workItemId}` shape the docs describe was never minted. The
+child is identified by `GraphOrchestratorInput.WorkItemId`, a field; the consumer's S13.40 (which
+asked how a child id could be parsed unambiguously) is answered by there being nothing to parse.
+
+**Breaking.** `MintRun` and `RunSeparator` removed (`abstractions!:`); `IMcpToolCatalog.ResolveAsync`'s
+second parameter is now the engagement id (same shape, different meaning — a consumer passing an
+execution id would silently disable sandbox fencing, so the rename is deliberate and the consumer's
+own tests pin it). ADR-E15's compatibility floor: an in-flight execution keeps the instance id it was
+scheduled under; ids of both shapes coexist in stores and neither is ever parsed.
+
+*Evidence.* Microsoft Learn, "Durable orchestrations overview" (instance ids: 1–100 characters,
+printable ASCII, not `/ \ # ?`, not starting with `@`), read 2026-09-10; the scheduling exception
+above, reproduced against the local DTS emulator the same day; ADR-PA15/PA16 for the position this
+completes.

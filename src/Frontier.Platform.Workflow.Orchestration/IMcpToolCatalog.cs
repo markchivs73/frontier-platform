@@ -16,10 +16,11 @@ public interface IMcpToolCatalog
     /// (ADR-CD9, S13.7b) to the matching MCP tool, connecting to each referenced server at
     /// most once per call.
     /// Returns <c>[]</c> for an empty <paramref name="toolRefs"/> — no MCP round trip is made.
-    /// S9.38c: when <paramref name="executionId"/> is a sandbox test-run (<c>SANDBOX-</c>
-    /// prefix), any tool classified as a write (<see cref="McpSandboxWriteTools"/>) is
-    /// returned wrapped so calling it never reaches the real connector (doc 13 §5) —
-    /// read tools are unaffected.
+    /// S9.38c: when <paramref name="engagementId"/> is a sandbox test-run's per-run engagement
+    /// (<c>SANDBOX-</c> prefix), any tool classified as a write (<see cref="McpSandboxWriteTools"/>)
+    /// is returned wrapped so calling it never reaches the real connector (doc 13 §5) — read tools
+    /// are unaffected. ADR-PA20: this used to be read off the execution id, which no longer spells
+    /// the engagement.
     /// </summary>
-    Task<IReadOnlyList<AITool>> ResolveAsync(IReadOnlyList<string> toolRefs, string executionId, CancellationToken ct);
+    Task<IReadOnlyList<AITool>> ResolveAsync(IReadOnlyList<string> toolRefs, string engagementId, CancellationToken ct);
 }

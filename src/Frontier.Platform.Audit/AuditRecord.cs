@@ -15,7 +15,7 @@ public sealed record AuditRecord : IVersionedContract
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; init; } = "2.0";
 
-    /// <summary>The DTF instance id this record was consolidated from: <c>{engagementId}::{workflowId}</c>.</summary>
+    /// <summary>The DTF instance id this record was consolidated from — an opaque run token (ADR-PA20); <c>EngagementId</c>/<c>WorkflowId</c>/<c>RunId</c> are the fields beside it.</summary>
     [JsonPropertyOrder(1)]
     [JsonPropertyName("execution_id")]
     public required string ExecutionId { get; init; }

@@ -126,7 +126,7 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
         var instructions = await instructionsResolver.ResolveAsync(input.InstructionsRef, ct).ConfigureAwait(false);
         var prompt = PromptBuilder.Build(context, input.InputContractType, inputPayload);
         var maxOutputTokens = await AdmitAsync(input, resolved, instructions, prompt, ct).ConfigureAwait(false);
-        var tools = await toolCatalog.ResolveAsync(input.ToolRefs, input.ExecutionId, ct).ConfigureAwait(false);
+        var tools = await toolCatalog.ResolveAsync(input.ToolRefs, input.EngagementId, ct).ConfigureAwait(false);
 
         var request = new AgentInvocationRequest
         {

@@ -6,8 +6,8 @@ namespace Frontier.Platform.Workflow.Model;
 
 /// <summary>
 /// A work item for dispatcher-mode workflows (doc 16 §4, ADR-E8). The item is received
-/// as a <c>WorkItem</c> external event and spawned as a sub-orchestration with instanceId
-/// <c>{engagementId}::{workflowId}::{workItemId}</c>. Phase 1: simple shape with ID + payload.
+/// as a <c>WorkItem</c> external event and spawned as a sub-orchestration (identified by its
+/// <c>WorkItemId</c> field, never by a composite instance id — ADR-PA15/PA20). Phase 1: simple shape with ID + payload.
 /// </summary>
 [ExcludeFromCodeCoverage(Justification = "Pure data contract; Validate() method not called at runtime.")]
 public sealed record WorkItem

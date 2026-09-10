@@ -16,7 +16,7 @@ public sealed record ExecutionSnapshot : IVersionedContract
     [JsonPropertyName("schema_version")]
     public string SchemaVersion { get; init; } = "2.0"; // S13.12a: the ADR-E3a D3 artifact rename is a wire break (ArtifactVocabularyMigration adapts 1.0 bytes).
 
-    /// <summary>The DTF instance id: <c>{engagementId}::{workflowId}</c> (dispatcher children append <c>::{workItemId}</c>).</summary>
+    /// <summary>The DTF instance id — the opaque run token (ADR-PA20). The engagement, workflow and run are the typed fields beside it, never read out of this.</summary>
     [JsonPropertyOrder(1)]
     [JsonPropertyName("execution_id")]
     public required string ExecutionId { get; init; }
