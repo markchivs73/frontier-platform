@@ -1697,3 +1697,9 @@ virtual Frontier.Platform.Workflow.Compiler.Storage.SaveDraftResult.Equals(Front
 virtual Frontier.Platform.Workflow.Compiler.Storage.SaveDraftResult.PrintMembers(System.Text.StringBuilder! builder) -> bool
 Frontier.Platform.Workflow.Compiler.ITestRunExecutor.StartAsync(string! engagementId, Frontier.Platform.Workflow.Model.WorkflowDefinition! definition, string? dynamicContextJson, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<string!>!
 *REMOVED*Frontier.Platform.Workflow.Compiler.ITestRunExecutor.StartAsync(string! engagementId, Frontier.Platform.Workflow.Model.WorkflowDefinition! definition, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<string!>!
+Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.Deconstruct(out string! WorkflowId, out string! Name, out string? EngagementType, out string! Status, out System.DateTime? LastPublishedAt, out string? LastPublishedBy, out string? ExecutionMode) -> void
+Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.ExecutionMode.get -> string?
+Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.ExecutionMode.init -> void
+Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.WorkflowCatalogueSummary(string! WorkflowId, string! Name, string? EngagementType, string! Status, System.DateTime? LastPublishedAt, string? LastPublishedBy, string? ExecutionMode = null) -> void
+*REMOVED*Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.Deconstruct(out string! WorkflowId, out string! Name, out string? EngagementType, out string! Status, out System.DateTime? LastPublishedAt, out string? LastPublishedBy) -> void
+*REMOVED*Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.WorkflowCatalogueSummary(string! WorkflowId, string! Name, string? EngagementType, string! Status, System.DateTime? LastPublishedAt, string? LastPublishedBy) -> void

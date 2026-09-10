@@ -305,7 +305,8 @@ public sealed record WorkflowCatalogueSummary(
     string? EngagementType,
     string Status,
     DateTime? LastPublishedAt,
-    string? LastPublishedBy);
+    string? LastPublishedBy,
+    string? ExecutionMode = null);
 
 /// <summary>Chat history index (one per draft, tracks turns).</summary>
 [ExcludeFromCodeCoverage(Justification = "Storage POCO record with compiler-generated equality")]

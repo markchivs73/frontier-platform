@@ -793,7 +793,8 @@ public sealed class CosmosDefinitionStore : IDefinitionStore
         // current-pointer, turn docs) are excluded by the IN clause.
         var iterator = _container.GetItemQueryIterator<CatalogueRow>(
             new QueryDefinition(
-                "SELECT c.workflowId, c.id, c.state, c.definitionVersion, c.approvedUtc, c.approvedBy, c.definition.name AS definitionName " +
+                "SELECT c.workflowId, c.id, c.state, c.definitionVersion, c.approvedUtc, c.approvedBy, c.definition.name AS definitionName, " +
+                "c.definition.engagement_type AS definitionEngagementType, c.definition.mode AS definitionMode " +
                 "FROM c WHERE c.state IN ('draft', 'published', 'superseded', 'retired')"));
 
         var rows = new List<CatalogueRow>();
@@ -838,16 +839,25 @@ public sealed class CosmosDefinitionStore : IDefinitionStore
                 .Select(r => r.DefinitionName)
                 .FirstOrDefault(n => !string.IsNullOrWhiteSpace(n)) ?? wfId;
 
+            // Type and mode come from what would actually run: the current published version, else the
+            // draft. Before this they were never projected — the summary hard-coded EngagementType to null
+            // and the engagementType filter below did not exist, so ?engagement_type= returned everything
+            // (consumer S13.67).
+            var authority = versions.FirstOrDefault(v => v.State == "published")
+                ?? group.OrderByDescending(r => r.DefinitionVersion ?? 0).First();
             summaries.Add(new WorkflowCatalogueSummary(
                 WorkflowId: wfId,
                 Name: resolvedName,
-                EngagementType: null,
+                EngagementType: authority.DefinitionEngagementType,
                 Status: effectiveStatus,
                 LastPublishedAt: lastPublishedAt,
-                LastPublishedBy: lastPublishedBy));
+                LastPublishedBy: lastPublishedBy,
+                ExecutionMode: authority.DefinitionMode));
         }
 
         // In-memory filters (Phase 1 — catalogue sizes are small).
+        if (!string.IsNullOrWhiteSpace(engagementType))
+            summaries = summaries.Where(s => string.Equals(s.EngagementType, engagementType, StringComparison.OrdinalIgnoreCase)).ToList();
         if (!string.IsNullOrWhiteSpace(status))
             summaries = summaries.Where(s => string.Equals(s.Status, status, StringComparison.OrdinalIgnoreCase)).ToList();
         if (!string.IsNullOrWhiteSpace(search))
@@ -883,5 +893,10 @@ public sealed class CosmosDefinitionStore : IDefinitionStore
         public string? ApprovedBy { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("definitionName")]
         public string? DefinitionName { get; init; }
+        [System.Text.Json.Serialization.JsonPropertyName("definitionEngagementType")]
+        public string? DefinitionEngagementType { get; init; }
+        /// <summary>The definition's <c>mode</c> as its canonical wire string (<c>one_shot</c>, <c>dispatcher</c>).</summary>
+        [System.Text.Json.Serialization.JsonPropertyName("definitionMode")]
+        public string? DefinitionMode { get; init; }
     }
 }
