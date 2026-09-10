@@ -836,3 +836,14 @@ scheduled under; ids of both shapes coexist in stores and neither is ever parsed
 printable ASCII, not `/ \ # ?`, not starting with `@`), read 2026-09-10; the scheduling exception
 above, reproduced against the local DTS emulator the same day; ADR-PA15/PA16 for the position this
 completes.
+
+### ADR-PA20 — amended 2026-09-10 (same day): two readers in the sandbox channel
+
+`TestRunService` derived the engagement id from the test-run id twice — `ExtractEngagementId` for the
+snapshot read that drives reconciliation, and `EnrichWithArtifactContentAsync` for the section store's
+keys — and neither was found by a search for `ExecutionId` because both parsed the string by hand.
+With an opaque token the "engagement" became the token, the snapshot lookup hit the wrong partition,
+and every sandbox run stayed *running* forever with its gate never auto-approved. `TestRunDocument`
+gains an optional `engagementId`, written at start (and for a blocked run), and both readers use it; a
+document without one is returned as persisted. Additive; the parser is deleted. The lesson is the one
+ADR-PA15 recorded and this ADR repeated: the readers were never where the format was.

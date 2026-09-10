@@ -83,7 +83,7 @@ public sealed class TestRunServiceTests
 
     /// <summary>A persisted run document in the given state (defaults to a live running run).</summary>
     private static TestRunDocument RunDoc(
-        string testRunId = "SANDBOX-abc::wf-test", string? status = TestRunStatus.Running,
+        string testRunId = "SANDBOX-abc::wf-test", string? status = TestRunStatus.Running, string? engagementId = "SANDBOX-abc",
         string gateMode = "AutoApprove", bool success = false, DateTime? completedAtUtc = null,
         string? pausedAtGateId = null, IReadOnlyList<TestRunNodeStep>? nodeSteps = null,
         IReadOnlyList<TestRunGateDecision>? gateDecisions = null) => new()
@@ -91,6 +91,7 @@ public sealed class TestRunServiceTests
         Id = "wf-test:testrun:fixed-doc-id",
         WorkflowId = "wf-test",
         TestRunId = testRunId,
+        EngagementId = engagementId,
         DraftRevision = "rev-1",
         StartedAtUtc = DateTime.UtcNow,
         CompletedAtUtc = completedAtUtc,
@@ -112,6 +113,59 @@ public sealed class TestRunServiceTests
             .Callback<TestRunDocument, CancellationToken>((d, _) => doc = d)
             .ReturnsAsync((TestRunDocument d, CancellationToken _) => d);
         persisted = () => doc;
+    }
+
+    // ── ADR-PA20: the engagement is a field on the run document, never parsed off the run id ──
+
+    [Fact]
+    public async Task StartAsync_PersistsTheSandboxEngagementTheRunExecutesOn()
+    {
+        _store.Setup(s => s.GetDraftAsync("wf-test", It.IsAny<CancellationToken>())).ReturnsAsync(Draft());
+        _compiler.Setup(c => c.ValidateStructural(It.IsAny<WorkflowDefinition>())).Returns([]);
+        string? startedOn = null;
+        _executor.Setup(e => e.StartAsync(It.IsAny<string>(), It.IsAny<WorkflowDefinition>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Callback<string, WorkflowDefinition, string?, CancellationToken>((eng, _, _, _) => startedOn = eng)
+            .ReturnsAsync("0199f0c2e4a17b3c9d5e6f708192a3b4");
+        SetupPersistCapture(out var persisted);
+
+        await _service.StartAsync("wf-test", new TestRunRequest { SampleInputs = new { }, GateMode = TestRunGateMode.AutoApprove }, CancellationToken.None);
+
+        Assert.NotNull(startedOn);
+        Assert.StartsWith("SANDBOX-", startedOn, StringComparison.Ordinal);
+        Assert.Equal(startedOn, persisted()!.EngagementId);
+        Assert.Equal("0199f0c2e4a17b3c9d5e6f708192a3b4", persisted()!.TestRunId);
+    }
+
+    [Fact]
+    public async Task StartAsync_BlockedRun_RecordsAnEngagementToo()
+    {
+        _store.Setup(s => s.GetDraftAsync("wf-test", It.IsAny<CancellationToken>())).ReturnsAsync(Draft());
+        _compiler.Setup(c => c.ValidateStructural(It.IsAny<WorkflowDefinition>()))
+            .Returns([new ValidationFinding("DAG-ness", ValidationSeverity.Error, "cycle detected")]);
+        SetupPersistCapture(out var persisted);
+
+        await _service.StartAsync("wf-test", new TestRunRequest { SampleInputs = new { }, GateMode = TestRunGateMode.AutoApprove }, CancellationToken.None);
+
+        Assert.StartsWith("SANDBOX-", persisted()!.EngagementId, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A document written before the field cannot say which engagement's snapshot to read, and the
+    /// run id no longer can either — it is returned as persisted rather than reconciled against the
+    /// wrong partition (which is what parsing an opaque token produced).
+    /// </summary>
+    [Fact]
+    public async Task ReconcileAsync_DocumentWithoutAnEngagement_IsReturnedAsPersistedWithoutReadingASnapshot()
+    {
+        var steps = new List<TestRunNodeStep> { new() { NodeId = "gen-scope", Status = "completed", NodeType = "agent_task", ArtifactKey = "scope" } }.AsReadOnly();
+        _store.Setup(s => s.GetTestRunAsync("0199f0c2", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(RunDoc(testRunId: "0199f0c2", engagementId: null, nodeSteps: steps));
+
+        var result = await _service.ReconcileAsync("0199f0c2", CancellationToken.None);
+
+        Assert.Equal(TestRunStatus.Running, result!.Status);
+        Assert.Single(result.NodeSteps);
+        _executor.Verify(e => e.GetSnapshotAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     // ── StartAsync (S9.85: persist running, return immediately) ──
@@ -493,9 +547,10 @@ public sealed class TestRunServiceTests
     public async Task GetResultAsync_EnrichesStepsThatHaveArtifactKeysWithStoredContent()
     {
         // S9.53: TestRunDocument persists metadata only; the node's real output is fetched at
-        // read time from the section store, keyed by the run's engagement id (testRunId before "::").
-        const string testRunId = "SANDBOX-abc123::wf-test";
-        var doc = RunDoc(testRunId: testRunId, status: TestRunStatus.Completed, success: true, completedAtUtc: DateTime.UtcNow, nodeSteps:
+        // read time from the section store, keyed by the run's engagement id — a field on the
+        // document since ADR-PA20 (it used to be parsed off the test-run id).
+        const string testRunId = "0199f0c2e4a17b3c9d5e6f708192a3b4";
+        var doc = RunDoc(testRunId: testRunId, engagementId: "SANDBOX-abc123", status: TestRunStatus.Completed, success: true, completedAtUtc: DateTime.UtcNow, nodeSteps:
         [
             new TestRunNodeStep { NodeId = "n-scope", Status = "completed", ArtifactKey = "scope" },
             new TestRunNodeStep { NodeId = "n-gate", Status = "completed", ArtifactKey = null },
@@ -658,21 +713,25 @@ public sealed class TestRunServiceTests
         Assert.Null(persisted()!.GateKind);
     }
 
+    /// <summary>
+    /// ADR-PA20: the test-run id is an opaque run token, so the snapshot is read by the engagement
+    /// recorded on the document — the id is never parsed. (This replaced a test that pinned the
+    /// parser's "no separator → whole string" fallback, which is exactly what mis-partitioned every
+    /// sandbox read once ids stopped carrying the engagement.)
+    /// </summary>
     [Fact]
-    public async Task DecideGateAsync_MalformedTestRunIdWithoutSeparator_StillResolves()
+    public async Task DecideGateAsync_OpaqueTestRunId_ReadsTheSnapshotByTheDocumentsEngagement()
     {
-        // Defensive: ExtractEngagementId falls back to the whole string when "::" is absent
-        // (a malformed testRunId shouldn't crash the endpoint, even though every real one
-        // minted by ITestRunExecutor.StartAsync always contains "::").
-        var doc = RunDoc(testRunId: "malformed-id", gateMode: "Interactive", status: TestRunStatus.PausedAtGate, pausedAtGateId: "gate-1");
-        _store.Setup(s => s.GetTestRunAsync("malformed-id", It.IsAny<CancellationToken>())).ReturnsAsync(doc);
-        _executor.Setup(e => e.GetSnapshotAsync("malformed-id", "malformed-id", It.IsAny<CancellationToken>()))
+        var doc = RunDoc(testRunId: "0199f0c2e4a17b3c9d5e6f708192a3b4", engagementId: "SANDBOX-abc", gateMode: "Interactive", status: TestRunStatus.PausedAtGate, pausedAtGateId: "gate-1");
+        _store.Setup(s => s.GetTestRunAsync(doc.TestRunId, It.IsAny<CancellationToken>())).ReturnsAsync(doc);
+        _executor.Setup(e => e.GetSnapshotAsync(doc.TestRunId, "SANDBOX-abc", It.IsAny<CancellationToken>()))
             .ReturnsAsync(Snapshot(ExecutionStatus.Completed));
         SetupPersistCapture(out var persisted);
 
-        await _service.DecideGateAsync("malformed-id", "gate-1", DecisionKind.Approve, null, CancellationToken.None);
+        await _service.DecideGateAsync(doc.TestRunId, "gate-1", DecisionKind.Approve, null, CancellationToken.None);
 
         Assert.True(persisted()!.Success);
+        _executor.Verify(e => e.GetSnapshotAsync(doc.TestRunId, "SANDBOX-abc", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     // ── Pure state helpers ──

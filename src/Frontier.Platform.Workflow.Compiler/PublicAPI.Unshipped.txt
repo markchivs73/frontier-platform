@@ -1703,3 +1703,5 @@ Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.ExecutionMo
 Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.WorkflowCatalogueSummary(string! WorkflowId, string! Name, string? EngagementType, string! Status, System.DateTime? LastPublishedAt, string? LastPublishedBy, string? ExecutionMode = null) -> void
 *REMOVED*Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.Deconstruct(out string! WorkflowId, out string! Name, out string? EngagementType, out string! Status, out System.DateTime? LastPublishedAt, out string? LastPublishedBy) -> void
 *REMOVED*Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.WorkflowCatalogueSummary(string! WorkflowId, string! Name, string? EngagementType, string! Status, System.DateTime? LastPublishedAt, string? LastPublishedBy) -> void
+Frontier.Platform.Workflow.Compiler.Storage.TestRunDocument.EngagementId.get -> string?
+Frontier.Platform.Workflow.Compiler.Storage.TestRunDocument.EngagementId.init -> void
