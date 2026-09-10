@@ -73,7 +73,7 @@ public sealed class TestRunService : ITestRunService
             Success: false, NodeSteps: [], ErrorMessage: null,
             PausedAtGateId: null, GateKind: null, GateDecisions: [], FailureNodeId: null);
         await CreateRunDocumentAsync(
-            workflowId, testRunId, draft.DraftRevision, request.GateMode, now,
+            workflowId, testRunId, engagementId, draft.DraftRevision, request.GateMode, now,
             TestRunStatus.Running, runningOutcome, completedAtUtc: null, findings, ct);
 
         return new TestRunHandle { TestRunId = testRunId, WorkflowId = workflowId, StartedAtUtc = now };
@@ -100,7 +100,12 @@ public sealed class TestRunService : ITestRunService
         if (IsTerminalDocument(doc))
             return await ToResultAsync(doc, ct);
 
-        var snapshot = await _executor.GetSnapshotAsync(doc.TestRunId, ExtractEngagementId(doc.TestRunId), ct);
+        // ADR-PA20: the engagement is a field on the document, never read out of the run id. A
+        // document from before the field cannot be reconciled and is returned as it was persisted.
+        if (doc.EngagementId is not { } engagementId)
+            return await ToResultAsync(doc, ct);
+
+        var snapshot = await _executor.GetSnapshotAsync(doc.TestRunId, engagementId, ct);
         if (snapshot is null)
             return await ToResultAsync(doc, ct); // started but not yet checkpointed — still running
 
@@ -181,9 +186,6 @@ public sealed class TestRunService : ITestRunService
         || doc.PausedAtGateId != outcome.PausedAtGateId
         || doc.GateDecisions.Count != outcome.GateDecisions.Count;
 
-    private static string ExtractEngagementId(string executionId) =>
-        executionId.Contains("::", StringComparison.Ordinal) ? executionId[..executionId.IndexOf("::", StringComparison.Ordinal)] : executionId;
-
     /// <summary>Resolves the paused gate's <c>GateKind</c> from the draft's definition (S9.38d) — the snapshot alone doesn't carry it. Only called from the gate-pause branch, where <c>PausedAtGateId</c> is always set.</summary>
     private async Task<TestRunOutcome> WithGateKindAsync(TestRunOutcome outcome, string workflowId, CancellationToken ct)
     {
@@ -207,7 +209,7 @@ public sealed class TestRunService : ITestRunService
             DraftRevision = doc.DraftRevision,
             Success = false,
             Status = TestRunStatus.Running,
-            NodeSteps = await EnrichWithArtifactContentAsync(doc.TestRunId, outcome.NodeSteps, ct),
+            NodeSteps = await EnrichWithArtifactContentAsync(doc.TestRunId, doc.EngagementId, outcome.NodeSteps, ct),
             FailureNodeId = null,
             ValidatorFindings = doc.ValidatorFindings,
             CostMetrics = ToCostMetrics(doc.CostMetrics),
@@ -223,16 +225,19 @@ public sealed class TestRunService : ITestRunService
         string workflowId, string draftRevision, TestRunGateMode gateMode, DateTime now,
         IReadOnlyList<ValidationFinding> findings, CancellationToken ct)
     {
-        var blockedId = $"SANDBOX-{Guid.NewGuid():N}::{workflowId}";
+        // Never scheduled, so this is not an instance id — a synthetic key the run document and
+        // the A4 list address the blocked run by. Its engagement is recorded as a field like any run's.
+        var engagementId = $"SANDBOX-{Guid.NewGuid():N}";
+        var blockedId = $"{engagementId}::{workflowId}";
         var outcome = new TestRunOutcome(
             Success: false, NodeSteps: [], ErrorMessage: "Pure-tier validation failed",
             PausedAtGateId: null, GateKind: null, GateDecisions: [], FailureNodeId: null);
-        await CreateRunDocumentAsync(workflowId, blockedId, draftRevision, gateMode, now, TestRunStatus.Failed, outcome, now, findings, ct);
+        await CreateRunDocumentAsync(workflowId, blockedId, engagementId, draftRevision, gateMode, now, TestRunStatus.Failed, outcome, now, findings, ct);
         return new TestRunHandle { TestRunId = blockedId, WorkflowId = workflowId, StartedAtUtc = now };
     }
 
     private async Task<TestRunDocument> CreateRunDocumentAsync(
-        string workflowId, string testRunId, string draftRevision, TestRunGateMode gateMode,
+        string workflowId, string testRunId, string engagementId, string draftRevision, TestRunGateMode gateMode,
         DateTime startedAtUtc, string status, TestRunOutcome outcome, DateTime? completedAtUtc,
         IReadOnlyList<ValidationFinding> findings, CancellationToken ct)
     {
@@ -245,6 +250,7 @@ public sealed class TestRunService : ITestRunService
             Id = $"{workflowId}:testrun:{Guid.NewGuid()}",
             WorkflowId = workflowId,
             TestRunId = testRunId,
+            EngagementId = engagementId,
             DraftRevision = draftRevision,
             StartedAtUtc = startedAtUtc,
             CompletedAtUtc = completedAtUtc,
@@ -320,7 +326,7 @@ public sealed class TestRunService : ITestRunService
         // Legacy fallback mirrors the API list projection exactly: no status + no CompletedAtUtc
         // reads as running (e.g. a doc orphaned before its first checkpoint), else Success decides.
         Status = doc.Status ?? (doc.CompletedAtUtc is null ? TestRunStatus.Running : doc.Success ? TestRunStatus.Completed : TestRunStatus.Failed),
-        NodeSteps = await EnrichWithArtifactContentAsync(doc.TestRunId, doc.NodeSteps, ct),
+        NodeSteps = await EnrichWithArtifactContentAsync(doc.TestRunId, doc.EngagementId, doc.NodeSteps, ct),
         FailureNodeId = doc.FailureNodeId,
         ValidatorFindings = doc.ValidatorFindings,
         CostMetrics = ToCostMetrics(doc.CostMetrics),
@@ -335,13 +341,17 @@ public sealed class TestRunService : ITestRunService
     /// S9.53: fills each step's <see cref="TestRunNodeStep.OutputContent"/> from the section store
     /// — the step metadata was persisted at run time, the real output is read back live (within
     /// the sandbox TTL window). A step with no section, or whose content has expired, keeps null
-    /// content and the UI renders "no output". The execution/engagement ids come from the
-    /// <c>SANDBOX-{runId}::{workflowId}</c> test-run id (the section store's own keys).
+    /// content and the UI renders "no output". The section store is keyed by execution and
+    /// engagement id; both are fields on the run document (ADR-PA20 — the test-run id is an opaque
+    /// run token and no longer spells the engagement). A document with no engagement recorded
+    /// (pre-field) gets its steps back unenriched.
     /// </summary>
     private async Task<IReadOnlyList<TestRunNodeStep>> EnrichWithArtifactContentAsync(
-        string testRunId, IReadOnlyList<TestRunNodeStep> steps, CancellationToken ct)
+        string testRunId, string? engagementId, IReadOnlyList<TestRunNodeStep> steps, CancellationToken ct)
     {
-        var engagementId = testRunId.Split("::", 2)[0];
+        if (engagementId is null)
+            return steps;
+
         var enriched = new List<TestRunNodeStep>(steps.Count);
         foreach (var step in steps)
         {

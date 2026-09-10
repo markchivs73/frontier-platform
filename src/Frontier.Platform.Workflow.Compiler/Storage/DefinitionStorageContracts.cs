@@ -214,6 +214,12 @@ public sealed record TestRunDocument
     public required string WorkflowId { get; init; }
     [JsonPropertyName("testRunId")]
     public required string TestRunId { get; init; }
+    // ADR-PA20 (amended): the per-run SANDBOX- engagement the run executes on. It used to be parsed
+    // off the test-run id, which is now an opaque run token and spells nothing. Optional: a document
+    // written before this field has no engagement and is returned as persisted, never reconciled
+    // (its 7-day TTL makes migration moot).
+    [JsonPropertyName("engagementId")]
+    public string? EngagementId { get; init; }
     [JsonPropertyName("draftRevision")]
     public required string DraftRevision { get; init; }
     [JsonPropertyName("startedAtUtc")]
