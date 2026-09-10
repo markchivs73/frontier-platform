@@ -154,7 +154,7 @@ public sealed class TestRunServiceTests
         Assert.Equal(TestRunStatus.Failed, persisted()!.Status); // blocked = terminal from birth
         Assert.NotNull(persisted()!.CompletedAtUtc);
         Assert.Equal("Pure-tier validation failed", persisted()!.ErrorMessage);
-        _executor.Verify(e => e.StartAsync(It.IsAny<string>(), It.IsAny<WorkflowDefinition>(), It.IsAny<CancellationToken>()), Times.Never);
+        _executor.Verify(e => e.StartAsync(It.IsAny<string>(), It.IsAny<WorkflowDefinition>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
 
         // S9.29g (doc 13 §5 advisory evidence): the real blocking findings must attach, not a
         // hardcoded empty list — this is the exact reason the run was blocked.
@@ -172,7 +172,7 @@ public sealed class TestRunServiceTests
     {
         _store.Setup(s => s.GetDraftAsync("wf-test", It.IsAny<CancellationToken>())).ReturnsAsync(Draft());
         _compiler.Setup(c => c.ValidateStructural(It.IsAny<WorkflowDefinition>())).Returns([]);
-        _executor.Setup(e => e.StartAsync(It.IsAny<string>(), It.IsAny<WorkflowDefinition>(), It.IsAny<CancellationToken>()))
+        _executor.Setup(e => e.StartAsync(It.IsAny<string>(), It.IsAny<WorkflowDefinition>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("SANDBOX-abc::wf-test");
         SetupPersistCapture(out var persisted);
 
@@ -189,6 +189,33 @@ public sealed class TestRunServiceTests
         _executor.Verify(e => e.GetSnapshotAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    /// <summary>ADR-PA17 amendment: the caller's sample input reaches the executor as canonical dynamic-context JSON.</summary>
+    [Fact]
+    public async Task StartAsync_SampleInputsSupplied_HandsThemToTheExecutorAsDynamicContext()
+    {
+        _store.Setup(st => st.GetDraftAsync("wf-test", It.IsAny<CancellationToken>())).ReturnsAsync(Draft());
+        _compiler.Setup(c => c.ValidateStructural(It.IsAny<WorkflowDefinition>())).Returns([]);
+        _executor.Setup(e => e.StartAsync(It.IsAny<string>(), It.IsAny<WorkflowDefinition>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())).ReturnsAsync("SANDBOX-abc::wf-test");
+        SetupPersistCapture(out _);
+
+        await _service.StartAsync("wf-test", new TestRunRequest { SampleInputs = new { engagement_brief = "Draft a scope." }, GateMode = TestRunGateMode.AutoApprove }, CancellationToken.None);
+
+        _executor.Verify(e => e.StartAsync(It.Is<string>(id => id.StartsWith("SANDBOX-", StringComparison.Ordinal)), It.IsAny<WorkflowDefinition>(), "{\"engagement_brief\":\"Draft a scope.\"}", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task StartAsync_EmptySampleInputs_HandsNullToTheExecutor()
+    {
+        _store.Setup(st => st.GetDraftAsync("wf-test", It.IsAny<CancellationToken>())).ReturnsAsync(Draft());
+        _compiler.Setup(c => c.ValidateStructural(It.IsAny<WorkflowDefinition>())).Returns([]);
+        _executor.Setup(e => e.StartAsync(It.IsAny<string>(), It.IsAny<WorkflowDefinition>(), It.IsAny<string?>(), It.IsAny<CancellationToken>())).ReturnsAsync("SANDBOX-abc::wf-test");
+        SetupPersistCapture(out _);
+
+        await _service.StartAsync("wf-test", new TestRunRequest { SampleInputs = new { }, GateMode = TestRunGateMode.AutoApprove }, CancellationToken.None);
+
+        _executor.Verify(e => e.StartAsync(It.IsAny<string>(), It.IsAny<WorkflowDefinition>(), null, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     [Fact]
     public async Task StartAsync_StructuralValidationWarnings_PersistsFindingsWithoutBlocking()
     {
@@ -197,7 +224,7 @@ public sealed class TestRunServiceTests
         _store.Setup(s => s.GetDraftAsync("wf-test", It.IsAny<CancellationToken>())).ReturnsAsync(Draft());
         _compiler.Setup(c => c.ValidateStructural(It.IsAny<WorkflowDefinition>()))
             .Returns([new ValidationFinding("naming", ValidationSeverity.Warning, "consider a clearer name")]);
-        _executor.Setup(e => e.StartAsync(It.IsAny<string>(), It.IsAny<WorkflowDefinition>(), It.IsAny<CancellationToken>()))
+        _executor.Setup(e => e.StartAsync(It.IsAny<string>(), It.IsAny<WorkflowDefinition>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("SANDBOX-abc::wf-test");
         SetupPersistCapture(out var persisted);
 
@@ -206,7 +233,7 @@ public sealed class TestRunServiceTests
         Assert.Equal(TestRunStatus.Running, persisted()!.Status);
         var finding = Assert.Single(persisted()!.ValidatorFindings);
         Assert.Equal("naming", finding.RuleId);
-        _executor.Verify(e => e.StartAsync(It.IsAny<string>(), It.IsAny<WorkflowDefinition>(), It.IsAny<CancellationToken>()), Times.Once);
+        _executor.Verify(e => e.StartAsync(It.IsAny<string>(), It.IsAny<WorkflowDefinition>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     // ── ReconcileAsync (S9.85: the shared reconciler) ──

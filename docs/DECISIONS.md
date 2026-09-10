@@ -762,3 +762,13 @@ and that the profile's own writes still lead with the discriminator. Pinning the
 the consumer's concern and is about CI determinism, not correctness — after this change the
 platform reads correctly against any build.
 
+### ADR-PA17 — amended 2026-09-10: the sandbox's sample input reaches the executor as context
+
+`TestRunRequest.SampleInputs` was accepted by `TestRunService.StartAsync` and discarded before the
+executor was called — the consumer's S13.50 shape one layer over, found as S13.61's second finding.
+`ITestRunExecutor.StartAsync` now takes the input as what ADR-PA17 already says it is: the sandbox
+engagement's dynamic context, canonical JSON, or `null` when nothing was supplied (an empty object
+is "nothing"). The executor writes it before scheduling; what a run with no context gets is the
+implementation's call — the consumer seeds a default brief when the entry node needs one.
+Breaking for implementors of `ITestRunExecutor`; the consumer's adapter is the only one.
+

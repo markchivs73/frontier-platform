@@ -1695,3 +1695,5 @@ virtual Frontier.Platform.Workflow.Compiler.SaveDraftResponse.PrintMembers(Syste
 virtual Frontier.Platform.Workflow.Compiler.Storage.SaveDraftResult.EqualityContract.get -> System.Type!
 virtual Frontier.Platform.Workflow.Compiler.Storage.SaveDraftResult.Equals(Frontier.Platform.Workflow.Compiler.Storage.SaveDraftResult? other) -> bool
 virtual Frontier.Platform.Workflow.Compiler.Storage.SaveDraftResult.PrintMembers(System.Text.StringBuilder! builder) -> bool
+Frontier.Platform.Workflow.Compiler.ITestRunExecutor.StartAsync(string! engagementId, Frontier.Platform.Workflow.Model.WorkflowDefinition! definition, string? dynamicContextJson, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<string!>!
+*REMOVED*Frontier.Platform.Workflow.Compiler.ITestRunExecutor.StartAsync(string! engagementId, Frontier.Platform.Workflow.Model.WorkflowDefinition! definition, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<string!>!
