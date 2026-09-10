@@ -117,7 +117,7 @@ public sealed class McpToolInvocationPipelineTests
 
     private sealed class StubCatalog(AITool? tool) : IMcpToolCatalog
     {
-        public Task<IReadOnlyList<AITool>> ResolveAsync(IReadOnlyList<string> toolRefs, string executionId, CancellationToken ct) =>
+        public Task<IReadOnlyList<AITool>> ResolveAsync(IReadOnlyList<string> toolRefs, string engagementId, CancellationToken ct) =>
             Task.FromResult<IReadOnlyList<AITool>>(tool is null ? [] : [tool]);
     }
 

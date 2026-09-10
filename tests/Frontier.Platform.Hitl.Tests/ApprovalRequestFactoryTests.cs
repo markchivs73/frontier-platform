@@ -61,7 +61,8 @@ public sealed class ApprovalRequestFactoryTests
     {
         // S9.94: a sandbox test-run gate must self-expire so a completed/cleared run leaves no
         // orphaned pending request (and it never appears in the human inbox — see ApprovalsController).
-        var sandbox = HitlFixtures.GateOpenRequest() with { ExecutionId = "SANDBOX-abc123::wf-chain" };
+        // ADR-PA20: the execution id is an opaque run token; the sandbox is known by its engagement.
+        var sandbox = HitlFixtures.GateOpenRequest() with { EngagementId = "SANDBOX-abc123", ExecutionId = "0199f0c2e4a17b3c9d5e6f708192a3b4" };
 
         var request = ApprovalRequestFactory.Open(sandbox);
 

@@ -6,8 +6,8 @@ namespace Frontier.Platform.Workflow.Orchestration;
 /// <summary>
 /// Input to <see cref="GraphOrchestrator"/> (doc 00 §3.1, ADR-2) and <see cref="DispatcherOrchestrator"/> (S6.10, doc 00 §4.4).
 /// The pinned definition rides inline from the Host factory; the orchestrator body never fetches it. For dispatcher-mode children,
-/// <see cref="WorkItemId"/> is supplied by the parent dispatcher router and forms part of the child's instance id
-/// (<c>{engagementId}::{workflowId}::{workItemId}</c>, doc 16 §4, ADR-E8).
+/// <see cref="WorkItemId"/> is supplied by the parent dispatcher router and identifies the child as a field
+/// (doc 16 §4, ADR-E8) — an instance id is an opaque run token and carries none of this (ADR-PA20).
 /// </summary>
 public sealed record GraphOrchestratorInput
 {
@@ -24,7 +24,7 @@ public sealed record GraphOrchestratorInput
 
     /// <summary>
     /// For dispatcher-mode children: the work item ID that uniquely identifies this child execution within the dispatcher
-    /// (forms the last component of child instanceId: <c>{engagementId}::{workflowId}::{workItemId}</c>, S6.10, ADR-E8).
+    /// (the child's identity as a field, S6.10, ADR-E8 — not a component of its instance id, ADR-PA20).
     /// Null for OneShot mode (top-level executions started by the factory).
     /// </summary>
     [JsonPropertyOrder(2)]

@@ -12,8 +12,8 @@ namespace Frontier.Platform.Hitl;
 /// </summary>
 public static class ApprovalRequestFactory
 {
-    /// <summary>S9.94: prefix of sandbox test-run execution ids (<c>SANDBOX-{guid}::…</c>, S9.38a).</summary>
-    private const string SandboxExecutionPrefix = "SANDBOX-";
+    /// <summary>S9.94: prefix of the per-run <c>SANDBOX-{guid}</c> engagement a sandbox test-run is minted on (S9.38a). Read from the engagement id — since ADR-PA20 an execution id is an opaque run token and spells nothing.</summary>
+    private const string SandboxEngagementPrefix = "SANDBOX-";
 
     /// <summary>S9.94: sandbox approvals self-expire on the same 7-day window as the test-run docs
     /// (S9.38e) so a completed/cleared sandbox run leaves no orphaned pending request behind.</summary>
@@ -43,7 +43,7 @@ public static class ApprovalRequestFactory
             Status = ApprovalRequestStatus.Pending,
             RequestedAtUtc = request.RequestedAtUtc,
             EscalateAtUtc = request.TimeoutMinutes > 0 ? request.RequestedAtUtc.AddMinutes(request.TimeoutMinutes) : null,
-            Ttl = request.ExecutionId.StartsWith(SandboxExecutionPrefix, StringComparison.Ordinal)
+            Ttl = request.EngagementId.StartsWith(SandboxEngagementPrefix, StringComparison.Ordinal)
                 ? SandboxRetentionSeconds
                 : -1,
         };

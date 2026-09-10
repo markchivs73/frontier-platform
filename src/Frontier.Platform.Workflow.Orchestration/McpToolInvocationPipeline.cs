@@ -40,7 +40,7 @@ internal sealed class McpToolInvocationPipeline : IMcpToolInvocationPipeline
     {
         ArgumentNullException.ThrowIfNull(input);
 
-        var tools = await toolCatalog.ResolveAsync([input.ToolRef], input.ExecutionId, ct).ConfigureAwait(false);
+        var tools = await toolCatalog.ResolveAsync([input.ToolRef], input.EngagementId, ct).ConfigureAwait(false);
         if (tools is not [AIFunction function])
         {
             throw new InvalidOperationException($"Tool ref '{input.ToolRef}' did not resolve to an invocable tool.");

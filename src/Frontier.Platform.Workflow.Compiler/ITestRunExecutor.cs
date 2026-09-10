@@ -17,7 +17,7 @@ public interface ITestRunExecutor
     /// <summary>
     /// Starts a real <c>GraphOrchestrator</c> instance for <paramref name="definition"/>, which
     /// rides inline as orchestration input exactly as ADR-2 already supports for unpublished
-    /// definitions. Returns the minted <c>{engagementId}::{workflowId}</c> instance id.
+    /// definitions. Returns the minted instance id — an opaque run token (ADR-PA20).
     /// <para>
     /// <paramref name="dynamicContextJson"/> is the caller's <c>sampleInputs</c> (doc 13 §5) as what
     /// it actually is: the sandbox engagement's <b>dynamic context</b>, canonical JSON, to be written

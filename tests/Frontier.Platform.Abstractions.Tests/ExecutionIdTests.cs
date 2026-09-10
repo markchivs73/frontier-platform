@@ -3,15 +3,12 @@ using Frontier.Platform.Abstractions;
 namespace Frontier.Platform.Abstractions.Tests;
 
 /// <summary>
-/// Invariant 3's format, tested once. This suite consolidates two identical copies that had grown
+/// Invariant 3's two keys, tested once. This suite consolidates two identical copies that had grown
 /// in <c>Audit.Tests</c> and <c>Workflow.Orchestration.Tests</c> — the same split that produced the
 /// duplicate helpers they covered.
 /// </summary>
 public sealed class ExecutionIdTests
 {
-    /// <summary>The characters Cosmos rejects in an item <c>id</c>.</summary>
-    private static readonly string[] CosmosForbiddenIdCharacters = ["/", "\\", "?", "#"];
-
     [Fact]
     public void Mint_JoinsTheSegmentsWithTheSeparator()
     {
@@ -31,8 +28,8 @@ public sealed class ExecutionIdTests
     }
 
     /// <summary>
-    /// A workflow id containing the separator would move the boundary the id is read back from,
-    /// producing something that still looks well-formed and parses to different values.
+    /// A workflow id containing the separator would move the boundary of the affinity key, so two
+    /// different engagement-workflows could claim the same key.
     /// </summary>
     [Fact]
     public void Mint_WithAWorkflowIdContainingTheSeparator_Throws()
@@ -55,14 +52,9 @@ public sealed class ExecutionIdTests
 
     /// <summary>
     /// ADR-PA15 removed <c>Parse</c>/<c>ParseOrNull</c>: an execution id is an addressing key that
-    /// is written and never read. The tests that stood here pinned the reading — ADR-PA12's
-    /// "the workflow is the final segment" rule, and the deliberately-ambiguous dispatcher child
-    /// id — and went with the readers they protected.
-    /// <para>
-    /// What replaces them is the guarantee that still matters: minting is exact for a
-    /// <b>composite</b> engagement id, which is the shape production has and whose absence from
-    /// the old suite is exactly what let ADR-PA12's defect live.
-    /// </para>
+    /// is written and never read. What remains to guarantee is that the affinity key is exact for a
+    /// <b>composite</b> engagement id, which is the shape production has and whose absence from the
+    /// old suite is exactly what let ADR-PA12's defect live.
     /// </summary>
     [Theory]
     [InlineData("E2E::Acme::HQ", "wf-sow", "E2E::Acme::HQ::wf-sow")]
@@ -74,73 +66,56 @@ public sealed class ExecutionIdTests
     }
 
     /// <summary>
-    /// ADR-EX1: the run token is what lets a second run of the same engagement-workflow exist at
-    /// all — without it the id collides with its predecessor's history, snapshot document and gate
-    /// events. Minted against a composite engagement id, since that is the production shape.
+    /// ADR-PA20: the instance id is the run token and nothing else. The affinity key does not ride
+    /// in it — that is what made the id overflow DTS's cap for any caller-shaped pair of ids.
     /// </summary>
-    [Theory]
-    [InlineData("E2E::Acme::Admin-Website", "wf-1", "0199f0c2", "E2E::Acme::Admin-Website::wf-1~0199f0c2")]
-    [InlineData("eng-1", "wf-1", "0199f0c3", "eng-1::wf-1~0199f0c3")]
-    public void MintRun_AppendsTheRunTokenAfterTheAffinityKey(string engagementId, string workflowId, string runToken, string expected)
+    [Fact]
+    public void ForRun_IsTheTokenItself()
     {
-        Assert.Equal(expected, ExecutionId.MintRun(engagementId, workflowId, runToken));
+        Assert.Equal("0199f0c2e4a17b3c9d5e6f708192a3b4", ExecutionId.ForRun("0199f0c2e4a17b3c9d5e6f708192a3b4"));
+    }
+
+    [Fact]
+    public void ForRun_DoesNotContainTheAffinityKey()
+    {
+        var instanceId = ExecutionId.ForRun("0199f0c3");
+
+        Assert.DoesNotContain(ExecutionId.Separator, instanceId, StringComparison.Ordinal);
+        Assert.DoesNotContain(ExecutionId.Mint("eng-1", "wf-1"), instanceId, StringComparison.Ordinal);
     }
 
     /// <summary>
-    /// The two-argument mint stays the <b>affinity key</b> — the derivable value the claim is taken
-    /// on. `MintRun` must extend it rather than replace it, or one live run per engagement-workflow
-    /// stops being enforceable.
+    /// The limit that found the defect, pinned: a 32-character token is comfortably inside it, a
+    /// 101-character one is refused here rather than by the scheduler's gRPC client at start.
     /// </summary>
     [Fact]
-    public void MintRun_ExtendsTheAffinityKeyRatherThanReplacingIt()
+    public void ForRun_TokenLongerThanTheSchedulerAllows_Throws()
     {
-        var affinityKey = ExecutionId.Mint("E2E::Acme::HQ", "wf-sow");
+        var tooLong = new string('a', ExecutionId.MaxInstanceIdLength + 1);
 
-        var runId = ExecutionId.MintRun("E2E::Acme::HQ", "wf-sow", "0199f0c4");
+        var ex = Assert.Throws<ArgumentException>(() => ExecutionId.ForRun(tooLong));
 
-        Assert.StartsWith(affinityKey + ExecutionId.RunSeparator, runId, StringComparison.Ordinal);
+        Assert.Equal("runToken", ex.ParamName);
+        Assert.Contains("100", ex.Message, StringComparison.Ordinal);
+        Assert.Equal(ExecutionId.MaxInstanceIdLength, ExecutionId.ForRun(new string('a', ExecutionId.MaxInstanceIdLength)).Length);
     }
 
-    [Fact]
-    public void MintRun_TwoRuns_ProduceDistinctIds()
-    {
-        var first = ExecutionId.MintRun("eng-1", "wf-1", "0199f0c5");
-        var second = ExecutionId.MintRun("eng-1", "wf-1", "0199f0c6");
-
-        Assert.NotEqual(first, second);
-    }
-
+    /// <summary>A token that reads as an affinity key would blur the one boundary that still matters.</summary>
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
-    [InlineData("run::2")]
-    [InlineData("run~2")]
-    public void MintRun_TokenThatWouldBlurTheBoundary_Throws(string runToken)
+    [InlineData("eng-1::wf-1")]
+    public void ForRun_TokenThatIsNotASingleSegment_Throws(string runToken)
     {
-        var ex = Assert.Throws<ArgumentException>(() => ExecutionId.MintRun("eng-1", "wf-1", runToken));
+        var ex = Assert.Throws<ArgumentException>(() => ExecutionId.ForRun(runToken));
 
         Assert.Equal("runToken", ex.ParamName);
     }
 
     [Fact]
-    public void RunSeparator_IsNotTheSegmentSeparator()
+    public void MaxInstanceIdLength_IsTheSchedulersCap()
     {
-        // The run is not another level of the engagement hierarchy — S13.40's child-id ambiguity is
-        // exactly what sharing one mark for both would recreate.
-        Assert.NotEqual(ExecutionId.Separator, ExecutionId.RunSeparator);
-    }
-
-    /// <summary>
-    /// The separator has to survive the two places an execution id is carried verbatim: a Cosmos
-    /// item id (which forbids <c>/ \ ? #</c>) and a URL path segment (where <c>#</c> starts a
-    /// fragment). Pinned as a test because the first choice failed both and neither store nor route
-    /// would have reported it as a separator problem.
-    /// </summary>
-    [Fact]
-    public void RunSeparator_IsLegalInACosmosIdAndAUrlPathSegment()
-    {
-        Assert.DoesNotContain(ExecutionId.RunSeparator, CosmosForbiddenIdCharacters);
-        Assert.Equal(ExecutionId.RunSeparator, Uri.EscapeDataString(ExecutionId.RunSeparator));
+        Assert.Equal(100, ExecutionId.MaxInstanceIdLength);
     }
 
     [Fact]
