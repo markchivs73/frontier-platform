@@ -373,6 +373,37 @@ public sealed class DefinitionCompilerPhaseC_IntegrationTests : IAsyncLifetime, 
         Assert.IsType<AgentTaskNode>(Assert.Single(doc.Definition.Nodes));
     }
 
+    /// <summary>A definition of a given engagement type and mode, for the catalogue tests.</summary>
+    private static WorkflowDefinition DefinitionOf(string workflowId, string engagementType, ExecutionMode mode) => new()
+    {
+        WorkflowId = workflowId, DefinitionVersion = 1, EngagementType = engagementType, Name = workflowId, Nodes = [], Edges = [], DefinitionHash = "", Mode = mode,
+    };
+
+    /// <summary>
+    /// Consumer S13.67: <c>ListWorkflowsAsync</c> took an <c>engagementType</c> and ignored it, and the summary
+    /// hard-coded <c>EngagementType</c> to null — <c>?engagement_type=</c> returned every workflow. The
+    /// summary now carries type and mode from the current published version, and the filter applies.
+    /// </summary>
+    [Fact]
+    public async Task ListWorkflowsAsync_FiltersByEngagementType_AndCarriesTypeAndModeFromThePublishedVersion()
+    {
+        ArgumentNullException.ThrowIfNull(_store);
+        ArgumentNullException.ThrowIfNull(_container);
+        await _container.UpsertItemAsync(VersionDoc("wf-cat-a", 1, "published", DefinitionOf("wf-cat-a", "alpha", ExecutionMode.OneShot)), new PartitionKey("wf-cat-a"), cancellationToken: CancellationToken.None);
+        await _container.UpsertItemAsync(VersionDoc("wf-cat-b", 1, "published", DefinitionOf("wf-cat-b", "beta", ExecutionMode.Dispatcher)), new PartitionKey("wf-cat-b"), cancellationToken: CancellationToken.None);
+
+        var alpha = await _store.ListWorkflowsAsync("alpha", null, null, 0, 50, CancellationToken.None);
+        var all = await _store.ListWorkflowsAsync(null, null, null, 0, 50, CancellationToken.None);
+
+        var a = Assert.Single(alpha.Items, i => i.WorkflowId.StartsWith("wf-cat-", StringComparison.Ordinal));
+        Assert.Equal("wf-cat-a", a.WorkflowId);
+        Assert.Equal("alpha", a.EngagementType);
+        Assert.Equal("one_shot", a.ExecutionMode);
+        var b = Assert.Single(all.Items, i => i.WorkflowId == "wf-cat-b");
+        Assert.Equal("beta", b.EngagementType);
+        Assert.Equal("dispatcher", b.ExecutionMode);
+    }
+
     private static DefinitionVersionDocument VersionDoc(string workflowId, int version, string state, WorkflowDefinition definition) => new()
     {
         Id = $"{workflowId}:v{version}",
