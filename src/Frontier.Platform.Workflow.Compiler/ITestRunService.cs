@@ -77,7 +77,7 @@ public static class TestRunStatus
 /// <summary>Request to start a test-run (doc 13 §5 surface).</summary>
 public sealed record TestRunRequest
 {
-    /// <summary>Sample input contract data for the workflow entry node.</summary>
+    /// <summary>The run's dynamic context (doc 13 §5 <c>sampleInputs</c>) — written to the sandbox engagement before scheduling, never the entry node's payload (ADR-PA17). <c>{}</c> means none supplied.</summary>
     public required object SampleInputs { get; init; }
 
     /// <summary>HITL gate behaviour: auto-approve (flow-through) or interactive (designer gates).</summary>

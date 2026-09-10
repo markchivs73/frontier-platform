@@ -18,8 +18,14 @@ public interface ITestRunExecutor
     /// Starts a real <c>GraphOrchestrator</c> instance for <paramref name="definition"/>, which
     /// rides inline as orchestration input exactly as ADR-2 already supports for unpublished
     /// definitions. Returns the minted <c>{engagementId}::{workflowId}</c> instance id.
+    /// <para>
+    /// <paramref name="dynamicContextJson"/> is the caller's <c>sampleInputs</c> (doc 13 §5) as what
+    /// it actually is: the sandbox engagement's <b>dynamic context</b>, canonical JSON, to be written
+    /// before scheduling — never the entry node's payload (ADR-PA17's correction). <see langword="null"/>
+    /// when the caller supplied nothing; the implementation decides what a run with no context gets.
+    /// </para>
     /// </summary>
-    Task<string> StartAsync(string engagementId, WorkflowDefinition definition, CancellationToken ct);
+    Task<string> StartAsync(string engagementId, WorkflowDefinition definition, string? dynamicContextJson, CancellationToken ct);
 
     /// <summary>The latest read-optimised checkpoint for the execution, or <c>null</c> before its first checkpoint.</summary>
     Task<ExecutionSnapshot?> GetSnapshotAsync(string executionId, string engagementId, CancellationToken ct);
