@@ -558,31 +558,11 @@ public sealed class CosmosDefinitionStore : IDefinitionStore
         ArgumentNullException.ThrowIfNull(testRun);
         ValidateWorkflowId(testRun.WorkflowId);
 
-        var doc = new TestRunDocument
-        {
-            Id = testRun.Id,
-            WorkflowId = testRun.WorkflowId,
-            TestRunId = testRun.TestRunId,
-            DraftRevision = testRun.DraftRevision,
-            StartedAtUtc = testRun.StartedAtUtc,
-            CompletedAtUtc = testRun.CompletedAtUtc,
-            GateMode = testRun.GateMode,
-            // S9.89 live-E2E find: this field-by-field rebuild silently dropped the S9.85 Status —
-            // every persisted run read as legacy/terminal-by-CompletedAtUtc and the active-runs
-            // query matched nothing. Mock-store unit tests can't see this class (real-I/O,
-            // coverage-excluded); the live loop caught it.
-            Status = testRun.Status,
-            Success = testRun.Success,
-            NodeSteps = testRun.NodeSteps,
-            FailureNodeId = testRun.FailureNodeId,
-            ValidatorFindings = testRun.ValidatorFindings,
-            CostMetrics = testRun.CostMetrics,
-            GateDecisions = testRun.GateDecisions,
-            ErrorMessage = testRun.ErrorMessage,
-            PausedAtGateId = testRun.PausedAtGateId,
-            GateKind = testRun.GateKind,
-            Ttl = TestRunDocument.SandboxRetentionSeconds,
-        };
+        // The run is persisted as given, TTL aside. A field-by-field rebuild dropped each member it
+        // didn't list: S9.85's Status (S9.89), then ADR-PA20's EngagementId, which left every run
+        // unreconcilable. Mock-store unit tests cannot see this class, so the Cosmos round-trip
+        // integration test pins that nothing is lost.
+        var doc = testRun with { Ttl = TestRunDocument.SandboxRetentionSeconds };
 
         var response = await _container.UpsertItemAsync(doc, new PartitionKey(testRun.WorkflowId), cancellationToken: ct);
         return response.Resource;

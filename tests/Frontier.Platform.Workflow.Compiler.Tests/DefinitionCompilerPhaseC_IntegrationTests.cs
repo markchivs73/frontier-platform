@@ -523,6 +523,35 @@ public sealed class DefinitionCompilerPhaseC_IntegrationTests : IAsyncLifetime, 
         Assert.Equal(2, mine.FailureCount30d);
     }
 
+    /// <summary>
+    /// The store used to rebuild a run field by field, silently dropping whatever it didn't list
+    /// (S9.85's Status, then ADR-PA20's EngagementId — the reconcile then never found the run's
+    /// snapshot). Every optional member is set, so a future one the store loses fails here by name.
+    /// </summary>
+    [Fact]
+    public async Task PersistTestRunAsync_ThenGet_KeepsEveryMember()
+    {
+        ArgumentNullException.ThrowIfNull(_store);
+        const string workflowId = "wf-testrun-rt";
+        var testRunId = Guid.NewGuid().ToString("N");
+
+        await _store.PersistTestRunAsync(new TestRunDocument
+        {
+            Id = $"{workflowId}:testrun:{Guid.NewGuid()}", WorkflowId = workflowId, TestRunId = testRunId,
+            EngagementId = "SANDBOX-abc123", DraftRevision = "rev-1", StartedAtUtc = DateTime.UtcNow.AddMinutes(-1),
+            CompletedAtUtc = DateTime.UtcNow, GateMode = "AutoApprove", Status = "failed", Success = false,
+            NodeSteps = [], FailureNodeId = "node-1", ValidatorFindings = [], CostMetrics = new Dictionary<string, string> { ["total_tokens"] = "1" },
+            GateDecisions = [], ErrorMessage = "boom", PausedAtGateId = "gate-1", GateKind = "approval",
+        }, CancellationToken.None);
+
+        var read = await _store.GetTestRunAsync(testRunId, CancellationToken.None);
+
+        Assert.NotNull(read);
+        Assert.Equal("SANDBOX-abc123", read.EngagementId);
+        var lost = typeof(TestRunDocument).GetProperties().Where(p => p.GetValue(read) is null).Select(p => p.Name);
+        Assert.Empty(lost);
+    }
+
     private sealed class EmptyDesignerToolCatalog : IDesignerToolCatalog
     {
         public Task<IReadOnlyList<DesignerToolDescriptor>> GetToolsAsync(CancellationToken ct) =>
