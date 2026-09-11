@@ -222,6 +222,12 @@ public sealed record TestRunCostMetrics
     /// <summary>Estimated cost (vendor-specific calculation).</summary>
     public required decimal EstimatedCost { get; init; }
 
+    /// <summary>
+    /// The ISO 4217 code of <see cref="EstimatedCost"/> (ADR-PA21). Null when no invocation was
+    /// priced, or for a test-run document written before this member.
+    /// </summary>
+    public string? Currency { get; init; }
+
     /// <summary>Whether the test-run exceeded the Guardrails sandbox budget ceiling.</summary>
     public required bool BudgetExceeded { get; init; }
 }

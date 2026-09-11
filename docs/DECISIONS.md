@@ -924,3 +924,15 @@ prompt-caching reference, read 2026-09-11, gives cache reads at ~0.1× the base 
 figure is the consumer's sandbox test run of a seven-call workflow against the old catalogue. That
 catalogue's own doc comment already called its opus figures "PoC placeholders pending verified provider
 pricing". Decided by the owner 2026-09-11.
+
+### ADR-PA21 — amended 2026-09-11 (same day): the test-run cost summary
+
+The sandbox's cost summary was the one amount the ADR missed. `TestRunCostMetrics.EstimatedCost`
+had no currency beside it, so the consumer's test-run screen could show a number but not say what
+it was in. `TestRunCostMetrics` gains `Currency`, the ISO 4217 code of `EstimatedCost`, and
+`TestRunService` stores it in the run document's cost-metrics dictionary under a `currency` key,
+written only when non-null. The existing keys are unchanged. Unlike the ledger and catalogue
+members above, it is **optional**. It is null when no invocation was priced. Stored test-run
+documents predate it and are not migrated: they expire on their 7-day TTL, and until then they read
+back as currency-less instead of failing. ADR-E15's floor holds: the member is additive, never
+`required`, and rides no DTF activity input or output. Release: patch, v0.23.1.

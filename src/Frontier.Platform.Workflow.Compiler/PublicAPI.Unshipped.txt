@@ -1022,6 +1022,8 @@ Frontier.Platform.Workflow.Compiler.TestRunCostMetrics.CacheReadTokens.get -> in
 Frontier.Platform.Workflow.Compiler.TestRunCostMetrics.CacheReadTokens.init -> void
 Frontier.Platform.Workflow.Compiler.TestRunCostMetrics.CacheWriteTokens.get -> int
 Frontier.Platform.Workflow.Compiler.TestRunCostMetrics.CacheWriteTokens.init -> void
+Frontier.Platform.Workflow.Compiler.TestRunCostMetrics.Currency.get -> string?
+Frontier.Platform.Workflow.Compiler.TestRunCostMetrics.Currency.init -> void
 Frontier.Platform.Workflow.Compiler.TestRunCostMetrics.Equals(Frontier.Platform.Workflow.Compiler.TestRunCostMetrics? other) -> bool
 Frontier.Platform.Workflow.Compiler.TestRunCostMetrics.EstimatedCost.get -> decimal
 Frontier.Platform.Workflow.Compiler.TestRunCostMetrics.EstimatedCost.init -> void

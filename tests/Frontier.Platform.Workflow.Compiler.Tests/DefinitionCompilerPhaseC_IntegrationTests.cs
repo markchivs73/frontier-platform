@@ -540,7 +540,7 @@ public sealed class DefinitionCompilerPhaseC_IntegrationTests : IAsyncLifetime, 
             Id = $"{workflowId}:testrun:{Guid.NewGuid()}", WorkflowId = workflowId, TestRunId = testRunId,
             EngagementId = "SANDBOX-abc123", DraftRevision = "rev-1", StartedAtUtc = DateTime.UtcNow.AddMinutes(-1),
             CompletedAtUtc = DateTime.UtcNow, GateMode = "AutoApprove", Status = "failed", Success = false,
-            NodeSteps = [], FailureNodeId = "node-1", ValidatorFindings = [], CostMetrics = new Dictionary<string, string> { ["total_tokens"] = "1" },
+            NodeSteps = [], FailureNodeId = "node-1", ValidatorFindings = [], CostMetrics = new Dictionary<string, string> { ["total_tokens"] = "1", ["estimated_cost"] = "0.0234", ["currency"] = "USD" },
             GateDecisions = [], ErrorMessage = "boom", PausedAtGateId = "gate-1", GateKind = "approval",
         }, CancellationToken.None);
 
@@ -548,6 +548,8 @@ public sealed class DefinitionCompilerPhaseC_IntegrationTests : IAsyncLifetime, 
 
         Assert.NotNull(read);
         Assert.Equal("SANDBOX-abc123", read.EngagementId);
+        Assert.Equal("USD", read.CostMetrics["currency"]); // ADR-PA21 amendment: the cost summary's currency survives Cosmos
+        Assert.Equal("0.0234", read.CostMetrics["estimated_cost"]);
         var lost = typeof(TestRunDocument).GetProperties().Where(p => p.GetValue(read) is null).Select(p => p.Name);
         Assert.Empty(lost);
     }
