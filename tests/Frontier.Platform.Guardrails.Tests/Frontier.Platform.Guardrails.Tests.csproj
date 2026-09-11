@@ -19,6 +19,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Frontier.Platform.Guardrails\Frontier.Platform.Guardrails.csproj" />
+    <!-- ADR-PA21: BudgetLedgerDocument round-trips through the canonical profile -->
+    <ProjectReference Include="..\..\src\Frontier.Platform.Serialization\Frontier.Platform.Serialization.csproj" />
   </ItemGroup>
 
 </Project>

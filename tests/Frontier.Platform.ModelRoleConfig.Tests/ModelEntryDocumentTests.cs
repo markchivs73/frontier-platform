@@ -23,9 +23,9 @@ public sealed class ModelEntryDocumentTests
 
         Assert.Equal(entry.Provider, document.Provider);
         Assert.Equal(entry.ModelId, document.ModelId);
-        Assert.Equal(entry.InputCostPer1kGbp, document.InputCostPer1kGbp);
-        Assert.Equal(entry.OutputCostPer1kGbp, document.OutputCostPer1kGbp);
-        Assert.Equal(entry.CacheReadCostPer1kGbp, document.CacheReadCostPer1kGbp);
+        Assert.Equal(entry.InputCostPer1k, document.InputCostPer1k);
+        Assert.Equal(entry.OutputCostPer1k, document.OutputCostPer1k);
+        Assert.Equal(entry.CacheReadCostPer1k, document.CacheReadCostPer1k);
         Assert.Equal(entry.ContextWindow, document.ContextWindow);
         Assert.Equal(entry.MaxOutputTokens, document.MaxOutputTokens);
         Assert.Equal(entry.CachingStrategy, document.CachingStrategy);

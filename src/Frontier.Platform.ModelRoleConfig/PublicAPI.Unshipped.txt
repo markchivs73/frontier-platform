@@ -1,0 +1,14 @@
+Frontier.Platform.ModelRoleConfig.ModelEntry.CacheReadCostPer1k.get -> decimal
+Frontier.Platform.ModelRoleConfig.ModelEntry.CacheReadCostPer1k.init -> void
+Frontier.Platform.ModelRoleConfig.ModelEntry.Currency.get -> string!
+Frontier.Platform.ModelRoleConfig.ModelEntry.Currency.init -> void
+Frontier.Platform.ModelRoleConfig.ModelEntry.InputCostPer1k.get -> decimal
+Frontier.Platform.ModelRoleConfig.ModelEntry.InputCostPer1k.init -> void
+Frontier.Platform.ModelRoleConfig.ModelEntry.OutputCostPer1k.get -> decimal
+Frontier.Platform.ModelRoleConfig.ModelEntry.OutputCostPer1k.init -> void
+*REMOVED*Frontier.Platform.ModelRoleConfig.ModelEntry.CacheReadCostPer1kGbp.get -> decimal
+*REMOVED*Frontier.Platform.ModelRoleConfig.ModelEntry.CacheReadCostPer1kGbp.init -> void
+*REMOVED*Frontier.Platform.ModelRoleConfig.ModelEntry.InputCostPer1kGbp.get -> decimal
+*REMOVED*Frontier.Platform.ModelRoleConfig.ModelEntry.InputCostPer1kGbp.init -> void
+*REMOVED*Frontier.Platform.ModelRoleConfig.ModelEntry.OutputCostPer1kGbp.get -> decimal
+*REMOVED*Frontier.Platform.ModelRoleConfig.ModelEntry.OutputCostPer1kGbp.init -> void

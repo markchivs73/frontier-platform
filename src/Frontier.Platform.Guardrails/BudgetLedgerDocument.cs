@@ -37,29 +37,34 @@ public sealed record BudgetLedgerDocument
     [JsonPropertyOrder(4)]
     public long TotalOutputTokens { get; init; }
 
-    /// <summary>Cumulative cost in GBP (scale 2: string decimal per canonical profile).</summary>
-    [JsonPropertyName("total_cost_gbp")]
+    /// <summary>Cumulative cost in <see cref="Currency"/> (scale 2: string decimal per canonical profile).</summary>
+    [JsonPropertyName("total_cost")]
     [JsonPropertyOrder(5)]
-    public decimal TotalCostGbp { get; init; }
+    public decimal TotalCost { get; init; }
+
+    /// <summary>ISO 4217 code of <see cref="TotalCost"/>; usage in any other currency is refused (ADR-PA21).</summary>
+    [JsonPropertyName("currency")]
+    [JsonPropertyOrder(6)]
+    public required string Currency { get; init; }
 
     /// <summary>Count of recorded usage events (invocations) in this engagement.</summary>
     [JsonPropertyName("invocation_count")]
-    [JsonPropertyOrder(6)]
+    [JsonPropertyOrder(7)]
     public int InvocationCount { get; init; }
 
     /// <summary>Per-execution snapshot (id → latest tokens+cost), for hierarchical budget checks.</summary>
     [JsonPropertyName("execution_snapshots")]
-    [JsonPropertyOrder(7)]
+    [JsonPropertyOrder(8)]
     public Dictionary<string, ExecutionLedgerSnapshot>? ExecutionSnapshots { get; init; }
 
     /// <summary>Cosmos metadata: ETag for optimistic concurrency on patches.</summary>
     [JsonPropertyName("_etag")]
-    [JsonPropertyOrder(8)]
+    [JsonPropertyOrder(9)]
     public string? ETag { get; init; }
 
     /// <summary>Cosmos metadata: last-write timestamp.</summary>
     [JsonPropertyName("_ts")]
-    [JsonPropertyOrder(9)]
+    [JsonPropertyOrder(10)]
     public long? Timestamp { get; init; }
 }
 
@@ -71,6 +76,7 @@ public sealed record BudgetLedgerDocument
 public sealed record ExecutionLedgerSnapshot(
     [property: JsonPropertyName("execution_id")] string ExecutionId,
     [property: JsonPropertyName("total_tokens")] long TotalTokens,
-    [property: JsonPropertyName("total_cost_gbp")] decimal TotalCostGbp,
+    [property: JsonPropertyName("total_cost")] decimal TotalCost,
+    [property: JsonPropertyName("currency")] string Currency,
     [property: JsonPropertyName("invocation_count")] int InvocationCount,
     [property: JsonPropertyName("last_updated_utc")] DateTime LastUpdatedUtc);

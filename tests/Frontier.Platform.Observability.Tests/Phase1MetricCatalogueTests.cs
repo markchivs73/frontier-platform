@@ -18,7 +18,7 @@ public sealed class Phase1MetricCatalogueTests : IDisposable
     [InlineData("context.tokens",            MetricInstrumentType.Counter)]
     [InlineData("context.cache.writes",      MetricInstrumentType.Counter)]
     [InlineData("context.refresh.events",    MetricInstrumentType.Counter)]
-    [InlineData("context.cost.saved_gbp",    MetricInstrumentType.Counter)]
+    [InlineData("context.cost.saved",        MetricInstrumentType.Counter)]
     [InlineData("validator.outcomes",        MetricInstrumentType.Counter)]
     [InlineData("resilience.retries",        MetricInstrumentType.Counter)]
     [InlineData("hitl.decisions",            MetricInstrumentType.Counter)]

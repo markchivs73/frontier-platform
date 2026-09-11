@@ -11,4 +11,9 @@
     <PackageReference Include="Newtonsoft.Json" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Platform contract kernel: ContractViolationException for a currency mismatch (ADR-PA21) -->
+    <ProjectReference Include="..\Frontier.Platform.Abstractions\Frontier.Platform.Abstractions.csproj" />
+  </ItemGroup>
+
 </Project>

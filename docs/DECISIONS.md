@@ -847,3 +847,80 @@ and every sandbox run stayed *running* forever with its gate never auto-approved
 gains an optional `engagementId`, written at start (and for a blocked run), and both readers use it; a
 document without one is returned as persisted. Additive; the parser is deleted. The lesson is the one
 ADR-PA15 recorded and this ADR repeated: the readers were never where the format was.
+
+---
+
+## ADR-PA21 — a cost is an amount and a currency, and two currencies are never added
+
+Every cost amount on the platform drops the currency from its name and gains an ISO 4217 `currency`
+code beside it. `ModelEntry.InputCostPer1kGbp`/`OutputCostPer1kGbp`/`CacheReadCostPer1kGbp` become
+`InputCostPer1k`/`OutputCostPer1k`/`CacheReadCostPer1k` plus `Currency` (wire `input_cost_per_1k`,
+`output_cost_per_1k`, `cache_read_cost_per_1k`, `currency`); `BudgetSpec.MaxCostGbp` becomes `MaxCost` +
+`Currency`; `InvocationCostEstimate.EstimatedCostGbp` becomes `EstimatedCost` + `Currency`;
+`UsageRecord.CostGbp` and `BudgetSnapshot.CostGbp` become `Cost` + `Currency`; `BudgetLedgerDocument`
+and `ExecutionLedgerSnapshot` store `total_cost` + `currency`; Observability's `TierEconomics`,
+`TierEconomicsRow` and `NodeMetrics` take neutral names + `Currency`. The Phase 1 catalogues are priced
+in USD: claude-opus-4-8 at 0.0050 / 0.0250 / 0.0005 and claude-fable-5 at 0.0100 / 0.0500 / 0.0010
+per 1,000 input / output / cache-read tokens, and the guardrail ceilings keep their numbers in USD
+(default 2.00, sandbox C-28 0.50). Scales are unchanged: prices 4, budgets 2.
+
+**The defect.** A sandbox test run of a seven-call workflow reported £1.32. The arithmetic was right;
+the prices were not. claude-opus-4-8 was seeded at £0.03 / £0.15 per 1,000 tokens, a placeholder
+about six times Anthropic's list price, and the currency itself was a guess hard-wired into
+every member name. The consumer's API had already noticed the mismatch the other way: it served
+these GBP amounts as `avg_cost_usd` and `spent_usd`. Two wrong labels on one number is what a
+currency baked into a name produces. Nothing checks a name.
+
+**Why a currency per amount, not one platform currency.** The ledger adds amounts that came from
+different role mappings, and each mapping names its own model and so its own provider's price list.
+A single configured currency would be one more unchecked assumption at the point where amounts
+combine. With a code on each amount the combination point can check it. It also sets up the future
+correctly. Currency conversion is the consumer repo's evolution item **E25**, and when it lands it
+*removes a refusal* at the combination points. It does not add fields to every stored document.
+
+**Mixing is refused, never converted.** No conversion exists, so wherever two amounts meet in different
+currencies the platform throws `ContractViolationException`. That is the two-loop model's permanent
+failure: `FailureClassifier` maps it to `contract_violation` and the outer DTF retry handler never
+retries it, because no retry can make GBP comparable with USD. The refusals sit in `CostCurrency`
+(Guardrails) and are applied at:
+
+- **ledger accumulation** — `BudgetLedger.RecordUsageAsync` refuses usage whose currency differs from the
+  engagement's recorded usage, before storing it; `CosmosBudgetLedger.RecordUsageAsync` refuses usage whose
+  currency differs from the ledger document's `currency`. One currency per engagement makes every scope
+  aggregate (invocation, execution, engagement) single-currency by construction.
+- **hierarchy aggregation** — `BudgetHierarchy.BudgetHasCapacity` checks, before adding, that the scope
+  ceiling, the snapshot's accumulated cost and the estimate share a currency. A snapshot with nothing
+  recorded has a `null` currency and combines with anything. A ceiling with no currency is refused.
+- **admission** — `AdmissionController.Admit` refuses a per-invocation cost ceiling in a currency other than
+  the estimate's. *A judgement call:* Admit does not yet enforce the cost ceiling (tokens only), so
+  nothing is added there. The check is placed anyway, so a model entry priced in the wrong currency
+  fails at its first admission and not on the day cost enforcement lands.
+
+**The metric.** `context.cost.saved_gbp` (unit `GBP`) becomes `context.cost.saved` with the static unit
+`{cost}` and a `currency` attribute beside `engagement_type`. An OpenTelemetry instrument has one unit
+for life, so a currency in the unit or the name would need an instrument per currency. As an
+attribute, one instrument covers all of them, and a dashboard sums only within a `currency` series.
+That is the same rule the ledger enforces. `currency` is a bounded ISO 4217 code, so it respects
+ADR-O1's no-unbounded-dimension rule.
+
+**Breaking, and a bounded exception to lazy migration.** This is a public-surface break in Guardrails,
+ModelRoleConfig and Observability, and a wire break in two stored documents: the `model-role-config`
+chain entries and the `guardrail-ledger` documents. `currency` is required on both, so a document
+written before this change fails deserialization instead of being read as currency-less. No migration
+adapter is written, and the exception is named and bounded the way ADR-PA4 and ADR-PA15 bounded
+theirs. No deployed environment exists. These documents live only in local emulators, and those are
+re-seeded (the consumer's `cosmos-init.py` seed must match `Phase1RoleCatalogue` byte-for-value and
+changes with it). Neither document carries a `schema_version`, and neither is registered with
+`ContractMigrator`, so ADR-PA13's adapter ratchet does not reach them. No golden file contains these
+wire names, so none changes. Any stored cost document written after the first deployment is outside
+this exception and gets an adapter. *ADR-E15's floor:* no DTF activity input or output carries a renamed
+member. `AgentTaskActivityPipeline` builds `InvocationCostEstimate` inside the activity from the resolved
+`ModelEntry`, `AgentTaskActivityInput` carries identifiers only, and `ResolvedModelSummary` carries no cost,
+so no recorded orchestration history changes shape. Release: minor bump, v0.23.0 (major version 0).
+
+*Evidence.* Anthropic first-party list prices, from the Claude API pricing table cached 2026-06-24:
+claude-opus-4-8 $5 / $25 and claude-fable-5 $10 / $50 per million input / output tokens. Anthropic's
+prompt-caching reference, read 2026-09-11, gives cache reads at ~0.1× the base input price. The £1.32
+figure is the consumer's sandbox test run of a seven-call workflow against the old catalogue. That
+catalogue's own doc comment already called its opus figures "PoC placeholders pending verified provider
+pricing". Decided by the owner 2026-09-11.

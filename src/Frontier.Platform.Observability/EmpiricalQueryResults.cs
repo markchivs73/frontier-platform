@@ -3,21 +3,26 @@ using Frontier.Platform.Abstractions;
 
 namespace Frontier.Platform.Observability;
 
-/// <summary>Cache economics across all tiers for the given <see cref="EmpiricalScope"/> (doc 11 §2).</summary>
+/// <summary>
+/// Cache economics across all tiers for the given <see cref="EmpiricalScope"/> (doc 11 §2).
+/// <see cref="TotalCostSaved"/> is in <see cref="Currency"/> (ISO 4217, ADR-PA21), <c>null</c> when there are no rows.
+/// </summary>
 [ExcludeFromCodeCoverage(Justification = "Plain data record.")]
 public sealed record TierEconomics(
     IReadOnlyList<TierEconomicsRow> Rows,
-    decimal TotalCostSavedGbp,
+    decimal TotalCostSaved,
+    string? Currency,
     int TotalExecutions);
 
-/// <summary>Per-tier breakdown within a <see cref="TierEconomics"/> result.</summary>
+/// <summary>Per-tier breakdown within a <see cref="TierEconomics"/> result; <see cref="CostSaved"/> is in <see cref="Currency"/> (ISO 4217).</summary>
 [ExcludeFromCodeCoverage(Justification = "Plain data record.")]
 public sealed record TierEconomicsRow(
     string Tier,
     decimal HitRate,
     long TokensTotal,
     long TokensCached,
-    decimal CostSavedGbp);
+    decimal CostSaved,
+    string Currency);
 
 /// <summary>Retry reason/model distribution for the given scope (doc 11 §4.2).</summary>
 [ExcludeFromCodeCoverage(Justification = "Plain data record.")]
@@ -68,10 +73,11 @@ public sealed record NodeMetricsOverlay(
     int ExecutionsInWindow,
     IReadOnlyDictionary<string, NodeMetrics> Nodes);
 
-/// <summary>Aggregated metrics for a single canvas node (doc 11 §7).</summary>
+/// <summary>Aggregated metrics for a single canvas node (doc 11 §7); <see cref="MeanCost"/> is in <see cref="Currency"/> (ISO 4217, ADR-PA21).</summary>
 [ExcludeFromCodeCoverage(Justification = "Plain data record.")]
 public sealed record NodeMetrics(
-    decimal MeanCostGbp,
+    decimal MeanCost,
+    string Currency,
     long P50LatencyMs,
     long P95LatencyMs,
     decimal ValidatorPassRate,

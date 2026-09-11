@@ -13,10 +13,17 @@ internal sealed class BudgetLedger : IBudgetLedger
     private readonly ConcurrentDictionary<string, UsageRecord> recordsByCorrelationId = new(StringComparer.Ordinal);
 
     /// <inheritdoc />
+    /// <remarks>
+    /// An engagement's ledger holds one currency: usage in a different one is refused with
+    /// <see cref="Abstractions.ContractViolationException"/> before it is stored (ADR-PA21), so every
+    /// scope's aggregate — invocation, execution and engagement alike — is single-currency.
+    /// </remarks>
     public Task RecordUsageAsync(UsageRecord usage, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(usage);
 
+        var engagement = new BudgetScopeRef(BudgetScopeKind.Engagement, usage.EngagementId);
+        CostCurrency.EnsureCombinable(nameof(UsageRecord), CurrencyOf(engagement), usage.Currency);
         recordsByCorrelationId.TryAdd(usage.CorrelationId, usage);
         return Task.CompletedTask;
     }
@@ -30,9 +37,14 @@ internal sealed class BudgetLedger : IBudgetLedger
         return Task.FromResult(new BudgetSnapshot(
             scope,
             matching.Sum(record => record.InputTokens + record.OutputTokens),
-            matching.Sum(record => record.CostGbp),
+            matching.Sum(record => record.Cost),
+            matching.FirstOrDefault()?.Currency,
             matching.Count));
     }
+
+    /// <summary>The currency already recorded at <paramref name="scope"/>, or <c>null</c> if nothing has been.</summary>
+    internal string? CurrencyOf(BudgetScopeRef scope) =>
+        recordsByCorrelationId.Values.FirstOrDefault(record => Matches(record, scope))?.Currency;
 
     /// <summary>Whether <paramref name="record"/> belongs to <paramref name="scope"/> (doc 07 §6 — <see cref="BudgetScopeKind.Fleet"/> is never matched here; it's aggregated asynchronously, S6.5).</summary>
     internal static bool Matches(UsageRecord record, BudgetScopeRef scope) => scope.Kind switch

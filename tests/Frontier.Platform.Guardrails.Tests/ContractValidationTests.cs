@@ -72,11 +72,11 @@ public sealed class ContractValidationTests
     public void BudgetSnapshot_ValidCase_CanBeConstructed()
     {
         var scope = new BudgetScopeRef(BudgetScopeKind.Fleet, "");
-        var snapshot = new BudgetSnapshot(scope, 1000, 0.50m, 5);
+        var snapshot = new BudgetSnapshot(scope, 1000, 0.50m, "USD", 5);
 
         Assert.Equal(scope, snapshot.Scope);
         Assert.Equal(1000, snapshot.TokensUsed);
-        Assert.Equal(0.50m, snapshot.CostGbp);
+        Assert.Equal(0.50m, snapshot.Cost);
         Assert.Equal(5, snapshot.InvocationCount);
     }
 
@@ -84,40 +84,40 @@ public sealed class ContractValidationTests
     public void BudgetSnapshot_ZeroUsage_IsValid()
     {
         var scope = new BudgetScopeRef(BudgetScopeKind.Invocation, "inv-1");
-        var snapshot = new BudgetSnapshot(scope, 0, 0m, 0);
+        var snapshot = new BudgetSnapshot(scope, 0, 0m, null, 0);
 
         Assert.Equal(0, snapshot.TokensUsed);
-        Assert.Equal(0m, snapshot.CostGbp);
+        Assert.Equal(0m, snapshot.Cost);
         Assert.Equal(0, snapshot.InvocationCount);
     }
 
     [Fact]
     public void BudgetSpec_AllLimits_CanBeSet()
     {
-        var spec = new BudgetSpec(100_000, 1.00m, 50);
+        var spec = new BudgetSpec(100_000, 1.00m, "USD", 50);
 
         Assert.Equal(100_000, spec.MaxTokens);
-        Assert.Equal(1.00m, spec.MaxCostGbp);
+        Assert.Equal(1.00m, spec.MaxCost);
         Assert.Equal(50, spec.MaxAgentInvocations);
     }
 
     [Fact]
     public void BudgetSpec_UnboundedLimits_AllowNull()
     {
-        var spec = new BudgetSpec(null, null, null);
+        var spec = new BudgetSpec(null, null, null, null);
 
         Assert.Null(spec.MaxTokens);
-        Assert.Null(spec.MaxCostGbp);
+        Assert.Null(spec.MaxCost);
         Assert.Null(spec.MaxAgentInvocations);
     }
 
     [Fact]
     public void BudgetSpec_MixedLimits_CanBeCombined()
     {
-        var spec = new BudgetSpec(50_000, null, 25);
+        var spec = new BudgetSpec(50_000, null, null, 25);
 
         Assert.Equal(50_000, spec.MaxTokens);
-        Assert.Null(spec.MaxCostGbp);
+        Assert.Null(spec.MaxCost);
         Assert.Equal(25, spec.MaxAgentInvocations);
     }
 
@@ -133,14 +133,15 @@ public sealed class ContractValidationTests
             "claude-3-sonnet",
             5000,
             2000,
-            0.30m);
+            0.30m,
+            "USD");
 
         Assert.Equal("corr-123", estimate.CorrelationId);
         Assert.Equal("exec-456", estimate.ExecutionId);
         Assert.Equal("eng-789", estimate.EngagementId);
         Assert.Equal(5000, estimate.PromptTokens);
         Assert.Equal(2000, estimate.MaxOutputTokens);
-        Assert.Equal(0.30m, estimate.EstimatedCostGbp);
+        Assert.Equal(0.30m, estimate.EstimatedCost);
     }
 
     [Fact]
@@ -155,13 +156,14 @@ public sealed class ContractValidationTests
             "claude-3-opus",
             4500,
             1500,
-            0.25m);
+            0.25m,
+            "USD");
 
         Assert.Equal("corr-789", usage.CorrelationId);
         Assert.Equal("exec-012", usage.ExecutionId);
         Assert.Equal(4500, usage.InputTokens);
         Assert.Equal(1500, usage.OutputTokens);
-        Assert.Equal(0.25m, usage.CostGbp);
+        Assert.Equal(0.25m, usage.Cost);
     }
 
     [Fact]
@@ -174,14 +176,15 @@ public sealed class ContractValidationTests
             EngagementId = "eng-123",
             TotalInputTokens = 50_000,
             TotalOutputTokens = 25_000,
-            TotalCostGbp = 5.00m,
+            TotalCost = 5.00m,
+            Currency = "USD",
             InvocationCount = 10
         };
 
         Assert.Equal("eng-123", doc.PartitionKey);
         Assert.Equal(50_000, doc.TotalInputTokens);
         Assert.Equal(25_000, doc.TotalOutputTokens);
-        Assert.Equal(5.00m, doc.TotalCostGbp);
+        Assert.Equal(5.00m, doc.TotalCost);
     }
 
     [Fact]
@@ -191,12 +194,13 @@ public sealed class ContractValidationTests
             "exec-123",
             15_000,
             1.50m,
+            "USD",
             3,
             DateTime.UtcNow);
 
         Assert.Equal("exec-123", snapshot.ExecutionId);
         Assert.Equal(15_000, snapshot.TotalTokens);
-        Assert.Equal(1.50m, snapshot.TotalCostGbp);
+        Assert.Equal(1.50m, snapshot.TotalCost);
         Assert.Equal(3, snapshot.InvocationCount);
     }
 }

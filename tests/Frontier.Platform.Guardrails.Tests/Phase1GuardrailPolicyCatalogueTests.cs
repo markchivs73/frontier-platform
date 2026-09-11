@@ -11,7 +11,8 @@ public sealed class Phase1GuardrailPolicyCatalogueTests
         Assert.Equal("advisory-sow-default", policy.PolicyId);
         Assert.NotNull(policy.PerInvocation);
         Assert.Equal(20_000, policy.PerInvocation!.MaxTokens);
-        Assert.Equal(2.00m, policy.PerInvocation.MaxCostGbp);
+        Assert.Equal(2.00m, policy.PerInvocation.MaxCost);
+        Assert.Equal("USD", policy.PerInvocation.Currency);
         Assert.Null(policy.PerInvocation.MaxAgentInvocations);
         Assert.Null(policy.PerExecution);
         Assert.Null(policy.PerEngagement);
@@ -35,9 +36,9 @@ public sealed class Phase1GuardrailPolicyCatalogueTests
 
         Assert.NotNull(policy.PerInvocation);
         Assert.True(policy.PerInvocation!.MaxTokens.HasValue);
-        Assert.True(policy.PerInvocation.MaxCostGbp.HasValue);
+        Assert.True(policy.PerInvocation.MaxCost.HasValue);
         Assert.True(policy.PerInvocation.MaxTokens > 0);
-        Assert.True(policy.PerInvocation.MaxCostGbp > 0);
+        Assert.True(policy.PerInvocation.MaxCost > 0);
     }
 
     [Fact]
@@ -61,10 +62,10 @@ public sealed class Phase1GuardrailPolicyCatalogueTests
     {
         var policy = Phase1GuardrailPolicyCatalogue.Default;
 
-        if (policy.PerInvocation?.MaxTokens.HasValue == true && policy.PerInvocation.MaxCostGbp.HasValue)
+        if (policy.PerInvocation?.MaxTokens.HasValue == true && policy.PerInvocation.MaxCost.HasValue)
         {
             Assert.True(policy.PerInvocation.MaxTokens >= 0);
-            Assert.True(policy.PerInvocation.MaxCostGbp >= 0m);
+            Assert.True(policy.PerInvocation.MaxCost >= 0m);
         }
     }
 
@@ -76,8 +77,8 @@ public sealed class Phase1GuardrailPolicyCatalogueTests
         if (policy.PerInvocation?.MaxTokens.HasValue == true)
             Assert.True(policy.PerInvocation.MaxTokens >= 0);
 
-        if (policy.PerInvocation?.MaxCostGbp.HasValue == true)
-            Assert.True(policy.PerInvocation.MaxCostGbp >= 0m);
+        if (policy.PerInvocation?.MaxCost.HasValue == true)
+            Assert.True(policy.PerInvocation.MaxCost >= 0m);
 
         if (policy.PerInvocation?.MaxAgentInvocations.HasValue == true)
             Assert.True(policy.PerInvocation.MaxAgentInvocations >= 0);
@@ -110,7 +111,8 @@ public sealed class Phase1GuardrailPolicyCatalogueTests
         Assert.Equal("sandbox-test-run", policy.PolicyId);
         Assert.NotNull(policy.PerInvocation);
         Assert.Equal(5_000, policy.PerInvocation!.MaxTokens);
-        Assert.Equal(0.50m, policy.PerInvocation.MaxCostGbp);
+        Assert.Equal(0.50m, policy.PerInvocation.MaxCost);
+        Assert.Equal("USD", policy.PerInvocation.Currency);
         Assert.Null(policy.PerInvocation.MaxAgentInvocations);
         Assert.Null(policy.PerExecution);
         Assert.Null(policy.PerEngagement);
@@ -123,6 +125,6 @@ public sealed class Phase1GuardrailPolicyCatalogueTests
         var production = Phase1GuardrailPolicyCatalogue.Default;
 
         Assert.True(sandbox.PerInvocation!.MaxTokens < production.PerInvocation!.MaxTokens);
-        Assert.True(sandbox.PerInvocation.MaxCostGbp < production.PerInvocation.MaxCostGbp);
+        Assert.True(sandbox.PerInvocation.MaxCost < production.PerInvocation.MaxCost);
     }
 }

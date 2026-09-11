@@ -19,36 +19,41 @@ internal sealed record ModelEntryDocument
     [JsonPropertyName("model_id")]
     public required string ModelId { get; init; }
 
-    /// <summary>Input token cost in GBP per 1,000 tokens (scale 4).</summary>
+    /// <summary>Input token cost in <see cref="Currency"/> per 1,000 tokens (scale 4).</summary>
     [JsonPropertyOrder(2)]
-    [JsonPropertyName("input_cost_per_1k_gbp")]
+    [JsonPropertyName("input_cost_per_1k")]
     [DecimalPrecision(4)]
-    public required decimal InputCostPer1kGbp { get; init; }
+    public required decimal InputCostPer1k { get; init; }
 
-    /// <summary>Output token cost in GBP per 1,000 tokens (scale 4).</summary>
+    /// <summary>Output token cost in <see cref="Currency"/> per 1,000 tokens (scale 4).</summary>
     [JsonPropertyOrder(3)]
-    [JsonPropertyName("output_cost_per_1k_gbp")]
+    [JsonPropertyName("output_cost_per_1k")]
     [DecimalPrecision(4)]
-    public required decimal OutputCostPer1kGbp { get; init; }
+    public required decimal OutputCostPer1k { get; init; }
 
-    /// <summary>Cache-read token cost in GBP per 1,000 tokens (scale 4).</summary>
+    /// <summary>Cache-read token cost in <see cref="Currency"/> per 1,000 tokens (scale 4).</summary>
     [JsonPropertyOrder(4)]
-    [JsonPropertyName("cache_read_cost_per_1k_gbp")]
+    [JsonPropertyName("cache_read_cost_per_1k")]
     [DecimalPrecision(4)]
-    public required decimal CacheReadCostPer1kGbp { get; init; }
+    public required decimal CacheReadCostPer1k { get; init; }
+
+    /// <summary>ISO 4217 code of the three cost figures, e.g. <c>"USD"</c> (ADR-PA21).</summary>
+    [JsonPropertyOrder(5)]
+    [JsonPropertyName("currency")]
+    public required string Currency { get; init; }
 
     /// <summary>The model's context window, in tokens.</summary>
-    [JsonPropertyOrder(5)]
+    [JsonPropertyOrder(6)]
     [JsonPropertyName("context_window")]
     public required int ContextWindow { get; init; }
 
     /// <summary>The model's maximum output tokens per invocation.</summary>
-    [JsonPropertyOrder(6)]
+    [JsonPropertyOrder(7)]
     [JsonPropertyName("max_output_tokens")]
     public required int MaxOutputTokens { get; init; }
 
     /// <summary>Link to an <c>ICachingStrategy</c> registry key (ADR-CA1), if this entry has one.</summary>
-    [JsonPropertyOrder(7)]
+    [JsonPropertyOrder(8)]
     [JsonPropertyName("caching_strategy")]
     public string? CachingStrategy { get; init; }
 
@@ -57,9 +62,10 @@ internal sealed record ModelEntryDocument
     {
         Provider = Provider,
         ModelId = ModelId,
-        InputCostPer1kGbp = InputCostPer1kGbp,
-        OutputCostPer1kGbp = OutputCostPer1kGbp,
-        CacheReadCostPer1kGbp = CacheReadCostPer1kGbp,
+        InputCostPer1k = InputCostPer1k,
+        OutputCostPer1k = OutputCostPer1k,
+        CacheReadCostPer1k = CacheReadCostPer1k,
+        Currency = Currency,
         ContextWindow = ContextWindow,
         MaxOutputTokens = MaxOutputTokens,
         CachingStrategy = CachingStrategy,
@@ -70,9 +76,10 @@ internal sealed record ModelEntryDocument
     {
         Provider = entry.Provider,
         ModelId = entry.ModelId,
-        InputCostPer1kGbp = entry.InputCostPer1kGbp,
-        OutputCostPer1kGbp = entry.OutputCostPer1kGbp,
-        CacheReadCostPer1kGbp = entry.CacheReadCostPer1kGbp,
+        InputCostPer1k = entry.InputCostPer1k,
+        OutputCostPer1k = entry.OutputCostPer1k,
+        CacheReadCostPer1k = entry.CacheReadCostPer1k,
+        Currency = entry.Currency,
         ContextWindow = entry.ContextWindow,
         MaxOutputTokens = entry.MaxOutputTokens,
         CachingStrategy = entry.CachingStrategy,

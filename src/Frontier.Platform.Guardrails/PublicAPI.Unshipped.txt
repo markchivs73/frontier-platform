@@ -1,0 +1,56 @@
+Frontier.Platform.Guardrails.BudgetLedgerDocument.Currency.get -> string!
+Frontier.Platform.Guardrails.BudgetLedgerDocument.Currency.init -> void
+Frontier.Platform.Guardrails.BudgetLedgerDocument.TotalCost.get -> decimal
+Frontier.Platform.Guardrails.BudgetLedgerDocument.TotalCost.init -> void
+Frontier.Platform.Guardrails.BudgetSnapshot.BudgetSnapshot(Frontier.Platform.Guardrails.BudgetScopeRef! Scope, long TokensUsed, decimal Cost, string? Currency, int InvocationCount) -> void
+Frontier.Platform.Guardrails.BudgetSnapshot.Cost.get -> decimal
+Frontier.Platform.Guardrails.BudgetSnapshot.Cost.init -> void
+Frontier.Platform.Guardrails.BudgetSnapshot.Currency.get -> string?
+Frontier.Platform.Guardrails.BudgetSnapshot.Currency.init -> void
+Frontier.Platform.Guardrails.BudgetSnapshot.Deconstruct(out Frontier.Platform.Guardrails.BudgetScopeRef! Scope, out long TokensUsed, out decimal Cost, out string? Currency, out int InvocationCount) -> void
+Frontier.Platform.Guardrails.BudgetSpec.BudgetSpec(long? MaxTokens, decimal? MaxCost, string? Currency, int? MaxAgentInvocations) -> void
+Frontier.Platform.Guardrails.BudgetSpec.Currency.get -> string?
+Frontier.Platform.Guardrails.BudgetSpec.Currency.init -> void
+Frontier.Platform.Guardrails.BudgetSpec.Deconstruct(out long? MaxTokens, out decimal? MaxCost, out string? Currency, out int? MaxAgentInvocations) -> void
+Frontier.Platform.Guardrails.BudgetSpec.MaxCost.get -> decimal?
+Frontier.Platform.Guardrails.BudgetSpec.MaxCost.init -> void
+Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.Currency.get -> string!
+Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.Currency.init -> void
+Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.Deconstruct(out string! ExecutionId, out long TotalTokens, out decimal TotalCost, out string! Currency, out int InvocationCount, out System.DateTime LastUpdatedUtc) -> void
+Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.ExecutionLedgerSnapshot(string! ExecutionId, long TotalTokens, decimal TotalCost, string! Currency, int InvocationCount, System.DateTime LastUpdatedUtc) -> void
+Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.TotalCost.get -> decimal
+Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.TotalCost.init -> void
+Frontier.Platform.Guardrails.InvocationCostEstimate.Currency.get -> string!
+Frontier.Platform.Guardrails.InvocationCostEstimate.Currency.init -> void
+Frontier.Platform.Guardrails.InvocationCostEstimate.Deconstruct(out string! CorrelationId, out string! ExecutionId, out string! EngagementId, out string! NodeId, out string! AgentRole, out string! ResolvedModel, out long PromptTokens, out long MaxOutputTokens, out decimal EstimatedCost, out string! Currency) -> void
+Frontier.Platform.Guardrails.InvocationCostEstimate.EstimatedCost.get -> decimal
+Frontier.Platform.Guardrails.InvocationCostEstimate.EstimatedCost.init -> void
+Frontier.Platform.Guardrails.InvocationCostEstimate.InvocationCostEstimate(string! CorrelationId, string! ExecutionId, string! EngagementId, string! NodeId, string! AgentRole, string! ResolvedModel, long PromptTokens, long MaxOutputTokens, decimal EstimatedCost, string! Currency) -> void
+Frontier.Platform.Guardrails.UsageRecord.Cost.get -> decimal
+Frontier.Platform.Guardrails.UsageRecord.Cost.init -> void
+Frontier.Platform.Guardrails.UsageRecord.Currency.get -> string!
+Frontier.Platform.Guardrails.UsageRecord.Currency.init -> void
+Frontier.Platform.Guardrails.UsageRecord.Deconstruct(out string! CorrelationId, out string! ExecutionId, out string! EngagementId, out string! NodeId, out string! AgentRole, out string! ResolvedModel, out long InputTokens, out long OutputTokens, out decimal Cost, out string! Currency) -> void
+Frontier.Platform.Guardrails.UsageRecord.UsageRecord(string! CorrelationId, string! ExecutionId, string! EngagementId, string! NodeId, string! AgentRole, string! ResolvedModel, long InputTokens, long OutputTokens, decimal Cost, string! Currency) -> void
+*REMOVED*Frontier.Platform.Guardrails.BudgetLedgerDocument.TotalCostGbp.get -> decimal
+*REMOVED*Frontier.Platform.Guardrails.BudgetLedgerDocument.TotalCostGbp.init -> void
+*REMOVED*Frontier.Platform.Guardrails.BudgetSnapshot.BudgetSnapshot(Frontier.Platform.Guardrails.BudgetScopeRef! Scope, long TokensUsed, decimal CostGbp, int InvocationCount) -> void
+*REMOVED*Frontier.Platform.Guardrails.BudgetSnapshot.CostGbp.get -> decimal
+*REMOVED*Frontier.Platform.Guardrails.BudgetSnapshot.CostGbp.init -> void
+*REMOVED*Frontier.Platform.Guardrails.BudgetSnapshot.Deconstruct(out Frontier.Platform.Guardrails.BudgetScopeRef! Scope, out long TokensUsed, out decimal CostGbp, out int InvocationCount) -> void
+*REMOVED*Frontier.Platform.Guardrails.BudgetSpec.BudgetSpec(long? MaxTokens, decimal? MaxCostGbp, int? MaxAgentInvocations) -> void
+*REMOVED*Frontier.Platform.Guardrails.BudgetSpec.Deconstruct(out long? MaxTokens, out decimal? MaxCostGbp, out int? MaxAgentInvocations) -> void
+*REMOVED*Frontier.Platform.Guardrails.BudgetSpec.MaxCostGbp.get -> decimal?
+*REMOVED*Frontier.Platform.Guardrails.BudgetSpec.MaxCostGbp.init -> void
+*REMOVED*Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.Deconstruct(out string! ExecutionId, out long TotalTokens, out decimal TotalCostGbp, out int InvocationCount, out System.DateTime LastUpdatedUtc) -> void
+*REMOVED*Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.ExecutionLedgerSnapshot(string! ExecutionId, long TotalTokens, decimal TotalCostGbp, int InvocationCount, System.DateTime LastUpdatedUtc) -> void
+*REMOVED*Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.TotalCostGbp.get -> decimal
+*REMOVED*Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.TotalCostGbp.init -> void
+*REMOVED*Frontier.Platform.Guardrails.InvocationCostEstimate.Deconstruct(out string! CorrelationId, out string! ExecutionId, out string! EngagementId, out string! NodeId, out string! AgentRole, out string! ResolvedModel, out long PromptTokens, out long MaxOutputTokens, out decimal EstimatedCostGbp) -> void
+*REMOVED*Frontier.Platform.Guardrails.InvocationCostEstimate.EstimatedCostGbp.get -> decimal
+*REMOVED*Frontier.Platform.Guardrails.InvocationCostEstimate.EstimatedCostGbp.init -> void
+*REMOVED*Frontier.Platform.Guardrails.InvocationCostEstimate.InvocationCostEstimate(string! CorrelationId, string! ExecutionId, string! EngagementId, string! NodeId, string! AgentRole, string! ResolvedModel, long PromptTokens, long MaxOutputTokens, decimal EstimatedCostGbp) -> void
+*REMOVED*Frontier.Platform.Guardrails.UsageRecord.CostGbp.get -> decimal
+*REMOVED*Frontier.Platform.Guardrails.UsageRecord.CostGbp.init -> void
+*REMOVED*Frontier.Platform.Guardrails.UsageRecord.Deconstruct(out string! CorrelationId, out string! ExecutionId, out string! EngagementId, out string! NodeId, out string! AgentRole, out string! ResolvedModel, out long InputTokens, out long OutputTokens, out decimal CostGbp) -> void
+*REMOVED*Frontier.Platform.Guardrails.UsageRecord.UsageRecord(string! CorrelationId, string! ExecutionId, string! EngagementId, string! NodeId, string! AgentRole, string! ResolvedModel, long InputTokens, long OutputTokens, decimal CostGbp) -> void
