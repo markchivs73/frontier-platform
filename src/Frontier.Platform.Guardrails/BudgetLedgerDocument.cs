@@ -7,8 +7,8 @@ namespace Frontier.Platform.Guardrails;
 /// <summary>
 /// Cosmos document shape for the <c>guardrail-ledger</c> container (doc 07 §6, S6.5a):
 /// one doc per engagement, accumulating usage across all executions/invocations.
-/// Stored as `{engagementId}:ledger` under PK `/engagementId`; updated via partial-document
-/// patches (increment operations) for optimistic concurrency on high-contention scenarios.
+/// Stored as `{engagementId}:ledger` under PK `/engagement_id`; replaced whole under ETag optimistic
+/// concurrency, with a bounded retry when a concurrent write wins the race.
 /// </summary>
 [ExcludeFromCodeCoverage(Justification = "Plain data record; exercised indirectly through BudgetLedger and CosmosBudgetLedger tests.")]
 public sealed record BudgetLedgerDocument

@@ -29,7 +29,7 @@ public static class GuardrailsServiceCollectionExtensions
 
     /// <summary>
     /// Cosmos-backed variant (S6.5a): registers <see cref="CosmosBudgetLedger"/> for the
-    /// <c>guardrail-ledger</c> container (PK /engagementId). All other components same as
+    /// <c>guardrail-ledger</c> container (PK /engagement_id). All other components same as
     /// the in-memory variant. Switch between this and <see cref="AddFrontierGuardrails()"/>
     /// based on deployment configuration.
     /// </summary>

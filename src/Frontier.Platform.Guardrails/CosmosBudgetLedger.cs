@@ -4,45 +4,80 @@ using Microsoft.Azure.Cosmos;
 namespace Frontier.Platform.Guardrails;
 
 /// <summary>
-/// Cosmos-backed <see cref="IBudgetLedger"/> for the <c>guardrail-ledger</c> container (doc 07 §6, S6.5a).
-/// Uses partial-document patches (increment operations) for optimistic concurrency on high-contention scenarios
-/// (multiple invocations in an execution incrementing the same ledger doc simultaneously).
+/// Cosmos-backed <see cref="IBudgetLedger"/> for the <c>guardrail-ledger</c> container (doc 07 §6, S6.5a),
+/// partitioned on <c>/engagement_id</c>. Each usage record is a read-accumulate-write of the engagement's single
+/// ledger document under ETag optimistic concurrency: a write that loses a race to a concurrent one (412 on
+/// replace, 409 on first create) backs off with jitter and starts again from the read, up to <see cref="MaxWriteAttempts"/> attempts.
 /// </summary>
-[ExcludeFromCodeCoverage(Justification = "Cosmos integration adapter; tested against emulator locally only, not in CI.")]
+[ExcludeFromCodeCoverage(Justification = "Cosmos SDK adapter; covered by the emulator integration tests in CI's integration job, which the unit coverage gate does not run.")]
 internal sealed class CosmosBudgetLedger : IBudgetLedger
 {
+    /// <summary>How many read-accumulate-write attempts a usage record gets before the last conflict is rethrown.</summary>
+    internal const int MaxWriteAttempts = 10;
+
     private readonly Container container;
 
-    /// <summary>Creates a new ledger backed by the given Cosmos container (PK: /engagementId).</summary>
+    /// <summary>Creates a new ledger backed by the given Cosmos container (PK: /engagement_id).</summary>
     public CosmosBudgetLedger(Container container) => this.container = container ?? throw new ArgumentNullException(nameof(container));
 
     /// <inheritdoc />
+    /// <remarks>
+    /// When every attempt loses to a concurrent write, the last conflict <see cref="CosmosException"/> is rethrown so
+    /// the caller's resilience policy sees a transient failure.
+    /// </remarks>
     public async Task RecordUsageAsync(UsageRecord usage, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(usage);
 
-        var docId = BudgetLedgerAccumulation.DocumentId(usage.EngagementId);
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                await TryRecordUsageAsync(usage, cancellationToken);
+                return;
+            }
+            catch (CosmosException ex) when (BudgetLedgerWriteConflict.IsConcurrencyConflict(ex.StatusCode) && attempt < MaxWriteAttempts)
+            {
+                // Lost the race to a concurrent write: back off with jitter so contenders spread out, then re-read.
+                var ceiling = BudgetLedgerWriteConflict.BackoffCeiling(attempt);
+                await Task.Delay(TimeSpan.FromMilliseconds(System.Security.Cryptography.RandomNumberGenerator.GetInt32(0, (int)ceiling.TotalMilliseconds + 1)), cancellationToken);
+            }
+        }
+    }
 
+    /// <summary>One read-accumulate-write attempt; throws a 412/409 <see cref="CosmosException"/> on a lost race.</summary>
+    private async Task TryRecordUsageAsync(UsageRecord usage, CancellationToken cancellationToken)
+    {
+        var docId = BudgetLedgerAccumulation.DocumentId(usage.EngagementId);
+        var partitionKey = new PartitionKey(usage.EngagementId);
+        var (existing, etag) = await ReadLedgerAsync(docId, partitionKey, cancellationToken);
+        var updated = BudgetLedgerAccumulation.Accumulate(existing, usage, DateTime.UtcNow);
+
+        if (existing is null)
+        {
+            await container.CreateItemAsync(updated, partitionKey, cancellationToken: cancellationToken);
+            return;
+        }
+
+        await container.ReplaceItemAsync(
+            updated,
+            docId,
+            partitionKey,
+            new ItemRequestOptions { IfMatchEtag = etag },
+            cancellationToken);
+    }
+
+    /// <summary>Reads the ledger document with its ETag; a missing document yields <c>(null, null)</c>.</summary>
+    private async Task<(BudgetLedgerDocument? Document, string? ETag)> ReadLedgerAsync(string docId, PartitionKey partitionKey, CancellationToken cancellationToken)
+    {
         try
         {
-            var doc = await container.ReadItemAsync<BudgetLedgerDocument>(
-                docId,
-                new PartitionKey(usage.EngagementId),
-                cancellationToken: cancellationToken);
-
-            var updated = BudgetLedgerAccumulation.Accumulate(doc.Resource, usage, DateTime.UtcNow);
-
-            await container.ReplaceItemAsync(
-                updated,
-                docId,
-                new PartitionKey(usage.EngagementId),
-                cancellationToken: cancellationToken);
+            var response = await container.ReadItemAsync<BudgetLedgerDocument>(docId, partitionKey, cancellationToken: cancellationToken);
+            return (response.Resource, response.ETag);
         }
         catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
-            var newDoc = BudgetLedgerAccumulation.Accumulate(null, usage, DateTime.UtcNow);
-
-            await container.CreateItemAsync(newDoc, new PartitionKey(usage.EngagementId), cancellationToken: cancellationToken);
+            return (null, null);
         }
     }
 
