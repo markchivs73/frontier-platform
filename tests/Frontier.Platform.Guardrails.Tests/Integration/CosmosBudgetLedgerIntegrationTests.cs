@@ -25,7 +25,7 @@ public sealed class CosmosBudgetLedgerIntegrationTests : IAsyncLifetime, IDispos
         });
 
         var database = await client.CreateDatabaseIfNotExistsAsync(DatabaseId);
-        var container = await database.Database.CreateContainerIfNotExistsAsync(new ContainerProperties("guardrail-ledger", "/partitionKey"));
+        var container = await database.Database.CreateContainerIfNotExistsAsync(new ContainerProperties("guardrail-ledger", "/engagement_id"));
         ledger = new CosmosBudgetLedger(container.Container);
     }
 
@@ -49,6 +49,39 @@ public sealed class CosmosBudgetLedgerIntegrationTests : IAsyncLifetime, IDispos
         AssertSnapshot(await Snapshot(BudgetScopeKind.Execution, exec1), 375, 0.0042m, 2);
         AssertSnapshot(await Snapshot(BudgetScopeKind.Execution, exec2), 15, 0.0003m, 1);
         AssertSnapshot(await Snapshot(BudgetScopeKind.Engagement, engagementId), 390, 0.0045m, 3);
+    }
+
+    [Fact]
+    public async Task RecordUsageAsync_ConcurrentCallsForOneExecution_LosesNoUpdate()
+    {
+        const int Calls = 25;
+        var engagementId = $"eng-{Guid.NewGuid():N}";
+        var executionId = $"exec-{Guid.NewGuid():N}";
+
+        await Task.WhenAll(Enumerable.Range(1, Calls).Select(i =>
+            ledger.RecordUsageAsync(BudgetLedgerTests.Usage($"corr-{i}", executionId, engagementId, i, 1, 0.0001m * i), CancellationToken.None)));
+
+        var tokens = Enumerable.Range(1, Calls).Sum(i => i + 1L);
+        var cost = Enumerable.Range(1, Calls).Sum(i => 0.0001m * i);
+        AssertSnapshot(await Snapshot(BudgetScopeKind.Execution, executionId), tokens, cost, Calls);
+        AssertSnapshot(await Snapshot(BudgetScopeKind.Engagement, engagementId), tokens, cost, Calls);
+    }
+
+    [Fact]
+    public async Task RecordUsageAsync_ConcurrentCallsOnAnExistingLedger_LosesNoUpdate()
+    {
+        const int Calls = 25;
+        var engagementId = $"eng-{Guid.NewGuid():N}";
+        var executionId = $"exec-{Guid.NewGuid():N}";
+        await ledger.RecordUsageAsync(BudgetLedgerTests.Usage("corr-0", executionId, engagementId, 1, 0, 0.0001m), CancellationToken.None);
+
+        await Task.WhenAll(Enumerable.Range(1, Calls).Select(i =>
+            ledger.RecordUsageAsync(BudgetLedgerTests.Usage($"corr-{i}", executionId, engagementId, i, 1, 0.0001m * i), CancellationToken.None)));
+
+        var tokens = 1 + Enumerable.Range(1, Calls).Sum(i => i + 1L);
+        var cost = 0.0001m + Enumerable.Range(1, Calls).Sum(i => 0.0001m * i);
+        AssertSnapshot(await Snapshot(BudgetScopeKind.Execution, executionId), tokens, cost, Calls + 1);
+        AssertSnapshot(await Snapshot(BudgetScopeKind.Engagement, engagementId), tokens, cost, Calls + 1);
     }
 
     private Task<BudgetSnapshot> Snapshot(BudgetScopeKind kind, string id) =>

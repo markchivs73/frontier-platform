@@ -5,8 +5,8 @@ namespace Frontier.Platform.Guardrails;
 /// <summary>
 /// In-process <see cref="IBudgetLedger"/> (doc 07 §6 "or in-memory for PoC", S4.5). One
 /// worker's in-memory map is sufficient for the PoC Gate 3 single-worker harness;
-/// the Cosmos-backed <c>guardrail-ledger</c> container (PK <c>/engagementId</c>,
-/// partial-document patch increments, change-feed fleet aggregation) is S6.5.
+/// the Cosmos-backed <c>guardrail-ledger</c> container (PK <c>/engagement_id</c>,
+/// ETag optimistic concurrency, change-feed fleet aggregation) is S6.5.
 /// </summary>
 internal sealed class BudgetLedger : IBudgetLedger
 {
