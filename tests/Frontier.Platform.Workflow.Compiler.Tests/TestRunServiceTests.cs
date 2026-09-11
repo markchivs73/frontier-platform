@@ -506,6 +506,7 @@ public sealed class TestRunServiceTests
         Assert.False(persisted()!.Success);
         Assert.Equal(expectedMessage, persisted()!.ErrorMessage);
         Assert.Equal(TestRunStatus.Failed, result!.Status);
+        Assert.False(persisted()!.FailureNodeAttributed); // S13.26: not a step failure — no exact node
     }
 
     [Fact]
@@ -519,13 +520,17 @@ public sealed class TestRunServiceTests
             .ReturnsAsync(ZeroCostMetrics with { BudgetExceeded = true }); // e.g. the S9.38b sandbox fence tripped
         SetupPersistCapture(out var persisted);
 
-        await _service.ReconcileAsync(doc.TestRunId, CancellationToken.None);
+        var result = await _service.ReconcileAsync(doc.TestRunId, CancellationToken.None);
 
         Assert.Equal(TestRunStatus.Failed, persisted()!.Status);
         Assert.Contains("contract_violation", persisted()!.ErrorMessage, StringComparison.Ordinal);
         Assert.Equal("node-1", persisted()!.FailureNodeId);
         Assert.Equal("true", persisted()!.CostMetrics["budget_exceeded"]);
         Assert.False(persisted()!.CostMetrics.ContainsKey("currency")); // unpriced run: no currency key written
+
+        // S13.26: a PausedOnFailure snapshot names the failing node exactly, and says so end to end.
+        Assert.True(persisted()!.FailureNodeAttributed);
+        Assert.True(result!.FailureNodeAttributed);
     }
 
     // ── GetResultAsync ──

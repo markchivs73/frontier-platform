@@ -86,11 +86,14 @@ internal static class TestRunExecution
         PausedAtGateId: snapshot.Status == ExecutionStatus.PausedAtGate ? snapshot.PausedAtGateId : null,
         GateKind: null,
         GateDecisions: BuildGateDecisions(snapshot),
-        // C-35 (S9.53): the anchor for a plain-failure canvas link — the last *completed* node
-        // (not necessarily the one that failed; exact attribution is deferred, see S9.45).
+        // The anchor for the A4 failure canvas link. On PausedOnFailure it is the node that failed —
+        // S13.7i writes that snapshot with the walk's failed node as CurrentNodeId — so the link can
+        // say so (S13.26). On Failed it is only the last snapshot's node, i.e. the last *completed*
+        // one (C-35's honest "at or after this step").
         FailureNodeId: (snapshot.Status == ExecutionStatus.PausedOnFailure || snapshot.Status == ExecutionStatus.Failed)
             ? snapshot.CurrentNodeId
-            : null);
+            : null,
+        FailureNodeAttributed: snapshot.Status == ExecutionStatus.PausedOnFailure);
 
     /// <summary>
     /// S9.29g (doc 13 §5 "gate decisions taken"): every <see cref="HitlDecision"/> DTF has
@@ -130,4 +133,5 @@ internal sealed record TestRunOutcome(
     string? PausedAtGateId,
     string? GateKind,
     IReadOnlyList<TestRunGateDecision> GateDecisions,
-    string? FailureNodeId);
+    string? FailureNodeId,
+    bool FailureNodeAttributed = false);

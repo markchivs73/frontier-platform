@@ -132,6 +132,14 @@ public sealed record TestRunResult
     /// </summary>
     public string? FailureNodeId { get; init; }
 
+    /// <summary>
+    /// S13.26: <see langword="true"/> when <see cref="FailureNodeId"/> is the node that actually failed
+    /// (the run paused on a permanent step failure, which records its node exactly), so the A4 link can
+    /// say "failing node". <see langword="false"/> when it is only the last completed node — the
+    /// failure happened at or after it — or when there is no failure.
+    /// </summary>
+    public bool FailureNodeAttributed { get; init; }
+
     /// <summary>Validator results from rules executed during test-run.</summary>
     public required IReadOnlyList<ValidationFinding> ValidatorFindings { get; init; }
 

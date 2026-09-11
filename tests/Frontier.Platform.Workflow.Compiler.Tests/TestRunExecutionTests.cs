@@ -164,7 +164,7 @@ public sealed class TestRunExecutionTests
     }
 
     [Fact]
-    public void ToOutcome_PlainFailure_SetsFailureNodeIdToLastCompletedNode()
+    public void ToOutcome_Failure_SetsFailureNodeIdFromTheSnapshotsCurrentNode()
     {
         // C-35 (S9.53): the plain-failure canvas-link anchor is the snapshot's current node.
         var failed = TestRunExecution.ToOutcome(Snapshot(ExecutionStatus.PausedOnFailure, currentNodeId: "gen-scope"));
@@ -210,6 +210,35 @@ public sealed class TestRunExecutionTests
 
         Assert.False(outcome.Success);
         Assert.Contains("gate-1", outcome.ErrorMessage, StringComparison.Ordinal);
+    }
+
+    /// <summary>S13.26: a permanent step failure records the node that failed, so the outcome says the anchor is exact.</summary>
+    [Fact]
+    public void ToOutcome_PausedOnFailure_AttributesTheFailingNode()
+    {
+        var outcome = TestRunExecution.ToOutcome(Snapshot(ExecutionStatus.PausedOnFailure, currentNodeId: "match_developer"));
+
+        Assert.Equal("match_developer", outcome.FailureNodeId);
+        Assert.True(outcome.FailureNodeAttributed);
+    }
+
+    /// <summary>S13.26: an orchestration-level failure only knows the last snapshot's node — the last completed one — so the anchor is not exact.</summary>
+    [Theory]
+    [InlineData("failed")]
+    [InlineData("completed")]
+    [InlineData("paused_at_gate")]
+    public void ToOutcome_AnythingButPausedOnFailure_DoesNotAttribute(string status)
+    {
+        var snapshotStatus = status switch
+        {
+            "failed" => ExecutionStatus.Failed,
+            "completed" => ExecutionStatus.Completed,
+            _ => ExecutionStatus.PausedAtGate,
+        };
+
+        var outcome = TestRunExecution.ToOutcome(Snapshot(snapshotStatus, pausedAtGateId: status == "paused_at_gate" ? "g1" : null, currentNodeId: "gen-scope"));
+
+        Assert.False(outcome.FailureNodeAttributed);
     }
 
     [Fact]
