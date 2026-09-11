@@ -18,6 +18,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Single source of truth for the emulator endpoint (S9.23) -->
+    <Compile Include="..\Shared\EmulatorCosmos.cs" Link="EmulatorCosmos.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Frontier.Platform.Guardrails\Frontier.Platform.Guardrails.csproj" />
     <!-- ADR-PA21: BudgetLedgerDocument round-trips through the canonical profile -->
     <ProjectReference Include="..\..\src\Frontier.Platform.Serialization\Frontier.Platform.Serialization.csproj" />

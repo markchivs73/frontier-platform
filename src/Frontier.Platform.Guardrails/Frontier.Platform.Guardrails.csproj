@@ -14,6 +14,8 @@
   <ItemGroup>
     <!-- Platform contract kernel: ContractViolationException for a currency mismatch (ADR-PA21) -->
     <ProjectReference Include="..\Frontier.Platform.Abstractions\Frontier.Platform.Abstractions.csproj" />
+    <!-- Canonical profile: [DecimalPrecision(4)] on the ledger's cost fields (doc 01 §3.3) -->
+    <ProjectReference Include="..\Frontier.Platform.Serialization\Frontier.Platform.Serialization.csproj" />
   </ItemGroup>
 
 </Project>

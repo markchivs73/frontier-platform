@@ -936,3 +936,21 @@ members above, it is **optional**. It is null when no invocation was priced. Sto
 documents predate it and are not migrated: they expire on their 7-day TTL, and until then they read
 back as currency-less instead of failing. ADR-E15's floor holds: the member is additive, never
 `required`, and rides no DTF activity input or output. Release: patch, v0.23.1.
+
+### ADR-PA21 — amended 2026-09-11: the ledger keeps every execution's snapshot current, at scale 4
+
+Two defects in `CosmosBudgetLedger` sat under this ADR's ledger members. First, only the create path
+wrote `execution_snapshots`. The replace path advanced the engagement totals and left the map alone,
+so an execution-scope snapshot returned the first invocation's usage for good, and every execution
+after the document's first had no snapshot at all. Second, the execution-scope read used a LINQ
+`ContainsKey` that the Cosmos SDK cannot translate, so it threw before reaching the map. Accumulation
+now lives in the pure `BudgetLedgerAccumulation`, which advances the totals and the recorded
+execution's snapshot together and refuses usage whose currency differs from the document's or from
+the snapshot's. The read is a parameterised SQL `IS_DEFINED` query.
+
+**The ledger's costs are scale 4, not scale 2.** "Budgets 2" above means `BudgetSpec.MaxCost`, a
+ceiling, which is unchanged. `BudgetLedgerDocument.TotalCost` and `ExecutionLedgerSnapshot.TotalCost`
+accumulate real usage, and one invocation costs a fraction of a cent (0.0012 USD, say). Scale 2 would
+round that usage away. Both members were already written at the profile's default scale 4. They now
+declare `[DecimalPrecision(4)]` explicitly, so the stored bytes are unchanged and no migration is
+needed. Release: patch, v0.23.2.

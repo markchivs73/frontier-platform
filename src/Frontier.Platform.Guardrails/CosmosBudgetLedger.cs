@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Azure.Cosmos;
-using Microsoft.Azure.Cosmos.Linq;
 
 namespace Frontier.Platform.Guardrails;
 
@@ -22,7 +21,7 @@ internal sealed class CosmosBudgetLedger : IBudgetLedger
     {
         ArgumentNullException.ThrowIfNull(usage);
 
-        var docId = $"{usage.EngagementId}:ledger";
+        var docId = BudgetLedgerAccumulation.DocumentId(usage.EngagementId);
 
         try
         {
@@ -31,14 +30,7 @@ internal sealed class CosmosBudgetLedger : IBudgetLedger
                 new PartitionKey(usage.EngagementId),
                 cancellationToken: cancellationToken);
 
-            CostCurrency.EnsureCombinable(nameof(BudgetLedgerDocument), doc.Resource.Currency, usage.Currency);
-            var updated = doc.Resource with
-            {
-                TotalInputTokens = doc.Resource.TotalInputTokens + usage.InputTokens,
-                TotalOutputTokens = doc.Resource.TotalOutputTokens + usage.OutputTokens,
-                TotalCost = doc.Resource.TotalCost + usage.Cost,
-                InvocationCount = doc.Resource.InvocationCount + 1,
-            };
+            var updated = BudgetLedgerAccumulation.Accumulate(doc.Resource, usage, DateTime.UtcNow);
 
             await container.ReplaceItemAsync(
                 updated,
@@ -48,27 +40,7 @@ internal sealed class CosmosBudgetLedger : IBudgetLedger
         }
         catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
-            var newDoc = new BudgetLedgerDocument
-            {
-                PartitionKey = usage.EngagementId,
-                Id = docId,
-                EngagementId = usage.EngagementId,
-                TotalInputTokens = usage.InputTokens,
-                TotalOutputTokens = usage.OutputTokens,
-                TotalCost = usage.Cost,
-                Currency = usage.Currency,
-                InvocationCount = 1,
-                ExecutionSnapshots = new Dictionary<string, ExecutionLedgerSnapshot>
-                {
-                    [usage.ExecutionId] = new ExecutionLedgerSnapshot(
-                        ExecutionId: usage.ExecutionId,
-                        TotalTokens: usage.InputTokens + usage.OutputTokens,
-                        TotalCost: usage.Cost,
-                        Currency: usage.Currency,
-                        InvocationCount: 1,
-                        LastUpdatedUtc: DateTime.UtcNow),
-                },
-            };
+            var newDoc = BudgetLedgerAccumulation.Accumulate(null, usage, DateTime.UtcNow);
 
             await container.CreateItemAsync(newDoc, new PartitionKey(usage.EngagementId), cancellationToken: cancellationToken);
         }
@@ -111,9 +83,10 @@ internal sealed class CosmosBudgetLedger : IBudgetLedger
     /// <summary>Retrieves execution-level usage from the ledger doc's ExecutionSnapshots map.</summary>
     private async Task<BudgetSnapshot> GetExecutionSnapshotAsync(string executionId, CancellationToken cancellationToken)
     {
-        var docs = container.GetItemLinqQueryable<BudgetLedgerDocument>()
-            .Where(doc => doc.ExecutionSnapshots!.ContainsKey(executionId))
-            .ToFeedIterator();
+        // SQL, not LINQ: the Cosmos LINQ provider cannot translate Dictionary.ContainsKey.
+        var query = new QueryDefinition("SELECT * FROM c WHERE IS_DEFINED(c.execution_snapshots[@executionId])")
+            .WithParameter("@executionId", executionId);
+        using var docs = container.GetItemQueryIterator<BudgetLedgerDocument>(query);
 
         while (docs.HasMoreResults)
         {
