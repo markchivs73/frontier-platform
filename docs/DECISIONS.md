@@ -954,3 +954,60 @@ accumulate real usage, and one invocation costs a fraction of a cent (0.0012 USD
 round that usage away. Both members were already written at the profile's default scale 4. They now
 declare `[DecimalPrecision(4)]` explicitly, so the stored bytes are unchanged and no migration is
 needed. Release: patch, v0.23.2.
+
+## ADR-PA22 — verification resolves the key version that signed the record, not the current one
+
+`AuditSigner.VerifyAsync` fetched one key from `IKeyProvider.GetCurrentKeyAsync` and handed it to
+`AuditChainVerifier` for the whole chain, so every record was checked against whatever key is
+current *now*. Each record has always stored the version it was signed under in `SigningKeyId`;
+verification never read it. Audit chains are per **engagement** and span that engagement's entire
+life, so the first rotation would have reported every engagement's pre-rotation records as broken
+links — permanently, and with no way to tell that from tampering. Doc 05 §5 already specified the
+correct behaviour ("verification resolves the key *version* from `SigningKeyId`, so old records
+verify under old key versions forever; rotation requires no re-signing"), so this is a defect
+against the spec, not a change of position. It is a K6 repair: the HMAC chain is only evidence if
+it survives the key lifecycle.
+
+**The surface.** `IKeyProvider` gains `GetKeyAsync(keyId, ct)` returning `null` for an
+unresolvable id, with **no default interface implementation** — the only default available would
+be to fall back to the current key, which is the defect itself, so every implementation must
+answer by version or admit it cannot. A new internal `SigningKeyResolver` resolves a chain's
+**distinct** key ids, one provider call per distinct id (a 500-record chain over two rotations
+costs three calls, not 500). `AuditChainVerifier.Verify`/`FindBrokenLink`/`IsSignatureValid` take
+an `IReadOnlyDictionary<string, SigningKey>` and look each record up by its own `SigningKeyId`.
+`SignedAuditRecord` is **unchanged** — no bytes, hashes or signatures move, so every record
+already stored stays verifiable and no golden file changes.
+
+**Fail closed, but distinguishable.** An unresolvable key id makes `SignatureValid` false for the
+target record *and* lists the id in the new optional `VerificationResult.UnresolvedKeyIds`
+(`unresolved_key_ids`, property order 4). "The key version is gone" and "the signature is forged"
+are different findings and an auditor must not have to guess which one they are looking at. The
+list is **chain-wide**: any unresolvable id anywhere in the chain is reported even when the target
+record itself verifies, because a caller auditing a chain needs to know a version has been
+destroyed regardless of which record they asked about. It is optional and omit-null, so a clean
+verification's bytes are unchanged.
+
+**An unresolvable key does not stop the walk.** Hash-chain continuity needs no key, so
+`FindBrokenLink` still walks past a record whose key is missing and still reports a genuine hash
+discontinuity later in the chain. A missing key version is reported through `SignatureValid` and
+`UnresolvedKeyIds`, never as a broken link.
+
+**`VerifiedAgainstKeyId` is redefined — read this before upgrading.** It was "the key
+verification was performed against", which in practice meant the current key. It now means the
+**target record's own** key id: the version its signature was actually checked against. The shape
+is unchanged (still `required string`, same wire name, same order), so nothing fails to compile or
+deserialize, and that is exactly why it is called out here and in the release notes. Any consumer
+reading it as "the key the system is currently signing with" is now wrong, and silently so. After
+a rotation a pre-rotation record reports the older version here forever. This is the honest
+meaning: reporting a key the record was not verified against was never useful.
+
+*Evidence.* NIST SP 800-57 Part 1 Rev. 5 (May 2020) separates a key's **originator-usage period**
+from its longer **recipient-usage period** — a key retired for producing protection must remain
+available for *processing* already-protected data — which is the rule doc 05 §5 states as "old
+versions are disabled for signing, retained for verify". HMAC is per RFC 2104. Sources read
+2026-09-12.
+
+Release: **minor, v0.24.0** (major version 0, so a breaking change may ship in a minor — README
+"Versioning"). Breaking for any out-of-repo `IKeyProvider` implementation, which must now
+implement `GetKeyAsync`; the in-repo `DevKeyProvider` resolves its own key id and returns `null`
+for anything else. Tracked as S13.66.

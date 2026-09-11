@@ -17,3 +17,6 @@ Frontier.Platform.Audit.SignedAuditRecord.DynamicContextHash.get -> string?
 Frontier.Platform.Audit.SignedAuditRecord.DynamicContextHash.init -> void
 Frontier.Platform.Audit.SignedAuditRecord.Sandbox.get -> bool?
 Frontier.Platform.Audit.SignedAuditRecord.Sandbox.init -> void
+Frontier.Platform.Audit.IKeyProvider.GetKeyAsync(string! keyId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Audit.SigningKey?>!
+Frontier.Platform.Audit.VerificationResult.UnresolvedKeyIds.get -> System.Collections.Generic.IReadOnlyList<string!>?
+Frontier.Platform.Audit.VerificationResult.UnresolvedKeyIds.init -> void

@@ -25,8 +25,26 @@ public sealed record VerificationResult
     [JsonPropertyName("broken_link_at")]
     public string? BrokenLinkAt { get; init; }
 
-    /// <summary>The signing key id (Key Vault key version) verification was performed against.</summary>
+    /// <summary>
+    /// The signing key id (Key Vault key version) the <em>verified record itself</em> was signed
+    /// under — that is, the target record's <see cref="SignedAuditRecord.SigningKeyId"/>, which is
+    /// the version its signature was checked against. It is <em>not</em> "the current key":
+    /// after a rotation a pre-rotation record still reports the older version here, forever
+    /// (doc 05 §5; ADR-PA22 records the redefinition).
+    /// </summary>
     [JsonPropertyOrder(3)]
     [JsonPropertyName("verified_against_key_id")]
     public required string VerifiedAgainstKeyId { get; init; }
+
+    /// <summary>
+    /// The distinct signing key ids appearing <em>anywhere in the verified chain</em> that could
+    /// not be resolved to a key version, in chain order; <see langword="null"/> when every id
+    /// resolved. A record whose key id is listed here fails signature verification (fail closed),
+    /// but being listed distinguishes "the key version is gone" from "the signature is forged".
+    /// The chain's hash continuity needs no key and is still reported through
+    /// <see cref="ChainValid"/> and <see cref="BrokenLinkAt"/> (ADR-PA22).
+    /// </summary>
+    [JsonPropertyOrder(4)]
+    [JsonPropertyName("unresolved_key_ids")]
+    public IReadOnlyList<string>? UnresolvedKeyIds { get; init; }
 }

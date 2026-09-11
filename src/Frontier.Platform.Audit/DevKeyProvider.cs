@@ -9,8 +9,12 @@ namespace Frontier.Platform.Audit;
 /// </summary>
 internal sealed class DevKeyProvider : IKeyProvider
 {
-    private static readonly byte[] DevKeyMaterial = Encoding.UTF8.GetBytes("frontier-workflow-dev-signing-key");
+    private static readonly SigningKey DevKey = new("dev-key/v1", Encoding.UTF8.GetBytes("frontier-workflow-dev-signing-key"));
 
-    public Task<SigningKey> GetCurrentKeyAsync(CancellationToken cancellationToken) =>
-        Task.FromResult(new SigningKey("dev-key/v1", DevKeyMaterial));
+    /// <inheritdoc />
+    public Task<SigningKey> GetCurrentKeyAsync(CancellationToken cancellationToken) => Task.FromResult(DevKey);
+
+    /// <inheritdoc />
+    public Task<SigningKey?> GetKeyAsync(string keyId, CancellationToken cancellationToken) =>
+        Task.FromResult(keyId == DevKey.KeyId ? DevKey : null);
 }
