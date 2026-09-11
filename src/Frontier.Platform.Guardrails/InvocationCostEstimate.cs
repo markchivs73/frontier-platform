@@ -6,7 +6,8 @@ namespace Frontier.Platform.Guardrails;
 /// The pre-call cost estimate for one agent invocation (doc 07 §4), built by the
 /// invocation pipeline (S4.2) once context assembly has fixed <see cref="PromptTokens"/>
 /// and Model-Role Config has resolved <see cref="ResolvedModel"/> and its cost-per-token.
-/// Passed to <see cref="IAdmissionController.AdmitAsync"/>.
+/// Passed to <see cref="IAdmissionController.AdmitAsync"/>. <see cref="EstimatedCost"/> is in
+/// <see cref="Currency"/> (ISO 4217, ADR-PA21).
 /// </summary>
 [ExcludeFromCodeCoverage(Justification = "Plain data record; exercised by AdmissionController tests.")]
 public sealed record InvocationCostEstimate(
@@ -18,4 +19,5 @@ public sealed record InvocationCostEstimate(
     string ResolvedModel,
     long PromptTokens,
     long MaxOutputTokens,
-    decimal EstimatedCostGbp);
+    decimal EstimatedCost,
+    string Currency);

@@ -84,9 +84,11 @@ public static class Phase1RoleCatalogue
     /// (doc 08 §6's worked example); reordered after QG-4 gate testing found
     /// claude-fable-5 returns <c>not_found_error</c> on this account's API key, and
     /// <see cref="ModelResolver"/> always serves chain entry 0 (fallback-chain walking is
-    /// deferred — see its doc comment). Cost figures for claude-fable-5 follow doc 08 §6's
-    /// worked example; claude-opus-4-8's figures are PoC placeholders pending verified
-    /// provider pricing.
+    /// deferred — see its doc comment). Cost figures are Anthropic's first-party list prices in
+    /// USD per 1,000 tokens (pricing table cached 2026-06-24: claude-opus-4-8 $5/$25 and
+    /// claude-fable-5 $10/$50 per million input/output tokens), with cache reads at 0.1× base
+    /// input per Anthropic's prompt-caching documentation (ADR-PA21). They replaced GBP
+    /// placeholders roughly six times list.
     /// </summary>
     public static readonly RoleMapping DeepReasoningMappingV1 = new()
     {
@@ -98,9 +100,10 @@ public static class Phase1RoleCatalogue
             {
                 Provider = "anthropic",
                 ModelId = "claude-opus-4-8",
-                InputCostPer1kGbp = 0.0300m,
-                OutputCostPer1kGbp = 0.1500m,
-                CacheReadCostPer1kGbp = 0.0030m,
+                InputCostPer1k = 0.0050m,
+                OutputCostPer1k = 0.0250m,
+                CacheReadCostPer1k = 0.0005m,
+                Currency = "USD",
                 ContextWindow = 200_000,
                 MaxOutputTokens = 16_000,
             },
@@ -108,9 +111,10 @@ public static class Phase1RoleCatalogue
             {
                 Provider = "anthropic",
                 ModelId = "claude-fable-5",
-                InputCostPer1kGbp = 0.0180m,
-                OutputCostPer1kGbp = 0.0900m,
-                CacheReadCostPer1kGbp = 0.0018m,
+                InputCostPer1k = 0.0100m,
+                OutputCostPer1k = 0.0500m,
+                CacheReadCostPer1k = 0.0010m,
+                Currency = "USD",
                 ContextWindow = 200_000,
                 MaxOutputTokens = 16_000,
             },

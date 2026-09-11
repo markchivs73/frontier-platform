@@ -31,11 +31,12 @@ internal sealed class CosmosBudgetLedger : IBudgetLedger
                 new PartitionKey(usage.EngagementId),
                 cancellationToken: cancellationToken);
 
+            CostCurrency.EnsureCombinable(nameof(BudgetLedgerDocument), doc.Resource.Currency, usage.Currency);
             var updated = doc.Resource with
             {
                 TotalInputTokens = doc.Resource.TotalInputTokens + usage.InputTokens,
                 TotalOutputTokens = doc.Resource.TotalOutputTokens + usage.OutputTokens,
-                TotalCostGbp = doc.Resource.TotalCostGbp + usage.CostGbp,
+                TotalCost = doc.Resource.TotalCost + usage.Cost,
                 InvocationCount = doc.Resource.InvocationCount + 1,
             };
 
@@ -54,14 +55,16 @@ internal sealed class CosmosBudgetLedger : IBudgetLedger
                 EngagementId = usage.EngagementId,
                 TotalInputTokens = usage.InputTokens,
                 TotalOutputTokens = usage.OutputTokens,
-                TotalCostGbp = usage.CostGbp,
+                TotalCost = usage.Cost,
+                Currency = usage.Currency,
                 InvocationCount = 1,
                 ExecutionSnapshots = new Dictionary<string, ExecutionLedgerSnapshot>
                 {
                     [usage.ExecutionId] = new ExecutionLedgerSnapshot(
                         ExecutionId: usage.ExecutionId,
                         TotalTokens: usage.InputTokens + usage.OutputTokens,
-                        TotalCostGbp: usage.CostGbp,
+                        TotalCost: usage.Cost,
+                        Currency: usage.Currency,
                         InvocationCount: 1,
                         LastUpdatedUtc: DateTime.UtcNow),
                 },
@@ -88,7 +91,7 @@ internal sealed class CosmosBudgetLedger : IBudgetLedger
                 return await GetEngagementSnapshotAsync(scope.Id, cancellationToken);
 
             case BudgetScopeKind.Fleet:
-                return new BudgetSnapshot(scope, 0, 0, 0);
+                return new BudgetSnapshot(scope, 0, 0, null, 0);
 
             default:
                 throw new InvalidOperationException($"Unknown budget scope kind: {scope.Kind}");
@@ -102,7 +105,7 @@ internal sealed class CosmosBudgetLedger : IBudgetLedger
     private static Task<BudgetSnapshot> GetInvocationSnapshotAsync(string correlationId, CancellationToken cancellationToken)
     {
         var scope = new BudgetScopeRef(BudgetScopeKind.Invocation, correlationId);
-        return Task.FromResult(new BudgetSnapshot(scope, 0, 0, 0));
+        return Task.FromResult(new BudgetSnapshot(scope, 0, 0, null, 0));
     }
 
     /// <summary>Retrieves execution-level usage from the ledger doc's ExecutionSnapshots map.</summary>
@@ -120,13 +123,13 @@ internal sealed class CosmosBudgetLedger : IBudgetLedger
                 if (doc.ExecutionSnapshots?.TryGetValue(executionId, out var snapshot) == true)
                 {
                     var scope = new BudgetScopeRef(BudgetScopeKind.Execution, executionId);
-                    return new BudgetSnapshot(scope, snapshot.TotalTokens, snapshot.TotalCostGbp, snapshot.InvocationCount);
+                    return new BudgetSnapshot(scope, snapshot.TotalTokens, snapshot.TotalCost, snapshot.Currency, snapshot.InvocationCount);
                 }
             }
         }
 
         var emptyScope = new BudgetScopeRef(BudgetScopeKind.Execution, executionId);
-        return new BudgetSnapshot(emptyScope, 0, 0, 0);
+        return new BudgetSnapshot(emptyScope, 0, 0, null, 0);
     }
 
     /// <summary>Retrieves engagement-level usage (totals from the ledger doc).</summary>
@@ -144,13 +147,14 @@ internal sealed class CosmosBudgetLedger : IBudgetLedger
             return new BudgetSnapshot(
                 scope,
                 doc.Resource.TotalInputTokens + doc.Resource.TotalOutputTokens,
-                doc.Resource.TotalCostGbp,
+                doc.Resource.TotalCost,
+                doc.Resource.Currency,
                 doc.Resource.InvocationCount);
         }
         catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
             var scope = new BudgetScopeRef(BudgetScopeKind.Engagement, engagementId);
-            return new BudgetSnapshot(scope, 0, 0, 0);
+            return new BudgetSnapshot(scope, 0, 0, null, 0);
         }
     }
 }

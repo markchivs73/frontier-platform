@@ -12,7 +12,7 @@ public sealed class Phase1EmpiricalQueryServiceTests
         var result = await Service.GetCacheEconomicsAsync(Scope, CancellationToken.None);
 
         Assert.Empty(result.Rows);
-        Assert.Equal(0m, result.TotalCostSavedGbp);
+        Assert.Equal(0m, result.TotalCostSaved);
         Assert.Equal(0, result.TotalExecutions);
     }
 

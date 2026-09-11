@@ -173,16 +173,17 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
             resolved.ModelId,
             promptTokens,
             maxOutputTokens,
-            EstimateCostGbp(resolved.Entry, promptTokens, maxOutputTokens));
+            EstimateCost(resolved.Entry, promptTokens, maxOutputTokens),
+            resolved.Entry.Currency);
     }
 
     /// <summary>PoC-grade prompt-token heuristic: ~4 characters per token (S4.2; M.E.AI's reported <see cref="Microsoft.Extensions.AI.UsageDetails"/> replaces this post-invocation).</summary>
     internal static long EstimatePromptTokens(string instructions, string prompt) =>
         (long)Math.Ceiling((instructions.Length + prompt.Length) / 4.0);
 
-    /// <summary>Estimates the invocation's worst-case cost in GBP from <paramref name="entry"/>'s per-1k-token rates (doc 08 §6, scale 4).</summary>
-    internal static decimal EstimateCostGbp(ModelEntry entry, long promptTokens, long maxOutputTokens) =>
-        Math.Round((promptTokens / 1000m * entry.InputCostPer1kGbp) + (maxOutputTokens / 1000m * entry.OutputCostPer1kGbp), 4);
+    /// <summary>Estimates the invocation's worst-case cost, in <paramref name="entry"/>'s currency, from its per-1k-token rates (doc 08 §6, scale 4).</summary>
+    internal static decimal EstimateCost(ModelEntry entry, long promptTokens, long maxOutputTokens) =>
+        Math.Round((promptTokens / 1000m * entry.InputCostPer1k) + (maxOutputTokens / 1000m * entry.OutputCostPer1k), 4);
 
     /// <summary>Builds the activity's result, projecting <paramref name="resolved"/> into the audit-facing <see cref="ResolvedModelSummary"/> (doc 08 §6).</summary>
     internal static AgentTaskActivityResult BuildResult(AgentTaskActivityInput input, ResolvedModel resolved, string payload, string hash) => new()

@@ -25,14 +25,14 @@ public sealed class BudgetLedgerTests
         var snapshot = await ledger.GetSnapshotAsync(scope, CancellationToken.None);
 
         Assert.Equal(0, snapshot.TokensUsed);
-        Assert.Equal(0m, snapshot.CostGbp);
+        Assert.Equal(0m, snapshot.Cost);
         Assert.Equal(0, snapshot.InvocationCount);
     }
 
     [Fact]
     public async Task RecordUsageAsync_DuplicateCorrelationId_DoesNotDoubleCount()
     {
-        var usage = Usage(correlationId: "correlation-1", executionId: "execution-1", engagementId: "engagement-1", inputTokens: 100, outputTokens: 50, costGbp: 0.10m);
+        var usage = Usage(correlationId: "correlation-1", executionId: "execution-1", engagementId: "engagement-1", inputTokens: 100, outputTokens: 50, cost: 0.10m);
 
         await ledger.RecordUsageAsync(usage, CancellationToken.None);
         await ledger.RecordUsageAsync(usage with { InputTokens = 999 }, CancellationToken.None);
@@ -40,7 +40,7 @@ public sealed class BudgetLedgerTests
         var snapshot = await ledger.GetSnapshotAsync(new BudgetScopeRef(BudgetScopeKind.Invocation, "correlation-1"), CancellationToken.None);
 
         Assert.Equal(150, snapshot.TokensUsed);
-        Assert.Equal(0.10m, snapshot.CostGbp);
+        Assert.Equal(0.10m, snapshot.Cost);
         Assert.Equal(1, snapshot.InvocationCount);
     }
 
@@ -53,7 +53,7 @@ public sealed class BudgetLedgerTests
         var snapshot = await ledger.GetSnapshotAsync(new BudgetScopeRef(BudgetScopeKind.Invocation, "correlation-a"), CancellationToken.None);
 
         Assert.Equal(150, snapshot.TokensUsed);
-        Assert.Equal(0.10m, snapshot.CostGbp);
+        Assert.Equal(0.10m, snapshot.Cost);
         Assert.Equal(1, snapshot.InvocationCount);
     }
 
@@ -67,7 +67,7 @@ public sealed class BudgetLedgerTests
         var snapshot = await ledger.GetSnapshotAsync(new BudgetScopeRef(BudgetScopeKind.Execution, "execution-1"), CancellationToken.None);
 
         Assert.Equal(425, snapshot.TokensUsed);
-        Assert.Equal(0.30m, snapshot.CostGbp);
+        Assert.Equal(0.30m, snapshot.Cost);
         Assert.Equal(2, snapshot.InvocationCount);
     }
 
@@ -81,7 +81,7 @@ public sealed class BudgetLedgerTests
         var snapshot = await ledger.GetSnapshotAsync(new BudgetScopeRef(BudgetScopeKind.Engagement, "engagement-1"), CancellationToken.None);
 
         Assert.Equal(425, snapshot.TokensUsed);
-        Assert.Equal(0.30m, snapshot.CostGbp);
+        Assert.Equal(0.30m, snapshot.Cost);
         Assert.Equal(2, snapshot.InvocationCount);
     }
 
@@ -93,11 +93,11 @@ public sealed class BudgetLedgerTests
         var snapshot = await ledger.GetSnapshotAsync(new BudgetScopeRef(BudgetScopeKind.Fleet, "ignored"), CancellationToken.None);
 
         Assert.Equal(0, snapshot.TokensUsed);
-        Assert.Equal(0m, snapshot.CostGbp);
+        Assert.Equal(0m, snapshot.Cost);
         Assert.Equal(0, snapshot.InvocationCount);
     }
 
-    internal static UsageRecord Usage(string correlationId, string executionId, string engagementId, long inputTokens, long outputTokens, decimal costGbp) => new(
+    internal static UsageRecord Usage(string correlationId, string executionId, string engagementId, long inputTokens, long outputTokens, decimal cost, string currency = "USD") => new(
         CorrelationId: correlationId,
         ExecutionId: executionId,
         EngagementId: engagementId,
@@ -106,5 +106,6 @@ public sealed class BudgetLedgerTests
         ResolvedModel: "claude-fable-5",
         InputTokens: inputTokens,
         OutputTokens: outputTokens,
-        CostGbp: costGbp);
+        Cost: cost,
+        Currency: currency);
 }

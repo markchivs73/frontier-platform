@@ -7,7 +7,7 @@ namespace Frontier.Platform.Observability;
 /// </summary>
 internal sealed class Phase1EmpiricalQueryService : IEmpiricalQueryService
 {
-    private static readonly TierEconomics EmptyTierEconomics = new([], 0m, 0);
+    private static readonly TierEconomics EmptyTierEconomics = new([], 0m, null, 0);
     private static readonly RetryDistribution EmptyRetryDistribution = new([], 0, 0);
     private static readonly ValidatorDistribution EmptyValidatorDistribution = new([]);
     private static readonly HitlEvidence EmptyHitlEvidence = new([], 0m);

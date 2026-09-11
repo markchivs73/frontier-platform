@@ -40,7 +40,7 @@ public sealed class BudgetHierarchyTests
     public async Task CanApproveAsync_AllBudgetsNull_ReturnsTrue()
     {
         var hierarchy = Hierarchy(UnboundedPolicy);
-        var estimate = Estimate(promptTokens: 10_000, maxOutputTokens: 5_000, costGbp: 5.00m);
+        var estimate = Estimate(promptTokens: 10_000, maxOutputTokens: 5_000, cost: 5.00m);
 
         var result = await hierarchy.CanApproveAsync(
             Scope(BudgetScopeKind.Invocation, estimate.CorrelationId),
@@ -55,11 +55,11 @@ public sealed class BudgetHierarchyTests
     public async Task CanApproveAsync_WithinAllBudgets_ReturnsTrue()
     {
         var policy = PolicyWith(
-            perInvocation: new BudgetSpec(MaxTokens: 20_000, MaxCostGbp: 5.00m, MaxAgentInvocations: 10),
-            perExecution: new BudgetSpec(MaxTokens: 50_000, MaxCostGbp: 20.00m, MaxAgentInvocations: null),
-            perEngagement: new BudgetSpec(MaxTokens: 100_000, MaxCostGbp: 50.00m, MaxAgentInvocations: null));
+            perInvocation: new BudgetSpec(MaxTokens: 20_000, MaxCost: 5.00m, Currency: "USD", MaxAgentInvocations: 10),
+            perExecution: new BudgetSpec(MaxTokens: 50_000, MaxCost: 20.00m, Currency: "USD", MaxAgentInvocations: null),
+            perEngagement: new BudgetSpec(MaxTokens: 100_000, MaxCost: 50.00m, Currency: "USD", MaxAgentInvocations: null));
         var hierarchy = Hierarchy(policy);
-        var estimate = Estimate(promptTokens: 1_000, maxOutputTokens: 500, costGbp: 0.10m);
+        var estimate = Estimate(promptTokens: 1_000, maxOutputTokens: 500, cost: 0.10m);
 
         var result = await hierarchy.CanApproveAsync(
             Scope(BudgetScopeKind.Invocation, estimate.CorrelationId),
@@ -74,8 +74,8 @@ public sealed class BudgetHierarchyTests
     public async Task CanApproveAsync_InvocationTokenBudgetBreached_ReturnsFalse()
     {
         // PerInvocation budget: 1000 tokens. Estimate: 800 prompt + 201 output = 1001 > 1000.
-        var hierarchy = Hierarchy(PolicyWith(perInvocation: new BudgetSpec(MaxTokens: 1_000, null, null)));
-        var estimate = Estimate(promptTokens: 800, maxOutputTokens: 201, costGbp: 0.01m);
+        var hierarchy = Hierarchy(PolicyWith(perInvocation: new BudgetSpec(MaxTokens: 1_000, null, null, null)));
+        var estimate = Estimate(promptTokens: 800, maxOutputTokens: 201, cost: 0.01m);
 
         var result = await hierarchy.CanApproveAsync(
             Scope(BudgetScopeKind.Invocation, estimate.CorrelationId),
@@ -89,8 +89,8 @@ public sealed class BudgetHierarchyTests
     [Fact]
     public async Task CanApproveAsync_InvocationCostBudgetBreached_ReturnsFalse()
     {
-        var hierarchy = Hierarchy(PolicyWith(perInvocation: new BudgetSpec(null, MaxCostGbp: 1.00m, null)));
-        var estimate = Estimate(promptTokens: 100, maxOutputTokens: 100, costGbp: 1.01m);
+        var hierarchy = Hierarchy(PolicyWith(perInvocation: new BudgetSpec(null, MaxCost: 1.00m, Currency: "USD", null)));
+        var estimate = Estimate(promptTokens: 100, maxOutputTokens: 100, cost: 1.01m);
 
         var result = await hierarchy.CanApproveAsync(
             Scope(BudgetScopeKind.Invocation, estimate.CorrelationId),
@@ -106,10 +106,10 @@ public sealed class BudgetHierarchyTests
     {
         // PerExecution budget: 1000 tokens. Seed 500+500 already used in execution. Estimate adds 1+1 → 1002 > 1000.
         var executionId = "exec-over-limit";
-        var hierarchy = Hierarchy(PolicyWith(perExecution: new BudgetSpec(MaxTokens: 1_000, null, null)));
-        await ledger.RecordUsageAsync(Usage("corr-a", executionId, "eng-1", inputTokens: 300, outputTokens: 200, costGbp: 0.01m), CancellationToken.None);
-        await ledger.RecordUsageAsync(Usage("corr-b", executionId, "eng-1", inputTokens: 300, outputTokens: 200, costGbp: 0.01m), CancellationToken.None);
-        var estimate = Estimate(promptTokens: 1, maxOutputTokens: 1, costGbp: 0.001m, executionId: executionId);
+        var hierarchy = Hierarchy(PolicyWith(perExecution: new BudgetSpec(MaxTokens: 1_000, null, null, null)));
+        await ledger.RecordUsageAsync(Usage("corr-a", executionId, "eng-1", inputTokens: 300, outputTokens: 200, cost: 0.01m), CancellationToken.None);
+        await ledger.RecordUsageAsync(Usage("corr-b", executionId, "eng-1", inputTokens: 300, outputTokens: 200, cost: 0.01m), CancellationToken.None);
+        var estimate = Estimate(promptTokens: 1, maxOutputTokens: 1, cost: 0.001m, executionId: executionId);
 
         var result = await hierarchy.CanApproveAsync(
             Scope(BudgetScopeKind.Invocation, estimate.CorrelationId),
@@ -125,11 +125,11 @@ public sealed class BudgetHierarchyTests
     {
         // PerExecution budget: 3 invocations. Seed 3 prior records → count 3. New: 3+1=4 > 3 → deny.
         var executionId = "exec-at-limit";
-        var hierarchy = Hierarchy(PolicyWith(perExecution: new BudgetSpec(null, null, MaxAgentInvocations: 3)));
+        var hierarchy = Hierarchy(PolicyWith(perExecution: new BudgetSpec(null, null, null, MaxAgentInvocations: 3)));
         await ledger.RecordUsageAsync(Usage("corr-1", executionId, "eng-1", 100, 50, 0.01m), CancellationToken.None);
         await ledger.RecordUsageAsync(Usage("corr-2", executionId, "eng-1", 100, 50, 0.01m), CancellationToken.None);
         await ledger.RecordUsageAsync(Usage("corr-3", executionId, "eng-1", 100, 50, 0.01m), CancellationToken.None);
-        var estimate = Estimate(promptTokens: 100, maxOutputTokens: 50, costGbp: 0.01m, executionId: executionId);
+        var estimate = Estimate(promptTokens: 100, maxOutputTokens: 50, cost: 0.01m, executionId: executionId);
 
         var result = await hierarchy.CanApproveAsync(
             Scope(BudgetScopeKind.Invocation, estimate.CorrelationId),
@@ -143,12 +143,12 @@ public sealed class BudgetHierarchyTests
     [Fact]
     public async Task CanApproveAsync_EngagementCostBudgetBreached_ReturnsFalse()
     {
-        // PerEngagement cost budget: £5. Seed £4.90 across two executions. Estimate £0.11 → 5.01 > 5 → deny.
+        // PerEngagement cost budget: USD 5.00. Seed USD 4.90 across two executions. Estimate USD 0.11 → 5.01 > 5 → deny.
         var engagementId = "eng-over-cost";
-        var hierarchy = Hierarchy(PolicyWith(perEngagement: new BudgetSpec(null, MaxCostGbp: 5.00m, null)));
-        await ledger.RecordUsageAsync(Usage("corr-a", "exec-1", engagementId, 100, 50, costGbp: 2.45m), CancellationToken.None);
-        await ledger.RecordUsageAsync(Usage("corr-b", "exec-2", engagementId, 100, 50, costGbp: 2.45m), CancellationToken.None);
-        var estimate = Estimate(promptTokens: 100, maxOutputTokens: 50, costGbp: 0.11m, engagementId: engagementId);
+        var hierarchy = Hierarchy(PolicyWith(perEngagement: new BudgetSpec(null, MaxCost: 5.00m, Currency: "USD", null)));
+        await ledger.RecordUsageAsync(Usage("corr-a", "exec-1", engagementId, 100, 50, cost: 2.45m), CancellationToken.None);
+        await ledger.RecordUsageAsync(Usage("corr-b", "exec-2", engagementId, 100, 50, cost: 2.45m), CancellationToken.None);
+        var estimate = Estimate(promptTokens: 100, maxOutputTokens: 50, cost: 0.11m, engagementId: engagementId);
 
         var result = await hierarchy.CanApproveAsync(
             Scope(BudgetScopeKind.Invocation, estimate.CorrelationId),
@@ -164,9 +164,9 @@ public sealed class BudgetHierarchyTests
     {
         // PerInvocation and PerEngagement set, PerExecution null. Execution level is skipped; should approve.
         var hierarchy = Hierarchy(PolicyWith(
-            perInvocation: new BudgetSpec(MaxTokens: 10_000, null, null),
-            perEngagement: new BudgetSpec(MaxTokens: 100_000, null, null)));
-        var estimate = Estimate(promptTokens: 1_000, maxOutputTokens: 500, costGbp: 0.01m);
+            perInvocation: new BudgetSpec(MaxTokens: 10_000, null, null, null),
+            perEngagement: new BudgetSpec(MaxTokens: 100_000, null, null, null)));
+        var estimate = Estimate(promptTokens: 1_000, maxOutputTokens: 500, cost: 0.01m);
 
         var result = await hierarchy.CanApproveAsync(
             Scope(BudgetScopeKind.Invocation, estimate.CorrelationId),
@@ -195,7 +195,7 @@ public sealed class BudgetHierarchyTests
     {
         var hierarchy = Hierarchy(UnboundedPolicy);
         var scope = Scope(BudgetScopeKind.Invocation, "corr-new");
-        var budget = new BudgetSpec(MaxTokens: 10_000, MaxCostGbp: 5.00m, MaxAgentInvocations: null);
+        var budget = new BudgetSpec(MaxTokens: 10_000, MaxCost: 5.00m, Currency: "USD", MaxAgentInvocations: null);
 
         var result = await hierarchy.CanApproveAtScopeAsync(scope, budget, Estimate(promptTokens: 100, maxOutputTokens: 100), CancellationToken.None);
 
@@ -207,8 +207,8 @@ public sealed class BudgetHierarchyTests
     [Fact]
     public void BudgetHasCapacity_AllBudgetFieldsNull_ReturnsTrue()
     {
-        var snapshot = new BudgetSnapshot(Scope(BudgetScopeKind.Invocation, "x"), TokensUsed: 9_999, CostGbp: 4.99m, InvocationCount: 9);
-        var budget = new BudgetSpec(MaxTokens: null, MaxCostGbp: null, MaxAgentInvocations: null);
+        var snapshot = new BudgetSnapshot(Scope(BudgetScopeKind.Invocation, "x"), TokensUsed: 9_999, Cost: 4.99m, Currency: "USD", InvocationCount: 9);
+        var budget = new BudgetSpec(MaxTokens: null, MaxCost: null, Currency: null, MaxAgentInvocations: null);
 
         Assert.True(BudgetHierarchy.BudgetHasCapacity(snapshot, budget, Estimate(promptTokens: 1_000, maxOutputTokens: 1_000)));
     }
@@ -217,8 +217,8 @@ public sealed class BudgetHierarchyTests
     public void BudgetHasCapacity_ExactlyAtTokenLimit_ReturnsTrue()
     {
         // snapshot.TokensUsed + prompt + output == MaxTokens → still approved (not strictly over)
-        var snapshot = new BudgetSnapshot(Scope(BudgetScopeKind.Invocation, "x"), TokensUsed: 18_000, CostGbp: 0m, InvocationCount: 0);
-        var budget = new BudgetSpec(MaxTokens: 20_000, null, null);
+        var snapshot = new BudgetSnapshot(Scope(BudgetScopeKind.Invocation, "x"), TokensUsed: 18_000, Cost: 0m, Currency: "USD", InvocationCount: 0);
+        var budget = new BudgetSpec(MaxTokens: 20_000, null, null, null);
 
         Assert.True(BudgetHierarchy.BudgetHasCapacity(snapshot, budget, Estimate(promptTokens: 1_000, maxOutputTokens: 1_000)));
     }
@@ -226,8 +226,8 @@ public sealed class BudgetHierarchyTests
     [Fact]
     public void BudgetHasCapacity_OneTokenOverLimit_ReturnsFalse()
     {
-        var snapshot = new BudgetSnapshot(Scope(BudgetScopeKind.Invocation, "x"), TokensUsed: 18_001, CostGbp: 0m, InvocationCount: 0);
-        var budget = new BudgetSpec(MaxTokens: 20_000, null, null);
+        var snapshot = new BudgetSnapshot(Scope(BudgetScopeKind.Invocation, "x"), TokensUsed: 18_001, Cost: 0m, Currency: "USD", InvocationCount: 0);
+        var budget = new BudgetSpec(MaxTokens: 20_000, null, null, null);
 
         Assert.False(BudgetHierarchy.BudgetHasCapacity(snapshot, budget, Estimate(promptTokens: 1_000, maxOutputTokens: 1_000)));
     }
@@ -235,18 +235,18 @@ public sealed class BudgetHierarchyTests
     [Fact]
     public void BudgetHasCapacity_CostExceeded_ReturnsFalse()
     {
-        var snapshot = new BudgetSnapshot(Scope(BudgetScopeKind.Engagement, "eng-1"), TokensUsed: 0, CostGbp: 4.99m, InvocationCount: 0);
-        var budget = new BudgetSpec(null, MaxCostGbp: 5.00m, null);
+        var snapshot = new BudgetSnapshot(Scope(BudgetScopeKind.Engagement, "eng-1"), TokensUsed: 0, Cost: 4.99m, Currency: "USD", InvocationCount: 0);
+        var budget = new BudgetSpec(null, MaxCost: 5.00m, Currency: "USD", null);
 
-        Assert.False(BudgetHierarchy.BudgetHasCapacity(snapshot, budget, Estimate(costGbp: 0.02m)));
+        Assert.False(BudgetHierarchy.BudgetHasCapacity(snapshot, budget, Estimate(cost: 0.02m)));
     }
 
     [Fact]
     public void BudgetHasCapacity_MaxInvocationsExceeded_ReturnsFalse()
     {
         // snapshot.InvocationCount + 1 > MaxAgentInvocations
-        var snapshot = new BudgetSnapshot(Scope(BudgetScopeKind.Execution, "exec-1"), TokensUsed: 0, CostGbp: 0m, InvocationCount: 5);
-        var budget = new BudgetSpec(null, null, MaxAgentInvocations: 5);
+        var snapshot = new BudgetSnapshot(Scope(BudgetScopeKind.Execution, "exec-1"), TokensUsed: 0, Cost: 0m, Currency: "USD", InvocationCount: 5);
+        var budget = new BudgetSpec(null, null, null, MaxAgentInvocations: 5);
 
         Assert.False(BudgetHierarchy.BudgetHasCapacity(snapshot, budget, Estimate()));
     }
@@ -255,8 +255,8 @@ public sealed class BudgetHierarchyTests
     public void BudgetHasCapacity_ExactlyAtInvocationLimit_ReturnsTrue()
     {
         // snapshot.InvocationCount + 1 == MaxAgentInvocations → still approved
-        var snapshot = new BudgetSnapshot(Scope(BudgetScopeKind.Execution, "exec-1"), TokensUsed: 0, CostGbp: 0m, InvocationCount: 4);
-        var budget = new BudgetSpec(null, null, MaxAgentInvocations: 5);
+        var snapshot = new BudgetSnapshot(Scope(BudgetScopeKind.Execution, "exec-1"), TokensUsed: 0, Cost: 0m, Currency: "USD", InvocationCount: 4);
+        var budget = new BudgetSpec(null, null, null, MaxAgentInvocations: 5);
 
         Assert.True(BudgetHierarchy.BudgetHasCapacity(snapshot, budget, Estimate()));
     }
@@ -294,7 +294,7 @@ public sealed class BudgetHierarchyTests
     public async Task RecordHierarchicalUsageAsync_SingleRecordVisibleAtAllScopes()
     {
         var hierarchy = Hierarchy(UnboundedPolicy);
-        var usage = Usage("corr-1", "exec-1", "eng-1", inputTokens: 100, outputTokens: 50, costGbp: 0.10m);
+        var usage = Usage("corr-1", "exec-1", "eng-1", inputTokens: 100, outputTokens: 50, cost: 0.10m);
 
         await hierarchy.RecordHierarchicalUsageAsync(
             Scope(BudgetScopeKind.Invocation, "corr-1"),
@@ -319,7 +319,7 @@ public sealed class BudgetHierarchyTests
     public async Task RecordHierarchicalUsageAsync_CalledTwiceWithSameCorrelationId_DoesNotDoubleCount()
     {
         var hierarchy = Hierarchy(UnboundedPolicy);
-        var usage = Usage("corr-idem", "exec-1", "eng-1", inputTokens: 100, outputTokens: 50, costGbp: 0.10m);
+        var usage = Usage("corr-idem", "exec-1", "eng-1", inputTokens: 100, outputTokens: 50, cost: 0.10m);
 
         await hierarchy.RecordHierarchicalUsageAsync(Scope(BudgetScopeKind.Invocation, "corr-idem"), Scope(BudgetScopeKind.Engagement, "eng-1"), usage, CancellationToken.None);
         await hierarchy.RecordHierarchicalUsageAsync(Scope(BudgetScopeKind.Invocation, "corr-idem"), Scope(BudgetScopeKind.Engagement, "eng-1"), usage with { InputTokens = 9999 }, CancellationToken.None);
@@ -346,9 +346,10 @@ public sealed class BudgetHierarchyTests
     private static InvocationCostEstimate Estimate(
         long promptTokens = 100,
         long maxOutputTokens = 100,
-        decimal costGbp = 0.01m,
+        decimal cost = 0.01m,
         string? executionId = null,
-        string? engagementId = null) => new(
+        string? engagementId = null,
+        string currency = "USD") => new(
             CorrelationId: "corr-test",
             ExecutionId: executionId ?? "exec-test",
             EngagementId: engagementId ?? "eng-test",
@@ -357,9 +358,10 @@ public sealed class BudgetHierarchyTests
             ResolvedModel: "claude-fable-5",
             PromptTokens: promptTokens,
             MaxOutputTokens: maxOutputTokens,
-            EstimatedCostGbp: costGbp);
+            EstimatedCost: cost,
+            Currency: currency);
 
-    private static UsageRecord Usage(string correlationId, string executionId, string engagementId, long inputTokens, long outputTokens, decimal costGbp) => new(
+    private static UsageRecord Usage(string correlationId, string executionId, string engagementId, long inputTokens, long outputTokens, decimal cost, string currency = "USD") => new(
         CorrelationId: correlationId,
         ExecutionId: executionId,
         EngagementId: engagementId,
@@ -368,5 +370,6 @@ public sealed class BudgetHierarchyTests
         ResolvedModel: "claude-fable-5",
         InputTokens: inputTokens,
         OutputTokens: outputTokens,
-        CostGbp: costGbp);
+        Cost: cost,
+        Currency: currency);
 }

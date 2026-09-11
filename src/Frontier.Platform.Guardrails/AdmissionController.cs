@@ -34,10 +34,17 @@ internal sealed class AdmissionController : IAdmissionController
     /// if even zero output tokens would breach <see cref="BudgetSpec.MaxTokens"/>,
     /// <see cref="AdmissionResult.ProceedWithWarning"/> with a shaped
     /// <see cref="AdmissionDecision.GrantedMaxOutputTokens"/> if the requested output
-    /// would breach it, else <see cref="AdmissionResult.Proceed"/> unchanged.
+    /// would breach it, else <see cref="AdmissionResult.Proceed"/> unchanged. A cost ceiling in a
+    /// currency other than the estimate's is refused with
+    /// <see cref="Abstractions.ContractViolationException"/> even though the ceiling itself is not
+    /// yet enforced here, so a mis-currencied model entry fails at its first admission rather than
+    /// the day cost enforcement lands (ADR-PA21).
     /// </summary>
     internal static AdmissionDecision Admit(InvocationCostEstimate estimate, GuardrailPolicy policy)
     {
+        if (policy.PerInvocation is { } perInvocation)
+            CostCurrency.EnsureComparable(perInvocation, estimate);
+
         if (policy.PerInvocation?.MaxTokens is not { } maxTokens)
         {
             return new AdmissionDecision(AdmissionResult.Proceed, null, estimate.MaxOutputTokens, null);

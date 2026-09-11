@@ -66,7 +66,7 @@ public sealed class AdmissionControllerTests
     {
         var policy = new GuardrailPolicy(
             "no-token-cap",
-            PerInvocation: new BudgetSpec(MaxTokens: null, MaxCostGbp: 2.00m, MaxAgentInvocations: null),
+            PerInvocation: new BudgetSpec(MaxTokens: null, MaxCost: 2.00m, Currency: "USD", MaxAgentInvocations: null),
             PerExecution: null,
             PerEngagement: null);
         var estimate = Estimate(promptTokens: 1_000, maxOutputTokens: 500);
@@ -131,5 +131,6 @@ public sealed class AdmissionControllerTests
         ResolvedModel: "claude-fable-5",
         PromptTokens: promptTokens,
         MaxOutputTokens: maxOutputTokens,
-        EstimatedCostGbp: 0.10m);
+        EstimatedCost: 0.10m,
+        Currency: "USD");
 }

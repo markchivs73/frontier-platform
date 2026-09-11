@@ -7,9 +7,10 @@ public sealed class ModelResolverTests
     {
         Provider = "anthropic",
         ModelId = "claude-opus-4-8",
-        InputCostPer1kGbp = 0.03m,
-        OutputCostPer1kGbp = 0.15m,
-        CacheReadCostPer1kGbp = 0.003m,
+        InputCostPer1k = 0.03m,
+        OutputCostPer1k = 0.15m,
+        CacheReadCostPer1k = 0.003m,
+        Currency = "USD",
         ContextWindow = 200_000,
         MaxOutputTokens = 16_000,
     };
@@ -18,9 +19,10 @@ public sealed class ModelResolverTests
     {
         Provider = "anthropic",
         ModelId = "claude-fable-5",
-        InputCostPer1kGbp = 0.018m,
-        OutputCostPer1kGbp = 0.09m,
-        CacheReadCostPer1kGbp = 0.0018m,
+        InputCostPer1k = 0.018m,
+        OutputCostPer1k = 0.09m,
+        CacheReadCostPer1k = 0.0018m,
+        Currency = "USD",
         ContextWindow = 200_000,
         MaxOutputTokens = 16_000,
     };

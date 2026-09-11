@@ -370,9 +370,10 @@ public sealed class AgentTaskActivityPipelineTests
         {
             Provider = "anthropic",
             ModelId = "claude-fable-5",
-            InputCostPer1kGbp = 0.003m,
-            OutputCostPer1kGbp = 0.015m,
-            CacheReadCostPer1kGbp = 0.0003m,
+            InputCostPer1k = 0.003m,
+            OutputCostPer1k = 0.015m,
+            CacheReadCostPer1k = 0.0003m,
+            Currency = "USD",
             ContextWindow = 200_000,
             MaxOutputTokens = 4096,
         },

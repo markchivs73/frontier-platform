@@ -55,18 +55,28 @@ internal sealed class BudgetHierarchy(IBudgetLedger ledger, GuardrailPolicy poli
     /// Returns <c>false</c> if any field of <paramref name="budget"/> would be breached by
     /// adding <paramref name="estimate"/> on top of <paramref name="snapshot"/>'s current usage.
     /// Uses <c>PromptTokens + MaxOutputTokens</c> as a worst-case token estimate (doc 07 §4).
+    /// Throws <see cref="Abstractions.ContractViolationException"/> if a cost ceiling, the
+    /// accumulated cost and the estimate are not all in one currency (ADR-PA21).
     /// </summary>
     internal static bool BudgetHasCapacity(BudgetSnapshot snapshot, BudgetSpec budget, InvocationCostEstimate estimate)
     {
         if (budget.MaxTokens.HasValue && snapshot.TokensUsed + estimate.PromptTokens + estimate.MaxOutputTokens > budget.MaxTokens.Value)
             return false;
 
-        if (budget.MaxCostGbp.HasValue && snapshot.CostGbp + estimate.EstimatedCostGbp > budget.MaxCostGbp.Value)
+        if (budget.MaxCost.HasValue && CostWithEstimate(snapshot, budget, estimate) > budget.MaxCost.Value)
             return false;
 
         if (budget.MaxAgentInvocations.HasValue && snapshot.InvocationCount + 1 > budget.MaxAgentInvocations.Value)
             return false;
 
         return true;
+    }
+
+    /// <summary>The scope's accumulated cost plus <paramref name="estimate"/>'s, once all three amounts are proven to share a currency (ADR-PA21).</summary>
+    internal static decimal CostWithEstimate(BudgetSnapshot snapshot, BudgetSpec budget, InvocationCostEstimate estimate)
+    {
+        CostCurrency.EnsureComparable(budget, estimate);
+        CostCurrency.EnsureCombinable(nameof(BudgetSnapshot), snapshot.Currency, estimate.Currency);
+        return snapshot.Cost + estimate.EstimatedCost;
     }
 }
