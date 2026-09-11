@@ -294,8 +294,9 @@ public sealed class TestRunService : ITestRunService
         }, ct);
     }
 
-    private static System.Collections.ObjectModel.ReadOnlyDictionary<string, string> ToMetricsDictionary(TestRunCostMetrics costMetrics) =>
-        new Dictionary<string, string>
+    private static System.Collections.ObjectModel.ReadOnlyDictionary<string, string> ToMetricsDictionary(TestRunCostMetrics costMetrics)
+    {
+        var metrics = new Dictionary<string, string>
         {
             ["total_tokens"] = costMetrics.TotalTokens.ToString(System.Globalization.CultureInfo.InvariantCulture),
             ["input_tokens"] = costMetrics.InputTokens.ToString(System.Globalization.CultureInfo.InvariantCulture),
@@ -304,7 +305,14 @@ public sealed class TestRunService : ITestRunService
             ["cache_write_tokens"] = costMetrics.CacheWriteTokens.ToString(System.Globalization.CultureInfo.InvariantCulture),
             ["estimated_cost"] = costMetrics.EstimatedCost.ToString(System.Globalization.CultureInfo.InvariantCulture),
             ["budget_exceeded"] = costMetrics.BudgetExceeded ? "true" : "false"
-        }.AsReadOnly();
+        };
+        // ADR-PA21: written only when priced, so an unpriced run's document stays as it was.
+        if (costMetrics.Currency is not null)
+        {
+            metrics["currency"] = costMetrics.Currency;
+        }
+        return metrics.AsReadOnly();
+    }
 
     private static TestRunCostMetrics ToCostMetrics(IReadOnlyDictionary<string, string> metrics) => new()
     {
@@ -315,6 +323,7 @@ public sealed class TestRunService : ITestRunService
         CacheWriteTokens = int.Parse(metrics.GetValueOrDefault("cache_write_tokens", "0"), System.Globalization.CultureInfo.InvariantCulture),
         EstimatedCost = decimal.Parse(metrics.GetValueOrDefault("estimated_cost", "0"), System.Globalization.CultureInfo.InvariantCulture),
         BudgetExceeded = bool.Parse(metrics.GetValueOrDefault("budget_exceeded", "false")),
+        Currency = metrics.GetValueOrDefault("currency"),
     };
 
     /// <summary>Maps a persisted document to the result contract, enriching steps with live section content (S9.53).</summary>

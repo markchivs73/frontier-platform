@@ -469,12 +469,14 @@ public sealed class TestRunServiceTests
         _telemetry.Setup(t => t.GetCostMetricsAsync(doc.TestRunId, It.IsAny<CancellationToken>())).ReturnsAsync(new TestRunCostMetrics
         {
             TotalTokens = 1500, InputTokens = 1000, OutputTokens = 500, CacheReadTokens = 200, CacheWriteTokens = 50,
-            EstimatedCost = 0.0234m, BudgetExceeded = false,
+            EstimatedCost = 0.0234m, Currency = "USD", BudgetExceeded = false,
         });
         SetupPersistCapture(out var persisted);
 
         var result = await _service.ReconcileAsync(doc.TestRunId, CancellationToken.None);
 
+        Assert.Equal("USD", persisted()!.CostMetrics["currency"]); // ADR-PA21: the amount's currency persists beside it
+        Assert.Equal("USD", result!.CostMetrics.Currency);
         Assert.Equal(TestRunStatus.Completed, persisted()!.Status);
         Assert.True(persisted()!.Success);
         Assert.NotNull(persisted()!.CompletedAtUtc);
@@ -523,6 +525,7 @@ public sealed class TestRunServiceTests
         Assert.Contains("contract_violation", persisted()!.ErrorMessage, StringComparison.Ordinal);
         Assert.Equal("node-1", persisted()!.FailureNodeId);
         Assert.Equal("true", persisted()!.CostMetrics["budget_exceeded"]);
+        Assert.False(persisted()!.CostMetrics.ContainsKey("currency")); // unpriced run: no currency key written
     }
 
     // ── GetResultAsync ──
@@ -614,6 +617,22 @@ public sealed class TestRunServiceTests
         Assert.Equal(50, result.CostMetrics.CacheWriteTokens);
         Assert.Equal(0.0234m, result.CostMetrics.EstimatedCost);
         Assert.True(result.CostMetrics.BudgetExceeded);
+        Assert.Null(result.CostMetrics.Currency); // a document written before ADR-PA21's currency reads as null
+    }
+
+    [Fact]
+    public async Task GetResultAsync_ParsesPersistedCurrency()
+    {
+        var doc = RunDoc(status: TestRunStatus.Completed, success: true, completedAtUtc: DateTime.UtcNow) with
+        {
+            CostMetrics = new Dictionary<string, string> { ["estimated_cost"] = "0.0234", ["currency"] = "USD" }.AsReadOnly(),
+        };
+        _store.Setup(s => s.GetTestRunAsync(doc.TestRunId, It.IsAny<CancellationToken>())).ReturnsAsync(doc);
+
+        var result = await _service.GetResultAsync(doc.TestRunId, CancellationToken.None);
+
+        Assert.Equal(0.0234m, result!.CostMetrics.EstimatedCost);
+        Assert.Equal("USD", result.CostMetrics.Currency);
     }
 
     // ── DecideGateAsync (S9.38d/S9.85: raise + reconcile once, no blocking) ──
