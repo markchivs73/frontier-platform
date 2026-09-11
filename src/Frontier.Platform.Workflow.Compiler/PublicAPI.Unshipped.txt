@@ -1707,3 +1707,7 @@ Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.WorkflowCat
 *REMOVED*Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.WorkflowCatalogueSummary(string! WorkflowId, string! Name, string? EngagementType, string! Status, System.DateTime? LastPublishedAt, string? LastPublishedBy) -> void
 Frontier.Platform.Workflow.Compiler.Storage.TestRunDocument.EngagementId.get -> string?
 Frontier.Platform.Workflow.Compiler.Storage.TestRunDocument.EngagementId.init -> void
+Frontier.Platform.Workflow.Compiler.Storage.TestRunDocument.FailureNodeAttributed.get -> bool?
+Frontier.Platform.Workflow.Compiler.Storage.TestRunDocument.FailureNodeAttributed.init -> void
+Frontier.Platform.Workflow.Compiler.TestRunResult.FailureNodeAttributed.get -> bool
+Frontier.Platform.Workflow.Compiler.TestRunResult.FailureNodeAttributed.init -> void

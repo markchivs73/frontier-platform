@@ -241,6 +241,10 @@ public sealed record TestRunDocument
     public required IReadOnlyList<TestRunNodeStep> NodeSteps { get; init; }
     [JsonPropertyName("failureNodeId")]
     public string? FailureNodeId { get; init; }
+    // S13.26: true when FailureNodeId is the node that failed (a PausedOnFailure snapshot), false
+    // when it is only the last completed node. Optional: documents written before it read as null.
+    [JsonPropertyName("failureNodeAttributed")]
+    public bool? FailureNodeAttributed { get; init; }
     [JsonPropertyName("validatorFindings")]
     public required IReadOnlyList<ValidationFinding> ValidatorFindings { get; init; }
     [JsonPropertyName("costMetrics")]

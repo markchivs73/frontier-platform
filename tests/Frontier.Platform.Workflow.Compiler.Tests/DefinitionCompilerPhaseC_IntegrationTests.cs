@@ -540,7 +540,7 @@ public sealed class DefinitionCompilerPhaseC_IntegrationTests : IAsyncLifetime, 
             Id = $"{workflowId}:testrun:{Guid.NewGuid()}", WorkflowId = workflowId, TestRunId = testRunId,
             EngagementId = "SANDBOX-abc123", DraftRevision = "rev-1", StartedAtUtc = DateTime.UtcNow.AddMinutes(-1),
             CompletedAtUtc = DateTime.UtcNow, GateMode = "AutoApprove", Status = "failed", Success = false,
-            NodeSteps = [], FailureNodeId = "node-1", ValidatorFindings = [], CostMetrics = new Dictionary<string, string> { ["total_tokens"] = "1", ["estimated_cost"] = "0.0234", ["currency"] = "USD" },
+            NodeSteps = [], FailureNodeId = "node-1", FailureNodeAttributed = true, ValidatorFindings = [], CostMetrics = new Dictionary<string, string> { ["total_tokens"] = "1", ["estimated_cost"] = "0.0234", ["currency"] = "USD" },
             GateDecisions = [], ErrorMessage = "boom", PausedAtGateId = "gate-1", GateKind = "approval",
         }, CancellationToken.None);
 
