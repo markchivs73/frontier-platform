@@ -25,7 +25,7 @@ public sealed class SchemaVersionSupportedRuleTests
 
     /// <summary>The Error sentence for a stored version no adapter and no current reader can handle.</summary>
     private const string UnsupportedSentence =
-        "This draft was stored at schema 9.9, which this build cannot read — schema 2.0 is current.";
+        "This draft was stored at schema 9.9, which this build cannot read — schema 2.0 is current. Open it in a build that reads schema 9.9, or recreate it here.";
 
     private static readonly SchemaVersionSupportedRule Rule = new();
 

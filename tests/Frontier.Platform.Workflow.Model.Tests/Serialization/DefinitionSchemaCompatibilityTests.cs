@@ -33,6 +33,16 @@ public sealed class DefinitionSchemaCompatibilityTests
         // its unrecognised keys vanish. That is the defect — it must classify as unsupported.
         Assert.Equal(SchemaCompatibility.Unsupported, DefinitionSchemaCompatibility.Classify("0.9"));
 
+    /// <summary>
+    /// S13.34 (Mark, 2026-09-12): a newer *minor* of the current major is Current, not a finding —
+    /// same major means this build reads it, and the converter already deserializes it normally.
+    /// Minor versions are additive by convention, so saying nothing matches what actually happens.
+    /// A newer *major* (3.0, below) is Unsupported: that is the case this rule exists to name.
+    /// </summary>
+    [Fact]
+    public void NewerMinorOfTheCurrentMajor_IsCurrent() =>
+        Assert.Equal(SchemaCompatibility.Current, DefinitionSchemaCompatibility.Classify("2.1"));
+
     [Fact]
     public void NewerMajorThanCurrent_ClassifiesAsUnsupported() =>
         // The downgrade case: a draft written by a later build and read by this one. There is no
