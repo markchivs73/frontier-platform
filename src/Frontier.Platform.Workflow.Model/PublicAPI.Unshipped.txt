@@ -96,13 +96,13 @@ Frontier.Platform.Workflow.Model.ExecutionSnapshot.EngagementId.init -> void
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.Equals(Frontier.Platform.Workflow.Model.ExecutionSnapshot? other) -> bool
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.ExecutionId.get -> string!
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.ExecutionId.init -> void
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.ExecutionMode.get -> Frontier.Platform.Workflow.Model.ExecutionMode?
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.ExecutionMode.init -> void
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.ExecutionSnapshot() -> void
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.FailureClassification.get -> string?
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.FailureClassification.init -> void
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.InitiatedBy.get -> string?
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.InitiatedBy.init -> void
-Frontier.Platform.Workflow.Model.ExecutionSnapshot.Mode.get -> Frontier.Platform.Workflow.Model.ExecutionMode?
-Frontier.Platform.Workflow.Model.ExecutionSnapshot.Mode.init -> void
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.PausedAtGateId.get -> string?
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.PausedAtGateId.init -> void
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.RunId.get -> string?

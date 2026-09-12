@@ -1261,15 +1261,24 @@ ADR-PA25 made the dispatcher spawn a child per work item. `ExecutionSnapshot` ca
 mode nor the item, so every child run of an engagement looked identical in the projection and in
 the engagement timeline: nobody could say which ticket a given run was serving.
 
-**The mode is stored, not derived, and not reduced to a boolean.** `mode` (property order 21) is
-the definition's existing `ExecutionMode` smart enum on its canonical wire string; `work_item_id`
-(order 22) is the child's item, null on every run that is not one. An `is_dispatcher` flag was
+**The mode is stored, not derived, and not reduced to a boolean.** `execution_mode` (property
+order 21) is the definition's existing `ExecutionMode` smart enum on its canonical wire string;
+`work_item_id` (order 22) is the child's item, null on every run that is not one. An
+`is_dispatcher` flag was
 rejected: the question a projection has to answer is *what kind of run is this*, and a derived
 boolean is wrong the moment a third mode exists. The two fields are read together — a child is
 handed its parent's pinned definition unaltered (ADR-PA25 — rewriting it would move the
-`definition_hash`), so a child's mode is `dispatcher` too. The router is therefore `mode ==
-dispatcher && work_item_id == null`, and a child is `dispatcher` with an item. Neither field alone
-separates them, which is the concrete reason the pair is stored rather than a flag.
+`definition_hash`), so a child's mode is `dispatcher` too. The router is therefore `execution_mode
+== dispatcher && work_item_id == null`, and a child is `dispatcher` with an item. Neither field
+alone separates them, which is the concrete reason the pair is stored rather than a flag.
+
+**The field is `execution_mode`, not `mode`.** It was `mode` when #44 merged — matching
+`WorkflowDefinition.mode`, the contract it is copied from — and was renamed before v0.27.0 was
+tagged, so nothing had ever shipped under that spelling and no stored bytes carry it. The
+projection's readers are the boundary that matters here, and `execution_mode` is their established
+vocabulary; the consumer binds the CLR name by reflection, which is why the property is
+`ExecutionMode` rather than `Mode`. Internal consistency with the definition contract lost to
+consistency where the value is actually read.
 
 **The leak this closes.** S13.62's refresh fan-out filters on status alone, so it raises
 `DynamicContextRefreshRequired` at dispatcher instances, which never wait on it; `ContinueAsNew`'s

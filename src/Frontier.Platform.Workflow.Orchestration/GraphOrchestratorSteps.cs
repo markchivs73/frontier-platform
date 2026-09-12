@@ -616,7 +616,7 @@ internal static class GraphOrchestratorSteps
         StartedAtUtc = state.StartedAtUtc,
         DynamicContextEpoch = state.DynamicContextEpoch,
         DynamicContextHash = state.DynamicContextHash,
-        Mode = input.Definition.Mode,
+        ExecutionMode = input.Definition.Mode,
         WorkItemId = input.WorkItemId,
     };
 

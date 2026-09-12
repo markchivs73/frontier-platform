@@ -9,7 +9,7 @@ namespace Frontier.Platform.Workflow.Model.Tests;
 /// <summary>
 /// ADR-PA26: a dispatcher child's run must be identifiable in the execution projection.
 /// <para>
-/// Two properties carry it — the run's <see cref="ExecutionSnapshot.Mode"/> and its
+/// Two properties carry it — the run's <see cref="ExecutionSnapshot.ExecutionMode"/> and its
 /// <see cref="ExecutionSnapshot.WorkItemId"/> — and both are additive under the ADR-E15
 /// compatibility floor. These tests pin the three claims the change rests on: the fields are
 /// omitted entirely when null (so nothing already stored moves), bytes recorded before they
@@ -24,7 +24,7 @@ public sealed class DispatcherChildAttributionTests
     {
         var json = Json(Snapshot());
 
-        Assert.False(json.ContainsKey("mode"));
+        Assert.False(json.ContainsKey("execution_mode"));
         Assert.False(json.ContainsKey("work_item_id"));
     }
 
@@ -44,15 +44,15 @@ public sealed class DispatcherChildAttributionTests
     [Fact]
     public void Serialize_DispatcherChild_WritesTheModesCanonicalNameAndTheWorkItem()
     {
-        var json = Json(Snapshot() with { Mode = ExecutionMode.Dispatcher, WorkItemId = "TICKET-1" });
+        var json = Json(Snapshot() with { ExecutionMode = ExecutionMode.Dispatcher, WorkItemId = "TICKET-1" });
 
-        Assert.Equal("dispatcher", (string?)json["mode"]);
+        Assert.Equal("dispatcher", (string?)json["execution_mode"]);
         Assert.Equal("TICKET-1", (string?)json["work_item_id"]);
     }
 
     [Fact]
     public void Serialize_OneShotRun_WritesTheModesCanonicalName() =>
-        Assert.Equal("one_shot", (string?)Json(Snapshot() with { Mode = ExecutionMode.OneShot })["mode"]);
+        Assert.Equal("one_shot", (string?)Json(Snapshot() with { ExecutionMode = ExecutionMode.OneShot })["execution_mode"]);
 
     /// <summary>ADR-E15's floor: bytes recorded before the fields existed replay as null, not as a default mode.</summary>
     [Fact]
@@ -62,18 +62,18 @@ public sealed class DispatcherChildAttributionTests
 
         var snapshot = JsonSerializer.Deserialize<ExecutionSnapshot>(legacy, CanonicalProfile.Options)!;
 
-        Assert.Null(snapshot.Mode);
+        Assert.Null(snapshot.ExecutionMode);
         Assert.Null(snapshot.WorkItemId);
     }
 
     [Fact]
     public void RoundTrip_DispatcherChild_PreservesBothFields()
     {
-        var child = Snapshot() with { Mode = ExecutionMode.Dispatcher, WorkItemId = "TICKET-9" };
+        var child = Snapshot() with { ExecutionMode = ExecutionMode.Dispatcher, WorkItemId = "TICKET-9" };
 
         var round = JsonSerializer.Deserialize<ExecutionSnapshot>(CanonicalProfile.SerializeCanonical(child), CanonicalProfile.Options)!;
 
-        Assert.Equal(ExecutionMode.Dispatcher, round.Mode);
+        Assert.Equal(ExecutionMode.Dispatcher, round.ExecutionMode);
         Assert.Equal("TICKET-9", round.WorkItemId);
     }
 
@@ -81,8 +81,8 @@ public sealed class DispatcherChildAttributionTests
     [Fact]
     public void TwoChildrenOfOneEngagement_AreDistinguishableByWorkItem()
     {
-        var first = Snapshot() with { Mode = ExecutionMode.Dispatcher, WorkItemId = "TICKET-1", RunId = "run-1" };
-        var second = Snapshot() with { Mode = ExecutionMode.Dispatcher, WorkItemId = "TICKET-2", RunId = "run-2" };
+        var first = Snapshot() with { ExecutionMode = ExecutionMode.Dispatcher, WorkItemId = "TICKET-1", RunId = "run-1" };
+        var second = Snapshot() with { ExecutionMode = ExecutionMode.Dispatcher, WorkItemId = "TICKET-2", RunId = "run-2" };
 
         Assert.NotEqual(CanonicalProfile.SerializeCanonical(first), CanonicalProfile.SerializeCanonical(second));
         Assert.NotEqual(first.WorkItemId, second.WorkItemId);
@@ -96,17 +96,34 @@ public sealed class DispatcherChildAttributionTests
     [Fact]
     public void Router_AndItsChild_ShareAModeAndDifferByWorkItem()
     {
-        var router = Snapshot() with { Mode = ExecutionMode.Dispatcher };
-        var child = Snapshot() with { Mode = ExecutionMode.Dispatcher, WorkItemId = "TICKET-1" };
+        var router = Snapshot() with { ExecutionMode = ExecutionMode.Dispatcher };
+        var child = Snapshot() with { ExecutionMode = ExecutionMode.Dispatcher, WorkItemId = "TICKET-1" };
 
-        Assert.Equal(router.Mode, child.Mode);
+        Assert.Equal(router.ExecutionMode, child.ExecutionMode);
         Assert.Null(router.WorkItemId);
         Assert.NotNull(child.WorkItemId);
     }
 
     [Fact]
     public void Validate_DispatcherChild_DoesNotThrow() =>
-        (Snapshot() with { Mode = ExecutionMode.Dispatcher, WorkItemId = "TICKET-1" }).Validate();
+        (Snapshot() with { ExecutionMode = ExecutionMode.Dispatcher, WorkItemId = "TICKET-1" }).Validate();
+
+    /// <summary>
+    /// The CLR name is part of the contract, not only the wire name: the consumer binds this
+    /// property by reflection, looking for a name that says which <em>mode</em> a run is in. `Mode`
+    /// alone — the spelling the definition contract uses — does not say that at the boundary that
+    /// reads the projection, where `execution_mode` is the established vocabulary. Renamed before
+    /// v0.27.0 was tagged, so nothing had ever shipped under the old spelling.
+    /// </summary>
+    [Fact]
+    public void ExecutionSnapshot_HasAModePropertyNamedForTheConceptItCarries()
+    {
+        var property = typeof(ExecutionSnapshot).GetProperty(nameof(ExecutionSnapshot.ExecutionMode));
+
+        Assert.NotNull(property);
+        Assert.Contains("ExecutionMode", property.Name, StringComparison.Ordinal);
+        Assert.Equal(typeof(ExecutionMode), property.PropertyType);
+    }
 
     private static JsonObject Json(ExecutionSnapshot snapshot) =>
         JsonNode.Parse(CanonicalProfile.SerializeCanonical(snapshot))!.AsObject();

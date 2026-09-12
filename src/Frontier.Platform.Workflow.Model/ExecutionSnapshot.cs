@@ -168,16 +168,20 @@ public sealed record ExecutionSnapshot : IVersionedContract
     /// <b>Read it together with <see cref="WorkItemId"/>.</b> A dispatcher child is handed its
     /// parent's own pinned definition unaltered (ADR-PA25 — rewriting it would move the
     /// <c>definition_hash</c>), so a child's mode is <c>dispatcher</c> too. The router itself is
-    /// therefore <c>mode == dispatcher &amp;&amp; work_item_id == null</c>; a child is
-    /// <c>mode == dispatcher</c> with a work item. Neither a boolean flag nor the mode alone can
-    /// express that.
+    /// therefore <c>execution_mode == dispatcher &amp;&amp; work_item_id == null</c>; a child is
+    /// <c>execution_mode == dispatcher</c> with a work item. Neither a boolean flag nor the mode
+    /// alone can express that.
     /// </para>
     /// <b>Additive and optional</b> per the ADR-E15 floor: snapshots written before this field read
     /// as <see langword="null"/>, meaning "the mode was not recorded", never "one_shot".
+    /// <para>
+    /// Spelled <c>execution_mode</c> rather than the definition contract's <c>mode</c>: this is the
+    /// established spelling at the boundary that actually consumes the projection.
+    /// </para>
     /// </summary>
     [JsonPropertyOrder(21)]
-    [JsonPropertyName("mode")]
-    public ExecutionMode? Mode { get; init; }
+    [JsonPropertyName("execution_mode")]
+    public ExecutionMode? ExecutionMode { get; init; }
 
     /// <summary>
     /// The work item this run is serving, for a dispatcher child (ADR-E8, ADR-PA26); <see langword="null"/>
