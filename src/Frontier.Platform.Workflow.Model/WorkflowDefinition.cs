@@ -15,7 +15,7 @@ public sealed record WorkflowDefinition : IVersionedContract
     /// <inheritdoc />
     [JsonPropertyOrder(0)]
     [JsonPropertyName("schema_version")]
-    public string SchemaVersion { get; init; } = "2.0"; // S13.12a: the ADR-E3a D3 artifact rename is a wire break (ArtifactVocabularyMigration adapts 1.0 bytes).
+    public string SchemaVersion { get; init; } = ArtifactVocabularyMigration.RenamedSchemaVersion; // S13.12a: the ADR-E3a D3 artifact rename is a wire break (ArtifactVocabularyMigration adapts 1.0 bytes).
 
     /// <summary>Stable identity for this workflow, independent of <see cref="DefinitionVersion"/>.</summary>
     [JsonPropertyOrder(1)]

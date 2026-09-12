@@ -1,6 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 using Frontier.Platform.Abstractions;
+using Frontier.Platform.Serialization;
+using Frontier.Platform.Workflow.Model;
 
 using Microsoft.Azure.Cosmos;
 
@@ -52,18 +55,37 @@ public sealed class CosmosDefinitionStore : IDefinitionStore
     {
         ValidateWorkflowId(workflowId);
 
-        try
-        {
-            var response = await _container.ReadItemAsync<DefinitionDraftDocument>(
-                $"{workflowId}:draft",
-                new PartitionKey(workflowId),
-                cancellationToken: ct);
-            return response.Resource;
-        }
-        catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        // S13.34: read the raw bytes, not a typed item. The stored schema version has to be probed
+        // on the way past — MigratingWorkflowDefinitionConverter stamps the current version onto the
+        // definition it returns, so once the document is materialised nothing can tell where the
+        // draft came from, and its dropped keys surface as content errors on innocent nodes.
+        using var response = await _container.ReadItemStreamAsync(
+            $"{workflowId}:draft",
+            new PartitionKey(workflowId),
+            cancellationToken: ct);
+
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
             return null;
         }
+
+        response.EnsureSuccessStatusCode();
+
+        using var reader = new StreamReader(response.Content);
+        var json = await reader.ReadToEndAsync(ct);
+
+        var document = JsonSerializer.Deserialize<DefinitionDraftDocument>(json, CanonicalProfile.Options)!;
+        return document with { StoredSchemaVersion = ProbeStoredSchemaVersion(json) };
+    }
+
+    /// <summary>The <c>schema_version</c> the stored <c>definition</c> node declared, before migration (S13.34).</summary>
+    private static string? ProbeStoredSchemaVersion(string documentJson)
+    {
+        using var parsed = JsonDocument.Parse(documentJson);
+
+        return parsed.RootElement.TryGetProperty("definition", out var definition)
+            ? MigratingWorkflowDefinitionConverter.ProbeStoredSchemaVersion(definition.GetRawText())
+            : null;
     }
 
     public async Task<SaveDraftResult> SaveDraftAsync(
@@ -92,6 +114,7 @@ public sealed class CosmosDefinitionStore : IDefinitionStore
             BaseVersion = draft.BaseVersion,
             DraftRevision = draft.DraftRevision,
             Definition = draft.Definition,
+            StoredSchemaVersion = draft.StoredSchemaVersion,
             LastEditedBy = draft.LastEditedBy,
             LastEditedUtc = draft.LastEditedUtc
         };

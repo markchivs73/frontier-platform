@@ -79,6 +79,30 @@ public sealed class MigratingWorkflowDefinitionConverter : JsonConverter<Workflo
                 : element.Deserialize<WorkflowDefinition>(options);
     }
 
+    /// <summary>
+    /// Reads the <c>schema_version</c> the stored bytes actually carry, before any migration
+    /// (S13.34). Returns <see langword="null"/> when the document declares none — absent means
+    /// unknown, never "current".
+    ///
+    /// <para>This is the only way the stored version survives a read:
+    /// <see cref="ArtifactVocabularyMigration.Migrate{T}"/> stamps the current version onto the
+    /// node before deserializing, so the definition that comes back can never report where it
+    /// came from.</para>
+    /// </summary>
+    public static string? ProbeStoredSchemaVersion(string json)
+    {
+        ArgumentNullException.ThrowIfNull(json);
+
+        using var document = JsonDocument.Parse(json);
+        var element = document.RootElement;
+
+        return element.ValueKind == JsonValueKind.Object
+            && element.TryGetProperty("schema_version", out var version)
+            && version.ValueKind == JsonValueKind.String
+                ? version.GetString()
+                : null;
+    }
+
     /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, WorkflowDefinition value, JsonSerializerOptions options) =>
         JsonSerializer.Serialize(writer, value, options);

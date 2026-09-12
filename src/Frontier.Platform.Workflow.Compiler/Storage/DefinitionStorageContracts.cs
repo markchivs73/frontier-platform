@@ -23,6 +23,14 @@ public sealed record DefinitionDraftDocument
     [JsonPropertyName("definition")]
     [JsonConverter(typeof(MigratingWorkflowDefinitionConverter))]
     public required WorkflowDefinition Definition { get; init; }
+    /// <summary>
+    /// S13.34: the <c>schema_version</c> the stored definition bytes carried, probed before
+    /// migration. Optional and null-omitting — documents written before this field existed read
+    /// as null ("not probed"), never as a confident "current". It rides on the envelope, so the
+    /// definition's own canonical bytes and hash are untouched (hard invariant 1).
+    /// </summary>
+    [JsonPropertyName("storedSchemaVersion")]
+    public string? StoredSchemaVersion { get; init; }
     [JsonPropertyName("lastEditedBy")]
     public required string LastEditedBy { get; init; }
     [JsonPropertyName("lastEditedUtc")]

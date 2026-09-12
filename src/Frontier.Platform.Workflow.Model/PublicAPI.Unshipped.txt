@@ -39,11 +39,17 @@ Frontier.Platform.Workflow.Model.ConsolidateAuditInput.<Clone>$() -> Frontier.Pl
 Frontier.Platform.Workflow.Model.ConsolidateAuditInput.ConsolidateAuditInput() -> void
 Frontier.Platform.Workflow.Model.ConsolidateAuditInput.DefinitionHash.get -> string!
 Frontier.Platform.Workflow.Model.ConsolidateAuditInput.DefinitionHash.init -> void
+Frontier.Platform.Workflow.Model.ConsolidateAuditInput.EngagementId.get -> string!
+Frontier.Platform.Workflow.Model.ConsolidateAuditInput.EngagementId.init -> void
 Frontier.Platform.Workflow.Model.ConsolidateAuditInput.Equals(Frontier.Platform.Workflow.Model.ConsolidateAuditInput? other) -> bool
 Frontier.Platform.Workflow.Model.ConsolidateAuditInput.ExecutionId.get -> string!
 Frontier.Platform.Workflow.Model.ConsolidateAuditInput.ExecutionId.init -> void
+Frontier.Platform.Workflow.Model.ConsolidateAuditInput.RunId.get -> string?
+Frontier.Platform.Workflow.Model.ConsolidateAuditInput.RunId.init -> void
 Frontier.Platform.Workflow.Model.ConsolidateAuditInput.StartedAtUtc.get -> System.DateTime
 Frontier.Platform.Workflow.Model.ConsolidateAuditInput.StartedAtUtc.init -> void
+Frontier.Platform.Workflow.Model.ConsolidateAuditInput.WorkflowId.get -> string!
+Frontier.Platform.Workflow.Model.ConsolidateAuditInput.WorkflowId.init -> void
 Frontier.Platform.Workflow.Model.ContextInjectionNode
 Frontier.Platform.Workflow.Model.ContextInjectionNode.ContextInjectionNode() -> void
 Frontier.Platform.Workflow.Model.ContextInjectionNode.ContextRequest.get -> Frontier.Platform.Abstractions.ContextRequest!
@@ -62,6 +68,7 @@ Frontier.Platform.Workflow.Model.DecisionNode.DefaultBranchNodeId.init -> void
 Frontier.Platform.Workflow.Model.DecisionNode.Equals(Frontier.Platform.Workflow.Model.DecisionNode? other) -> bool
 Frontier.Platform.Workflow.Model.DecisionNode.Predicate.get -> string?
 Frontier.Platform.Workflow.Model.DecisionNode.Predicate.init -> void
+Frontier.Platform.Workflow.Model.DefinitionSchemaCompatibility
 Frontier.Platform.Workflow.Model.EdgeKind
 Frontier.Platform.Workflow.Model.ExecutionMode
 Frontier.Platform.Workflow.Model.ExecutionSnapshot
@@ -80,6 +87,10 @@ Frontier.Platform.Workflow.Model.ExecutionSnapshot.Decisions.get -> System.Colle
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.Decisions.init -> void
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.DefinitionVersion.get -> int
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.DefinitionVersion.init -> void
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.DynamicContextEpoch.get -> int?
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.DynamicContextEpoch.init -> void
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.DynamicContextHash.get -> string?
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.DynamicContextHash.init -> void
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.EngagementId.get -> string!
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.EngagementId.init -> void
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.Equals(Frontier.Platform.Workflow.Model.ExecutionSnapshot? other) -> bool
@@ -92,12 +103,16 @@ Frontier.Platform.Workflow.Model.ExecutionSnapshot.InitiatedBy.get -> string?
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.InitiatedBy.init -> void
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.PausedAtGateId.get -> string?
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.PausedAtGateId.init -> void
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.RunId.get -> string?
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.RunId.init -> void
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.SchemaVersion.get -> string!
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.SchemaVersion.init -> void
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.Sequence.get -> int
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.Sequence.init -> void
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.SkippedNodeIds.get -> System.Collections.Generic.IReadOnlyList<string!>?
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.SkippedNodeIds.init -> void
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.StartedAtUtc.get -> System.DateTime?
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.StartedAtUtc.init -> void
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.Status.get -> Frontier.Platform.Abstractions.ExecutionStatus!
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.Status.init -> void
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.Validate() -> void
@@ -208,6 +223,10 @@ Frontier.Platform.Workflow.Model.RetryPolicySpec.ProfileName.init -> void
 Frontier.Platform.Workflow.Model.RetryPolicySpec.RetryPolicySpec() -> void
 Frontier.Platform.Workflow.Model.RetryPolicySpec.TimeoutSecondsOverride.get -> int?
 Frontier.Platform.Workflow.Model.RetryPolicySpec.TimeoutSecondsOverride.init -> void
+Frontier.Platform.Workflow.Model.SchemaCompatibility
+Frontier.Platform.Workflow.Model.SchemaCompatibility.Adapted = 1 -> Frontier.Platform.Workflow.Model.SchemaCompatibility
+Frontier.Platform.Workflow.Model.SchemaCompatibility.Current = 0 -> Frontier.Platform.Workflow.Model.SchemaCompatibility
+Frontier.Platform.Workflow.Model.SchemaCompatibility.Unsupported = 2 -> Frontier.Platform.Workflow.Model.SchemaCompatibility
 Frontier.Platform.Workflow.Model.StepCompletion
 Frontier.Platform.Workflow.Model.StepCompletion.<Clone>$() -> Frontier.Platform.Workflow.Model.StepCompletion!
 Frontier.Platform.Workflow.Model.StepCompletion.ArtifactKey.get -> string?
@@ -438,6 +457,8 @@ static Frontier.Platform.Workflow.Model.ContextInjectionNode.operator !=(Frontie
 static Frontier.Platform.Workflow.Model.ContextInjectionNode.operator ==(Frontier.Platform.Workflow.Model.ContextInjectionNode? left, Frontier.Platform.Workflow.Model.ContextInjectionNode? right) -> bool
 static Frontier.Platform.Workflow.Model.DecisionNode.operator !=(Frontier.Platform.Workflow.Model.DecisionNode? left, Frontier.Platform.Workflow.Model.DecisionNode? right) -> bool
 static Frontier.Platform.Workflow.Model.DecisionNode.operator ==(Frontier.Platform.Workflow.Model.DecisionNode? left, Frontier.Platform.Workflow.Model.DecisionNode? right) -> bool
+static Frontier.Platform.Workflow.Model.DefinitionSchemaCompatibility.Classify(string? storedSchemaVersion) -> Frontier.Platform.Workflow.Model.SchemaCompatibility
+static Frontier.Platform.Workflow.Model.DefinitionSchemaCompatibility.CurrentSchemaVersion.get -> string!
 static Frontier.Platform.Workflow.Model.ExecutionSnapshot.operator !=(Frontier.Platform.Workflow.Model.ExecutionSnapshot? left, Frontier.Platform.Workflow.Model.ExecutionSnapshot? right) -> bool
 static Frontier.Platform.Workflow.Model.ExecutionSnapshot.operator ==(Frontier.Platform.Workflow.Model.ExecutionSnapshot? left, Frontier.Platform.Workflow.Model.ExecutionSnapshot? right) -> bool
 static Frontier.Platform.Workflow.Model.ExternalEvent.operator !=(Frontier.Platform.Workflow.Model.ExternalEvent? left, Frontier.Platform.Workflow.Model.ExternalEvent? right) -> bool
@@ -452,6 +473,7 @@ static Frontier.Platform.Workflow.Model.LoopNode.operator !=(Frontier.Platform.W
 static Frontier.Platform.Workflow.Model.LoopNode.operator ==(Frontier.Platform.Workflow.Model.LoopNode? left, Frontier.Platform.Workflow.Model.LoopNode? right) -> bool
 static Frontier.Platform.Workflow.Model.McpToolNode.operator !=(Frontier.Platform.Workflow.Model.McpToolNode? left, Frontier.Platform.Workflow.Model.McpToolNode? right) -> bool
 static Frontier.Platform.Workflow.Model.McpToolNode.operator ==(Frontier.Platform.Workflow.Model.McpToolNode? left, Frontier.Platform.Workflow.Model.McpToolNode? right) -> bool
+static Frontier.Platform.Workflow.Model.MigratingWorkflowDefinitionConverter.ProbeStoredSchemaVersion(string! json) -> string?
 static Frontier.Platform.Workflow.Model.MigratingWorkflowDefinitionConverter.ReadMigrated(string! json, System.Text.Json.JsonSerializerOptions! options) -> Frontier.Platform.Workflow.Model.WorkflowDefinition?
 static Frontier.Platform.Workflow.Model.ParallelNode.operator !=(Frontier.Platform.Workflow.Model.ParallelNode? left, Frontier.Platform.Workflow.Model.ParallelNode? right) -> bool
 static Frontier.Platform.Workflow.Model.ParallelNode.operator ==(Frontier.Platform.Workflow.Model.ParallelNode? left, Frontier.Platform.Workflow.Model.ParallelNode? right) -> bool
@@ -507,17 +529,3 @@ virtual Frontier.Platform.Workflow.Model.ConditionalPredicate.PrintMembers(Syste
 virtual Frontier.Platform.Workflow.Model.WorkflowNode.EqualityContract.get -> System.Type!
 virtual Frontier.Platform.Workflow.Model.WorkflowNode.Equals(Frontier.Platform.Workflow.Model.WorkflowNode? other) -> bool
 virtual Frontier.Platform.Workflow.Model.WorkflowNode.PrintMembers(System.Text.StringBuilder! builder) -> bool
-Frontier.Platform.Workflow.Model.ConsolidateAuditInput.EngagementId.get -> string!
-Frontier.Platform.Workflow.Model.ConsolidateAuditInput.EngagementId.init -> void
-Frontier.Platform.Workflow.Model.ConsolidateAuditInput.WorkflowId.get -> string!
-Frontier.Platform.Workflow.Model.ConsolidateAuditInput.WorkflowId.init -> void
-Frontier.Platform.Workflow.Model.ConsolidateAuditInput.RunId.get -> string?
-Frontier.Platform.Workflow.Model.ConsolidateAuditInput.RunId.init -> void
-Frontier.Platform.Workflow.Model.ExecutionSnapshot.RunId.get -> string?
-Frontier.Platform.Workflow.Model.ExecutionSnapshot.RunId.init -> void
-Frontier.Platform.Workflow.Model.ExecutionSnapshot.StartedAtUtc.get -> System.DateTime?
-Frontier.Platform.Workflow.Model.ExecutionSnapshot.StartedAtUtc.init -> void
-Frontier.Platform.Workflow.Model.ExecutionSnapshot.DynamicContextEpoch.get -> int?
-Frontier.Platform.Workflow.Model.ExecutionSnapshot.DynamicContextEpoch.init -> void
-Frontier.Platform.Workflow.Model.ExecutionSnapshot.DynamicContextHash.get -> string?
-Frontier.Platform.Workflow.Model.ExecutionSnapshot.DynamicContextHash.init -> void

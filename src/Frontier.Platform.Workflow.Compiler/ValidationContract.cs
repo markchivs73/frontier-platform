@@ -50,7 +50,8 @@ public enum RuleTier
 public sealed record DefinitionValidationContext(
     WorkflowDefinition Definition,
     string? DraftRevision = null,
-    IReadOnlyDictionary<string, string>? ResourceVersions = null
+    IReadOnlyDictionary<string, string>? ResourceVersions = null,
+    string? StoredSchemaVersion = null
 );
 
 /// <summary>

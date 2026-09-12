@@ -1011,3 +1011,51 @@ Release: **minor, v0.24.0** (major version 0, so a breaking change may ship in a
 "Versioning"). Breaking for any out-of-repo `IKeyProvider` implementation, which must now
 implement `GetKeyAsync`; the in-repo `DevKeyProvider` resolves its own key id and returns `null`
 for anything else. Tracked as S13.66.
+
+## ADR-PA23 — a draft says when it predates the schema it is read with
+
+`MigratingWorkflowDefinitionConverter.Read` adapted only stored versions with a registered adapter.
+**Every other version deserialized straight through** — unrecognised keys were dropped with no log,
+no exception and no finding. The nulled fields then surfaced as ordinary content errors
+("rollback target … produces no section (no artifact_key)"), so a designer debugged a phantom
+content problem on an innocent node instead of being told the draft predates the schema this build
+reads. The read behaviour is deliberately unchanged: a definition that cannot be read faithfully is
+never silently guessed at. What changes is that the condition is now *named*.
+
+**The stored version must be probed and carried.** `ArtifactVocabularyMigration.Migrate` stamps the
+current `schema_version` onto the node before deserializing, so a definition that has been read
+always reports the current version — the stored one is gone by the time anything downstream could
+classify it. `MigratingWorkflowDefinitionConverter.ProbeStoredSchemaVersion(json)` reads it from the
+pre-migration bytes, and `DefinitionDraftDocument.StoredSchemaVersion` carries it on the storage
+envelope. On the envelope, not in the definition: the definition's canonical bytes — and therefore
+every published hash — stay byte-identical with and without the field (hard invariant 1, pinned by
+`DefinitionDraftDocument_StoredSchemaVersion_DoesNotChangeTheDefinitionsCanonicalBytes`). Absent
+reads as null, which means "not probed", never "current".
+
+**Info when adapted, Error when unsupported** (decided by the owner, 2026-09-12). An adapted draft is
+readable and correct — the designer only needs to know why it looks old — so an Error there would
+block a publish that is fine. An unsupported stored version means fields were dropped, so the
+definition on screen is not the definition that was saved; Error blocks publish, which is what an
+unreadable draft deserves. Nothing at all is emitted when the version is current or was never
+probed: the common path stays silent.
+
+**A newer minor of the current major is Current, not a finding.** Same major means this build reads
+it and the converter already deserializes it normally; minor versions are additive by convention, so
+saying nothing matches what actually happens. A newer *major* is Unsupported — there is no backward
+adapter and never will be, and treating "not older" as "fine" is how a downgrade silently corrupts a
+draft. `DefinitionSchemaCompatibility.CurrentSchemaVersion` derives from
+`ArtifactVocabularyMigration.RenamedSchemaVersion`, the same constant `WorkflowDefinition.SchemaVersion`
+defaults to, so the classification cannot drift from the type at the next schema bump.
+
+Rule `schema.version-supported` is pure-tier and **definition-scoped** (`NodeId`/`EdgeRef` null):
+anchoring it to a node would send the designer to the wrong place, which is the failure this defect
+is about. The doc 13 §4.2 catalogue row lives in the consumer repo and is tracked there;
+`RuleCatalogueSpecCoverageTests` pins the catalogue as a checked-in fixture in this repo, so it
+passes here on registration and does not depend on that amendment.
+
+**Known gap at the time of this decision.** The probed version reaches the storage envelope and
+`DefinitionValidationContext`, but no caller yet passes it into a validation run: wiring it through
+`IDefinitionCompiler.ValidateStructural` broke seven pre-existing `TestRunServiceTests` as a mocking
+artifact and sat outside the agreed surface, so it was reverted rather than absorbed here. The rule
+and its plumbing are correct and tested; until that wiring lands, `schema.version-supported` cannot
+fire in a real validation. Tracked as S13.34.
