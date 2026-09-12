@@ -48,12 +48,14 @@ public static class CanonicalOutputSchema
     /// </exception>
     public static ChatResponseFormat For(Type outputType)
     {
-        if (outputType == typeof(TypedPayload))
+        ArgumentNullException.ThrowIfNull(outputType);
+
+        if (IsRefused(outputType))
         {
             throw new NotSupportedException(
-                "TypedPayload is not an agent output contract yet: its free-form payload is schematised from its " +
-                "schema_ref under the ADR-AG1 schema-validated variant (ADR-E2 deferral (c), arrives with E4/E13). " +
-                "Declare the concrete output contract instead.");
+                $"{outputType.Name} is not an agent output contract yet: its free-form TypedPayload content is " +
+                "schematised from its schema_ref under the ADR-AG1 schema-validated variant (ADR-E2 deferral (c), " +
+                "arrives with E4/E13). Declare the concrete output contract instead.");
         }
 
         return Cache.GetOrAdd(outputType, static type => ChatResponseFormat.ForJsonSchema(
@@ -63,6 +65,22 @@ public static class CanonicalOutputSchema
                 inferenceOptions: new AIJsonSchemaCreateOptions { TransformSchemaNode = TransformNode }),
             schemaName: type.Name));
     }
+
+    /// <summary>
+    /// Whether <paramref name="type"/> is refused outright rather than schematised: it either
+    /// <em>is</em> a <see cref="TypedPayload"/> or declares one (S13.22 — <c>WorkItem</c> is the
+    /// first such contract).
+    /// <para>
+    /// The reason is ADR-E2 deferral (c) and it is the same in both cases: the free-form
+    /// <c>payload</c>/<c>facts</c> have no honest CLR-derived schema, so a containing contract
+    /// inherits the dishonesty along with the property. Refusing fails fast at invocation with the
+    /// design reference instead of live at the model API with an opaque 400. The check is one level
+    /// deep deliberately — anything deeper is left to <c>CanonicalOutputSchemaTests</c>' sweep,
+    /// which fails loudly on a boolean schema rather than quietly excusing it.
+    /// </para>
+    /// </summary>
+    internal static bool IsRefused(Type type) =>
+        type == typeof(TypedPayload) || Array.Exists(type.GetProperties(), p => p.PropertyType == typeof(TypedPayload));
 
     /// <summary>
     /// Rewrites converter-opaque boolean schema nodes into their canonical wire-form

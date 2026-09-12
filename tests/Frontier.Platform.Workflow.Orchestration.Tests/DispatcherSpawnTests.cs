@@ -284,11 +284,7 @@ public sealed class DispatcherSpawnTests
                 return pending.Task;
             };
 
-            Context.ActivityHandlers[WorkflowActivityNames.ResolveDispatcherVersionActivity] = input =>
-            {
-                ResolveRequests.Add((ResolveDispatcherVersionRequest)input!);
-                return new ResolveDispatcherVersionResult { Definition = this.rollover };
-            };
+            Context.WithVersionResolver(this.rollover, ResolveRequests);
 
             // The dispatcher must never call this. Registered so that calling it is a recorded
             // failure rather than an unhandled "no handler registered" exception.
@@ -353,7 +349,7 @@ public sealed class DispatcherSpawnTests
         internal async Task<GraphOrchestratorResult> WithTimeout(Task<GraphOrchestratorResult> run)
         {
             var completed = await Task.WhenAny(run, Task.Delay(TimeSpan.FromSeconds(10)));
-            Assert.True(ReferenceEquals(completed, run), "the dispatcher did not return at the generation boundary — it is awaiting its children");
+            Assert.True(ReferenceEquals(completed, run), $"the dispatcher did not return at the generation boundary — it is awaiting its {children.Count} children");
             return await run;
         }
     }

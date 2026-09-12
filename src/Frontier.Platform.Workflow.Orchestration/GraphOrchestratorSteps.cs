@@ -58,7 +58,7 @@ internal static class GraphOrchestratorSteps
     /// </summary>
     internal static async Task<GraphExecutionState> RunInitialWalkAsync(TaskOrchestrationContext context, GraphOrchestratorInput input, IRollbackPlanner rollbackPlanner, IResiliencePolicyProvider policyProvider, IMcpWriteClassifier mcpWriteClassifier)
     {
-        EnsureSupported(input.Definition);
+        EnsureSupported(input.Definition, input.WorkItemId);
 
         var state = new GraphExecutionState
         {
@@ -376,10 +376,31 @@ internal static class GraphOrchestratorSteps
         return context.CallActivityAsync<SignedAuditRecord>(WorkflowActivityNames.ConsolidateAuditActivity, request, taskOptions);
     }
 
-    /// <summary>Throws if <paramref name="definition"/> uses anything beyond the S2.2 PoC's supported shape: <see cref="ExecutionMode.OneShot"/>, all <see cref="AgentTaskNode"/>.</summary>
-    internal static void EnsureSupported(WorkflowDefinition definition)
+    /// <summary>
+    /// Throws if <paramref name="definition"/> uses anything beyond the S2.2 PoC's supported shape:
+    /// <see cref="ExecutionMode.OneShot"/>, all <see cref="AgentTaskNode"/>.
+    /// <para>
+    /// <b>The dispatcher-child carve-out (S13.22).</b> A dispatcher hands its child its <em>own</em>
+    /// pinned definition, whose mode is <c>dispatcher</c>, so before this every spawned child died
+    /// here on a permanent contract violation. A non-null <paramref name="workItemId"/> is what
+    /// distinguishes the two callers: a child of a dispatcher carries one, a top-level execution
+    /// never does. The child runs the graph, which is what this orchestrator is for.
+    /// </para>
+    /// <para>
+    /// The rejected alternative, recorded so it is not retried: rewriting the child's definition to
+    /// <see cref="ExecutionMode.OneShot"/> before spawning would mutate a pinned definition and
+    /// change its <c>definition_hash</c> — a K3/ADR-2 breach, and the hash is what the signed audit
+    /// record pins to prove which graph version produced the output. The mode guard gives, not the
+    /// definition.
+    /// </para>
+    /// </summary>
+    /// <param name="definition">The pinned definition about to be walked.</param>
+    /// <param name="workItemId">The dispatcher work item this execution is a child of, or null for a top-level execution.</param>
+    internal static void EnsureSupported(WorkflowDefinition definition, string? workItemId = null)
     {
-        if (definition.Mode != ExecutionMode.OneShot)
+        var isDispatcherChild = definition.Mode == ExecutionMode.Dispatcher && !string.IsNullOrWhiteSpace(workItemId);
+
+        if (definition.Mode != ExecutionMode.OneShot && !isDispatcherChild)
         {
             throw new ContractViolationException(nameof(WorkflowDefinition), [$"GraphOrchestrator (S2.2 PoC) supports only '{ExecutionMode.OneShot.Name}' definitions; got '{definition.Mode.Name}'."]);
         }

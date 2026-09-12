@@ -76,7 +76,7 @@ public sealed class DispatcherOrchestratorTests
     [Fact]
     public async Task RunAsync_WorkItemWithDirectedBy_ThreadsItIntoChildInitiatedBy()
     {
-        var context = new FakeTaskOrchestrationContext();
+        var context = new FakeTaskOrchestrationContext().WithVersionResolver();
         context.ExternalEvents[DispatcherOrchestrator.WorkItemEventName] = new WorkItem
         {
             WorkItemId = "SUB-001",
@@ -100,7 +100,7 @@ public sealed class DispatcherOrchestratorTests
     [Fact]
     public async Task RunAsync_WorkItemWithoutDirectedBy_FallsBackToDispatcherInitiator()
     {
-        var context = new FakeTaskOrchestrationContext();
+        var context = new FakeTaskOrchestrationContext().WithVersionResolver();
         context.ExternalEvents[DispatcherOrchestrator.WorkItemEventName] = new WorkItem
         {
             WorkItemId = "SUB-002",
@@ -127,7 +127,7 @@ public sealed class DispatcherOrchestratorTests
     [Fact]
     public async Task RunAsync_SpawnsTheGraphOrchestrator()
     {
-        var context = new FakeTaskOrchestrationContext();
+        var context = new FakeTaskOrchestrationContext().WithVersionResolver();
         context.ExternalEvents[DispatcherOrchestrator.WorkItemEventName] = new WorkItem
         {
             WorkItemId = "SUB-003",

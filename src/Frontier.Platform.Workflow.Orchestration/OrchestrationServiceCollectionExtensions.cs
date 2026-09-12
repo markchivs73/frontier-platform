@@ -24,7 +24,13 @@ public static class OrchestrationServiceCollectionExtensions
     /// <see cref="IMcpToolCatalog"/>, <see cref="IMcpEndpointResolver"/>,
     /// <see cref="IMcpWriteClassifier"/>, <see cref="IExecutionSnapshotReader"/>,
     /// <see cref="IEntryPayloadBuilder"/> and <see cref="IContractTypeSet"/>. Each of those names
-    /// a vendor or a deployment fact; the engine asks and does not decide.</para>
+    /// a vendor or a deployment fact; the engine asks and does not decide. The same is true of
+    /// <see cref="IDynamicContextContentProducer"/> and <see cref="IDispatcherVersionResolver"/>:
+    /// their activities are registered here, the ports behind them deliberately are not.</para>
+    ///
+    /// <para>An activity needs <b>two</b> registrations to work: this one, and an entry in the
+    /// consumer's DTF task registry. Missing either resolves cleanly and fails only at runtime —
+    /// the <see cref="RefreshDynamicContextActivity"/> lesson (S10.4).</para>
     /// </summary>
     public static IServiceCollection AddFrontierWorkflowOrchestration(this IServiceCollection services, IConfiguration configuration)
     {
@@ -46,6 +52,7 @@ public static class OrchestrationServiceCollectionExtensions
             .AddTransient<EscalateApprovalActivity>()
             .AddTransient<InvokeMcpToolActivity>()
             .AddTransient<RefreshDynamicContextActivity>()
+            .AddTransient<ResolveDispatcherVersionActivity>()
             .AddSingleton<IAuditConsolidator, AuditConsolidator>()
             .AddTransient<IAgentTaskActivityPipeline, AgentTaskActivityPipeline>()
             .AddTransient<IMcpToolInvocationPipeline, McpToolInvocationPipeline>()

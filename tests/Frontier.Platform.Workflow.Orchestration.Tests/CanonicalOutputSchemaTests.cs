@@ -42,7 +42,7 @@ public sealed class CanonicalOutputSchemaTests
         // an unhandled custom converter fails here at PR time, not live with a 400.
         var contractTypes = typeof(WorkflowDefinition).Assembly.GetTypes()
             .Where(t => t.IsClass && !t.IsAbstract && typeof(IVersionedContract).IsAssignableFrom(t)
-                && t != typeof(TypedPayload));   // deliberately refused, not schematised — see the test below
+                && !CanonicalOutputSchema.IsRefused(t));   // deliberately refused, not schematised — see the two tests below
 
         foreach (var type in contractTypes)
         {
@@ -61,6 +61,47 @@ public sealed class CanonicalOutputSchemaTests
         var exception = Assert.Throws<NotSupportedException>(CanonicalOutputSchema.For<TypedPayload>);
 
         Assert.Contains("ADR-AG1 schema-validated variant", exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// S13.22 — a contract that <em>carries</em> a <see cref="TypedPayload"/> inherits the refusal
+    /// along with the property, and <see cref="WorkItem"/> is the first one. Retyping its payload
+    /// from <c>object</c> to the ADR-E2 envelope brought it into the sweep below, where its
+    /// free-form <c>payload</c> node exported as a boolean schema — the exact failure this class
+    /// exists to catch. Inventing a schema for it instead would contradict ADR-E2 deferral (c): the
+    /// honest schema is the capability-declared <c>schema_ref</c>, not anything the CLR type knows.
+    /// A work item is not an agent output contract in any case.
+    /// </summary>
+    /// <summary>The non-generic entry point is reachable from a consumer's vendor adapter, so it guards its argument.</summary>
+    [Fact]
+    public void For_NullType_Throws() =>
+        Assert.Throws<ArgumentNullException>(() => CanonicalOutputSchema.For(null!));
+
+    [Fact]
+    public void For_WorkItem_ThrowsNotSupportedWithDesignReference()
+    {
+        var exception = Assert.Throws<NotSupportedException>(CanonicalOutputSchema.For<WorkItem>);
+
+        Assert.Contains("ADR-AG1 schema-validated variant", exception.Message, StringComparison.Ordinal);
+        Assert.Contains(nameof(WorkItem), exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The refused set is pinned by name, not merely skipped. The sweep above now excludes whatever
+    /// the generator refuses, so without this a future contract could be quietly refused — and
+    /// therefore quietly unswept — instead of being schematised. Refusal has to stay a deliberate,
+    /// visible decision about two named types.
+    /// </summary>
+    [Fact]
+    public void IsRefused_IsExactlyTypedPayloadAndTheContractsCarryingIt()
+    {
+        var refused = typeof(WorkflowDefinition).Assembly.GetTypes()
+            .Where(t => t.IsClass && !t.IsAbstract && typeof(IVersionedContract).IsAssignableFrom(t) && CanonicalOutputSchema.IsRefused(t))
+            .Select(t => t.Name)
+            .Order(StringComparer.Ordinal)
+            .ToList();
+
+        Assert.Equal(["TypedPayload", "WorkItem"], refused);
     }
 
     [Fact]

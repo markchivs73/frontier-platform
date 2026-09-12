@@ -63,7 +63,9 @@ exactly that.
   that disagrees with it is rebuilt, never trusted.
 - `TypedPayload` and `PayloadRef` — a payload travels inline or by reference, so large
   outputs never inflate orchestration state.
-- `StepCompletion`, `ExternalEvent`, `WorkItem` — the units a run advances through.
+- `StepCompletion`, `ExternalEvent`, `WorkItem` — the units a run advances through. A
+  `WorkItem` carries external input across the durable history boundary, so its content is a
+  validated `TypedPayload` envelope rather than an untyped blob.
 - `WorkflowActivityNames` — the activity names the durable substrate matches replay against.
   These are **identity, not labels**: renaming one is a breaking change to in-flight
   executions, because the orchestrator schedules by name from code and the substrate matches

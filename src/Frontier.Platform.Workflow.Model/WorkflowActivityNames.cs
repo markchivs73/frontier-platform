@@ -26,6 +26,9 @@ public static class WorkflowActivityNames
     /// <summary>Re-renders and merges an engagement's named dynamic-context components on an ADR-CR1 refresh signal (Orchestration, S13.62, doc 04 §8).</summary>
     public const string RefreshDynamicContextActivity = "RefreshDynamicContextActivity";
 
+    /// <summary>Resolves the definition version a dispatcher's next generation runs, at the <c>ContinueAsNew</c> boundary (Orchestration, S13.18, ADR-E15 D2, doc 16 §8).</summary>
+    public const string ResolveDispatcherVersionActivity = "ResolveDispatcherVersionActivity";
+
     /// <summary>Derives the section dependency graph and downstream set (CascadeLogic, doc 03 §4).</summary>
     public const string EvaluateCascadeActivity = "EvaluateCascadeActivity";
 
