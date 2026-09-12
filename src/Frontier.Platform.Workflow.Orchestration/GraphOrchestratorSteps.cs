@@ -616,7 +616,45 @@ internal static class GraphOrchestratorSteps
         StartedAtUtc = state.StartedAtUtc,
         DynamicContextEpoch = state.DynamicContextEpoch,
         DynamicContextHash = state.DynamicContextHash,
+        Mode = input.Definition.Mode,
+        WorkItemId = input.WorkItemId,
     };
+
+    /// <summary>
+    /// Writes a dispatcher child's <b>sequence-0</b> snapshot before its walk begins (ADR-PA26), and
+    /// does nothing for any other execution.
+    /// <para>
+    /// Sequence 0 is the pre-start projection slot, and for a normal run the Host's
+    /// <c>OrchestrationFactory</c> fills it (S4.7a, doc 02 §5) — which is why
+    /// <see cref="GraphExecutionState.Sequence"/> starts at 1. A dispatcher child bypasses that
+    /// factory entirely: it is spawned by <see cref="DispatcherOrchestrator"/>, so nothing wrote its
+    /// slot and the child stayed invisible in the projection until its first node completed — the
+    /// S13.70 shape, a run that exists but cannot be seen. This fills the same slot by the same
+    /// path: <see cref="WorkflowActivityNames.SnapshotStateActivity"/>, from an activity, never
+    /// orchestrator-body I/O.
+    /// </para>
+    /// <para>
+    /// A non-blank <see cref="GraphOrchestratorInput.WorkItemId"/> is what identifies a child —
+    /// the same discriminator <see cref="EnsureSupported"/> already uses, so the two cannot drift.
+    /// </para>
+    /// </summary>
+    internal static async Task WriteChildStartSnapshotAsync(TaskOrchestrationContext context, GraphOrchestratorInput input, DateTime startedAtUtc, IResiliencePolicyProvider policyProvider)
+    {
+        if (string.IsNullOrWhiteSpace(input.WorkItemId))
+        {
+            return;
+        }
+
+        var state = new GraphExecutionState
+        {
+            StartedAtUtc = startedAtUtc,
+            DynamicContextEpoch = input.DynamicContextEpoch,
+            DynamicContextHash = input.DynamicContextHash,
+            Sequence = 0,
+        };
+
+        await WriteSnapshotAsync(context, input, state, ExecutionStatus.Running, currentNodeId: null, policyProvider);
+    }
 
     /// <summary>
     /// Runs a <see cref="HumanGateNode"/> to completion (doc 06 §3-§7, §13, S4.6): opens
