@@ -7,3 +7,25 @@ const Frontier.Platform.Abstractions.ExecutionId.MaxInstanceIdLength = 100 -> in
 static Frontier.Platform.Abstractions.ExecutionId.ForRun(string! runToken) -> string!
 *REMOVED*const Frontier.Platform.Abstractions.ExecutionId.RunSeparator = "~" -> string!
 *REMOVED*static Frontier.Platform.Abstractions.ExecutionId.MintRun(string! engagementId, string! workflowId, string! runToken) -> string!
+Frontier.Platform.Abstractions.DynamicContextRefreshRequired
+Frontier.Platform.Abstractions.DynamicContextRefreshRequired.<Clone>$() -> Frontier.Platform.Abstractions.DynamicContextRefreshRequired!
+Frontier.Platform.Abstractions.DynamicContextRefreshRequired.DynamicContextRefreshRequired() -> void
+Frontier.Platform.Abstractions.DynamicContextRefreshRequired.Equals(Frontier.Platform.Abstractions.DynamicContextRefreshRequired? other) -> bool
+Frontier.Platform.Abstractions.DynamicContextRefreshRequired.SchemaVersion.get -> string!
+Frontier.Platform.Abstractions.DynamicContextRefreshRequired.SchemaVersion.init -> void
+Frontier.Platform.Abstractions.DynamicContextRefreshRequired.EngagementId.get -> string!
+Frontier.Platform.Abstractions.DynamicContextRefreshRequired.EngagementId.init -> void
+Frontier.Platform.Abstractions.DynamicContextRefreshRequired.Reason.get -> string!
+Frontier.Platform.Abstractions.DynamicContextRefreshRequired.Reason.init -> void
+Frontier.Platform.Abstractions.DynamicContextRefreshRequired.ChangedFields.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Frontier.Platform.Abstractions.DynamicContextRefreshRequired.ChangedFields.init -> void
+Frontier.Platform.Abstractions.DynamicContextRefreshRequired.DetectedAtUtc.get -> System.DateTime
+Frontier.Platform.Abstractions.DynamicContextRefreshRequired.DetectedAtUtc.init -> void
+Frontier.Platform.Abstractions.DynamicContextRefreshRequired.Components.get -> System.Collections.Generic.IReadOnlyList<string!>?
+Frontier.Platform.Abstractions.DynamicContextRefreshRequired.Components.init -> void
+Frontier.Platform.Abstractions.DynamicContextRefreshRequired.Validate() -> void
+override Frontier.Platform.Abstractions.DynamicContextRefreshRequired.Equals(object? obj) -> bool
+override Frontier.Platform.Abstractions.DynamicContextRefreshRequired.GetHashCode() -> int
+override Frontier.Platform.Abstractions.DynamicContextRefreshRequired.ToString() -> string!
+static Frontier.Platform.Abstractions.DynamicContextRefreshRequired.operator !=(Frontier.Platform.Abstractions.DynamicContextRefreshRequired? left, Frontier.Platform.Abstractions.DynamicContextRefreshRequired? right) -> bool
+static Frontier.Platform.Abstractions.DynamicContextRefreshRequired.operator ==(Frontier.Platform.Abstractions.DynamicContextRefreshRequired? left, Frontier.Platform.Abstractions.DynamicContextRefreshRequired? right) -> bool

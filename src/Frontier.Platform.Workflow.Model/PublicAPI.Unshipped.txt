@@ -529,3 +529,4 @@ virtual Frontier.Platform.Workflow.Model.ConditionalPredicate.PrintMembers(Syste
 virtual Frontier.Platform.Workflow.Model.WorkflowNode.EqualityContract.get -> System.Type!
 virtual Frontier.Platform.Workflow.Model.WorkflowNode.Equals(Frontier.Platform.Workflow.Model.WorkflowNode? other) -> bool
 virtual Frontier.Platform.Workflow.Model.WorkflowNode.PrintMembers(System.Text.StringBuilder! builder) -> bool
+const Frontier.Platform.Workflow.Model.WorkflowActivityNames.RefreshDynamicContextActivity = "RefreshDynamicContextActivity" -> string!

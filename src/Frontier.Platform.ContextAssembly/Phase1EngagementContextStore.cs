@@ -76,6 +76,10 @@ internal sealed class Phase1EngagementContextStore : IEngagementContextStore
     }
 
     /// <inheritdoc />
+    public Task<int> MergeDynamicContextAsync(EngagementId engagementId, IReadOnlyDictionary<string, string> components, CancellationToken ct) =>
+        EngagementContextMerge.ApplyThroughAsync(this, engagementId, components, ct);
+
+    /// <inheritdoc />
     public Task<int> UpsertDynamicContextAsync(EngagementId engagementId, string dynamicContent, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(engagementId);

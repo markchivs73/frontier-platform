@@ -107,6 +107,17 @@ internal sealed class CosmosEngagementContextStore : IEngagementContextStore
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// Read-merge-write over the epoch documents, not an in-place patch: the epoch history is
+    /// append-only (doc 04 §6), so a scoped refresh still lands as a whole new epoch — it just
+    /// carries the keys it did not change forward instead of dropping them. Concurrency is the
+    /// upsert's existing conflict handling; a single live instance per engagement-workflow (hard
+    /// invariant 3) is what keeps that sufficient in Phase 1.
+    /// </remarks>
+    public Task<int> MergeDynamicContextAsync(EngagementId engagementId, IReadOnlyDictionary<string, string> components, CancellationToken ct) =>
+        EngagementContextMerge.ApplyThroughAsync(this, engagementId, components, ct);
+
+    /// <inheritdoc />
     public async Task<int> UpsertDynamicContextAsync(EngagementId engagementId, string dynamicContent, CancellationToken ct)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(engagementId);

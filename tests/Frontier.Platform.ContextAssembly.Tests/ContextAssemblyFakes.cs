@@ -40,6 +40,14 @@ internal sealed class FakeEngagementContextStore(string? content) : IEngagementC
     {
         return Task.FromResult(++currentEpoch);
     }
+
+    /// <summary>
+    /// This double serves a fixed <c>content</c> and cannot represent a write, so it refuses the
+    /// merge rather than reporting a success that changed nothing (S13.62). No assembler test
+    /// merges; <c>EngagementContextMergeTests</c> exercises the real stores.
+    /// </summary>
+    public Task<int> MergeDynamicContextAsync(EngagementId engagementId, IReadOnlyDictionary<string, string> components, CancellationToken ct) =>
+        throw new NotSupportedException("FakeEngagementContextStore serves fixed content; merge is exercised against the real stores.");
 }
 
 /// <summary>

@@ -30,4 +30,26 @@ public interface IDynamicContextRefresher
         string newDynamicContent,
         string refreshReason,
         CancellationToken ct);
+
+    /// <summary>
+    /// Refreshes only the named dynamic-context components, leaving every other key of the
+    /// engagement's context byte-identical (S13.62, ADR-PA24) — the scoped form ADR-CR1's signal
+    /// actually describes, since doc 18 §3 raises it for named components and doc 04 §8's payload
+    /// carries <c>changed_fields</c> rather than a whole context.
+    /// </summary>
+    /// <param name="engagementId">The engagement this refresh is for.</param>
+    /// <param name="components">Component key → that component's rendered canonical JSON.</param>
+    /// <param name="refreshReason">ADR-CR1's explicit reason, for OTEL metrics and structured logging.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Refresh result: whether the bytes moved, the epoch the engagement is now on, and that epoch's content hash.</returns>
+    /// <remarks>
+    /// Byte-identity still governs the epoch (ADR-EC1, doc 04 §8): components that merge to the
+    /// bytes already stored report <c>Refreshed: false</c> and the unchanged current epoch, so a
+    /// primed provider cache is not needlessly invalidated.
+    /// </remarks>
+    Task<DynamicContextRefreshResult> RefreshComponentsAsync(
+        EngagementId engagementId,
+        IReadOnlyDictionary<string, string> components,
+        string refreshReason,
+        CancellationToken ct);
 }

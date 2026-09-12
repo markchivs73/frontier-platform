@@ -13,6 +13,14 @@ internal sealed class FakeEngagementContextStore(string? dynamicContextJson) : I
 
     public Task<int> UpsertDynamicContextAsync(EngagementId engagementId, string dynamicContent, CancellationToken ct) => Task.FromResult(++currentEpoch);
 
+    /// <summary>
+    /// This double serves a fixed document and cannot represent a write, so it refuses the merge
+    /// rather than reporting a success that changed nothing (S13.62). The composer tests it serves
+    /// never refresh; the merge semantics are pinned in <c>EngagementContextMergeTests</c>.
+    /// </summary>
+    public Task<int> MergeDynamicContextAsync(EngagementId engagementId, IReadOnlyDictionary<string, string> components, CancellationToken ct) =>
+        throw new NotSupportedException("FakeEngagementContextStore serves fixed content; merge is exercised against the real stores.");
+
     /// <summary>The epoch the fake reports as current (S13.60); a request for any other epoch returns <see langword="null"/>, as the real stores do for a missing version.</summary>
     internal int CurrentEpoch { get; init; }
 

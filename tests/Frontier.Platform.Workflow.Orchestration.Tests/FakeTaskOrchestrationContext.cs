@@ -108,6 +108,11 @@ internal sealed class FakeTaskOrchestrationContext : TaskOrchestrationContext
                 return pending.Task;
             }
 
+            if (value is PendingExternalEvent pendingEvent)
+            {
+                return pendingEvent.Next<T>();
+            }
+
             return Task.FromResult(value is Queue<object> queue ? (T)queue.Dequeue() : (T)value);
         }
 
@@ -136,6 +141,71 @@ internal sealed class FakeTaskOrchestrationContext : TaskOrchestrationContext
 
     /// <inheritdoc />
     public override Guid NewGuid() => throw new NotSupportedException();
+}
+
+/// <summary>
+/// An external event the test raises at a chosen moment (S13.62), for
+/// <see cref="FakeTaskOrchestrationContext.ExternalEvents"/>.
+/// <para>
+/// The plain-value and <see cref="Queue{T}"/> entries above are both fixed before the
+/// orchestration starts, which cannot express the S13.62 refresh cases: the refresh subscription
+/// is created <em>once, before the walk</em>, and the interesting behaviour is a signal arriving
+/// while specific nodes are already in flight. This double models DTF faithfully instead — a wait
+/// with no buffered event pends indefinitely; <see cref="Raise"/> delivers to the oldest waiter,
+/// or buffers for the next wait if none is outstanding; and each raise is consumed exactly once,
+/// so an implementation that re-arms its subscription correctly blocks again rather than
+/// re-reading the same event forever.
+/// </para>
+/// </summary>
+internal sealed class PendingExternalEvent
+{
+    private readonly Queue<object> buffered = new();
+    private readonly Queue<Action<object>> waiters = new();
+
+    /// <summary>How many times a wait against this event has been satisfied — "exactly once per signal".</summary>
+    public int DeliveredCount { get; private set; }
+
+    /// <summary>
+    /// Returns the next delivery: the oldest buffered raise, or a task completed by a future
+    /// <see cref="Raise"/>.
+    /// <para>
+    /// <b>Delivery is synchronous</b> (S13.62). The waiter is a plain
+    /// <see cref="TaskCompletionSource{T}"/> completed directly by <see cref="Raise"/>, so its
+    /// continuation runs inline on the raising thread — the same way <c>CompleteNode</c>'s node
+    /// task already behaves, and the way a real DTF orchestrator body behaves: single-threaded,
+    /// no thread-pool hop. The earlier form asynchronously hopped <em>twice</em>
+    /// (<c>RunContinuationsAsynchronously</c> plus a <c>ContinueWith</c> on
+    /// <see cref="TaskScheduler.Default"/>) while node completion stayed inline, so the walk had
+    /// two asymmetric resumption paths racing: a signal raised before a node completed was
+    /// observed by the walk only sometimes, and a determinism test whose harness is itself
+    /// non-deterministic proves nothing either way.
+    /// </para>
+    /// </summary>
+    public Task<T> Next<T>()
+    {
+        if (buffered.Count > 0)
+        {
+            DeliveredCount++;
+            return Task.FromResult((T)buffered.Dequeue());
+        }
+
+        var pending = new TaskCompletionSource<T>();
+        waiters.Enqueue(payload => pending.SetResult((T)payload));
+        return pending.Task;
+    }
+
+    /// <summary>Raises the event with <paramref name="payload"/>, delivering to the oldest outstanding waiter or buffering it.</summary>
+    public void Raise(object payload)
+    {
+        if (waiters.Count > 0)
+        {
+            DeliveredCount++;
+            waiters.Dequeue()(payload);
+            return;
+        }
+
+        buffered.Enqueue(payload);
+    }
 }
 
 /// <summary>
