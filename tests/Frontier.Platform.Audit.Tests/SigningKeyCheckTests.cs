@@ -50,11 +50,18 @@ public sealed class SigningKeyCheckTests
     private sealed class FakeKeyProvider(SigningKey key) : IKeyProvider
     {
         public Task<SigningKey> GetCurrentKeyAsync(CancellationToken cancellationToken) => Task.FromResult(key);
+
+        public Task<SigningKey?> GetKeyAsync(string keyId, CancellationToken cancellationToken) =>
+            Task.FromResult(keyId == key.KeyId ? key : null);
     }
 
     private sealed class DevKeyProviderForTests : IKeyProvider
     {
-        public Task<SigningKey> GetCurrentKeyAsync(CancellationToken cancellationToken) =>
-            Task.FromResult(new SigningKey("dev-key/v1", "frontier-workflow-dev-signing-key"u8.ToArray()));
+        private static readonly SigningKey Key = new("dev-key/v1", "frontier-workflow-dev-signing-key"u8.ToArray());
+
+        public Task<SigningKey> GetCurrentKeyAsync(CancellationToken cancellationToken) => Task.FromResult(Key);
+
+        public Task<SigningKey?> GetKeyAsync(string keyId, CancellationToken cancellationToken) =>
+            Task.FromResult(keyId == Key.KeyId ? Key : null);
     }
 }

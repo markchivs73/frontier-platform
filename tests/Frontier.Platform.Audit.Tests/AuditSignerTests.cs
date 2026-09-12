@@ -112,4 +112,91 @@ public sealed class AuditSignerTests
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => signer.VerifyAsync("eng-1::wf-1", "eng-1", CancellationToken.None));
     }
+
+    [Fact]
+    public async Task VerifyAsync_PostRotation_VerifiedAgainstKeyIdIsTheRecordsKey()
+    {
+        // S13.66 / doc 05 §5: a v1 record verified after rotation to v2 verifies under v1, forever.
+        var store = new FakeAuditRecordStore();
+        var provider = new FakeRotatingKeyProvider();
+        var signer = new AuditSigner(store, provider);
+        var signed = await signer.SignAsync(AuditRecordHasherTests.Sample(), CancellationToken.None);
+        provider.RotateTo(FakeRotatingKeyProvider.V2);
+
+        var result = await signer.VerifyAsync(signed.ExecutionId, signed.EngagementId, CancellationToken.None);
+
+        Assert.True(result.SignatureValid);
+        Assert.True(result.ChainValid);
+        Assert.Equal(FakeRotatingKeyProvider.V1.KeyId, result.VerifiedAgainstKeyId);
+        Assert.Null(result.UnresolvedKeyIds);
+    }
+
+    [Fact]
+    public async Task VerifyAsync_ChainSpanningTwoKeys_VerifiesEndToEnd()
+    {
+        var store = new FakeAuditRecordStore();
+        var provider = new FakeRotatingKeyProvider();
+        var signer = new AuditSigner(store, provider);
+        var first = await signer.SignAsync(AuditRecordHasherTests.Sample(), CancellationToken.None);
+        provider.RotateTo(FakeRotatingKeyProvider.V2);
+        var second = await signer.SignAsync(
+            AuditRecordHasherTests.Sample() with { ExecutionId = "eng-1::wf-2", WorkflowId = "wf-2", ClosedAtUtc = first.ClosedAtUtc.AddMinutes(1) },
+            CancellationToken.None);
+
+        Assert.Equal(FakeRotatingKeyProvider.V2.KeyId, second.SigningKeyId);
+        foreach (var record in new[] { first, second })
+        {
+            var result = await signer.VerifyAsync(record.ExecutionId, record.EngagementId, CancellationToken.None);
+
+            Assert.True(result.SignatureValid);
+            Assert.True(result.ChainValid);
+            Assert.Null(result.BrokenLinkAt);
+            Assert.Equal(record.SigningKeyId, result.VerifiedAgainstKeyId);
+        }
+    }
+
+    [Fact]
+    public async Task VerifyAsync_TargetKeyVersionDestroyed_FailsClosedAndReportsTheUnresolvedId()
+    {
+        // Decision (A): indistinguishable-from-forgery is not acceptable — the id is reported;
+        // decision (C): hash continuity is key-free, so the chain is still walked and still valid.
+        var store = new FakeAuditRecordStore();
+        var provider = new FakeRotatingKeyProvider();
+        var signer = new AuditSigner(store, provider);
+        var first = await signer.SignAsync(AuditRecordHasherTests.Sample(), CancellationToken.None);
+        provider.RotateTo(FakeRotatingKeyProvider.V2);
+        await signer.SignAsync(
+            AuditRecordHasherTests.Sample() with { ExecutionId = "eng-1::wf-2", WorkflowId = "wf-2", ClosedAtUtc = first.ClosedAtUtc.AddMinutes(1) },
+            CancellationToken.None);
+        provider.Forget(FakeRotatingKeyProvider.V1.KeyId);
+
+        var result = await signer.VerifyAsync(first.ExecutionId, first.EngagementId, CancellationToken.None);
+
+        Assert.False(result.SignatureValid);
+        Assert.Equal(FakeRotatingKeyProvider.V1.KeyId, result.VerifiedAgainstKeyId);
+        Assert.Equal([FakeRotatingKeyProvider.V1.KeyId], result.UnresolvedKeyIds);
+        Assert.True(result.ChainValid);
+        Assert.Null(result.BrokenLinkAt);
+    }
+
+    [Fact]
+    public async Task VerifyAsync_OtherRecordsKeyDestroyed_TargetStillVerifiesAndTheIdIsReported()
+    {
+        var store = new FakeAuditRecordStore();
+        var provider = new FakeRotatingKeyProvider();
+        var signer = new AuditSigner(store, provider);
+        var first = await signer.SignAsync(AuditRecordHasherTests.Sample(), CancellationToken.None);
+        provider.RotateTo(FakeRotatingKeyProvider.V2);
+        var second = await signer.SignAsync(
+            AuditRecordHasherTests.Sample() with { ExecutionId = "eng-1::wf-2", WorkflowId = "wf-2", ClosedAtUtc = first.ClosedAtUtc.AddMinutes(1) },
+            CancellationToken.None);
+        provider.Forget(FakeRotatingKeyProvider.V1.KeyId);
+
+        var result = await signer.VerifyAsync(second.ExecutionId, second.EngagementId, CancellationToken.None);
+
+        Assert.True(result.SignatureValid);
+        Assert.Equal(FakeRotatingKeyProvider.V2.KeyId, result.VerifiedAgainstKeyId);
+        Assert.Equal([FakeRotatingKeyProvider.V1.KeyId], result.UnresolvedKeyIds);
+        Assert.True(result.ChainValid);
+    }
 }
