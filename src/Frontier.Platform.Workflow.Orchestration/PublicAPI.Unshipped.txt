@@ -419,3 +419,35 @@ override Frontier.Platform.Workflow.Orchestration.RefreshDynamicContextRequest.G
 override Frontier.Platform.Workflow.Orchestration.RefreshDynamicContextRequest.ToString() -> string!
 static Frontier.Platform.Workflow.Orchestration.RefreshDynamicContextRequest.operator !=(Frontier.Platform.Workflow.Orchestration.RefreshDynamicContextRequest? left, Frontier.Platform.Workflow.Orchestration.RefreshDynamicContextRequest? right) -> bool
 static Frontier.Platform.Workflow.Orchestration.RefreshDynamicContextRequest.operator ==(Frontier.Platform.Workflow.Orchestration.RefreshDynamicContextRequest? left, Frontier.Platform.Workflow.Orchestration.RefreshDynamicContextRequest? right) -> bool
+Frontier.Platform.Workflow.Orchestration.IDispatcherVersionResolver
+Frontier.Platform.Workflow.Orchestration.IDispatcherVersionResolver.ResolveAsync(string! engagementId, string! workflowId, int currentVersion, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Model.WorkflowDefinition?>!
+Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionActivity
+Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionActivity.ResolveDispatcherVersionActivity(Frontier.Platform.Workflow.Orchestration.IDispatcherVersionResolver! resolver) -> void
+override Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionActivity.RunAsync(Microsoft.DurableTask.TaskActivityContext! context, Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionRequest! input) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult!>!
+Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionRequest
+Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionRequest.<Clone>$() -> Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionRequest!
+Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionRequest.CurrentDefinitionVersion.get -> int
+Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionRequest.CurrentDefinitionVersion.init -> void
+Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionRequest.EngagementId.get -> string!
+Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionRequest.EngagementId.init -> void
+Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionRequest.Equals(Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionRequest? other) -> bool
+Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionRequest.ResolveDispatcherVersionRequest() -> void
+Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionRequest.WorkflowId.get -> string!
+Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionRequest.WorkflowId.init -> void
+override Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionRequest.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionRequest.GetHashCode() -> int
+override Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionRequest.ToString() -> string!
+static Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionRequest.operator !=(Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionRequest? left, Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionRequest? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionRequest.operator ==(Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionRequest? left, Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionRequest? right) -> bool
+Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult
+Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult.<Clone>$() -> Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult!
+Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult.Definition.get -> Frontier.Platform.Workflow.Model.WorkflowDefinition?
+Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult.Definition.init -> void
+Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult.Equals(Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult? other) -> bool
+Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult.ResolveDispatcherVersionResult() -> void
+override Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult.GetHashCode() -> int
+override Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult.ToString() -> string!
+static Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult.operator !=(Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult? left, Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult.operator ==(Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult? left, Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult? right) -> bool
+const Frontier.Platform.Workflow.Orchestration.DispatcherOrchestrator.WorkItemEventName = "WorkItem" -> string!

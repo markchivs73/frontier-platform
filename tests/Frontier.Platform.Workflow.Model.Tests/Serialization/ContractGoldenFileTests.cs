@@ -60,4 +60,29 @@ public sealed class ContractGoldenFileTests
     [Fact]
     public void TypedPayloadInline_SerializesStablyAndRoundTrips() =>
         ContractRoundTripAssertions.AssertByteStableAndRoundTrips(ContractSamples.TypedPayloadInline());
+
+    /// <summary>
+    /// S13.22 — <see cref="WorkItem"/> is a <b>live wire contract</b> and gets the full treatment.
+    /// <para>
+    /// It carried <c>required object Payload</c>, which is not a contract at all: <c>object</c>
+    /// deserializes as a <c>JsonElement</c>, so every consumer re-inspects an untyped blob and the
+    /// ADR-E1 tonnage path (a large payload staged by reference) has nowhere to live. That is K4
+    /// erosion in the one place it matters most — this is <em>external</em> input crossing into DTF
+    /// history, where the bytes are evidential and permanent. ADR-E2's <see cref="TypedPayload"/>
+    /// is the engine's one generic carriage for exactly this, inline or by reference, naming the
+    /// schema its content conforms to.
+    /// </para>
+    /// <para>
+    /// A golden file is therefore not ceremony here: a work item's bytes sit in the durable history
+    /// of an eternal instance and are replayed for as long as it lives.
+    /// </para>
+    /// </summary>
+    [Fact]
+    public void WorkItem_SerializesStablyAndRoundTrips() =>
+        ContractRoundTripAssertions.AssertStableAndRoundTrips(ContractSamples.WorkItem(), "work_item.json");
+
+    /// <summary>The inline-envelope, no-directing-human variant: <c>directed_by</c> is omitted, not null.</summary>
+    [Fact]
+    public void WorkItemInline_SerializesStablyAndRoundTrips() =>
+        ContractRoundTripAssertions.AssertByteStableAndRoundTrips(ContractSamples.WorkItemInline());
 }

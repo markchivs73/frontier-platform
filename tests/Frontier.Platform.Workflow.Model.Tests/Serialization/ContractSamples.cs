@@ -303,6 +303,24 @@ internal static class ContractSamples
         Payload = Json("""{"category":"product_upload","confidence":0.97}"""),
     };
 
+    /// <summary>
+    /// S13.22: a <see cref="WorkItem"/> carrying an ADR-E2 envelope by reference, with its
+    /// directing human (ADR-E8/S13.19).
+    /// </summary>
+    public static WorkItem WorkItem() => new()
+    {
+        WorkItemId = "SUB-001",
+        Payload = TypedPayloadByRef(),
+        DirectedBy = "user:oid-supplier",
+    };
+
+    /// <summary>The same contract with an inline envelope and no directing human — pins the omit-null shape of <c>directed_by</c>.</summary>
+    public static WorkItem WorkItemInline() => new()
+    {
+        WorkItemId = "SUB-002",
+        Payload = TypedPayloadInline(),
+    };
+
     /// <summary>Parses <paramref name="json"/> to a detached <see cref="JsonElement"/>.</summary>
     private static JsonElement Json(string json)
     {

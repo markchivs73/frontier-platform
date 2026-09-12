@@ -34,6 +34,14 @@ There is no reference here to a model provider or a tool transport — no Anthro
 | `IMcpWriteClassifier` | Whether a tool mutates state, for sandbox write-fencing |
 | `IExecutionSnapshotReader` | Reading the execution projection |
 | `IContractTypeSet` (from `…Workflow.Model`) | This deployment's contract types |
+| `IDynamicContextContentProducer` | Rendering an engagement's dynamic-context components on a refresh |
+| `IDispatcherVersionResolver` | Which definition version a dispatcher's next generation runs |
+
+The last two are reached only from their activities, and neither is registered by
+`AddFrontierWorkflowOrchestration` — deliberately. A default would let a misconfigured deployment
+run on, quietly, instead of failing to start. Note that an activity needs **two** registrations to
+work: the DI one this package performs, and an entry in the consumer's durable task registry.
+Missing either resolves cleanly and fails only at runtime.
 
 The alternative — the engine holding a provider reference — would make adopting the interpreter
 mean adopting a vendor. It also has a subtler cost: a hardcoded classification is invisible to

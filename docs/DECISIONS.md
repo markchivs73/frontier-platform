@@ -1146,3 +1146,111 @@ Release: **minor, v0.25.0 proposed** (major version 0, so a breaking change may 
 README "Versioning"). Breaking for any out-of-repo `IEngagementContextStore` implementation, which
 must now implement `MergeDynamicContextAsync`; `EngagementContextMerge.ApplyThroughAsync` is public
 so that obligation is satisfiable in one line, over the interface's own members.
+
+## ADR-PA25 — the dispatcher is a router, not a queue; and its generation boundary is where a version moves
+
+S13.22 and S13.18 are recorded together because they are one change: the resolve-before-
+`ContinueAsNew` edit and the body rewrite touch the same twelve lines of `DispatcherOrchestrator`.
+
+**The defect.** `DispatcherOrchestrator` awaited `CallSubOrchestratorAsync` *inside* its loop,
+before looping back to the `WorkItem` wait. One child parked at a human gate therefore blocked
+every later work item — the exact inverse of doc 00 §4.4's "work items process in parallel: a child
+paused at a human gate never blocks the queue" and doc 16 §4's children running "normal
+run-to-completion semantics". A dispatcher-mode definition typically contains a gate, so the serial
+form would have parked the queue on the first ticket and looked like nothing worse than a slow
+system. It had never run: nothing raises `WorkItem` yet (that is the consumer half), which is why
+five years of green tests said nothing about it.
+
+**Spawning is parallel and unbounded, and `ContinueAsNew` counts spawns, not completions.** The
+body races the `WorkItem` wait against its outstanding children and never throttles; the generation
+boundary fires on the Nth *spawn*, with every child still in flight, and does not wait for them.
+Both read as bugs and are the design, so both are commented at the call site and pinned by tests.
+The evidence for the second is explicit: a sub-orchestration "runs as a child of the calling
+(parent) orchestrator" as its own orchestration instance with its own history, which "can run
+standalone for one-off device setup, or a parent orchestrator can schedule it as a
+sub-orchestration" (Microsoft Learn, *Sub-orchestrations in Durable Task*, ms.date 2026-04-23,
+updated 2026-08-03). What `continue-as-new` discards is stated just as precisely: "The results of
+any incomplete tasks are discarded when an orchestration calls `continue-as-new`" (Microsoft Learn,
+*Eternal Orchestrations in Durable Task*, ms.date 2026-04-23, updated 2026-08-05) — the *results*,
+in the parent's own execution, not the child instances, which are separately scheduled and complete
+on their own, writing their own snapshots and their own signed audit records. A rollover mid-flight
+therefore orphans nothing. Restoring an `await` in the loop, adding a throttle, or putting a
+`WhenAll` at the boundary would each turn the router back into the queue this replaced.
+
+The same page fixes the other half of the boundary: in .NET "`continue-as-new` preserves
+unprocessed events by default … unprocessed events are delivered when the orchestration next calls
+`waitForExternalEvent`". That default is load-bearing here — a work item raised between the Nth
+spawn and the new generation must cross, or an ingest surface accepted an event and dropped it —
+and it is also what makes the refresh drain necessary, below.
+
+**The `WorkItem` wait is subscribed once per generation and re-armed only after a delivery.** DTF
+writes one history record per subscription, so a wait re-created inside the loop grows history on
+every pass and consumes buffered events out of order. This is not a new hazard: it is the one
+already documented on the ADR-CR1 refresh wait in `GraphOrchestratorSteps`, and the dispatcher
+inherits it wholesale the moment the loop races that wait against outstanding children.
+
+**`EnsureSupported` gains a work-item carve-out; rewriting the child's definition was rejected.** A
+dispatcher hands its child its *own* pinned definition, whose mode is `dispatcher`, so every
+spawned child would have died on the `Mode != OneShot` guard — a contract violation, permanent and
+never retried (invariant 7). The carve-out is exactly as wide as a non-blank `WorkItemId`: a child
+of a dispatcher carries one, a top-level execution never does. The alternative — rewriting the
+child's definition to `OneShot` before spawning — mutates a pinned definition and changes its
+`definition_hash`, a K3/ADR-2 breach. The hash is what the signed audit record pins to prove which
+graph version produced the output, so a child whose definition was edited in flight would attest to
+a version that was never published. The mode guard gives, not the definition. The dispatcher's own
+mode guard moves from `InvalidOperationException` to `ContractViolationException` at the same time:
+one vocabulary for one class of mistake, and the permanent-failure classification is read off the
+exception type.
+
+**The rollover port fails loud.** `IDispatcherVersionResolver` is declared here and deliberately
+**not** DI-registered — the `IDynamicContextContentProducer` precedent: what a published version is,
+and what an engagement's pin means, is the consumer's knowledge (doc 16 §8, ADR-E7), and a default
+would let a misconfigured deployment roll a dispatcher onto the wrong definition instead of failing
+to start. Resolution runs in an activity because it is a store read (invariant 2) and at the
+generation boundary because a running generation stays pinned to the definition its history
+recorded (invariant 6). `null` means "no successor — continue on the current version" (doc 16 §8's
+third bullet; ADR-E15 D2's "the queue never stalls on a retired version"). **Failure must throw and
+must never be reported as `null`**, and the XML doc says so: conflating "nothing newer" with
+"lookup failed" would pin a dispatcher to a stale definition silently and forever, with no later
+moment at which the mistake surfaces — the same silent-fallback shape as the epoch-0 no-op
+(ADR-PA24) and the S13.66 key provider. The next generation's input is *rebuilt* around the
+resolved definition while preserving `RunId`, `EngagementId` and `InitiatedBy`: a generation change
+is the same run continuing, so a new run id would fork the audit chain (ADR-EX1) and a dropped
+initiator would break the S13.19 attribution chain at an arbitrary 100-item boundary.
+
+**`WorkItem.Payload` becomes an ADR-E2 `TypedPayload`.** It was `required object`, which is not a
+contract: `object` deserializes as a `JsonElement`, so every consumer re-inspects an untyped blob
+and ADR-E1 tonnage has nowhere to live. This is K4 erosion in the one place it matters most — the
+only path carrying **external** input across the DTF history boundary, where the bytes are
+evidential and replayed for the life of an eternal instance. The contract now implements
+`IVersionedContract`, validates (cascading the envelope's own violations), and has a golden file.
+Adding `schema_version` at property order 0 renumbers the rest, which canonical-serialization
+normally forbids outright; it is safe **because of** the defect above — nothing has ever raised a
+`WorkItem`, so no stored or replayed bytes exist. It is a break in theory only, and only until the
+first dispatcher runs.
+
+Two consequences were followed rather than worked around. `ContinueAsNewThreshold` became
+`internal` so tests reference the boundary instead of hard-coding 100. And `CanonicalOutputSchema`
+now refuses any contract that *carries* a `TypedPayload`, not just `TypedPayload` itself: making
+`WorkItem` a versioned contract brought it into the schema sweep, where its free-form payload
+exported as the boolean schema Anthropic rejects. Inventing a schema for it would contradict ADR-E2
+deferral (c) — the honest schema is the capability-declared `schema_ref` — and a work item is not
+an agent output contract in any case. The sweep now skips whatever the generator refuses, and a
+new test pins the refused set to exactly `TypedPayload` and `WorkItem` so refusal stays a visible
+decision rather than a quiet exemption.
+
+**The dispatcher drains refresh signals it will never act on.** S13.62's fan-out raises
+`DynamicContextRefreshRequired` at every live instance of an engagement, dispatchers included. A
+dispatcher has no walk and no epoch to move, so it never acts on one — but with unprocessed events
+preserved by default (cited above), every such signal would be carried into the next generation,
+and the next, forever: unbounded history growth for the life of an eternal instance, entirely
+silently. A drain-and-discard wait bounds it. Excluding dispatchers from the fan-out on the
+consumer side is a separate, complementary fix; this half holds even if that one is forgotten.
+
+Release: **minor, v0.26.0 proposed** (major version 0, so a breaking change may ship in a minor —
+README "Versioning"). **Breaking on two counts, both on `WorkItem`:** `Payload` is retyped from
+`object` to `TypedPayload`, and the new `schema_version` at property order 0 renumbers every other
+property — a wire-compatibility break that canonical-serialization normally forbids outright. Both
+are safe for exactly one reason, and it is the defect above rather than any property of the change:
+nothing has ever raised a `WorkItem`, so no stored or replayed bytes exist to break. That reason
+expires the moment the first dispatcher runs.

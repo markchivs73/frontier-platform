@@ -273,8 +273,11 @@ Frontier.Platform.Workflow.Model.WorkItem.<Clone>$() -> Frontier.Platform.Workfl
 Frontier.Platform.Workflow.Model.WorkItem.DirectedBy.get -> string?
 Frontier.Platform.Workflow.Model.WorkItem.DirectedBy.init -> void
 Frontier.Platform.Workflow.Model.WorkItem.Equals(Frontier.Platform.Workflow.Model.WorkItem? other) -> bool
-Frontier.Platform.Workflow.Model.WorkItem.Payload.get -> object!
+Frontier.Platform.Workflow.Model.WorkItem.Payload.get -> Frontier.Platform.Workflow.Model.TypedPayload!
 Frontier.Platform.Workflow.Model.WorkItem.Payload.init -> void
+Frontier.Platform.Workflow.Model.WorkItem.SchemaVersion.get -> string!
+Frontier.Platform.Workflow.Model.WorkItem.SchemaVersion.init -> void
+Frontier.Platform.Workflow.Model.WorkItem.Validate() -> void
 Frontier.Platform.Workflow.Model.WorkItem.WorkItem() -> void
 Frontier.Platform.Workflow.Model.WorkItem.WorkItemId.get -> string!
 Frontier.Platform.Workflow.Model.WorkItem.WorkItemId.init -> void
@@ -530,3 +533,4 @@ virtual Frontier.Platform.Workflow.Model.WorkflowNode.EqualityContract.get -> Sy
 virtual Frontier.Platform.Workflow.Model.WorkflowNode.Equals(Frontier.Platform.Workflow.Model.WorkflowNode? other) -> bool
 virtual Frontier.Platform.Workflow.Model.WorkflowNode.PrintMembers(System.Text.StringBuilder! builder) -> bool
 const Frontier.Platform.Workflow.Model.WorkflowActivityNames.RefreshDynamicContextActivity = "RefreshDynamicContextActivity" -> string!
+const Frontier.Platform.Workflow.Model.WorkflowActivityNames.ResolveDispatcherVersionActivity = "ResolveDispatcherVersionActivity" -> string!

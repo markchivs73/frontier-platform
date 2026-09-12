@@ -45,6 +45,62 @@ public sealed class GraphOrchestratorStepsTests
         GraphOrchestratorSteps.EnsureSupported(definition);
     }
 
+    /// <summary>
+    /// <b>S13.22 defect 3.</b> A dispatcher hands its child its own pinned definition, whose mode
+    /// is <c>dispatcher</c> — so every spawned child hit this guard and died on a contract
+    /// violation, permanent and never retried (invariant 7). The work item id is what distinguishes
+    /// the two callers: a child of a dispatcher carries one, a top-level execution never does. The
+    /// child <em>runs the graph</em>, which is exactly what <c>GraphOrchestrator</c> is for.
+    /// <para>
+    /// <b>The rejected alternative, recorded so it is not retried.</b> Rewriting the child's
+    /// definition to <c>OneShot</c> before spawning would mutate a pinned definition and change its
+    /// <c>definition_hash</c> — a K3/ADR-2 breach. The hash is what the signed audit record pins to
+    /// prove which graph version produced the output (doc 00 §5); a child whose definition was
+    /// edited in flight would attest to a version that was never published. The mode guard gives,
+    /// not the definition.
+    /// </para>
+    /// </summary>
+    [Fact]
+    public void EnsureSupported_DispatcherModeWithWorkItemId_DoesNotThrow()
+    {
+        var definition = OrchestrationFixtures.DispatcherModeChain();
+
+        GraphOrchestratorSteps.EnsureSupported(definition, workItemId: "TICKET-1");
+    }
+
+    /// <summary>
+    /// The carve-out is exactly as wide as the work item id. A dispatcher-mode definition with no
+    /// work item is a top-level execution started against the wrong orchestrator — still a
+    /// permanent contract violation, and the reason this is a carve-out rather than a removal.
+    /// </summary>
+    [Fact]
+    public void EnsureSupported_DispatcherModeWithoutWorkItemId_StillThrowsContractViolationException()
+    {
+        var definition = OrchestrationFixtures.DispatcherModeChain();
+
+        var exception = Assert.Throws<ContractViolationException>(() => GraphOrchestratorSteps.EnsureSupported(definition, workItemId: null));
+
+        Assert.Contains(ExecutionMode.OneShot.Name, exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>A blank work item id is not a work item — an empty string must not open the carve-out.</summary>
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void EnsureSupported_DispatcherModeWithBlankWorkItemId_StillThrows(string workItemId) =>
+        Assert.Throws<ContractViolationException>(() => GraphOrchestratorSteps.EnsureSupported(OrchestrationFixtures.DispatcherModeChain(), workItemId));
+
+    /// <summary>The carve-out is about the mode only: a child still cannot run node types the interpreter does not support.</summary>
+    [Fact]
+    public void EnsureSupported_DispatcherChildWithUnsupportedNode_StillThrows()
+    {
+        var definition = OrchestrationFixtures.WithUnsupportedNode() with { Mode = ExecutionMode.Dispatcher };
+
+        var exception = Assert.Throws<ContractViolationException>(() => GraphOrchestratorSteps.EnsureSupported(definition, workItemId: "TICKET-1"));
+
+        Assert.Contains("branch-1", exception.Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void BuildActivityInput_MapsNodeFieldsAndCorrelationId()
     {

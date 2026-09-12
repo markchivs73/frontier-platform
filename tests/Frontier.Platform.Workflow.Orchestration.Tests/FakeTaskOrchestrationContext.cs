@@ -15,6 +15,14 @@ namespace Frontier.Platform.Workflow.Orchestration.Tests;
 /// wait's token. <see cref="WaitForExternalEvent{T}(string, CancellationToken)"/> therefore
 /// honours that cancellation for unconfigured events — without it, the awaited event task would
 /// never transition and the helper's final <c>await externalEventTask</c> would hang forever.
+/// <para>
+/// <b>S13.22 additions.</b> <see cref="NewGuid"/> and <see cref="ContinueAsNew"/> threw before the
+/// dispatcher cluster, and <see cref="CallSubOrchestratorAsync{TResult}"/> always completed
+/// immediately. Between them those three made the dispatcher's defining behaviours unassertable:
+/// a child cannot be held open, a generation boundary cannot be inspected, and a child has no
+/// identity. They now record and defer instead. Every previously documented behaviour above is
+/// unchanged.
+/// </para>
 /// </summary>
 internal sealed class FakeTaskOrchestrationContext : TaskOrchestrationContext
 {
@@ -47,6 +55,52 @@ internal sealed class FakeTaskOrchestrationContext : TaskOrchestrationContext
 
     /// <summary>Inputs captured from <see cref="CallSubOrchestratorAsync{TResult}"/> (S13.19: dispatcher spawn assertions).</summary>
     public List<object?> SubOrchestratorInputs { get; } = [];
+
+    /// <summary>Orchestration names captured from <see cref="CallSubOrchestratorAsync{TResult}"/>, positionally aligned with <see cref="SubOrchestratorInputs"/>.</summary>
+    public List<string> SubOrchestratorNames { get; } = [];
+
+    /// <summary>
+    /// Optional control over each spawned sub-orchestration (S13.22), receiving the spawn's
+    /// zero-based ordinal and its input and returning the task the call awaits.
+    /// <para>
+    /// <b>Why an ordinal rather than a name.</b> A dispatcher spawns every child under the same
+    /// orchestration name, so a name-keyed handler cannot hold child 1 open while child 2 runs —
+    /// which is the single behaviour ADR-E8 turns on ("a ticket paused at a human gate never
+    /// blocks the queue", doc 00 §4.4). Left null, a spawn completes immediately with
+    /// <see langword="default"/>, which is what every pre-S13.22 test expects.
+    /// </para>
+    /// </summary>
+    public Func<int, object?, Task<object>>? SubOrchestratorHandler { get; set; }
+
+    /// <summary>
+    /// Every <see cref="ContinueAsNew"/> call, in order — input and
+    /// <c>preserveUnprocessedEvents</c> both observable.
+    /// <para>
+    /// It threw before S13.22, which made the throw an exit route: the dispatcher's loop has no
+    /// other terminating branch, so its tests asserted <see cref="NotSupportedException"/> and read
+    /// the captured child inputs afterwards. An escape hatch cannot express what the generation
+    /// boundary actually does — what input the next generation carries, and whether buffered events
+    /// survive it — so it records instead, and the body returns normally after calling it.
+    /// </para>
+    /// </summary>
+    public List<ContinueAsNewCall> ContinueAsNewCalls { get; } = [];
+
+    /// <summary>
+    /// How many times a subscription has been created per event name — the history shape, not the
+    /// delivery count (<see cref="PendingExternalEvent.DeliveredCount"/> is that).
+    /// <para>
+    /// DTF writes one history record per subscription. A wait re-created on every pass of a loop
+    /// therefore grows history without bound and consumes buffered events out of order — the hazard
+    /// <c>GraphOrchestratorSteps:70-77</c> documents for the refresh wait, and the same hazard for
+    /// the dispatcher's <c>WorkItem</c> wait once the loop races that wait against outstanding
+    /// children. A correct body holds exactly one outstanding subscription per event name, so the
+    /// count here is deliveries + 1.
+    /// </para>
+    /// </summary>
+    public Dictionary<string, int> ExternalEventSubscriptions { get; } = new(StringComparer.Ordinal);
+
+    /// <summary>How many times <see cref="NewGuid"/> has been called.</summary>
+    public int NewGuidCallCount { get; private set; }
 
     /// <summary>Creates a fake context with the given <see cref="InstanceId"/> and <see cref="CurrentUtcDateTime"/>.</summary>
     public FakeTaskOrchestrationContext(string instanceId = "eng-1::wf-chain", DateTime? currentUtcDateTime = null)
@@ -98,6 +152,8 @@ internal sealed class FakeTaskOrchestrationContext : TaskOrchestrationContext
     /// <inheritdoc />
     public override Task<T> WaitForExternalEvent<T>(string eventName, CancellationToken cancellationToken = default)
     {
+        ExternalEventSubscriptions[eventName] = ExternalEventSubscriptions.GetValueOrDefault(eventName) + 1;
+
         if (ExternalEvents.TryGetValue(eventName, out var value))
         {
             if (value is DecisionAfterTimeout timeoutThen)
@@ -130,18 +186,44 @@ internal sealed class FakeTaskOrchestrationContext : TaskOrchestrationContext
     }
 
     /// <inheritdoc />
-    public override Task<TResult> CallSubOrchestratorAsync<TResult>(TaskName orchestratorName, object? input = null, TaskOptions? options = null)
+    public override async Task<TResult> CallSubOrchestratorAsync<TResult>(TaskName orchestratorName, object? input = null, TaskOptions? options = null)
     {
+        var ordinal = SubOrchestratorInputs.Count;
         SubOrchestratorInputs.Add(input);
-        return Task.FromResult<TResult>(default!);
+        SubOrchestratorNames.Add(orchestratorName.Name);
+
+        if (SubOrchestratorHandler is null)
+        {
+            return default!;
+        }
+
+        return (TResult)await SubOrchestratorHandler(ordinal, input);
     }
 
     /// <inheritdoc />
-    public override void ContinueAsNew(object? newInput = null, bool preserveUnprocessedEvents = true) => throw new NotSupportedException();
+    public override void ContinueAsNew(object? newInput = null, bool preserveUnprocessedEvents = true) =>
+        ContinueAsNewCalls.Add(new ContinueAsNewCall(newInput, preserveUnprocessedEvents));
 
-    /// <inheritdoc />
-    public override Guid NewGuid() => throw new NotSupportedException();
+    /// <summary>
+    /// A replay-stable GUID sequence: the <em>n</em>th call of a run always returns the same value,
+    /// so two runs of one script produce one identity set (hard invariant 2 —
+    /// <c>context.NewGuid()</c> is the only GUID source a body may use, precisely because DTF
+    /// records and replays it).
+    /// <para>
+    /// It threw before S13.22, which is why nothing could assert on child identity at all.
+    /// </para>
+    /// </summary>
+    public override Guid NewGuid()
+    {
+        NewGuidCallCount++;
+        return new Guid(NewGuidCallCount, 0, 0, [0, 0, 0, 0, 0, 0, 0, 0]);
+    }
 }
+
+/// <summary>One recorded <see cref="FakeTaskOrchestrationContext.ContinueAsNew"/> call (S13.22).</summary>
+/// <param name="Input">The input the next generation would start from.</param>
+/// <param name="PreserveUnprocessedEvents">Whether buffered events cross the generation boundary.</param>
+internal sealed record ContinueAsNewCall(object? Input, bool PreserveUnprocessedEvents);
 
 /// <summary>
 /// An external event the test raises at a chosen moment (S13.62), for

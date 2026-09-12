@@ -109,7 +109,51 @@ public sealed class OrchestratorPurityTests
         Assert.Equal(4, offenders.Count);
     }
 
+    /// <summary>
+    /// <b>S13.22: <c>context.NewGuid()</c> is the only GUID source an orchestrator body may use.</b>
+    /// <para>
+    /// The dispatcher must mint a run id per child, so a body now legitimately needs a GUID — and
+    /// the two ways to get one are a keystroke apart in source and opposite in consequence.
+    /// <c>Guid.NewGuid()</c> returns a fresh value on every replay, so the child's identity (and
+    /// therefore its snapshot key and its audit record) changes underneath a re-executed history;
+    /// DTF records <c>context.NewGuid()</c> and replays the recorded value. This is the
+    /// <c>DateTime.UtcNow</c> / <c>CurrentUtcDateTime</c> pairing the ban list already documents,
+    /// for identity instead of time, and it is pinned as a pair so neither half drifts.
+    /// </para>
+    /// </summary>
+    [Fact]
+    public void GuidNewGuidIsRefused_ButTheContextsRecordedGuidIsNot()
+    {
+        Assert.NotNull(DeterminismBans.MemberReason("System.Guid", "NewGuid"));
+        Assert.Null(DeterminismBans.MemberReason("Microsoft.DurableTask.TaskOrchestrationContext", "NewGuid"));
+    }
+
+    /// <summary>
+    /// The pair again, at the level that actually protects the build: a real body taking its GUID
+    /// from the durable context raises no violation, while the planted impure body does. A ban that
+    /// only ever fires is as useless as one that never fires — it would push implementers to work
+    /// around the guard rather than through it.
+    /// </summary>
+    [Fact]
+    public void ABodyTakingItsGuidFromTheContextIsClean()
+    {
+        var refusals = OrchestratorClosure.DeclaredMethods(typeof(DeliberatelyPureBody))
+            .SelectMany(IlCallScanner.CalledMethods)
+            .Select(DeterminismBans.ReasonToRefuse)
+            .Where(reason => reason is not null)
+            .ToList();
+
+        Assert.Empty(refusals);
+    }
+
     internal static string Describe(MethodBase method) => $"{method.DeclaringType?.FullName}.{method.Name}";
+
+    /// <summary>A stand-in orchestrator body that takes both its clock and its identity from the durable context — the sanctioned forms.</summary>
+    internal static class DeliberatelyPureBody
+    {
+        internal static string Run(Microsoft.DurableTask.TaskOrchestrationContext context) =>
+            $"{context.CurrentUtcDateTime:O}-{context.NewGuid()}";
+    }
 
     /// <summary>A stand-in orchestrator body, present only so the guard can be shown to reject one.</summary>
     internal static class DeliberatelyImpureBody
