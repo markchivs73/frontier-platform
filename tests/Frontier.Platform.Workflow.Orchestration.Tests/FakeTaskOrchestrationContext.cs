@@ -108,6 +108,11 @@ internal sealed class FakeTaskOrchestrationContext : TaskOrchestrationContext
                 return pending.Task;
             }
 
+            if (value is PendingExternalEvent pendingEvent)
+            {
+                return pendingEvent.Next<T>();
+            }
+
             return Task.FromResult(value is Queue<object> queue ? (T)queue.Dequeue() : (T)value);
         }
 
@@ -136,6 +141,56 @@ internal sealed class FakeTaskOrchestrationContext : TaskOrchestrationContext
 
     /// <inheritdoc />
     public override Guid NewGuid() => throw new NotSupportedException();
+}
+
+/// <summary>
+/// An external event the test raises at a chosen moment (S13.62), for
+/// <see cref="FakeTaskOrchestrationContext.ExternalEvents"/>.
+/// <para>
+/// The plain-value and <see cref="Queue{T}"/> entries above are both fixed before the
+/// orchestration starts, which cannot express the S13.62 refresh cases: the refresh subscription
+/// is created <em>once, before the walk</em>, and the interesting behaviour is a signal arriving
+/// while specific nodes are already in flight. This double models DTF faithfully instead — a wait
+/// with no buffered event pends indefinitely; <see cref="Raise"/> delivers to the oldest waiter,
+/// or buffers for the next wait if none is outstanding; and each raise is consumed exactly once,
+/// so an implementation that re-arms its subscription correctly blocks again rather than
+/// re-reading the same event forever.
+/// </para>
+/// </summary>
+internal sealed class PendingExternalEvent
+{
+    private readonly Queue<object> buffered = new();
+    private readonly Queue<TaskCompletionSource<object>> waiters = new();
+
+    /// <summary>How many times a wait against this event has been satisfied — "exactly once per signal".</summary>
+    public int DeliveredCount { get; private set; }
+
+    /// <summary>Returns the next delivery: the oldest buffered raise, or a task completed by a future <see cref="Raise"/>.</summary>
+    public Task<T> Next<T>()
+    {
+        if (buffered.Count > 0)
+        {
+            DeliveredCount++;
+            return Task.FromResult((T)buffered.Dequeue());
+        }
+
+        var pending = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
+        waiters.Enqueue(pending);
+        return pending.Task.ContinueWith(completed => (T)completed.Result, TaskScheduler.Default);
+    }
+
+    /// <summary>Raises the event with <paramref name="payload"/>, delivering to the oldest outstanding waiter or buffering it.</summary>
+    public void Raise(object payload)
+    {
+        if (waiters.Count > 0)
+        {
+            DeliveredCount++;
+            waiters.Dequeue().SetResult(payload);
+            return;
+        }
+
+        buffered.Enqueue(payload);
+    }
 }
 
 /// <summary>
