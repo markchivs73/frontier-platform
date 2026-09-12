@@ -270,7 +270,7 @@ internal static class ContractSamples
     public static ExecutionSnapshot ExecutionSnapshotInitiated() => ExecutionSnapshot() with { InitiatedBy = "user:oid-mark" };
 
     /// <summary>ADR-PA26: a dispatcher child's snapshot — the mode it runs under and the work item it serves.</summary>
-    public static ExecutionSnapshot ExecutionSnapshotDispatcherChild() => ExecutionSnapshot() with { Mode = ExecutionMode.Dispatcher, WorkItemId = "TICKET-1" };
+    public static ExecutionSnapshot ExecutionSnapshotDispatcherChild() => ExecutionSnapshot() with { ExecutionMode = ExecutionMode.Dispatcher, WorkItemId = "TICKET-1" };
 
     /// <summary>S13.60: a snapshot citing the dynamic-context epoch and hash the run was pinned to.</summary>
     public static ExecutionSnapshot ExecutionSnapshotWithContextPin() => ExecutionSnapshot() with { DynamicContextEpoch = 3, DynamicContextHash = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" };

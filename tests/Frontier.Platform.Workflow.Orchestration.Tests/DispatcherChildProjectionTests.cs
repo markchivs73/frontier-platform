@@ -41,7 +41,7 @@ public sealed class DispatcherChildProjectionTests
         await orchestrator.RunAsync(context, ChildInput("TICKET-1"));
 
         Assert.Equal("TICKET-1", snapshots[0].WorkItemId);
-        Assert.Equal(ExecutionMode.Dispatcher, snapshots[0].Mode);
+        Assert.Equal(ExecutionMode.Dispatcher, snapshots[0].ExecutionMode);
     }
 
     /// <summary>Every checkpoint carries it, not just the first — the projection is read at any point in the run.</summary>
@@ -95,7 +95,7 @@ public sealed class DispatcherChildProjectionTests
 
         await orchestrator.RunAsync(context, input);
 
-        Assert.All(snapshots, snapshot => Assert.Equal(ExecutionMode.OneShot, snapshot.Mode));
+        Assert.All(snapshots, snapshot => Assert.Equal(ExecutionMode.OneShot, snapshot.ExecutionMode));
     }
 
     /// <summary>The point of the change: two children of one engagement are told apart in the projection.</summary>
