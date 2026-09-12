@@ -59,6 +59,10 @@ public sealed class RuleCatalogueSpecCoverageTests
         "timeouts.nesting",
         "retention.fits-window",
         "versioning.no-clash",
+        // S13.34: a draft stored below the current schema major must say so rather than emitting
+        // rule errors about the keys the silent drop nulled. The doc 13 §4.2 row lands in the
+        // consumer repo (read-only from here), so this entry fails until that amendment merges.
+        "schema.version-supported",
     ];
 
     [Fact]
@@ -81,7 +85,9 @@ public sealed class RuleCatalogueSpecCoverageTests
         // resourced because they depend on deployment capability, not the definition alone),
         // and 0 Runtime — determinism.sample-eval was retired at S13.23. It was the tier's only
         // member, and nothing executes that tier, so it could never have produced a finding.
-        Assert.Equal(17, CurrentlyRegisteredRules.Count(r => r.Tier == RuleTier.Pure));
+        // +1 Pure at S13.34: schema.version-supported reads the context's probed stored version
+        // and nothing else, so it runs in-circuit with the rest of the pure tier.
+        Assert.Equal(18, CurrentlyRegisteredRules.Count(r => r.Tier == RuleTier.Pure));
         Assert.Equal(13, CurrentlyRegisteredRules.Count(r => r.Tier == RuleTier.Resourced));
         Assert.Equal(0, CurrentlyRegisteredRules.Count(r => r.Tier == RuleTier.Runtime));
     }

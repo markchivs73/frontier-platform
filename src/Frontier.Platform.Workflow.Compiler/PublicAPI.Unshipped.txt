@@ -1,3 +1,6 @@
+*REMOVED*Frontier.Platform.Workflow.Compiler.ITestRunExecutor.StartAsync(string! engagementId, Frontier.Platform.Workflow.Model.WorkflowDefinition! definition, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<string!>!
+*REMOVED*Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.Deconstruct(out string! WorkflowId, out string! Name, out string? EngagementType, out string! Status, out System.DateTime? LastPublishedAt, out string? LastPublishedBy) -> void
+*REMOVED*Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.WorkflowCatalogueSummary(string! WorkflowId, string! Name, string? EngagementType, string! Status, System.DateTime? LastPublishedAt, string? LastPublishedBy) -> void
 Frontier.Platform.Workflow.Compiler.AgentProposal
 Frontier.Platform.Workflow.Compiler.AgentProposal.<Clone>$() -> Frontier.Platform.Workflow.Compiler.AgentProposal!
 Frontier.Platform.Workflow.Compiler.AgentProposal.AgentProposal() -> void
@@ -64,15 +67,17 @@ Frontier.Platform.Workflow.Compiler.DefinitionLifecycleService.SaveDraftAsync(st
 Frontier.Platform.Workflow.Compiler.DefinitionLifecycleService.UnretireAsync(string! workflowId, int version, string! adminId, string! reason, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task!
 Frontier.Platform.Workflow.Compiler.DefinitionValidationContext
 Frontier.Platform.Workflow.Compiler.DefinitionValidationContext.<Clone>$() -> Frontier.Platform.Workflow.Compiler.DefinitionValidationContext!
-Frontier.Platform.Workflow.Compiler.DefinitionValidationContext.Deconstruct(out Frontier.Platform.Workflow.Model.WorkflowDefinition! Definition, out string? DraftRevision, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>? ResourceVersions) -> void
+Frontier.Platform.Workflow.Compiler.DefinitionValidationContext.Deconstruct(out Frontier.Platform.Workflow.Model.WorkflowDefinition! Definition, out string? DraftRevision, out System.Collections.Generic.IReadOnlyDictionary<string!, string!>? ResourceVersions, out string? StoredSchemaVersion) -> void
 Frontier.Platform.Workflow.Compiler.DefinitionValidationContext.Definition.get -> Frontier.Platform.Workflow.Model.WorkflowDefinition!
 Frontier.Platform.Workflow.Compiler.DefinitionValidationContext.Definition.init -> void
-Frontier.Platform.Workflow.Compiler.DefinitionValidationContext.DefinitionValidationContext(Frontier.Platform.Workflow.Model.WorkflowDefinition! Definition, string? DraftRevision = null, System.Collections.Generic.IReadOnlyDictionary<string!, string!>? ResourceVersions = null) -> void
+Frontier.Platform.Workflow.Compiler.DefinitionValidationContext.DefinitionValidationContext(Frontier.Platform.Workflow.Model.WorkflowDefinition! Definition, string? DraftRevision = null, System.Collections.Generic.IReadOnlyDictionary<string!, string!>? ResourceVersions = null, string? StoredSchemaVersion = null) -> void
 Frontier.Platform.Workflow.Compiler.DefinitionValidationContext.DraftRevision.get -> string?
 Frontier.Platform.Workflow.Compiler.DefinitionValidationContext.DraftRevision.init -> void
 Frontier.Platform.Workflow.Compiler.DefinitionValidationContext.Equals(Frontier.Platform.Workflow.Compiler.DefinitionValidationContext? other) -> bool
 Frontier.Platform.Workflow.Compiler.DefinitionValidationContext.ResourceVersions.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>?
 Frontier.Platform.Workflow.Compiler.DefinitionValidationContext.ResourceVersions.init -> void
+Frontier.Platform.Workflow.Compiler.DefinitionValidationContext.StoredSchemaVersion.get -> string?
+Frontier.Platform.Workflow.Compiler.DefinitionValidationContext.StoredSchemaVersion.init -> void
 Frontier.Platform.Workflow.Compiler.DefinitionValidator
 Frontier.Platform.Workflow.Compiler.DefinitionValidator.ComputeDefinitionHash(Frontier.Platform.Workflow.Model.WorkflowDefinition! definition) -> string!
 Frontier.Platform.Workflow.Compiler.DefinitionValidator.DefinitionValidator(System.Collections.Generic.IEnumerable<Frontier.Platform.Workflow.Compiler.IDefinitionValidationRule!>! rules) -> void
@@ -215,6 +220,7 @@ Frontier.Platform.Workflow.Compiler.ITestRunExecutor
 Frontier.Platform.Workflow.Compiler.ITestRunExecutor.GetSnapshotAsync(string! executionId, string! engagementId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Model.ExecutionSnapshot?>!
 Frontier.Platform.Workflow.Compiler.ITestRunExecutor.RaiseGateDecisionAsync(string! executionId, string! gateId, string! approverId, Frontier.Platform.Abstractions.DecisionKind! decision, string? notes, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task!
 Frontier.Platform.Workflow.Compiler.ITestRunExecutor.StartAsync(string! engagementId, Frontier.Platform.Workflow.Model.WorkflowDefinition! definition, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<string!>!
+Frontier.Platform.Workflow.Compiler.ITestRunExecutor.StartAsync(string! engagementId, Frontier.Platform.Workflow.Model.WorkflowDefinition! definition, string? dynamicContextJson, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<string!>!
 Frontier.Platform.Workflow.Compiler.ITestRunInputSchemaProvider
 Frontier.Platform.Workflow.Compiler.ITestRunInputSchemaProvider.GetInputSchema(Frontier.Platform.Workflow.Model.WorkflowDefinition! definition) -> Frontier.Platform.Workflow.Compiler.TestRunInputSchema?
 Frontier.Platform.Workflow.Compiler.ITestRunService
@@ -556,6 +562,8 @@ Frontier.Platform.Workflow.Compiler.Rules.RetentionWindowConfig.DtfRetentionDays
 Frontier.Platform.Workflow.Compiler.Rules.RetentionWindowConfig.DtfRetentionDays.init -> void
 Frontier.Platform.Workflow.Compiler.Rules.RetentionWindowConfig.Equals(Frontier.Platform.Workflow.Compiler.Rules.RetentionWindowConfig? other) -> bool
 Frontier.Platform.Workflow.Compiler.Rules.RetentionWindowConfig.RetentionWindowConfig() -> void
+Frontier.Platform.Workflow.Compiler.Rules.SchemaVersionSupportedRule
+Frontier.Platform.Workflow.Compiler.Rules.SchemaVersionSupportedRule.SchemaVersionSupportedRule() -> void
 Frontier.Platform.Workflow.Compiler.Rules.StructureDispatcherInputRule
 Frontier.Platform.Workflow.Compiler.Rules.StructureDispatcherInputRule.StructureDispatcherInputRule() -> void
 Frontier.Platform.Workflow.Compiler.Rules.StructureRequiredFieldsRule
@@ -738,6 +746,8 @@ Frontier.Platform.Workflow.Compiler.Storage.DefinitionDraftDocument.LastEditedUt
 Frontier.Platform.Workflow.Compiler.Storage.DefinitionDraftDocument.LastEditedUtc.init -> void
 Frontier.Platform.Workflow.Compiler.Storage.DefinitionDraftDocument.State.get -> string!
 Frontier.Platform.Workflow.Compiler.Storage.DefinitionDraftDocument.State.init -> void
+Frontier.Platform.Workflow.Compiler.Storage.DefinitionDraftDocument.StoredSchemaVersion.get -> string?
+Frontier.Platform.Workflow.Compiler.Storage.DefinitionDraftDocument.StoredSchemaVersion.init -> void
 Frontier.Platform.Workflow.Compiler.Storage.DefinitionDraftDocument.WorkflowId.get -> string!
 Frontier.Platform.Workflow.Compiler.Storage.DefinitionDraftDocument.WorkflowId.init -> void
 Frontier.Platform.Workflow.Compiler.Storage.DefinitionVersionDocument
@@ -896,9 +906,13 @@ Frontier.Platform.Workflow.Compiler.Storage.TestRunDocument.CostMetrics.get -> S
 Frontier.Platform.Workflow.Compiler.Storage.TestRunDocument.CostMetrics.init -> void
 Frontier.Platform.Workflow.Compiler.Storage.TestRunDocument.DraftRevision.get -> string!
 Frontier.Platform.Workflow.Compiler.Storage.TestRunDocument.DraftRevision.init -> void
+Frontier.Platform.Workflow.Compiler.Storage.TestRunDocument.EngagementId.get -> string?
+Frontier.Platform.Workflow.Compiler.Storage.TestRunDocument.EngagementId.init -> void
 Frontier.Platform.Workflow.Compiler.Storage.TestRunDocument.Equals(Frontier.Platform.Workflow.Compiler.Storage.TestRunDocument? other) -> bool
 Frontier.Platform.Workflow.Compiler.Storage.TestRunDocument.ErrorMessage.get -> string?
 Frontier.Platform.Workflow.Compiler.Storage.TestRunDocument.ErrorMessage.init -> void
+Frontier.Platform.Workflow.Compiler.Storage.TestRunDocument.FailureNodeAttributed.get -> bool?
+Frontier.Platform.Workflow.Compiler.Storage.TestRunDocument.FailureNodeAttributed.init -> void
 Frontier.Platform.Workflow.Compiler.Storage.TestRunDocument.FailureNodeId.get -> string?
 Frontier.Platform.Workflow.Compiler.Storage.TestRunDocument.FailureNodeId.init -> void
 Frontier.Platform.Workflow.Compiler.Storage.TestRunDocument.GateDecisions.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Workflow.Compiler.TestRunGateDecision!>!
@@ -964,9 +978,12 @@ Frontier.Platform.Workflow.Compiler.Storage.WorkflowCataloguePage.WorkflowCatalo
 Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary
 Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.<Clone>$() -> Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary!
 Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.Deconstruct(out string! WorkflowId, out string! Name, out string? EngagementType, out string! Status, out System.DateTime? LastPublishedAt, out string? LastPublishedBy) -> void
+Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.Deconstruct(out string! WorkflowId, out string! Name, out string? EngagementType, out string! Status, out System.DateTime? LastPublishedAt, out string? LastPublishedBy, out string? ExecutionMode) -> void
 Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.EngagementType.get -> string?
 Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.EngagementType.init -> void
 Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.Equals(Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary? other) -> bool
+Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.ExecutionMode.get -> string?
+Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.ExecutionMode.init -> void
 Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.LastPublishedAt.get -> System.DateTime?
 Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.LastPublishedAt.init -> void
 Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.LastPublishedBy.get -> string?
@@ -976,6 +993,7 @@ Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.Name.init -
 Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.Status.get -> string!
 Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.Status.init -> void
 Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.WorkflowCatalogueSummary(string! WorkflowId, string! Name, string? EngagementType, string! Status, System.DateTime? LastPublishedAt, string? LastPublishedBy) -> void
+Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.WorkflowCatalogueSummary(string! WorkflowId, string! Name, string? EngagementType, string! Status, System.DateTime? LastPublishedAt, string? LastPublishedBy, string? ExecutionMode = null) -> void
 Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.WorkflowId.get -> string!
 Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.WorkflowId.init -> void
 Frontier.Platform.Workflow.Compiler.Storage.WorkflowHealthDocument
@@ -1118,6 +1136,8 @@ Frontier.Platform.Workflow.Compiler.TestRunResult.DraftRevision.init -> void
 Frontier.Platform.Workflow.Compiler.TestRunResult.Equals(Frontier.Platform.Workflow.Compiler.TestRunResult? other) -> bool
 Frontier.Platform.Workflow.Compiler.TestRunResult.ErrorMessage.get -> string?
 Frontier.Platform.Workflow.Compiler.TestRunResult.ErrorMessage.init -> void
+Frontier.Platform.Workflow.Compiler.TestRunResult.FailureNodeAttributed.get -> bool
+Frontier.Platform.Workflow.Compiler.TestRunResult.FailureNodeAttributed.init -> void
 Frontier.Platform.Workflow.Compiler.TestRunResult.FailureNodeId.get -> string?
 Frontier.Platform.Workflow.Compiler.TestRunResult.FailureNodeId.init -> void
 Frontier.Platform.Workflow.Compiler.TestRunResult.GateDecisions.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Workflow.Compiler.TestRunGateDecision!>!
@@ -1389,6 +1409,8 @@ override Frontier.Platform.Workflow.Compiler.Rules.ResilienceOverridesTightenOnl
 override Frontier.Platform.Workflow.Compiler.Rules.RetentionWindowConfig.Equals(object? obj) -> bool
 override Frontier.Platform.Workflow.Compiler.Rules.RetentionWindowConfig.GetHashCode() -> int
 override Frontier.Platform.Workflow.Compiler.Rules.RetentionWindowConfig.ToString() -> string!
+override Frontier.Platform.Workflow.Compiler.Rules.SchemaVersionSupportedRule.DefaultSeverity.get -> Frontier.Platform.Workflow.Compiler.ValidationSeverity
+override Frontier.Platform.Workflow.Compiler.Rules.SchemaVersionSupportedRule.RuleId.get -> string!
 override Frontier.Platform.Workflow.Compiler.Rules.StructureDispatcherInputRule.DefaultSeverity.get -> Frontier.Platform.Workflow.Compiler.ValidationSeverity
 override Frontier.Platform.Workflow.Compiler.Rules.StructureDispatcherInputRule.RuleId.get -> string!
 override Frontier.Platform.Workflow.Compiler.Rules.StructureRequiredFieldsRule.DefaultSeverity.get -> Frontier.Platform.Workflow.Compiler.ValidationSeverity
@@ -1697,17 +1719,3 @@ virtual Frontier.Platform.Workflow.Compiler.SaveDraftResponse.PrintMembers(Syste
 virtual Frontier.Platform.Workflow.Compiler.Storage.SaveDraftResult.EqualityContract.get -> System.Type!
 virtual Frontier.Platform.Workflow.Compiler.Storage.SaveDraftResult.Equals(Frontier.Platform.Workflow.Compiler.Storage.SaveDraftResult? other) -> bool
 virtual Frontier.Platform.Workflow.Compiler.Storage.SaveDraftResult.PrintMembers(System.Text.StringBuilder! builder) -> bool
-Frontier.Platform.Workflow.Compiler.ITestRunExecutor.StartAsync(string! engagementId, Frontier.Platform.Workflow.Model.WorkflowDefinition! definition, string? dynamicContextJson, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<string!>!
-*REMOVED*Frontier.Platform.Workflow.Compiler.ITestRunExecutor.StartAsync(string! engagementId, Frontier.Platform.Workflow.Model.WorkflowDefinition! definition, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<string!>!
-Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.Deconstruct(out string! WorkflowId, out string! Name, out string? EngagementType, out string! Status, out System.DateTime? LastPublishedAt, out string? LastPublishedBy, out string? ExecutionMode) -> void
-Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.ExecutionMode.get -> string?
-Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.ExecutionMode.init -> void
-Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.WorkflowCatalogueSummary(string! WorkflowId, string! Name, string? EngagementType, string! Status, System.DateTime? LastPublishedAt, string? LastPublishedBy, string? ExecutionMode = null) -> void
-*REMOVED*Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.Deconstruct(out string! WorkflowId, out string! Name, out string? EngagementType, out string! Status, out System.DateTime? LastPublishedAt, out string? LastPublishedBy) -> void
-*REMOVED*Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.WorkflowCatalogueSummary(string! WorkflowId, string! Name, string? EngagementType, string! Status, System.DateTime? LastPublishedAt, string? LastPublishedBy) -> void
-Frontier.Platform.Workflow.Compiler.Storage.TestRunDocument.EngagementId.get -> string?
-Frontier.Platform.Workflow.Compiler.Storage.TestRunDocument.EngagementId.init -> void
-Frontier.Platform.Workflow.Compiler.Storage.TestRunDocument.FailureNodeAttributed.get -> bool?
-Frontier.Platform.Workflow.Compiler.Storage.TestRunDocument.FailureNodeAttributed.init -> void
-Frontier.Platform.Workflow.Compiler.TestRunResult.FailureNodeAttributed.get -> bool
-Frontier.Platform.Workflow.Compiler.TestRunResult.FailureNodeAttributed.init -> void

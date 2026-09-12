@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Frontier.Platform.Serialization;
 using Frontier.Platform.Workflow.Compiler.Storage;
+using Frontier.Platform.Workflow.Model;
 
 namespace Frontier.Platform.Workflow.Compiler.Tests;
 
@@ -84,6 +85,76 @@ public sealed class StorageDocumentRoundTripTests
             JsonSerializer.Serialize(written, CanonicalProfile.Options), CanonicalProfile.Options);
 
         Assert.Equal(written, read);
+    }
+
+    /// <summary>A draft document carrying the S13.34 probed stored schema version.</summary>
+    private static DefinitionDraftDocument Draft(string? storedSchemaVersion) => new()
+    {
+        Id = "wf-x:draft",
+        WorkflowId = "wf-x",
+        State = "draft",
+        BaseVersion = 0,
+        DraftRevision = "rev-1",
+        Definition = new WorkflowDefinition
+        {
+            WorkflowId = "wf-x",
+            DefinitionVersion = 1,
+            EngagementType = "support-triage",
+            Name = "Stale draft",
+            DefinitionHash = "sha256:stale",
+            Nodes = [],
+            Edges = [],
+            Mode = ExecutionMode.OneShot,
+        },
+        StoredSchemaVersion = storedSchemaVersion,
+        LastEditedBy = "designer-1",
+        LastEditedUtc = new DateTime(2026, 8, 1, 0, 0, 0, DateTimeKind.Utc),
+    };
+
+    [Fact]
+    public void DefinitionDraftDocument_StoredSchemaVersion_SurvivesWriteThenRead()
+    {
+        // S13.34: the probed stored version is what the validation pass classifies. It has to be
+        // a document field because ArtifactVocabularyMigration.Migrate overwrites schema_version
+        // before deserializing — the definition itself can never report where it came from.
+        var written = Draft("1.0");
+
+        var read = JsonSerializer.Deserialize<DefinitionDraftDocument>(
+            JsonSerializer.Serialize(written, CanonicalProfile.Options), CanonicalProfile.Options);
+
+        Assert.NotNull(read);
+        Assert.Equal("1.0", read!.StoredSchemaVersion);
+    }
+
+    [Fact]
+    public void DefinitionDraftDocument_NoStoredSchemaVersion_RoundTrips()
+    {
+        // Optional and null-omitting: every document written before this field existed must still
+        // read, and must read as "unknown" (null), never as a confident "current".
+        var read = JsonSerializer.Deserialize<DefinitionDraftDocument>(
+            JsonSerializer.Serialize(Draft(null), CanonicalProfile.Options), CanonicalProfile.Options);
+
+        Assert.NotNull(read);
+        Assert.Null(read!.StoredSchemaVersion);
+    }
+
+    [Fact]
+    public void DefinitionDraftDocument_StoredSchemaVersion_DoesNotChangeTheDefinitionsCanonicalBytes()
+    {
+        // Hard invariant 1. The new field rides on the storage envelope; the definition's own
+        // canonical bytes — and therefore its hash — must be byte-identical whether the envelope
+        // carries a stored version or not. If this fails, every published definition's hash moved.
+        var definitionBytes = JsonSerializer.Serialize(Draft(null).Definition, CanonicalProfile.Options);
+
+        var withVersion = JsonDocument.Parse(JsonSerializer.Serialize(Draft("1.0"), CanonicalProfile.Options));
+        var withoutVersion = JsonDocument.Parse(JsonSerializer.Serialize(Draft(null), CanonicalProfile.Options));
+
+        Assert.Equal(definitionBytes, withVersion.RootElement.GetProperty("definition").GetRawText());
+        Assert.Equal(
+            withoutVersion.RootElement.GetProperty("definition").GetRawText(),
+            withVersion.RootElement.GetProperty("definition").GetRawText());
+        Assert.DoesNotContain(
+            "schema_version\":\"1.0", withVersion.RootElement.GetProperty("definition").GetRawText(), StringComparison.Ordinal);
     }
 
     [Fact]

@@ -50,6 +50,11 @@ public static class CompilerServiceCollectionExtensions
         services.AddSingleton<IDefinitionValidationRule, HitlRollbackTargetValidRule>();
         services.AddSingleton<IDefinitionValidationRule, ResilienceOverridesTightenOnlyRule>();
 
+        // S13.34: names a draft the reader cannot read faithfully, so the keys the silent drop
+        // nulled stop surfacing as content errors on innocent nodes. Pure — it reads the
+        // context's probed stored version and nothing else.
+        services.AddSingleton<IDefinitionValidationRule, SchemaVersionSupportedRule>();
+
         // S9.27c: first two resourced-tier rules (doc 13 §4.2), pulled ahead of the full S9.30
         // rollout (C-21b) so the first real publish (S9.28) is resource-verified, not just
         // structurally valid. Constructed via the same IDesignerToolCatalog/IAgentRoleCatalog

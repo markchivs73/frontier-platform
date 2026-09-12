@@ -118,4 +118,54 @@ public sealed class MigratingWorkflowDefinitionConverterTests
     [Fact]
     public void ReadMigrated_JsonNull_ReturnsNull() =>
         Assert.Null(MigratingWorkflowDefinitionConverter.ReadMigrated("null", CanonicalProfile.Options));
+
+    [Fact]
+    public void UnadaptableVersion_DeserializesWithNullArtifactKeys_AndIsProbeable()
+    {
+        // S13.34. Two assertions, deliberately in one test because they are the two halves of the
+        // defect.
+        //
+        // First half — today's behaviour, pinned not endorsed: a stored version with no
+        // registered adapter deserializes straight through. section_key is an unrecognised
+        // property, so it is dropped and ArtifactKey comes back null, with no log, no exception
+        // and no finding. The nulled field then surfaces as an ordinary content error from
+        // HitlRollbackTargetValidRule ("rollback target … produces no section (no artifact_key)")
+        // and the designer debugs a phantom content problem. The fix must NOT change this read
+        // behaviour — a definition that cannot be read faithfully must not be silently guessed at.
+        //
+        // Second half — what makes the fix possible: the stored version must remain recoverable
+        // from the raw bytes. ArtifactVocabularyMigration.Migrate overwrites schema_version before
+        // deserializing, so the deserialized definition's own SchemaVersion can never answer the
+        // question; only a probe of the stored JSON can.
+        var storedJson = StoredV1Document.Replace(
+            "\"schema_version\": \"1.0\"", "\"schema_version\": \"0.9\"", StringComparison.Ordinal);
+
+        var draft = JsonSerializer.Deserialize<DefinitionDraftDocument>(storedJson, CanonicalProfile.Options)!;
+
+        Assert.Null(Assert.IsType<AgentTaskNode>(draft.Definition.Nodes[0]).ArtifactKey);
+
+        using var document = JsonDocument.Parse(storedJson);
+        var definitionJson = document.RootElement.GetProperty("definition").GetRawText();
+
+        Assert.Equal("0.9", MigratingWorkflowDefinitionConverter.ProbeStoredSchemaVersion(definitionJson));
+    }
+
+    [Fact]
+    public void ProbeStoredSchemaVersion_AdaptedDocument_ReportsTheStoredVersion_NotTheMigratedOne()
+    {
+        // The decisive constraint: Migrate stamps RenamedSchemaVersion onto the node before
+        // deserializing, so the definition that comes back says "2.0" however old the bytes were.
+        // The probe must read the bytes, not the product of the migration.
+        using var document = JsonDocument.Parse(StoredV1Document);
+        var definitionJson = document.RootElement.GetProperty("definition").GetRawText();
+
+        Assert.Equal("1.0", MigratingWorkflowDefinitionConverter.ProbeStoredSchemaVersion(definitionJson));
+        Assert.Equal("2.0", ReadStoredDraft().Definition.SchemaVersion);
+    }
+
+    [Fact]
+    public void ProbeStoredSchemaVersion_NoSchemaVersionProperty_ReturnsNull() =>
+        // Absent means unknown, not "current" — the rule emits nothing for null and must never
+        // be fed a confident wrong answer.
+        Assert.Null(MigratingWorkflowDefinitionConverter.ProbeStoredSchemaVersion("{\"workflow_id\":\"wf-x\"}"));
 }
