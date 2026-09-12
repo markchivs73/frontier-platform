@@ -35,6 +35,7 @@ public sealed class GraphOrchestrator(IResiliencePolicyProvider policyProvider, 
 
         var startedAtUtc = context.CurrentUtcDateTime;
 
+        await GraphOrchestratorSteps.WriteChildStartSnapshotAsync(context, input, startedAtUtc, policyProvider);
         var state = await GraphOrchestratorSteps.RunInitialWalkAsync(context, input, rollbackPlanner, policyProvider, mcpWriteClassifier);
         await GraphOrchestratorSteps.RunCascadeWalkAsync(context, input, state, policyProvider, mcpWriteClassifier);
         await GraphOrchestratorSteps.WriteFinalSnapshotAsync(context, input, state, policyProvider);

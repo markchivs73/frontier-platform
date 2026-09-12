@@ -155,6 +155,44 @@ public sealed record ExecutionSnapshot : IVersionedContract
     [JsonPropertyName("dynamic_context_hash")]
     public string? DynamicContextHash { get; init; }
 
+    /// <summary>
+    /// The <see cref="WorkflowDefinition.Mode"/> this run's pinned definition declares (ADR-PA26) —
+    /// the projection's answer to "what kind of run is this?", stored rather than derived.
+    /// <para>
+    /// A run's mode was previously invisible to every reader of the projection, and that gap is what
+    /// let S13.62's status-only refresh fan-out raise <c>DynamicContextRefreshRequired</c> at
+    /// dispatcher instances, which never wait on it — events that <c>ContinueAsNew</c>'s
+    /// <c>preserveUnprocessedEvents</c> then carries into every later generation.
+    /// </para>
+    /// <para>
+    /// <b>Read it together with <see cref="WorkItemId"/>.</b> A dispatcher child is handed its
+    /// parent's own pinned definition unaltered (ADR-PA25 — rewriting it would move the
+    /// <c>definition_hash</c>), so a child's mode is <c>dispatcher</c> too. The router itself is
+    /// therefore <c>mode == dispatcher &amp;&amp; work_item_id == null</c>; a child is
+    /// <c>mode == dispatcher</c> with a work item. Neither a boolean flag nor the mode alone can
+    /// express that.
+    /// </para>
+    /// <b>Additive and optional</b> per the ADR-E15 floor: snapshots written before this field read
+    /// as <see langword="null"/>, meaning "the mode was not recorded", never "one_shot".
+    /// </summary>
+    [JsonPropertyOrder(21)]
+    [JsonPropertyName("mode")]
+    public ExecutionMode? Mode { get; init; }
+
+    /// <summary>
+    /// The work item this run is serving, for a dispatcher child (ADR-E8, ADR-PA26); <see langword="null"/>
+    /// for every run that is not one. Without it every child of an engagement is indistinguishable
+    /// in the projection and in the engagement timeline — nobody can say which ticket a given run
+    /// is serving. It is a field, never a component of the instance id (ADR-PA20).
+    /// <para>
+    /// <b>Additive and optional</b> per the ADR-E15 floor: snapshots written before this field read
+    /// as <see langword="null"/>, which is what they were.
+    /// </para>
+    /// </summary>
+    [JsonPropertyOrder(22)]
+    [JsonPropertyName("work_item_id")]
+    public string? WorkItemId { get; init; }
+
     /// <inheritdoc />
     public void Validate()
     {

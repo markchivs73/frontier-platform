@@ -1254,3 +1254,45 @@ property — a wire-compatibility break that canonical-serialization normally fo
 are safe for exactly one reason, and it is the defect above rather than any property of the change:
 nothing has ever raised a `WorkItem`, so no stored or replayed bytes exist to break. That reason
 expires the moment the first dispatcher runs.
+
+## ADR-PA26 — the projection records a run's mode and its work item, and a child writes its own sequence 0
+
+ADR-PA25 made the dispatcher spawn a child per work item. `ExecutionSnapshot` carried neither the
+mode nor the item, so every child run of an engagement looked identical in the projection and in
+the engagement timeline: nobody could say which ticket a given run was serving.
+
+**The mode is stored, not derived, and not reduced to a boolean.** `mode` (property order 21) is
+the definition's existing `ExecutionMode` smart enum on its canonical wire string; `work_item_id`
+(order 22) is the child's item, null on every run that is not one. An `is_dispatcher` flag was
+rejected: the question a projection has to answer is *what kind of run is this*, and a derived
+boolean is wrong the moment a third mode exists. The two fields are read together — a child is
+handed its parent's pinned definition unaltered (ADR-PA25 — rewriting it would move the
+`definition_hash`), so a child's mode is `dispatcher` too. The router is therefore `mode ==
+dispatcher && work_item_id == null`, and a child is `dispatcher` with an item. Neither field alone
+separates them, which is the concrete reason the pair is stored rather than a flag.
+
+**The leak this closes.** S13.62's refresh fan-out filters on status alone, so it raises
+`DynamicContextRefreshRequired` at dispatcher instances, which never wait on it; `ContinueAsNew`'s
+`preserveUnprocessedEvents: true` then carries those events into every generation — silent,
+unbounded history growth. The dispatcher's own drain (ADR-PA25) bounds it from inside; excluding
+routers from the fan-out is the consumer's complementary half, and it was impossible because the
+projection could not say which runs were routers. Now it can.
+
+**A dispatcher child writes its own sequence-0 snapshot.** Sequence 0 is the pre-start projection
+slot, filled by the Host's `OrchestrationFactory` for a normal run (S4.7a) — which is why
+`GraphExecutionState.Sequence` starts at 1. A child bypasses that factory entirely, so nothing
+wrote its slot and the child stayed invisible until its first node completed: the S13.70 shape, a
+run that exists but cannot be seen, already fixed once for test runs. `GraphOrchestrator` now calls
+`WriteChildStartSnapshotAsync` before the walk, which writes through the same
+`SnapshotStateActivity` path at sequence 0 and does nothing at all for a top-level run. It is an
+activity call, never body I/O (invariant 2), and the discriminator is the same non-blank
+`WorkItemId` that `EnsureSupported`'s dispatcher-child carve-out already uses, so the two cannot
+drift.
+
+Both properties are **optional, omit-null and appended** — nothing is renumbered, no member is
+`required`, and bytes recorded before them read back as null per the ADR-E15 floor. Every existing
+snapshot golden is byte-identical, pinned by a test that re-serializes the unchanged sample against
+the pre-change golden rather than by inspection.
+
+Release: **minor, v0.27.0 proposed** — purely additive, but the consumer's fan-out exclusion needs
+a version to bump to.

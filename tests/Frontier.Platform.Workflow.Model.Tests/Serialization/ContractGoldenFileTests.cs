@@ -20,6 +20,14 @@ public sealed class ContractGoldenFileTests
     public void ExecutionSnapshot_PausedOnFailure_SerializesStablyAndRoundTrips() =>
         ContractRoundTripAssertions.AssertStableAndRoundTrips(ContractSamples.ExecutionSnapshotPausedOnFailure(), "execution_snapshot_paused_on_failure.json");
 
+    /// <summary>
+    /// ADR-PA26: a dispatcher child's snapshot carries its mode and its work item. New golden —
+    /// every existing snapshot golden above is untouched, which is the compatibility claim.
+    /// </summary>
+    [Fact]
+    public void ExecutionSnapshotDispatcherChild_SerializesStablyAndRoundTrips() =>
+        ContractRoundTripAssertions.AssertStableAndRoundTrips(ContractSamples.ExecutionSnapshotDispatcherChild(), "execution_snapshot_dispatcher_child.json");
+
     [Fact]
     public void WorkflowDefinition_SerializesStablyAndRoundTrips() =>
         ContractRoundTripAssertions.AssertStableAndRoundTrips(ContractSamples.WorkflowDefinition(), "workflow_definition.json");

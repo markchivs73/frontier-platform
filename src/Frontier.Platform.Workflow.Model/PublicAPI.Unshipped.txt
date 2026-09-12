@@ -101,6 +101,8 @@ Frontier.Platform.Workflow.Model.ExecutionSnapshot.FailureClassification.get -> 
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.FailureClassification.init -> void
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.InitiatedBy.get -> string?
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.InitiatedBy.init -> void
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.Mode.get -> Frontier.Platform.Workflow.Model.ExecutionMode?
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.Mode.init -> void
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.PausedAtGateId.get -> string?
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.PausedAtGateId.init -> void
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.RunId.get -> string?
@@ -118,6 +120,8 @@ Frontier.Platform.Workflow.Model.ExecutionSnapshot.Status.init -> void
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.Validate() -> void
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.WorkflowId.get -> string!
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.WorkflowId.init -> void
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.WorkItemId.get -> string?
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.WorkItemId.init -> void
 Frontier.Platform.Workflow.Model.ExternalEvent
 Frontier.Platform.Workflow.Model.ExternalEvent.<Clone>$() -> Frontier.Platform.Workflow.Model.ExternalEvent!
 Frontier.Platform.Workflow.Model.ExternalEvent.Actor.get -> string?
