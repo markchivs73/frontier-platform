@@ -45,6 +45,7 @@ public static class OrchestrationServiceCollectionExtensions
             .AddTransient<RequestApprovalActivity>()
             .AddTransient<EscalateApprovalActivity>()
             .AddTransient<InvokeMcpToolActivity>()
+            .AddTransient<RefreshDynamicContextActivity>()
             .AddSingleton<IAuditConsolidator, AuditConsolidator>()
             .AddTransient<IAgentTaskActivityPipeline, AgentTaskActivityPipeline>()
             .AddTransient<IMcpToolInvocationPipeline, McpToolInvocationPipeline>()

@@ -1,5 +1,6 @@
 using Frontier.Platform.Abstractions;
 using Frontier.Platform.Audit;
+using Frontier.Platform.ContextAssembly;
 using Frontier.Platform.Hitl;
 using Frontier.Platform.Resilience;
 using Microsoft.DurableTask;
@@ -40,6 +41,14 @@ internal static class GraphOrchestratorSteps
     internal const string GateEventNamePrefix = "Gate:";
 
     /// <summary>
+    /// The ADR-CR1 refresh signal's external event name (S13.62). A contract shared with the
+    /// ingest surface that raises it, so it is a constant rather than a literal in the walk. Doc 04
+    /// §8's code block spells it <c>...Needed</c> while constructing a <c>...Required</c> payload on
+    /// the next line; doc 04's own prose, doc 16 §4 and doc 18 §3 all say <c>Required</c>.
+    /// </summary>
+    internal const string DynamicContextRefreshEventName = "DynamicContextRefreshRequired";
+
+    /// <summary>
     /// Runs every <see cref="AgentTaskNode"/>/<see cref="HumanGateNode"/> once via the
     /// ADR-5 ready-set scheduler (S13.7i): all ready non-gate nodes are scheduled
     /// concurrently (the DTF fan-out pattern — the orchestrator's single-threaded event
@@ -59,8 +68,32 @@ internal static class GraphOrchestratorSteps
         };
         var walk = GraphWalk.Create(input.Definition);
 
+        // ADR-CR1/ADR-PA24. Created ONCE, outside the loop, and deliberately kept out of
+        // walk.Running: re-creating it per iteration writes a new subscription into history on
+        // every pass and consumes buffered events out of order, and parking it in walk.Running
+        // would make the loop count it as outstanding work — so every ordinary run (almost none
+        // ever receive a signal) would hang at the point the graph is otherwise finished. Leaving
+        // it dangling when the walk ends is correct; DTF discards it with the instance.
+        var refreshWait = context.WaitForExternalEvent<DynamicContextRefreshRequired>(DynamicContextRefreshEventName);
+        DynamicContextRefreshRequired? pendingRefresh = null;
+
         while (walk.HasWork)
         {
+            if (pendingRefresh is null && refreshWait.IsCompleted)
+            {
+                pendingRefresh = await refreshWait;
+                refreshWait = context.WaitForExternalEvent<DynamicContextRefreshRequired>(DynamicContextRefreshEventName);
+            }
+
+            // Refresh at quiescence only. Moving the run's pin while activities scheduled against
+            // the old epoch are still in flight would leave the snapshot attesting to an epoch half
+            // the completed steps never read; doc 04 §8's "queue for next checkpoint" is this.
+            if (pendingRefresh is not null && walk.Running.Count == 0)
+            {
+                await RefreshDynamicContextAsync(context, input, state, pendingRefresh, policyProvider);
+                pendingRefresh = null;
+            }
+
             if (walk.FirstFailure is null && await TryScheduleAsync(context, input, walk, state, rollbackPlanner, policyProvider, mcpWriteClassifier))
             {
                 continue;
@@ -71,13 +104,42 @@ internal static class GraphOrchestratorSteps
                 break;
             }
 
-            await Task.WhenAny(walk.Running.Values);
+            await Task.WhenAny([.. walk.Running.Values, refreshWait]);
             ObserveFinished(walk);
         }
 
         await ThrowIfFailedAsync(context, input, state, walk, policyProvider);
         walk.ThrowIfIncomplete();
         return state;
+    }
+
+    /// <summary>
+    /// Applies one consumed ADR-CR1 refresh signal (S13.62, doc 04 §8): calls
+    /// <see cref="WorkflowActivityNames.RefreshDynamicContextActivity"/> — the decision is the
+    /// body's, the work is the activity's (hard invariant 2) — and moves the run's pin onto the
+    /// epoch it reports. Every node scheduled after this point carries the new epoch; nodes
+    /// already in <c>walk.Running</c> keep the one they were scheduled with, which is the entire
+    /// point of pinning at schedule time.
+    /// <para>
+    /// Reuses <see cref="SnapshotPersistenceProfile"/>: the refresh is a Cosmos read-merge-write
+    /// with the same retry characteristics as the snapshot writer.
+    /// </para>
+    /// </summary>
+    internal static async Task RefreshDynamicContextAsync(TaskOrchestrationContext context, GraphOrchestratorInput input, GraphExecutionState state, DynamicContextRefreshRequired signal, IResiliencePolicyProvider policyProvider)
+    {
+        var request = new RefreshDynamicContextRequest
+        {
+            EngagementId = input.EngagementId,
+            Reason = signal.Reason,
+            ChangedFields = signal.ChangedFields,
+            Components = signal.Components,
+        };
+
+        var taskOptions = policyProvider.GetTaskOptions(SnapshotPersistenceProfile);
+        var result = await context.CallActivityAsync<DynamicContextRefreshResult>(WorkflowActivityNames.RefreshDynamicContextActivity, request, taskOptions);
+
+        state.DynamicContextEpoch = result.Epoch;
+        state.DynamicContextHash = result.ContentHash;
     }
 
     /// <summary>

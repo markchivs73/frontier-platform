@@ -1059,3 +1059,90 @@ passes here on registration and does not depend on that amendment.
 artifact and sat outside the agreed surface, so it was reverted rather than absorbed here. The rule
 and its plumbing are correct and tested; until that wiring lands, `schema.version-supported` cannot
 fire in a real validation. Tracked as S13.34.
+
+## ADR-PA24 — ADR-CR1's refresh lands at quiescence, merges, and reports a real epoch
+
+S13.62 closed ADR-CR1's loop: the orchestrator now consumes a `DynamicContextRefreshRequired`
+signal, decides what to do with it, and moves the run's dynamic-context pin. Four decisions were
+open and are settled here.
+
+**The event has one wire contract, in the kernel.** `DynamicContextRefreshRequired` lives in
+`Frontier.Platform.Abstractions`, and both halves of the seam use it: the consumer's ingest surface
+emits it, `GraphOrchestrator` consumes it. A consumer-side duplicate of the same event would be two
+contracts for one wire — divergent bytes, divergent hashes, and nothing to fail when they drift
+apart — which is what ADR-PA2 and K10 exist to prevent. It carries engagement id, reason, changed
+fields, detected-at UTC, and an optional `components` list whose names are the **snake_case document
+keys** (`engagement_profile`), not doc 18 §1's kebab-case tier-table spelling: the names have to
+match the keys the merge writes under, and hard invariant 1 governs the wire.
+
+**The name is `DynamicContextRefreshRequired`.** Doc 04 §8's code block raises
+`DynamicContextRefreshNeeded` while constructing a `DynamicContextRefreshRequired` payload on the
+very next line, so the block contradicts itself; doc 04's own prose above it, doc 16 §4's
+refresh-class list and doc 18 §3 all say `Required`. Event names are contracts, so the three
+consistent sources win and the doc's code block is wrong.
+
+**Refresh at quiescence only** — doc 04 §8 gives the orchestrator three outcomes ("refresh now,
+defer to next checkpoint, acknowledge") but never defines the predicate, so this is policy the docs
+left open rather than behaviour invented against them. The orchestrator refreshes when no nodes are
+in flight; a signal arriving mid-flight is held and applied at the next iteration that quiesces
+(doc 04 §8's "queue for next checkpoint"). The reason is evidential, not aesthetic: the pin is
+stamped onto every checkpoint and consolidated into the signed audit record (S13.60/S13.65), so
+moving it while activities scheduled against the old epoch are still running would leave the
+snapshot attesting to an epoch that half the completed steps never read. Two consequences are
+deliberate and pinned by tests so nobody "fixes" them — nodes already in flight keep the epoch they
+were scheduled with (that is what `AgentTaskActivityInput.DynamicContextEpoch` is *for*), and a
+signal raised while a human gate is open is not observed until the gate returns, because a gate runs
+inline in the walk rather than inside the walk's `Task.WhenAny`. DTF buffers it; nothing is lost;
+doc 18 §3 states the same outcome from the other side.
+
+The subscription is created **once, outside** the walk loop and kept **out of** `walk.Running`,
+re-armed only after a signal is consumed. Both halves are load-bearing: re-creating it per iteration
+writes a new subscription into history on every pass and consumes buffered events out of order, and
+parking it in `walk.Running` would make the loop count it as outstanding work — so every ordinary
+run, which is to say almost every run, would hang at the point the graph is otherwise finished. It
+is left dangling when the walk ends and DTF discards it with the instance. It is not hand-rolled
+from `Task.WhenAny` + `CreateTimer` + `CancellationTokenSource.Cancel`, for the reason already
+recorded on `GraphOrchestratorSteps.TryWaitForArtifactUpdateAsync`: that races a `TimerFired`
+history replay against an already-cancelled timer and throws.
+
+**A scoped refresh merges; it does not replace.** `IEngagementContextStore` gains
+`MergeDynamicContextAsync`, which writes only its named components and leaves every other key
+byte-identical. This is a correctness fix, not tidiness. An ADR-CR1 refresh is *scoped* — doc 18 §3
+raises it for named components and doc 04 §8's payload carries `changed_fields`, not a whole context
+— but the only primitive available was `UpsertDynamicContextAsync`, which replaces the whole
+document. Routing a scoped refresh through it deletes every key the refresh did not produce; the one
+that matters is `engagement_brief`, because `ContextContentFilter.Filter` throws
+`ContractViolationException` for a requested key the document no longer holds, and hard invariant 7
+makes a contract violation **permanent** — never retried. A single scoped refresh would therefore
+have permanently killed every entry node requesting the brief, on a live engagement, with no retry
+to recover it. That is why this is a store primitive rather than a read-modify-write each caller is
+trusted to get right. A named component is replaced **wholesale**, not merged into recursively: the
+unit is the component, and doc 18 §2's stub→enriched transition legitimately *removes* fields that a
+recursive merge would strand. Byte-identity still governs the epoch (ADR-EC1, doc 04 §8): a merge
+that changes nothing writes nothing and reports the epoch already current, so a primed provider
+cache stays primed.
+
+**The epoch-0 no-op defect is fixed.** `DynamicContextRefresher` returned `Epoch: 0` on the
+identical-bytes path. That constant is not "no epoch" — it is a valid epoch, the first one, since
+the store's counter is 0-based. S13.60 made it reachable and harmful in one change by giving the run
+a pin in `GraphExecutionState.DynamicContextEpoch`, and S13.62 is the first caller to assign a
+refresh result to it: a run that refreshes at epoch 4, finds the bytes unchanged and stores the
+returned `0` has silently dragged its pin back four epochs, after which every assembly reads stale
+bytes while the snapshot and the signed audit record both attest to an epoch the run never read.
+Wrong provenance is worse than none, because it reads as true. A no-op now reports the store's
+*current* epoch, read through the existing `GetDynamicContextSnapshotAsync(id, null, ct)`; the no-op
+semantics themselves are unchanged and must stay unchanged. The pre-existing refresher tests were
+accidentally right — each seeds exactly one upsert, so the current epoch there genuinely *is* 0 —
+which is precisely why the defect survived them.
+
+**The content producer is the consumer's half.** The refresh activity takes rendered content through
+`IDynamicContextContentProducer`, a port. The dynamic components themselves are consumer-side types
+over the consumer's engagement entity and its CRM enrichment (doc 18 §1's "thin readers", ADR-EC1);
+recreating them here would be an ADR-PA2 breach. The engine knows only that a refresh needs rendered
+content and asks for it. The decision runs in the orchestrator body, the work runs in an activity —
+hard invariant 2, enforced by `OrchestratorPurityTests`.
+
+Release: **minor, v0.25.0 proposed** (major version 0, so a breaking change may ship in a minor —
+README "Versioning"). Breaking for any out-of-repo `IEngagementContextStore` implementation, which
+must now implement `MergeDynamicContextAsync`; `EngagementContextMerge.ApplyThroughAsync` is public
+so that obligation is satisfiable in one line, over the interface's own members.

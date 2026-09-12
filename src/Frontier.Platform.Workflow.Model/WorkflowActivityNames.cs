@@ -23,6 +23,9 @@ public static class WorkflowActivityNames
     /// <summary>One deterministic MCP tool call for <see cref="McpToolNode"/> (Orchestration, S13.7c, doc 00 §3.2).</summary>
     public const string InvokeMcpToolActivity = "InvokeMcpToolActivity";
 
+    /// <summary>Re-renders and merges an engagement's named dynamic-context components on an ADR-CR1 refresh signal (Orchestration, S13.62, doc 04 §8).</summary>
+    public const string RefreshDynamicContextActivity = "RefreshDynamicContextActivity";
+
     /// <summary>Derives the section dependency graph and downstream set (CascadeLogic, doc 03 §4).</summary>
     public const string EvaluateCascadeActivity = "EvaluateCascadeActivity";
 

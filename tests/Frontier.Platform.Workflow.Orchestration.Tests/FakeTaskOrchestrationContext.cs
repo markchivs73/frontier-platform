@@ -160,12 +160,27 @@ internal sealed class FakeTaskOrchestrationContext : TaskOrchestrationContext
 internal sealed class PendingExternalEvent
 {
     private readonly Queue<object> buffered = new();
-    private readonly Queue<TaskCompletionSource<object>> waiters = new();
+    private readonly Queue<Action<object>> waiters = new();
 
     /// <summary>How many times a wait against this event has been satisfied — "exactly once per signal".</summary>
     public int DeliveredCount { get; private set; }
 
-    /// <summary>Returns the next delivery: the oldest buffered raise, or a task completed by a future <see cref="Raise"/>.</summary>
+    /// <summary>
+    /// Returns the next delivery: the oldest buffered raise, or a task completed by a future
+    /// <see cref="Raise"/>.
+    /// <para>
+    /// <b>Delivery is synchronous</b> (S13.62). The waiter is a plain
+    /// <see cref="TaskCompletionSource{T}"/> completed directly by <see cref="Raise"/>, so its
+    /// continuation runs inline on the raising thread — the same way <c>CompleteNode</c>'s node
+    /// task already behaves, and the way a real DTF orchestrator body behaves: single-threaded,
+    /// no thread-pool hop. The earlier form asynchronously hopped <em>twice</em>
+    /// (<c>RunContinuationsAsynchronously</c> plus a <c>ContinueWith</c> on
+    /// <see cref="TaskScheduler.Default"/>) while node completion stayed inline, so the walk had
+    /// two asymmetric resumption paths racing: a signal raised before a node completed was
+    /// observed by the walk only sometimes, and a determinism test whose harness is itself
+    /// non-deterministic proves nothing either way.
+    /// </para>
+    /// </summary>
     public Task<T> Next<T>()
     {
         if (buffered.Count > 0)
@@ -174,9 +189,9 @@ internal sealed class PendingExternalEvent
             return Task.FromResult((T)buffered.Dequeue());
         }
 
-        var pending = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
-        waiters.Enqueue(pending);
-        return pending.Task.ContinueWith(completed => (T)completed.Result, TaskScheduler.Default);
+        var pending = new TaskCompletionSource<T>();
+        waiters.Enqueue(payload => pending.SetResult((T)payload));
+        return pending.Task;
     }
 
     /// <summary>Raises the event with <paramref name="payload"/>, delivering to the oldest outstanding waiter or buffering it.</summary>
@@ -185,7 +200,7 @@ internal sealed class PendingExternalEvent
         if (waiters.Count > 0)
         {
             DeliveredCount++;
-            waiters.Dequeue().SetResult(payload);
+            waiters.Dequeue()(payload);
             return;
         }
 

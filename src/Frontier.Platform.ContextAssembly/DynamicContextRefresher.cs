@@ -46,26 +46,64 @@ internal sealed partial class DynamicContextRefresher : IDynamicContextRefresher
         ArgumentException.ThrowIfNullOrWhiteSpace(refreshReason);
 
         var newHash = CanonicalProfile.Hash(newDynamicContent);
-        var currentContent = await contextStore.GetDynamicContextAsync(engagementId, ct);
+        var current = await contextStore.GetDynamicContextSnapshotAsync(engagementId, null, ct);
 
-        if (currentContent is not null)
+        // S13.62/ADR-PA24: a no-op reports the store's CURRENT epoch, never the constant 0. The
+        // returned epoch becomes the run's pin, and 0 is a valid epoch — the first one — so
+        // returning it from a no-op at epoch 4 silently drags the run back four epochs, after
+        // which every assembly reads stale bytes while the snapshot and the signed audit record
+        // attest to an epoch the run never read.
+        if (current is not null && current.ContentHash == newHash)
         {
-            var currentHash = CanonicalProfile.Hash(currentContent);
-            if (currentHash == newHash)
-            {
-                LogNoOp(logger, engagementId, refreshReason);
-                return new(Refreshed: false, Epoch: 0, ContentHash: newHash);
-            }
+            LogNoOp(logger, engagementId, refreshReason);
+            return new(Refreshed: false, Epoch: current.Epoch, ContentHash: newHash);
         }
 
         var newEpoch = await contextStore.UpsertDynamicContextAsync(engagementId, newDynamicContent, ct);
         LogRefreshed(logger, engagementId, newEpoch, refreshReason);
-
-        meter.CreateCounter<int>("dynamic_context_refreshed", description: "Dynamic context refreshes by reason")
-            .Add(1, new KeyValuePair<string, object?>("reason", refreshReason));
+        RecordRefresh(refreshReason);
 
         return new(Refreshed: true, Epoch: newEpoch, ContentHash: newHash);
     }
+
+    /// <inheritdoc />
+    public async Task<DynamicContextRefreshResult> RefreshComponentsAsync(
+        EngagementId engagementId,
+        IReadOnlyDictionary<string, string> components,
+        string refreshReason,
+        CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(engagementId);
+        ArgumentNullException.ThrowIfNull(components);
+        ArgumentException.ThrowIfNullOrWhiteSpace(refreshReason);
+
+        var before = await contextStore.GetDynamicContextSnapshotAsync(engagementId, null, ct);
+        var epoch = await contextStore.MergeDynamicContextAsync(engagementId, components, ct);
+        var after = await contextStore.GetDynamicContextSnapshotAsync(engagementId, null, ct);
+
+        var refreshed = before is null || before.Epoch != epoch;
+        LogComponentRefresh(refreshed, engagementId, epoch, refreshReason);
+
+        return new(refreshed, epoch, after!.ContentHash);
+    }
+
+    /// <summary>Logs and meters a component refresh outcome, so <see cref="RefreshComponentsAsync"/> stays a straight line.</summary>
+    internal void LogComponentRefresh(bool refreshed, EngagementId engagementId, int epoch, string refreshReason)
+    {
+        if (!refreshed)
+        {
+            LogNoOp(logger, engagementId, refreshReason);
+            return;
+        }
+
+        LogRefreshed(logger, engagementId, epoch, refreshReason);
+        RecordRefresh(refreshReason);
+    }
+
+    /// <summary>Increments the doc 11 OTEL refresh counter, tagged with ADR-CR1's explicit reason.</summary>
+    internal void RecordRefresh(string refreshReason) =>
+        meter.CreateCounter<int>("dynamic_context_refreshed", description: "Dynamic context refreshes by reason")
+            .Add(1, new KeyValuePair<string, object?>("reason", refreshReason));
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Dynamic context refresh no-op for engagement {EngagementId}: hash unchanged (reason: {RefreshReason})")]
     private static partial void LogNoOp(ILogger logger, EngagementId engagementId, string refreshReason);
