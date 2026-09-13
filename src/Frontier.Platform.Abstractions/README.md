@@ -37,6 +37,30 @@ There is no `AddFrontier…()` call: this package is types only, with nothing to
   never be retried, as distinct from transient faults, which are retried per the policies in
   `Frontier.Platform.Resilience`.
 
+**Execution identity**
+
+- `ExecutionId` — the `{engagementId}::{workflowId}` instance format, stated once. It is kernel
+  vocabulary because every tier needs to *mint* it and no lower assembly is visible to them all:
+  a workload's composition root mints an id for scheduling, and the interpreter and audit family
+  address durable state by it. Before this type, the format was written out in six places across
+  two repositories (ADR-PA11).
+
+  **An execution id is written, never read.** It is an addressing key, and nothing may split,
+  slice or pattern-match it to recover the parts that went into it — identity travels as typed
+  fields on the contracts instead. The parsing this type used to publish is gone (ADR-PA15), and
+  it is worth knowing why: every reader wanted the engagement id to derive a partition key, and
+  every caller already held it typed. Reading it back out instead mis-partitioned every audit
+  record for a composite engagement id (ADR-PA12) and left dispatcher child ids permanently
+  ambiguous. Both defects were in the reading, never in the format.
+
+  `RunSeparator` is `~`, not `#`, for two hard reasons rather than taste: an execution id is
+  embedded verbatim in Cosmos document ids, where `#` is illegal, and in URL path segments, where
+  `#` begins a fragment and truncates the path.
+
+  Publishing `Mint` does not loosen the one-instance-per-engagement-workflow invariant, which
+  governs who may mint an id *for scheduling*, not who may know the format — and a named call is
+  materially easier to police than a bare two-part string.
+
 **Shared kernel contracts**
 
 `EngagementId`, `ContextRequest`, `ExecutionStatus`, `GateKind`, `DecisionKind`,
