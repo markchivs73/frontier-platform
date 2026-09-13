@@ -17,7 +17,7 @@ artifact somebody else resolves.** A mistake does not stay inside one solution.
 - [ ] Coverage ≥95% per assembly; 100% on new code. Exclusions carry
       `[ExcludeFromCodeCoverage(Justification)]` and fit an allowed category
 - [ ] No compiler warnings, no analyzer violations, no `#pragma warning disable`
-- [ ] No `private` methods; methods ≤10–15 lines
+- [ ] No untestable logic in a private method — branch-free I/O and UI plumbing are fine; a decision, classification or calculation needs every branch reachable from a test through its caller (S13.76); methods ≤10–15 lines
 - [ ] No removed or weakened tests without an explicit explanation in the description
 - [ ] Doc comments on all new/changed public and internal types and methods
 - [ ] Commit subjects follow `scope: Summary` (`scope!:` for a public-surface break)
