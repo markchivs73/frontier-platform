@@ -46,8 +46,8 @@
 
   <!-- Microsoft.Extensions.AI + provider SDKs for context-assembly caching (TD-7) -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.Extensions.AI" Version="10.7.0" />
-    <PackageVersion Include="Microsoft.Extensions.AI.Abstractions" Version="10.7.0" />
+    <PackageVersion Include="Microsoft.Extensions.AI" Version="10.10.0" />
+    <PackageVersion Include="Microsoft.Extensions.AI.Abstractions" Version="10.10.0" />
     <PackageVersion Include="Anthropic" Version="12.35.1" />
     <PackageVersion Include="OpenAI" Version="2.5.0" />
   </ItemGroup>
@@ -62,7 +62,7 @@
        (doc 00 §9: AddFrontierXxx() extensions, consumer-owned interfaces, no SDK types) -->
   <ItemGroup>
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.9" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.9" />
   </ItemGroup>
 
@@ -70,7 +70,7 @@
   <ItemGroup>
     <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.9" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.9" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.9" />
     <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.9" />
     <PackageVersion Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.9" />
