@@ -335,6 +335,24 @@ public sealed class TestRunServiceTests
     }
 
     [Fact]
+    public async Task ReconcileAsync_LegacyDocumentOrphanedBeforeFirstCheckpoint_ReadsAsRunning()
+    {
+        // S13.79: the arm ToResultAsync's comment describes — "a doc orphaned before its first
+        // checkpoint" — had never been reached. Both existing legacy tests pass status: null but
+        // ALSO set completedAtUtc, so the null/null combination that derives Running was untested.
+        // Success is deliberately false: if the fallback ever read Success before CompletedAtUtc,
+        // this would come back Failed.
+        var doc = RunDoc(status: null, success: false, completedAtUtc: null);
+        _store.Setup(s => s.GetTestRunAsync(doc.TestRunId, It.IsAny<CancellationToken>())).ReturnsAsync(doc);
+        _executor.Setup(e => e.GetSnapshotAsync(doc.TestRunId, "SANDBOX-abc", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ExecutionSnapshot?)null);
+
+        var result = await _service.ReconcileAsync(doc.TestRunId, CancellationToken.None);
+
+        Assert.Equal(TestRunStatus.Running, result!.Status);
+    }
+
+    [Fact]
     public async Task ReconcileAsync_RunningNoCheckpointYet_ReturnsRunningWithoutPersist()
     {
         var doc = RunDoc();
