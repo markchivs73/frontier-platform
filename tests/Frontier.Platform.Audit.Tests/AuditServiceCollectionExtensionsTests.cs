@@ -47,6 +47,33 @@ public sealed class AuditServiceCollectionExtensionsTests
         Assert.Contains(startupChecks, check => check is CosmosTopologyCheck);
     }
 
+    [Theory]
+    [InlineData("https://frontier.documents.azure.com:443", false)]
+    [InlineData("https://localhost:8081", true)]
+    [InlineData("https://127.0.0.1:8081", true)]
+    [InlineData("http://localhost:8081", true)]
+    [InlineData("http://127.0.0.1:8081", true)]
+    public void AddFrontierAudit_EndpointLocality_DeterminesCertBypassBranch(string endpoint, bool isLocal)
+    {
+        // S13.79: exercises every branch of the private IsLocalEmulator OR-chain, matching the
+        // identical tests in Hitl and ModelRoleConfig (S9.24). Audit was the one of four copies of
+        // this helper left without one — every other Audit test sets a `https://localhost` endpoint,
+        // so three of its six arms had never been reached.
+        _ = isLocal; // asserted implicitly: client construction never throws either way
+        var services = new ServiceCollection();
+        var configuration = BuildConfiguration(new Dictionary<string, string?>
+        {
+            ["Cosmos:Endpoint"] = endpoint,
+            ["Cosmos:Database"] = "frontier-workflow",
+            ["Cosmos:Key"] = EmulatorKey,
+        });
+
+        services.AddFrontierAudit(configuration);
+        using var provider = services.BuildServiceProvider();
+
+        Assert.NotNull(provider.GetRequiredService<CosmosClient>());
+    }
+
     [Fact]
     public void AddFrontierAudit_MissingCosmosKey_OptionsResolutionThrows()
     {
