@@ -17,7 +17,7 @@ public sealed record ResolvedModel
     /// <summary>The resolved model's provider, e.g. <c>"anthropic"</c>.</summary>
     public required string Provider { get; init; }
 
-    /// <summary>The resolved model's identifier, e.g. <c>"claude-fable-5"</c>.</summary>
+    /// <summary>The resolved target's identifier: the model id, e.g. <c>"claude-fable-5"</c>, or an agent's resource name (<see cref="ChainEntry.TargetId"/>).</summary>
     public required string ModelId { get; init; }
 
     /// <summary>The resolved model's version, if the provider reports one (feeds caching-strategy resolution, ADR-CA1).</summary>
@@ -26,6 +26,6 @@ public sealed record ResolvedModel
     /// <summary>Position in the mapping's chain that was served: 0 = primary, &gt;0 = fallback (doc 08 §4 ADR-M2, an alarm signal when sustained).</summary>
     public required int ChainPosition { get; init; }
 
-    /// <summary>The resolved chain entry's cost/capability metadata, for Guardrails.</summary>
-    public required ModelEntry Entry { get; init; }
+    /// <summary>The resolved chain entry — a <see cref="ModelEntry"/> or an <see cref="AgentEntry"/> — with its cost/capability metadata, for Guardrails and the invoker.</summary>
+    public required ChainEntry Entry { get; init; }
 }

@@ -86,7 +86,7 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
         var telemetry = BuildTelemetryRecord(input, resolved, invocation, inputPayload, hash);
         await telemetryStaging.RecordInvocationAsync(telemetry, ct).ConfigureAwait(false);
 
-        return BuildResult(input, resolved, payload, hash);
+        return BuildResult(input, resolved, payload, hash, invocation.CardHash);
     }
 
     /// <summary>Builds the Model-Role Config resolution request for <paramref name="input"/>'s role (doc 08 §5).</summary>
@@ -101,7 +101,7 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
     internal async Task<ContextPackageContract> AssembleAsync(AgentTaskActivityInput input, ResolvedModel resolved, CancellationToken ct)
     {
         var composed = await composer.ComposeAsync(input.ContextRequest, input.RevisionNote, input.DynamicContextEpoch, ct).ConfigureAwait(false);
-        var metadata = new CachingMetadata(resolved.Provider, resolved.ModelId, resolved.ModelVersion, resolved.Entry.ContextWindow, DateTime.UtcNow);
+        var metadata = new CachingMetadata(resolved.Provider, resolved.ModelId, resolved.ModelVersion, ContextWindowOf(resolved.Entry), DateTime.UtcNow);
         var provenance = composed.DynamicEpoch is { } epoch
             ? new DynamicTierProvenance(input.EngagementId, epoch, composed.DynamicRef!)
             : null;
@@ -133,6 +133,7 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
             Instructions = instructions,
             Prompt = prompt,
             ModelId = resolved.ModelId,
+            Target = resolved.Entry,
             MaxOutputTokens = maxOutputTokens,
             Tools = tools,
         };
@@ -162,7 +163,7 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
     internal static InvocationCostEstimate BuildCostEstimate(AgentTaskActivityInput input, ResolvedModel resolved, string instructions, string prompt)
     {
         var promptTokens = EstimatePromptTokens(instructions, prompt);
-        var maxOutputTokens = resolved.Entry.MaxOutputTokens;
+        var maxOutputTokens = MaxOutputTokensOf(resolved.Entry);
 
         return new InvocationCostEstimate(
             input.CorrelationId,
@@ -181,24 +182,40 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
     internal static long EstimatePromptTokens(string instructions, string prompt) =>
         (long)Math.Ceiling((instructions.Length + prompt.Length) / 4.0);
 
-    /// <summary>Estimates the invocation's worst-case cost, in <paramref name="entry"/>'s currency, from its per-1k-token rates (doc 08 §6, scale 4).</summary>
-    internal static decimal EstimateCost(ModelEntry entry, long promptTokens, long maxOutputTokens) =>
-        Math.Round((promptTokens / 1000m * entry.InputCostPer1k) + (maxOutputTokens / 1000m * entry.OutputCostPer1k), 4);
+    /// <summary>
+    /// Estimates the invocation's worst-case cost, in <paramref name="entry"/>'s currency (scale 4): a model's
+    /// per-1k-token rates (doc 08 §6), or an agent's fixed per-invocation cost — a remote agent reports no
+    /// tokens the platform can price (ADR-PA27, decision 1A).
+    /// </summary>
+    internal static decimal EstimateCost(ChainEntry entry, long promptTokens, long maxOutputTokens) =>
+        entry is AgentEntry agent
+            ? Math.Round(agent.CostPerInvocation, 4)
+            : Math.Round((promptTokens / 1000m * ((ModelEntry)entry).InputCostPer1k) + (maxOutputTokens / 1000m * ((ModelEntry)entry).OutputCostPer1k), 4);
+
+    /// <summary>A model's max output tokens; <c>0</c> for an agent, whose output length is the remote agent's, not a budget the platform grants.</summary>
+    internal static int MaxOutputTokensOf(ChainEntry entry) => entry is ModelEntry model ? model.MaxOutputTokens : 0;
+
+    /// <summary>A model's context window for caching metadata; <c>0</c> for an agent, which resolves no platform caching strategy.</summary>
+    internal static int ContextWindowOf(ChainEntry entry) => entry is ModelEntry model ? model.ContextWindow : 0;
 
     /// <summary>Builds the activity's result, projecting <paramref name="resolved"/> into the audit-facing <see cref="ResolvedModelSummary"/> (doc 08 §6).</summary>
-    internal static AgentTaskActivityResult BuildResult(AgentTaskActivityInput input, ResolvedModel resolved, string payload, string hash) => new()
+    internal static AgentTaskActivityResult BuildResult(AgentTaskActivityInput input, ResolvedModel resolved, string payload, string hash, string? cardHash = null) => new()
     {
         NodeId = input.NodeId,
         ArtifactKey = input.ArtifactKey,
         OutputContractType = input.OutputContractType,
         OutputPayload = payload,
         OutputHash = hash,
-        ResolvedModel = ToSummary(resolved),
+        ResolvedModel = ToSummary(resolved, cardHash),
         HostBuild = HostBuildInfo.Version,
     };
 
-    /// <summary>Projects a <see cref="ResolvedModel"/> to its audit-facing <see cref="ResolvedModelSummary"/> (doc 08 §6).</summary>
-    internal static ResolvedModelSummary ToSummary(ResolvedModel resolved) => new()
+    /// <summary>
+    /// Projects a <see cref="ResolvedModel"/> to its audit-facing <see cref="ResolvedModelSummary"/> (doc 08 §6). An agent
+    /// target adds its registry resource, version and the pinned card's hash the invoker reported (ADR-PA27 attribution);
+    /// a model adds nothing, so its bytes do not change.
+    /// </summary>
+    internal static ResolvedModelSummary ToSummary(ResolvedModel resolved, string? cardHash = null) => new()
     {
         RoleId = resolved.RoleId,
         Provider = resolved.Provider,
@@ -206,6 +223,9 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
         ModelVersion = resolved.ModelVersion,
         ChainPosition = resolved.ChainPosition,
         MappingVersion = resolved.MappingVersion,
+        ResourceName = (resolved.Entry as AgentEntry)?.ResourceName,
+        ResourceVersion = (resolved.Entry as AgentEntry)?.ResourceVersion,
+        CardHash = resolved.Entry is AgentEntry ? cardHash : null,
     };
 
     /// <summary>
@@ -224,7 +244,7 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
         NodeId = input.NodeId,
         ArtifactKey = input.ArtifactKey,
         AgentRole = input.Role,
-        ResolvedModel = ToSummary(resolved),
+        ResolvedModel = ToSummary(resolved, invocation.CardHash),
         InputContractType = input.InputContractType,
         InputHash = ComputeInputHash(inputPayload),
         OutputContractType = input.OutputContractType,

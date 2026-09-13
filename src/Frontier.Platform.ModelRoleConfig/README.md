@@ -58,10 +58,16 @@ registration answers "always closed"; wire a real implementation when you want f
 - `RoleMapping` — a versioned role → model release: the ordered `Chain` (index 0 primary, the rest
   fallbacks), its `RolloutRing`, canary percentage, change reason, approver, effective-from
   timestamp, an optional evidence ref, and the fleet version it can fall back to while it is still
-  shadow or canary.
-- `ModelEntry` — one chain entry: provider, model id, per-1k-token input/output/cache-read cost in
-  GBP at scale 4, context window, max output tokens, and an optional caching-strategy key. The
-  cost fields are what Guardrails builds an estimate from.
+  shadow or canary. A chain is all models or all agents, never mixed (ADR-PA27).
+- `ChainEntry` — the abstract chain entry: a provider and the ISO 4217 currency of its costs
+  (ADR-PA21). `TargetId` is what the circuit breaker and audit key on.
+- `ModelEntry` — a model: model id, per-1k-token input/output/cache-read cost at scale 4, context
+  window, max output tokens, an optional caching-strategy key, and — for providers such as
+  `azure-openai` — an optional endpoint and deployment. The cost fields are what Guardrails builds
+  an estimate from.
+- `AgentEntry` — a registered remote agent reached over A2A (ADR-PA27): the consumer registry's
+  resource name and version, and a positive fixed cost per invocation, which is the estimate for
+  that call. Whether the resource is active is checked by the consumer, which owns the registry.
 - `RolloutRing` — `shadow` (duplicated for comparison, never served) → `canary` (an
   engagement-stable percentage of new executions) → `fleet` (all of them).
 
@@ -80,7 +86,9 @@ signal, not a detail — it means the primary is failing and nobody noticed.
 ## Storage
 
 `model-role-config` holds append-only version documents (`{roleId}:v{n}`) plus a `current`
-pointer. Rollback repoints `{roleId}:current` at an existing version through `IRoleMappingWriter`
+pointer. A chain entry writes `target: "agent"` only for an agent; an entry without `target` is a
+model, so every document written before ADR-PA27 reads unchanged, and a mixed or incomplete chain
+is refused when read. Rollback repoints `{roleId}:current` at an existing version through `IRoleMappingWriter`
 — it never rewrites a version document, so the history of what was live and when stays intact.
 
 ## Key invariants

@@ -1305,3 +1305,78 @@ the pre-change golden rather than by inspection.
 
 Release: **minor, v0.27.0 proposed** — purely additive, but the consumer's fan-out exclusion needs
 a version to bump to.
+
+## ADR-PA27 — a role's chain may resolve to a remote agent; the invoker learns what it resolved to
+
+frontier-workflow is wiring A2A agents hosted in Azure AI Foundry into workflows (its S13.80–S13.89).
+PLATFORM-EVOLUTION-CANDIDATES E4 and E6 already settle *how an external agent is reached*: through
+`role`, not a new node field — E4 says A2A slots behind `IAgentInvoker` "with no orchestrator or
+definition changes", and E6 says runtime resolves only which instance of the named thing serves. So a
+role's chain has to be able to hold an agent. It could not: every chain entry was a `ModelEntry` whose
+token prices, context window and max output tokens are required, and `AgentInvocationRequest` carried
+only `ModelId`, so the invoker could not tell an agent from a model, or `azure-openai` from `anthropic`.
+
+**Two entry types, one chain, never mixed.** `ChainEntry` is an abstract base holding `Provider` and
+`Currency`; `ModelEntry` keeps every member it had, and `AgentEntry` names a registry resource
+(`ResourceName`, `ResourceVersion`) with a fixed `CostPerInvocation`. A nullable-fields `ModelEntry`
+was rejected (the consumer's choice, 2026-09-13): it would type an agent as a model with holes, and
+every reader would have to guess which holes are allowed. A chain is **all-model or all-agent** — a
+fallback from a model to a remote agent, or back, would change the kind of thing that produced a
+section mid-outage, which ADR-M2's "the audit pins the exact model used" does not tolerate.
+
+**An agent's cost is per invocation, and positive.** A remote agent reports no tokens the platform can
+price, so the estimate is `CostPerInvocation`, and the entry grants no output-token budget and
+contributes no context window. Zero is refused: `EstimateCost` would admit it under every ceiling, making
+budget enforcement silently blind for exactly the calls that cost real money elsewhere.
+
+**The guard splits by who can see what.** The platform checks shape — a mixed chain, or an agent entry
+without its provider, resource or a positive cost, is a permanent `ContractViolationException` — both
+when a mapping document is read and when a mapping is resolved. That covers a mapping edited outside
+any publish path. Whether the named resource is *active* is the consumer's check, because only the
+consumer can see its registry: it refuses a publish against an inactive resource and fails the call
+permanently if the resource has been retired since. The plan had put both rules in mapping approval;
+`MappingGovernanceService`'s propose and approve are still `NotSupported` stubs, so there was nowhere
+to put them, and a platform port onto the consumer's registry was rejected as a dependency the resolver
+would take on every call.
+
+**The stored document is additive; an absent target is the migration.** One wire record,
+`ChainEntryDocument` (was `ModelEntryDocument`), carries both kinds. `target` (property order 9) is
+written only for an agent; the model fields became nullable on the wire but a model entry writes
+them all and never writes `target`, so its bytes are unchanged — pinned by a test that serializes a
+Phase-1 entry against its pre-change bytes. Reading treats an absent `target` as a model, which is the
+adapter for every mapping stored before this ADR. An unknown target, or a missing field for the target
+named, is a permanent violation naming the field.
+
+**The invoker receives the resolved entry.** `AgentInvocationRequest.Target` (required) is the
+`ChainEntry` itself, so a consumer invoker routes on provider, reads an `azure-openai` model's new
+optional `Endpoint`/`Deployment`, or finds the agent's registry resource. `ModelId` stays and carries the
+target's identifier (`ChainEntry.TargetId`: the model id, or the agent's resource name), which is also
+what the circuit breaker keys on.
+
+**Attribution rides the existing summary.** `ResolvedModelSummary` gains `resource_name`,
+`resource_version` and `card_hash` at orders 6–8, optional and omit-null, so every existing audit and
+telemetry golden is byte-identical. This is E6's Article 12 requirement — which resource produced this
+output — on the `AgentInvocation`/`StepCompletion` path that already carries ADR-E8's directing-human
+chain. The card hash is the **pinned** snapshot's, never a live fetch, and only the invoker knows it, so
+it returns on `AgentInvocationOutcome.CardHash` and is ignored for a model target.
+
+**`azure-openai` gets the OpenAI caching strategy.** Without a registration it fell to
+`NoCachingStrategy`: calls worked, and OpenAI-family models cache matching prefixes server-side
+regardless, but the prompt layout and cache-hit metrics were lost. It now resolves
+`OpenAiCachingStrategy`, beside the existing `openai` registration (the consumer's call, 2026-09-13).
+
+*Evidence (accessed 2026-09-13):* frontier-workflow's S13.81 spike against a live Foundry agent — the
+agent is addressed by a registry resource with a pinned card, answers with an `AgentTask` rather than a
+token-metered response, and so has no per-token price to estimate from; Microsoft Learn, Azure AI
+Foundry incoming A2A — agents are called over A2A with Entra auth, separately from model deployments;
+PLATFORM-EVOLUTION-CANDIDATES E4 and E6 (role-based reach, and the Article 12 attribution requirement);
+the code audit for this change — the single `AgentInvocationRequest` construction site
+(`AgentTaskActivityPipeline`) set only `ModelId`, and `CachingStrategyRegistry` registered no
+`azure-openai` provider.
+
+Release: **minor, v0.29.0 proposed — source-breaking.** `RoleMapping.Chain` and `ResolvedModel.Entry`
+change type to `ChainEntry`, `ModelEntry`'s `Provider` and `Currency` move to the base, and
+`AgentInvocationRequest.Target` is required. No stored bytes change and nothing is renamed on the wire.
+The only consumer is frontier-workflow, which moves in lockstep: its model-role display and test-run
+cost reader branch on the entry kind, and its invoker sets nothing new on the outcome until an agent
+path exists.

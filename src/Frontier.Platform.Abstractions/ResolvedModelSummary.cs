@@ -43,4 +43,19 @@ public sealed record ResolvedModelSummary
     [JsonPropertyOrder(5)]
     [JsonPropertyName("mapping_version")]
     public required int MappingVersion { get; init; }
+
+    /// <summary>The registry resource an agent target resolved to (ADR-PA27; E6's "which resource produced this output"); absent for models, so existing bytes do not change.</summary>
+    [JsonPropertyOrder(6)]
+    [JsonPropertyName("resource_name")]
+    public string? ResourceName { get; init; }
+
+    /// <summary>The registry resource version an agent target resolved to; absent for models.</summary>
+    [JsonPropertyOrder(7)]
+    [JsonPropertyName("resource_version")]
+    public string? ResourceVersion { get; init; }
+
+    /// <summary>The hash of the <b>pinned</b> card snapshot the agent was called against, never a live fetch; absent for models.</summary>
+    [JsonPropertyOrder(8)]
+    [JsonPropertyName("card_hash")]
+    public string? CardHash { get; init; }
 }

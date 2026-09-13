@@ -32,6 +32,13 @@ public sealed record AgentInvocationOutcome<TOutput>
     /// called one. Public for the same reflection reason as <see cref="Result"/>.
     /// </summary>
     public required IReadOnlyList<ToolCall> ToolCalls { get; init; }
+
+    /// <summary>
+    /// The hash of the <b>pinned</b> card snapshot an agent target was called against (ADR-PA27 attribution);
+    /// <see langword="null"/> for a model. Only the invoker knows it — the card lives in the consumer's
+    /// registry. Public for the same reflection reason as <see cref="Result"/>.
+    /// </summary>
+    public string? CardHash { get; init; }
 }
 
 /// <summary>
@@ -53,4 +60,7 @@ public sealed record AgentInvocationResult
 
     /// <summary>Wall-clock duration of the MAF invocation.</summary>
     public required long LatencyMs { get; init; }
+
+    /// <summary>The pinned card hash an agent target reported (ADR-PA27); <see langword="null"/> for a model.</summary>
+    public string? CardHash { get; init; }
 }

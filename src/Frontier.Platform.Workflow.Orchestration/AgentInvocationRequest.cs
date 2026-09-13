@@ -16,8 +16,16 @@ public sealed record AgentInvocationRequest
     /// <summary>The assembled user-turn prompt: composed context tiers plus the validated input contract payload.</summary>
     public required string Prompt { get; init; }
 
-    /// <summary>The provider model id resolved by <see cref="Frontier.Platform.ModelRoleConfig.IModelResolver"/> (doc 08 §6).</summary>
+    /// <summary>The provider model id resolved by <see cref="Frontier.Platform.ModelRoleConfig.IModelResolver"/> (doc 08 §6); an agent target's resource name.</summary>
     public required string ModelId { get; init; }
+
+    /// <summary>
+    /// The resolved chain entry (ADR-PA27), so the invoker can route on what the role resolved to: a
+    /// <see cref="Frontier.Platform.ModelRoleConfig.ModelEntry"/> carries its provider, endpoint and
+    /// deployment; an <see cref="Frontier.Platform.ModelRoleConfig.AgentEntry"/> names the registry
+    /// resource to call over A2A.
+    /// </summary>
+    public required Frontier.Platform.ModelRoleConfig.ChainEntry Target { get; init; }
 
     /// <summary>The output token budget granted by <see cref="Frontier.Platform.Guardrails.IAdmissionController"/> (doc 07).</summary>
     public required long MaxOutputTokens { get; init; }

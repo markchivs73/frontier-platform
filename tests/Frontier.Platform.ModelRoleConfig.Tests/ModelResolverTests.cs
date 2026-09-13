@@ -213,6 +213,50 @@ public sealed class ModelResolverTests
         await Assert.ThrowsAsync<InvalidOperationException>(() => resolver.ResolveAsync(request, CancellationToken.None));
     }
 
+    // ─── Agent chains (ADR-PA27) ─────────────────────────────────────────────
+
+    private static readonly AgentEntry EchoAgent = new()
+    {
+        Provider = AgentEntry.A2aProvider,
+        Currency = "USD",
+        ResourceName = "com.azure.foundry/echo",
+        ResourceVersion = "1.0",
+        CostPerInvocation = 0.02m,
+    };
+
+    [Fact]
+    public async Task ResolveAsync_AgentChain_ResolvesTheAgentByResourceName()
+    {
+        var resolver = new ModelResolver(new FakeRoleRegistry(FleetMapping() with { Chain = [EchoAgent] }), new AlwaysClosedCircuitBreakerQuery());
+        var request = new ResolutionRequest { RoleId = "deep-reasoning", EngagementId = "engagement-1" };
+
+        var resolved = await resolver.ResolveAsync(request, CancellationToken.None);
+
+        Assert.Equal(AgentEntry.A2aProvider, resolved.Provider);
+        Assert.Equal("com.azure.foundry/echo", resolved.ModelId);
+        Assert.Equal(EchoAgent, resolved.Entry);
+    }
+
+    [Fact]
+    public async Task ResolveAsync_AgentCircuitOpen_IsKeyedOnTheResourceName()
+    {
+        var resolver = new ModelResolver(
+            new FakeRoleRegistry(FleetMapping() with { Chain = [EchoAgent] }),
+            new FakeCircuitBreakerQuery(openFor: EchoAgent.ResourceName));
+        var request = new ResolutionRequest { RoleId = "deep-reasoning", EngagementId = "engagement-1" };
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => resolver.ResolveAsync(request, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task ResolveAsync_MixedChain_IsRefusedAsAContractViolation()
+    {
+        var resolver = new ModelResolver(new FakeRoleRegistry(FleetMapping() with { Chain = [FleetPrimary, EchoAgent] }), new AlwaysClosedCircuitBreakerQuery());
+        var request = new ResolutionRequest { RoleId = "deep-reasoning", EngagementId = "engagement-1" };
+
+        await Assert.ThrowsAsync<Frontier.Platform.Abstractions.ContractViolationException>(() => resolver.ResolveAsync(request, CancellationToken.None));
+    }
+
     // ─── IsInCanary helper (determinism) ─────────────────────────────────────
 
     [Theory]

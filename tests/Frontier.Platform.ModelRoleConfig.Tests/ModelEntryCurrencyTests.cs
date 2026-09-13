@@ -8,13 +8,13 @@ namespace Frontier.Platform.ModelRoleConfig.Tests;
 public sealed class ModelEntryCurrencyTests
 {
     [Fact]
-    public void ModelEntryDocument_RoundTripsThroughCanonicalProfile_WithCurrency()
+    public void ChainEntryDocument_RoundTripsThroughCanonicalProfile_WithCurrency()
     {
-        var document = ModelEntryDocument.FromDomain(Phase1RoleCatalogue.DeepReasoningMappingV1.Chain[0]);
+        var document = ChainEntryDocument.FromDomain(Phase1RoleCatalogue.DeepReasoningMappingV1.Chain[0]);
 
         var bytes = CanonicalProfile.SerializeCanonical(document);
         var json = JsonNode.Parse(bytes)!.AsObject();
-        var roundTripped = JsonSerializer.Deserialize<ModelEntryDocument>(bytes, CanonicalProfile.Options)!;
+        var roundTripped = JsonSerializer.Deserialize<ChainEntryDocument>(bytes, CanonicalProfile.Options)!;
 
         Assert.Equal(["provider", "model_id", "input_cost_per_1k", "output_cost_per_1k", "cache_read_cost_per_1k", "currency", "context_window", "max_output_tokens"], json.Select(p => p.Key));
         Assert.Equal("USD", (string?)json["currency"]);
@@ -26,13 +26,13 @@ public sealed class ModelEntryCurrencyTests
     {
         var entry = Phase1RoleCatalogue.DeepReasoningMappingV1.Chain[1];
 
-        Assert.Equal(entry.Currency, ModelEntryDocument.FromDomain(entry).Currency);
+        Assert.Equal(entry.Currency, ChainEntryDocument.FromDomain(entry).Currency);
     }
 
     [Fact]
     public void DeepReasoningMappingV1_OpusIsPricedAtUsdListPrice()
     {
-        var opus = Phase1RoleCatalogue.DeepReasoningMappingV1.Chain[0];
+        var opus = (ModelEntry)Phase1RoleCatalogue.DeepReasoningMappingV1.Chain[0];
 
         Assert.Equal("claude-opus-4-8", opus.ModelId);
         Assert.Equal("USD", opus.Currency);
@@ -44,7 +44,7 @@ public sealed class ModelEntryCurrencyTests
     [Fact]
     public void DeepReasoningMappingV1_FableIsPricedAtUsdListPrice()
     {
-        var fable = Phase1RoleCatalogue.DeepReasoningMappingV1.Chain[1];
+        var fable = (ModelEntry)Phase1RoleCatalogue.DeepReasoningMappingV1.Chain[1];
 
         Assert.Equal("claude-fable-5", fable.ModelId);
         Assert.Equal("USD", fable.Currency);

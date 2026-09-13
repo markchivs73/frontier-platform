@@ -1,7 +1,5 @@
 Frontier.Platform.ModelRoleConfig.ModelEntry.CacheReadCostPer1k.get -> decimal
 Frontier.Platform.ModelRoleConfig.ModelEntry.CacheReadCostPer1k.init -> void
-Frontier.Platform.ModelRoleConfig.ModelEntry.Currency.get -> string!
-Frontier.Platform.ModelRoleConfig.ModelEntry.Currency.init -> void
 Frontier.Platform.ModelRoleConfig.ModelEntry.InputCostPer1k.get -> decimal
 Frontier.Platform.ModelRoleConfig.ModelEntry.InputCostPer1k.init -> void
 Frontier.Platform.ModelRoleConfig.ModelEntry.OutputCostPer1k.get -> decimal
@@ -12,3 +10,52 @@ Frontier.Platform.ModelRoleConfig.ModelEntry.OutputCostPer1k.init -> void
 *REMOVED*Frontier.Platform.ModelRoleConfig.ModelEntry.InputCostPer1kGbp.init -> void
 *REMOVED*Frontier.Platform.ModelRoleConfig.ModelEntry.OutputCostPer1kGbp.get -> decimal
 *REMOVED*Frontier.Platform.ModelRoleConfig.ModelEntry.OutputCostPer1kGbp.init -> void
+*REMOVED*Frontier.Platform.ModelRoleConfig.ModelEntry.<Clone>$() -> Frontier.Platform.ModelRoleConfig.ModelEntry!
+*REMOVED*Frontier.Platform.ModelRoleConfig.ModelEntry.Provider.get -> string!
+*REMOVED*Frontier.Platform.ModelRoleConfig.ModelEntry.Provider.init -> void
+*REMOVED*Frontier.Platform.ModelRoleConfig.ResolvedModel.Entry.get -> Frontier.Platform.ModelRoleConfig.ModelEntry!
+*REMOVED*Frontier.Platform.ModelRoleConfig.RoleMapping.Chain.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.ModelRoleConfig.ModelEntry!>!
+Frontier.Platform.ModelRoleConfig.AgentEntry
+Frontier.Platform.ModelRoleConfig.AgentEntry.AgentEntry() -> void
+Frontier.Platform.ModelRoleConfig.AgentEntry.CostPerInvocation.get -> decimal
+Frontier.Platform.ModelRoleConfig.AgentEntry.CostPerInvocation.init -> void
+Frontier.Platform.ModelRoleConfig.AgentEntry.Equals(Frontier.Platform.ModelRoleConfig.AgentEntry? other) -> bool
+Frontier.Platform.ModelRoleConfig.AgentEntry.ResourceName.get -> string!
+Frontier.Platform.ModelRoleConfig.AgentEntry.ResourceName.init -> void
+Frontier.Platform.ModelRoleConfig.AgentEntry.ResourceVersion.get -> string!
+Frontier.Platform.ModelRoleConfig.AgentEntry.ResourceVersion.init -> void
+Frontier.Platform.ModelRoleConfig.ChainEntry
+Frontier.Platform.ModelRoleConfig.ChainEntry.ChainEntry() -> void
+Frontier.Platform.ModelRoleConfig.ChainEntry.ChainEntry(Frontier.Platform.ModelRoleConfig.ChainEntry! original) -> void
+Frontier.Platform.ModelRoleConfig.ChainEntry.Currency.get -> string!
+Frontier.Platform.ModelRoleConfig.ChainEntry.Currency.init -> void
+Frontier.Platform.ModelRoleConfig.ChainEntry.Provider.get -> string!
+Frontier.Platform.ModelRoleConfig.ChainEntry.Provider.init -> void
+Frontier.Platform.ModelRoleConfig.ModelEntry.Deployment.get -> string?
+Frontier.Platform.ModelRoleConfig.ModelEntry.Deployment.init -> void
+Frontier.Platform.ModelRoleConfig.ModelEntry.Endpoint.get -> System.Uri?
+Frontier.Platform.ModelRoleConfig.ModelEntry.Endpoint.init -> void
+Frontier.Platform.ModelRoleConfig.ResolvedModel.Entry.get -> Frontier.Platform.ModelRoleConfig.ChainEntry!
+Frontier.Platform.ModelRoleConfig.RoleMapping.Chain.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.ModelRoleConfig.ChainEntry!>!
+abstract Frontier.Platform.ModelRoleConfig.ChainEntry.<Clone>$() -> Frontier.Platform.ModelRoleConfig.ChainEntry!
+abstract Frontier.Platform.ModelRoleConfig.ChainEntry.TargetId.get -> string!
+const Frontier.Platform.ModelRoleConfig.AgentEntry.A2aProvider = "a2a" -> string!
+override Frontier.Platform.ModelRoleConfig.AgentEntry.<Clone>$() -> Frontier.Platform.ModelRoleConfig.AgentEntry!
+override Frontier.Platform.ModelRoleConfig.AgentEntry.Equals(object? obj) -> bool
+override Frontier.Platform.ModelRoleConfig.AgentEntry.GetHashCode() -> int
+override Frontier.Platform.ModelRoleConfig.AgentEntry.TargetId.get -> string!
+override Frontier.Platform.ModelRoleConfig.AgentEntry.ToString() -> string!
+override Frontier.Platform.ModelRoleConfig.ChainEntry.Equals(object? obj) -> bool
+override Frontier.Platform.ModelRoleConfig.ChainEntry.GetHashCode() -> int
+override Frontier.Platform.ModelRoleConfig.ChainEntry.ToString() -> string!
+override Frontier.Platform.ModelRoleConfig.ModelEntry.<Clone>$() -> Frontier.Platform.ModelRoleConfig.ModelEntry!
+override Frontier.Platform.ModelRoleConfig.ModelEntry.TargetId.get -> string!
+override sealed Frontier.Platform.ModelRoleConfig.AgentEntry.Equals(Frontier.Platform.ModelRoleConfig.ChainEntry? other) -> bool
+override sealed Frontier.Platform.ModelRoleConfig.ModelEntry.Equals(Frontier.Platform.ModelRoleConfig.ChainEntry? other) -> bool
+static Frontier.Platform.ModelRoleConfig.AgentEntry.operator !=(Frontier.Platform.ModelRoleConfig.AgentEntry? left, Frontier.Platform.ModelRoleConfig.AgentEntry? right) -> bool
+static Frontier.Platform.ModelRoleConfig.AgentEntry.operator ==(Frontier.Platform.ModelRoleConfig.AgentEntry? left, Frontier.Platform.ModelRoleConfig.AgentEntry? right) -> bool
+static Frontier.Platform.ModelRoleConfig.ChainEntry.operator !=(Frontier.Platform.ModelRoleConfig.ChainEntry? left, Frontier.Platform.ModelRoleConfig.ChainEntry? right) -> bool
+static Frontier.Platform.ModelRoleConfig.ChainEntry.operator ==(Frontier.Platform.ModelRoleConfig.ChainEntry? left, Frontier.Platform.ModelRoleConfig.ChainEntry? right) -> bool
+virtual Frontier.Platform.ModelRoleConfig.ChainEntry.EqualityContract.get -> System.Type!
+virtual Frontier.Platform.ModelRoleConfig.ChainEntry.Equals(Frontier.Platform.ModelRoleConfig.ChainEntry? other) -> bool
+virtual Frontier.Platform.ModelRoleConfig.ChainEntry.PrintMembers(System.Text.StringBuilder! builder) -> bool

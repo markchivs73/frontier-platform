@@ -451,3 +451,9 @@ override Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult
 static Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult.operator !=(Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult? left, Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult? right) -> bool
 static Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult.operator ==(Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult? left, Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult? right) -> bool
 const Frontier.Platform.Workflow.Orchestration.DispatcherOrchestrator.WorkItemEventName = "WorkItem" -> string!
+Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome<TOutput>.CardHash.get -> string?
+Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome<TOutput>.CardHash.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentInvocationRequest.Target.get -> Frontier.Platform.ModelRoleConfig.ChainEntry!
+Frontier.Platform.Workflow.Orchestration.AgentInvocationRequest.Target.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentInvocationResult.CardHash.get -> string?
+Frontier.Platform.Workflow.Orchestration.AgentInvocationResult.CardHash.init -> void
