@@ -45,6 +45,29 @@ consumers can define their own smart enums and have them serialize canonically.
 
 `SmartEnum<T>` itself lives in `Frontier.Platform.Abstractions`.
 
+## What else lives here
+
+Two things sit in this package because they are *defined by* the canonical profile rather than
+merely using it.
+
+**`ContextPackage`** — the assembled three-tier prompt context (`BaselineTier`, `DynamicTier`,
+`RealTimeTier`, `CacheHint`). It is produced by `Frontier.Platform.ContextAssembly`, but its shape
+crosses every subsystem boundary and is hashed into cache keys, so the contract belongs with the
+profile that fixes its bytes.
+
+**The boot-check seam** — `IStartupCheck` and `StartupCheckResult`. A library registers a check
+for the invariant it owns; the host runs every registered check before the process reports ready,
+and a failure means the process refuses to start rather than failing on first invocation. Several
+libraries use this (`SigningKeyCheck`, `CosmosTopologyCheck`, `RoleCatalogueCheck`,
+`TimeoutHierarchyCheck`, `OtelPipelineCheck`), which is why the two tiny types live in the one
+package everything already depends on.
+
+This package registers its own: **`CanonicalProfileCheck`** serializes a committed fixture through
+the profile and compares the SHA-256 against a known-good constant. A mismatch means the profile —
+naming, ordering, omit-null, converters — has drifted from what definition hashing, cache keys and
+audit signing were built against. It is the cheapest insurance in the platform, and if it fails,
+stored bytes have already changed meaning.
+
 ## Key invariants
 
 - **Wire bytes never change for a style preference.** Renaming a member, reordering

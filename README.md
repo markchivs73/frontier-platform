@@ -3,13 +3,31 @@
 Reusable platform libraries for the Frontier workflow orchestration platform, published as
 NuGet packages to GitHub Packages.
 
-These nine libraries are a **severable sub-graph**: no platform assembly references any
+These twelve libraries are a **severable sub-graph**: no platform assembly references any
 `Frontier.Reason.*` assembly, at either the assembly-reference or the type-dependency level.
 That guarantee is what allowed them to be extracted from the `frontier-workflow` repository
 into this one, and it is enforced here by architecture tests rather than left to convention
 (see [`docs/DECISIONS.md`](docs/DECISIONS.md), ADR-PA2).
 
+## Two tiers, and the dependency runs one way
+
+- **Governance tier** — Abstractions, Serialization, Audit, ContextAssembly, Guardrails, Hitl,
+  ModelRoleConfig, Observability, Resilience. Flat: each references only Abstractions and
+  Serialization among platform libraries, so each stays independently consumable and taking one
+  never drags in a sibling.
+- **Engine tier** — Workflow.Model, Workflow.Orchestration, Workflow.Compiler. May depend on
+  governance, because walking a DAG *is* calling an approval store, assembling context and
+  resolving a model.
+
+The half that carries the weight is the direction. `GovernanceLibrary_DoesNotDependOnTheEngine`
+asserts that no governance library references an engine assembly — a solution that wants audit or
+approvals and no interpreter at all must still be able to take them. A single reference the wrong
+way would collapse the tiers back into one graph, and it would compile perfectly, which is why it
+is a test rather than a convention (ADR-PA5).
+
 ## Packages
+
+### Governance tier
 
 | Package | Owns |
 |---|---|
@@ -22,6 +40,17 @@ into this one, and it is enforced here by architecture tests rather than left to
 | `Frontier.Platform.Resilience` | Retry, circuit-breaker and bulkhead policy specifications with failure classification, translated to named Polly v8 profiles. |
 | `Frontier.Platform.Observability` | Telemetry contracts and metric catalogue. |
 | `Frontier.Platform.Guardrails` | Admission control and budget enforcement over a Cosmos-backed ledger. |
+
+### Engine tier
+
+| Package | Owns |
+|---|---|
+| `Frontier.Platform.Workflow.Model` | The definition and execution model: the typed DAG a workflow compiles to, and the vocabulary its execution is recorded in. Inert — it declares shape and executes nothing. |
+| `Frontier.Platform.Workflow.Compiler` | Structural validation, the design-language schema, the publish lifecycle (draft → validate → propose → approve → publish), and the design agent. |
+| `Frontier.Platform.Workflow.Orchestration` | The interpreter: the durable orchestrator that walks a compiled DAG, its activity shells, the agent and tool invocation pipelines, and audit consolidation. Vendor-neutral — model providers and tool transports arrive through consumer-owned ports. |
+
+Each package has its own README with its DI entry point, the ports its consumer must supply, and
+the invariants it enforces.
 
 ## Consuming the packages
 
@@ -56,9 +85,9 @@ Versions are derived from git tags by [MinVer](https://github.com/adamralph/minv
 `v1.2.3` on `main` publishes `1.2.3`. Untagged builds get a height-suffixed prerelease off the
 last tag.
 
-All nine packages version in **lockstep** from a single tag — a change to one library
-republishes all nine at the new version. That is a deliberate trade: one tag and one changelog
-instead of nine of each. See `docs/DECISIONS.md`.
+All twelve packages version in **lockstep** from a single tag — a change to one library
+republishes all twelve at the new version. That is a deliberate trade: one tag and one changelog
+instead of twelve of each. See `docs/DECISIONS.md`.
 
 While the major version is `0`, breaking changes may appear in a minor release.
 
