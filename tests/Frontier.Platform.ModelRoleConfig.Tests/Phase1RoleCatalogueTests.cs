@@ -40,12 +40,12 @@ public sealed class Phase1RoleCatalogueTests
             primary =>
             {
                 Assert.Equal("anthropic", primary.Provider);
-                Assert.Equal("claude-opus-4-8", primary.ModelId);
+                Assert.Equal("claude-opus-4-8", Assert.IsType<ModelEntry>(primary).ModelId);
             },
             fallback =>
             {
                 Assert.Equal("anthropic", fallback.Provider);
-                Assert.Equal("claude-fable-5", fallback.ModelId);
+                Assert.Equal("claude-fable-5", Assert.IsType<ModelEntry>(fallback).ModelId);
             });
     }
 

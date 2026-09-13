@@ -14,8 +14,8 @@ public sealed record RoleMapping
     /// <summary>Monotonic version number for this role's mapping history.</summary>
     public required int MappingVersion { get; init; }
 
-    /// <summary>The model chain: <c>[0]</c> is primary, the rest are ordered fallbacks (doc 08 §4 ADR-M2).</summary>
-    public required IReadOnlyList<ModelEntry> Chain { get; init; }
+    /// <summary>The chain: <c>[0]</c> is primary, the rest are ordered fallbacks (doc 08 §4 ADR-M2). All models or all agents, never mixed (ADR-PA27).</summary>
+    public required IReadOnlyList<ChainEntry> Chain { get; init; }
 
     /// <summary>This mapping's rollout stage.</summary>
     public required RolloutRing Ring { get; init; }

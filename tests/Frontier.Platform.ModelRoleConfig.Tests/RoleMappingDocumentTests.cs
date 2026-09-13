@@ -66,4 +66,40 @@ public sealed class RoleMappingDocumentTests
         Assert.Equal(1, document.PredecessorFleetVersion);
         Assert.Equal(1, roundTripped.PredecessorFleetVersion);
     }
+
+    [Fact]
+    public void FromDomain_ThenToDomain_AgentMapping_RoundTrips()
+    {
+        var agent = new AgentEntry
+        {
+            Provider = AgentEntry.A2aProvider,
+            Currency = "USD",
+            ResourceName = "com.azure.foundry/echo",
+            ResourceVersion = "1.0",
+            CostPerInvocation = 0.02m,
+        };
+        var mapping = Phase1RoleCatalogue.DeepReasoningMappingV1 with { Chain = [agent] };
+
+        var roundTripped = RoleMappingDocument.FromDomain(mapping).ToDomain();
+
+        Assert.Equal(agent, Assert.Single(roundTripped.Chain));
+    }
+
+    [Fact]
+    public void ToDomain_StoredMixedChain_IsRefusedOnRead()
+    {
+        // ADR-PA27: the platform half of the guard — a mapping changed outside publish still cannot serve a mixed chain.
+        var agent = ChainEntryDocument.FromAgent(new AgentEntry
+        {
+            Provider = AgentEntry.A2aProvider,
+            Currency = "USD",
+            ResourceName = "com.azure.foundry/echo",
+            ResourceVersion = "1.0",
+            CostPerInvocation = 0.02m,
+        });
+        var document = RoleMappingDocument.FromDomain(Phase1RoleCatalogue.DeepReasoningMappingV1);
+        var mixed = document with { Chain = [.. document.Chain, agent] };
+
+        Assert.Throws<Frontier.Platform.Abstractions.ContractViolationException>(() => mixed.ToDomain());
+    }
 }

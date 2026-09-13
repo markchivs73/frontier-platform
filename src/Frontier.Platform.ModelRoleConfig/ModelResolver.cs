@@ -17,7 +17,7 @@ internal sealed class ModelResolver(IRoleRegistry roleRegistry, ICircuitBreakerQ
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var mapping = await GetEffectiveMappingAsync(request, cancellationToken);
+        var mapping = ChainShape.EnsureValid(await GetEffectiveMappingAsync(request, cancellationToken));
         var (entry, chainPosition) = WalkChain(mapping);
 
         return new ResolvedModel
@@ -25,7 +25,7 @@ internal sealed class ModelResolver(IRoleRegistry roleRegistry, ICircuitBreakerQ
             RoleId = mapping.RoleId,
             MappingVersion = mapping.MappingVersion,
             Provider = entry.Provider,
-            ModelId = entry.ModelId,
+            ModelId = entry.TargetId,
             ModelVersion = null,
             ChainPosition = chainPosition,
             Entry = entry,
@@ -56,12 +56,12 @@ internal sealed class ModelResolver(IRoleRegistry roleRegistry, ICircuitBreakerQ
     /// position. Skips entries whose circuit is open per <see cref="ICircuitBreakerQuery"/>.
     /// All-open → <see cref="InvalidOperationException"/> (whole-chain-down is sev-1, doc 08 §9).
     /// </summary>
-    internal (ModelEntry entry, int chainPosition) WalkChain(RoleMapping mapping)
+    internal (ChainEntry entry, int chainPosition) WalkChain(RoleMapping mapping)
     {
         for (var i = 0; i < mapping.Chain.Count; i++)
         {
             var entry = mapping.Chain[i];
-            if (!circuitBreakerQuery.IsOpen(entry.Provider, entry.ModelId))
+            if (!circuitBreakerQuery.IsOpen(entry.Provider, entry.TargetId))
                 return (entry, i);
         }
 

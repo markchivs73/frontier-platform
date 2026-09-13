@@ -57,6 +57,7 @@ internal sealed class AgentInvocationDispatcher
             Usage = (UsageDetails?)outcomeType.GetProperty("Usage")!.GetValue(outcome),
             ToolCalls = (IReadOnlyList<ToolCall>)outcomeType.GetProperty("ToolCalls")!.GetValue(outcome)!,
             LatencyMs = stopwatch.ElapsedMilliseconds,
+            CardHash = (string?)outcomeType.GetProperty("CardHash")!.GetValue(outcome),
         };
     }
 }

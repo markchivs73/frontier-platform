@@ -49,6 +49,9 @@ public static class ContextAssemblyServiceCollectionExtensions
             // initially. S6.2c: register OpenAI as provider default for fallback.
             registry.Register("anthropic", "claude-*", versionPattern: null, new AnthropicCachingStrategy());
             registry.Register("openai", modelPattern: "*", versionPattern: null, new OpenAiCachingStrategy());
+            // ADR-PA27: Azure OpenAI serves the same model family with the same automatic prefix
+            // caching, so it gets the same layout and metrics rather than the NoCachingStrategy fallback.
+            registry.Register("azure-openai", modelPattern: "*", versionPattern: null, new OpenAiCachingStrategy());
 
             return registry;
         });

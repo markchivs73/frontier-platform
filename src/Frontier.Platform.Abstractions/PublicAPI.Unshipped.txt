@@ -29,3 +29,9 @@ override Frontier.Platform.Abstractions.DynamicContextRefreshRequired.GetHashCod
 override Frontier.Platform.Abstractions.DynamicContextRefreshRequired.ToString() -> string!
 static Frontier.Platform.Abstractions.DynamicContextRefreshRequired.operator !=(Frontier.Platform.Abstractions.DynamicContextRefreshRequired? left, Frontier.Platform.Abstractions.DynamicContextRefreshRequired? right) -> bool
 static Frontier.Platform.Abstractions.DynamicContextRefreshRequired.operator ==(Frontier.Platform.Abstractions.DynamicContextRefreshRequired? left, Frontier.Platform.Abstractions.DynamicContextRefreshRequired? right) -> bool
+Frontier.Platform.Abstractions.ResolvedModelSummary.ResourceName.get -> string?
+Frontier.Platform.Abstractions.ResolvedModelSummary.ResourceName.init -> void
+Frontier.Platform.Abstractions.ResolvedModelSummary.ResourceVersion.get -> string?
+Frontier.Platform.Abstractions.ResolvedModelSummary.ResourceVersion.init -> void
+Frontier.Platform.Abstractions.ResolvedModelSummary.CardHash.get -> string?
+Frontier.Platform.Abstractions.ResolvedModelSummary.CardHash.init -> void

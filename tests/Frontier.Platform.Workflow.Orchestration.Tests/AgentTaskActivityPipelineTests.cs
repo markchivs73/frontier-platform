@@ -280,9 +280,61 @@ public sealed class AgentTaskActivityPipelineTests
 
         var granted = await pipeline.AdmitAsync(input, resolved, "instructions", "prompt", CancellationToken.None);
 
-        Assert.Equal(resolved.Entry.MaxOutputTokens, granted);
+        Assert.Equal(((ModelEntry)resolved.Entry).MaxOutputTokens, granted);
         Assert.NotNull(admission.ReceivedEstimate);
     }
+
+    [Fact]
+    public void EstimateCost_AgentEntry_IsTheFixedPerInvocationCost_AndGrantsNoTokensOrWindow()
+    {
+        // ADR-PA27, decision 1A: a remote agent reports no tokens the platform can price.
+        Assert.Equal(0.0200m, AgentTaskActivityPipeline.EstimateCost(EchoAgent, promptTokens: 50_000, maxOutputTokens: 16_000));
+        Assert.Equal(0, AgentTaskActivityPipeline.MaxOutputTokensOf(EchoAgent));
+        Assert.Equal(0, AgentTaskActivityPipeline.ContextWindowOf(EchoAgent));
+    }
+
+    [Fact]
+    public void ToSummary_AgentTarget_AttributesResourceVersionAndPinnedCardHash()
+    {
+        var resolved = ResolvedModelFixture() with { Provider = AgentEntry.A2aProvider, ModelId = EchoAgent.ResourceName, Entry = EchoAgent };
+
+        var summary = AgentTaskActivityPipeline.ToSummary(resolved, "sha256:pinned-card");
+
+        Assert.Equal("com.azure.foundry/echo", summary.ResourceName);
+        Assert.Equal("1.0", summary.ResourceVersion);
+        Assert.Equal("sha256:pinned-card", summary.CardHash);
+    }
+
+    [Fact]
+    public void ToSummary_ModelTarget_AddsNoAttribution_EvenIfACardHashIsReported()
+    {
+        var summary = AgentTaskActivityPipeline.ToSummary(ResolvedModelFixture(), "sha256:ignored");
+
+        Assert.Null(summary.ResourceName);
+        Assert.Null(summary.ResourceVersion);
+        Assert.Null(summary.CardHash);
+    }
+
+    [Fact]
+    public async Task InvokeAgentAsync_PassesTheResolvedEntryToTheInvokerAsTarget()
+    {
+        var pipeline = BuildPipeline(ScopeSectionFixture(), out var invoker, out _);
+        var input = BuildInput(nameof(BriefArtifact), nameof(SummaryArtifact), upstreamPayload: null);
+        var resolved = ResolvedModelFixture();
+
+        await pipeline.InvokeAgentAsync(input, resolved, Package("{}"), "{}", CancellationToken.None);
+
+        Assert.Same(resolved.Entry, invoker.ReceivedRequest!.Target);
+    }
+
+    private static readonly AgentEntry EchoAgent = new()
+    {
+        Provider = AgentEntry.A2aProvider,
+        Currency = "USD",
+        ResourceName = "com.azure.foundry/echo",
+        ResourceVersion = "1.0",
+        CostPerInvocation = 0.02m,
+    };
 
     [Fact]
     public void Constructor_NullComposer_Throws()

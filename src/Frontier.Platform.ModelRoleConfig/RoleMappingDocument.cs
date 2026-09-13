@@ -35,10 +35,10 @@ internal sealed record RoleMappingDocument
     [JsonPropertyName("canary_percent")]
     public required int CanaryPercent { get; init; }
 
-    /// <summary>The model chain: <c>[0]</c> is primary, the rest are ordered fallbacks (doc 08 §4 ADR-M2).</summary>
+    /// <summary>The chain: <c>[0]</c> is primary, the rest are ordered fallbacks (doc 08 §4 ADR-M2); all models or all agents (ADR-PA27).</summary>
     [JsonPropertyOrder(5)]
     [JsonPropertyName("chain")]
-    public required IReadOnlyList<ModelEntryDocument> Chain { get; init; }
+    public required IReadOnlyList<ChainEntryDocument> Chain { get; init; }
 
     /// <summary>Why this mapping was changed to (governance record, doc 08 §7).</summary>
     [JsonPropertyOrder(6)]
@@ -74,8 +74,8 @@ internal sealed record RoleMappingDocument
     [JsonPropertyName("ttl")]
     public int Ttl { get; init; } = -1;
 
-    /// <summary>Maps this wire document onto its domain <see cref="RoleMapping"/>.</summary>
-    internal RoleMapping ToDomain() => new()
+    /// <summary>Maps this wire document onto its domain <see cref="RoleMapping"/>, refusing an ill-shaped chain on read (ADR-PA27).</summary>
+    internal RoleMapping ToDomain() => ChainShape.EnsureValid(new RoleMapping
     {
         RoleId = RoleId,
         MappingVersion = MappingVersion,
@@ -87,7 +87,7 @@ internal sealed record RoleMappingDocument
         EffectiveFromUtc = EffectiveFromUtc,
         EvaluationEvidenceRef = EvaluationEvidenceRef,
         PredecessorFleetVersion = PredecessorFleetVersion,
-    };
+    });
 
     /// <summary>Maps a domain <see cref="RoleMapping"/> onto its append-only version document.</summary>
     internal static RoleMappingDocument FromDomain(RoleMapping mapping) => new()
@@ -97,7 +97,7 @@ internal sealed record RoleMappingDocument
         MappingVersion = mapping.MappingVersion,
         Ring = mapping.Ring,
         CanaryPercent = mapping.CanaryPercent,
-        Chain = mapping.Chain.Select(ModelEntryDocument.FromDomain).ToArray(),
+        Chain = mapping.Chain.Select(ChainEntryDocument.FromDomain).ToArray(),
         ChangeReason = mapping.ChangeReason,
         ApprovedBy = mapping.ApprovedBy,
         EffectiveFromUtc = mapping.EffectiveFromUtc,
