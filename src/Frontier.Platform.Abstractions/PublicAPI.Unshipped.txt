@@ -35,3 +35,5 @@ Frontier.Platform.Abstractions.ResolvedModelSummary.ResourceVersion.get -> strin
 Frontier.Platform.Abstractions.ResolvedModelSummary.ResourceVersion.init -> void
 Frontier.Platform.Abstractions.ResolvedModelSummary.CardHash.get -> string?
 Frontier.Platform.Abstractions.ResolvedModelSummary.CardHash.init -> void
+Frontier.Platform.Abstractions.ResolvedModelSummary.RemoteTaskId.get -> string?
+Frontier.Platform.Abstractions.ResolvedModelSummary.RemoteTaskId.init -> void

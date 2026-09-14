@@ -298,21 +298,23 @@ public sealed class AgentTaskActivityPipelineTests
     {
         var resolved = ResolvedModelFixture() with { Provider = AgentEntry.A2aProvider, ModelId = EchoAgent.ResourceName, Entry = EchoAgent };
 
-        var summary = AgentTaskActivityPipeline.ToSummary(resolved, "sha256:pinned-card");
+        var summary = AgentTaskActivityPipeline.ToSummary(resolved, "sha256:pinned-card", "resp_0139");
 
         Assert.Equal("com.azure.foundry/echo", summary.ResourceName);
         Assert.Equal("1.0", summary.ResourceVersion);
         Assert.Equal("sha256:pinned-card", summary.CardHash);
+        Assert.Equal("resp_0139", summary.RemoteTaskId);   // ADR-PA27 addendum: the audit's join key to the agent's side
     }
 
     [Fact]
-    public void ToSummary_ModelTarget_AddsNoAttribution_EvenIfACardHashIsReported()
+    public void ToSummary_ModelTarget_AddsNoAttribution_EvenIfACardHashOrTaskIdIsReported()
     {
-        var summary = AgentTaskActivityPipeline.ToSummary(ResolvedModelFixture(), "sha256:ignored");
+        var summary = AgentTaskActivityPipeline.ToSummary(ResolvedModelFixture(), "sha256:ignored", "resp_ignored");
 
         Assert.Null(summary.ResourceName);
         Assert.Null(summary.ResourceVersion);
         Assert.Null(summary.CardHash);
+        Assert.Null(summary.RemoteTaskId);
     }
 
     [Fact]
