@@ -144,6 +144,11 @@ public sealed record SignedAuditRecord : IVersionedContract
             violations.Add("every agent invocation must have a correlation_id.");
         }
 
+        if (ToolCallNoteCap.AnyExceeded(AgentInvocations))
+        {
+            violations.Add(ToolCallNoteCap.Violation);
+        }
+
         if (string.IsNullOrWhiteSpace(PreviousRecordHash) || string.IsNullOrWhiteSpace(RecordHash) ||
             string.IsNullOrWhiteSpace(Signature) || string.IsNullOrWhiteSpace(SigningKeyId))
         {

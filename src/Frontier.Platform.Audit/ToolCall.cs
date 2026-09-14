@@ -32,4 +32,23 @@ public sealed record ToolCall
     [JsonPropertyOrder(2)]
     [JsonPropertyName("simulated")]
     public bool? Simulated { get; init; }
+
+    /// <summary>
+    /// ADR-PA28: how the platform came to know about this call — <see cref="ToolCallProvenance.Observed"/>
+    /// when the platform made it, <see cref="ToolCallProvenance.SelfReported"/> when a remote agent
+    /// claimed it in its reply. Platform writers never set it, so it is absent (omitted on the wire)
+    /// on every record written before this field existed, and an absent provenance reads as observed.
+    /// </summary>
+    [JsonPropertyOrder(3)]
+    [JsonPropertyName("provenance")]
+    public ToolCallProvenance? Provenance { get; init; }
+
+    /// <summary>
+    /// ADR-PA28: the agent's stated purpose for a self-reported call; <c>null</c> (omitted on the wire)
+    /// for an observed one. Capped at <see cref="ToolCallNoteCap.MaxLength"/> (200) characters
+    /// (ADR-E1 tonnage) — enforced by the containing record's <c>Validate()</c>.
+    /// </summary>
+    [JsonPropertyOrder(4)]
+    [JsonPropertyName("note")]
+    public string? Note { get; init; }
 }

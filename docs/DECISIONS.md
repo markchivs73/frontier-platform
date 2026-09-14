@@ -1388,3 +1388,37 @@ change type to `ChainEntry`, `ModelEntry`'s `Provider` and `Currency` move to th
 The only consumer is frontier-workflow, which moves in lockstep: its model-role display and test-run
 cost reader branch on the entry kind, and its invoker sets nothing new on the outcome until an agent
 path exists.
+
+## ADR-PA28 — a remote agent's tool use is recorded as self-reported, never as observed
+
+frontier-workflow's S13.89 closes the governance gap decision 2A left open: a remote A2A agent's
+tools run on its side, so the platform never sees them, and the audit could only mark them *not
+visible*. The fleet convention that closes it asks each agent to say which tools it used — and the
+audit has to carry that answer without letting a claim pass for evidence.
+
+**The convention can only live in the reply payload.** Microsoft Learn, "Enable incoming A2A on a
+Foundry agent" (accessed 2026-09-14): incoming A2A is text-only, the reply is the artifact text the
+agent writes, and Foundry's A2A guidance describes an opacity contract — the caller never sees the
+server agent's prompt, model or tools. Nothing in the A2A response surfaces tool calls and a prompt
+agent controls only its text, so a `tools_used` list can ride nowhere but inside the reply the agent
+composes. That is exactly why the audit must say where the fact came from: a list the agent wrote is
+the agent's word, and K6 says a claim is never rendered as observed evidence.
+
+**`ToolCall` says how the platform knows.** `ToolCallProvenance` is a smart enum, `observed` for a
+call the platform made itself (the MCP path, S9.25) and `self_reported` for one lifted from a reply.
+`ToolCall.provenance` (order 3) and `note` (order 4) are optional and omit-null. The platform's own
+writers never set either, so every existing audit and telemetry golden is byte-identical, and a
+reader treats an **absent provenance as `observed`** — the adapter for every record written before
+this field. `note` carries the agent's stated purpose for a self-reported call, capped at **200
+characters** (ADR-E1 tonnage — an auditor needs the *why*, not the arguments); `AuditRecord.Validate`
+and `SignedAuditRecord.Validate` refuse a longer one as a contract violation. Lifting `tools_used`
+out of the reply before contract binding, dropping malformed claims, and labelling self-reported
+calls in the UI are the consumer's (S13.89b–c).
+
+*Evidence (accessed 2026-09-14):* Microsoft Learn, "Enable incoming A2A on a Foundry agent" — text-only
+incoming A2A, the reply is the agent's artifact text, and the opacity contract over prompt, model and
+tools; frontier-workflow's S13.81/S13.88 spikes against a live Foundry agent; the platform-keeps
+register, K6.
+
+Release: **minor, v0.31.0 — additive.** Two optional properties and one smart enum; no stored bytes
+change, nothing is renamed on the wire, and every golden is unchanged.

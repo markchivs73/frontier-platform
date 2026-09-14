@@ -129,6 +129,11 @@ public sealed record AuditRecord : IVersionedContract
             violations.Add("every agent invocation must have a correlation_id.");
         }
 
+        if (ToolCallNoteCap.AnyExceeded(AgentInvocations))
+        {
+            violations.Add(ToolCallNoteCap.Violation);
+        }
+
         if (violations.Count > 0)
         {
             throw new ContractViolationException(nameof(AuditRecord), violations);

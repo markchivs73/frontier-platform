@@ -20,3 +20,10 @@ Frontier.Platform.Audit.SignedAuditRecord.Sandbox.init -> void
 Frontier.Platform.Audit.IKeyProvider.GetKeyAsync(string! keyId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Audit.SigningKey?>!
 Frontier.Platform.Audit.VerificationResult.UnresolvedKeyIds.get -> System.Collections.Generic.IReadOnlyList<string!>?
 Frontier.Platform.Audit.VerificationResult.UnresolvedKeyIds.init -> void
+Frontier.Platform.Audit.ToolCall.Provenance.get -> Frontier.Platform.Audit.ToolCallProvenance?
+Frontier.Platform.Audit.ToolCall.Provenance.init -> void
+Frontier.Platform.Audit.ToolCall.Note.get -> string?
+Frontier.Platform.Audit.ToolCall.Note.init -> void
+Frontier.Platform.Audit.ToolCallProvenance
+static readonly Frontier.Platform.Audit.ToolCallProvenance.Observed -> Frontier.Platform.Audit.ToolCallProvenance!
+static readonly Frontier.Platform.Audit.ToolCallProvenance.SelfReported -> Frontier.Platform.Audit.ToolCallProvenance!

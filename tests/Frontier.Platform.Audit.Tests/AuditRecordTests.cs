@@ -46,6 +46,27 @@ public sealed class AuditRecordTests
         Assert.Contains("every agent invocation must have a correlation_id.", exception.Violations);
     }
 
+    [Fact]
+    public void Validate_ToolCallNoteAtCap_DoesNotThrow()
+    {
+        var observed = AuditContractSamples.ToolCall();
+        var claimed = observed with { Provenance = ToolCallProvenance.SelfReported, Note = new string('n', 200) };
+        var record = Record() with { AgentInvocations = [Invocation() with { ToolCalls = [observed, claimed] }] };
+
+        record.Validate();
+    }
+
+    [Fact]
+    public void Validate_ToolCallNoteOverCap_Throws()
+    {
+        var call = AuditContractSamples.ToolCall() with { Provenance = ToolCallProvenance.SelfReported, Note = new string('n', 201) };
+        var record = Record() with { AgentInvocations = [Invocation() with { ToolCalls = [call] }] };
+
+        var exception = Assert.Throws<ContractViolationException>(record.Validate);
+
+        Assert.Contains("every tool call note must be at most 200 characters.", exception.Violations);
+    }
+
     static AuditRecord Record() => new()
     {
         ExecutionId = "eng-1::wf-1",
