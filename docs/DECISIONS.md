@@ -1374,6 +1374,14 @@ the code audit for this change — the single `AgentInvocationRequest` construct
 (`AgentTaskActivityPipeline`) set only `ModelId`, and `CachingStrategyRegistry` registered no
 `azure-openai` provider.
 
+**Addendum (v0.30.0, frontier-workflow S13.88) — the remote task id rides too.** The consumer's A2A invoker
+found on execution (its S13.85) that the outcome had no slot for the agent's own task id, so an audit
+record could name the resource and the pinned card but not *which run on the agent's side* produced
+the section — the join key an operator needs when reading both sides. `AgentInvocationOutcome.RemoteTaskId`
+and `AgentInvocationResult.RemoteTaskId` (optional, bridged by the dispatcher like the card hash) and
+`ResolvedModelSummary.remote_task_id` (order 9, omit-null, ignored for a model target) close it.
+Additive; every existing golden is byte-identical. Release: **minor, v0.30.0.**
+
 Release: **minor, v0.29.0 proposed — source-breaking.** `RoleMapping.Chain` and `ResolvedModel.Entry`
 change type to `ChainEntry`, `ModelEntry`'s `Provider` and `Currency` move to the base, and
 `AgentInvocationRequest.Target` is required. No stored bytes change and nothing is renamed on the wire.

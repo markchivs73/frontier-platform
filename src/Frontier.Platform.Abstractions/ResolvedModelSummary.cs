@@ -58,4 +58,9 @@ public sealed record ResolvedModelSummary
     [JsonPropertyOrder(8)]
     [JsonPropertyName("card_hash")]
     public string? CardHash { get; init; }
+
+    /// <summary>The remote agent's own task id for this invocation (ADR-PA27 addendum, S13.88) — the audit's join key to the agent's side; absent for models.</summary>
+    [JsonPropertyOrder(9)]
+    [JsonPropertyName("remote_task_id")]
+    public string? RemoteTaskId { get; init; }
 }

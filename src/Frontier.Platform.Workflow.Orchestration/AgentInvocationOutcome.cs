@@ -39,6 +39,13 @@ public sealed record AgentInvocationOutcome<TOutput>
     /// registry. Public for the same reflection reason as <see cref="Result"/>.
     /// </summary>
     public string? CardHash { get; init; }
+
+    /// <summary>
+    /// The remote agent's own id for this invocation — the A2A task id (ADR-PA27 addendum), so the
+    /// audit can be matched to the agent's side; <see langword="null"/> for a model. Public for the
+    /// same reflection reason as <see cref="Result"/>.
+    /// </summary>
+    public string? RemoteTaskId { get; init; }
 }
 
 /// <summary>
@@ -63,4 +70,7 @@ public sealed record AgentInvocationResult
 
     /// <summary>The pinned card hash an agent target reported (ADR-PA27); <see langword="null"/> for a model.</summary>
     public string? CardHash { get; init; }
+
+    /// <summary>The remote agent's task id for this invocation (ADR-PA27 addendum); <see langword="null"/> for a model.</summary>
+    public string? RemoteTaskId { get; init; }
 }

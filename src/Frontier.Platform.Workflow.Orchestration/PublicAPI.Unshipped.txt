@@ -457,3 +457,7 @@ Frontier.Platform.Workflow.Orchestration.AgentInvocationRequest.Target.get -> Fr
 Frontier.Platform.Workflow.Orchestration.AgentInvocationRequest.Target.init -> void
 Frontier.Platform.Workflow.Orchestration.AgentInvocationResult.CardHash.get -> string?
 Frontier.Platform.Workflow.Orchestration.AgentInvocationResult.CardHash.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome<TOutput>.RemoteTaskId.get -> string?
+Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome<TOutput>.RemoteTaskId.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentInvocationResult.RemoteTaskId.get -> string?
+Frontier.Platform.Workflow.Orchestration.AgentInvocationResult.RemoteTaskId.init -> void

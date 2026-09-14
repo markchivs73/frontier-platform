@@ -58,6 +58,7 @@ internal sealed class AgentInvocationDispatcher
             ToolCalls = (IReadOnlyList<ToolCall>)outcomeType.GetProperty("ToolCalls")!.GetValue(outcome)!,
             LatencyMs = stopwatch.ElapsedMilliseconds,
             CardHash = (string?)outcomeType.GetProperty("CardHash")!.GetValue(outcome),
+            RemoteTaskId = (string?)outcomeType.GetProperty("RemoteTaskId")!.GetValue(outcome),
         };
     }
 }

@@ -52,6 +52,7 @@ public sealed class AgentInvocationDispatcherTests
         var result = await dispatcher.InvokeAsync(nameof(SummaryArtifact), request, CancellationToken.None);
 
         Assert.Equal("sha256:pinned-card", result.CardHash);
+        Assert.Equal("resp_0139", result.RemoteTaskId);
     }
 
     [Fact]
@@ -73,6 +74,6 @@ public sealed class AgentInvocationDispatcherTests
     {
         public Task<AgentInvocationOutcome<TOutput>> InvokeAsync<TOutput>(AgentInvocationRequest request, CancellationToken ct)
             where TOutput : Frontier.Platform.Abstractions.IVersionedContract =>
-            Task.FromResult(new AgentInvocationOutcome<TOutput> { Result = (TOutput)result, Usage = null, ToolCalls = [], CardHash = cardHash });
+            Task.FromResult(new AgentInvocationOutcome<TOutput> { Result = (TOutput)result, Usage = null, ToolCalls = [], CardHash = cardHash, RemoteTaskId = "resp_0139" });
     }
 }

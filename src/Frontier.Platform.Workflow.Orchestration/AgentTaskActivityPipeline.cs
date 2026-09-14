@@ -86,7 +86,7 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
         var telemetry = BuildTelemetryRecord(input, resolved, invocation, inputPayload, hash);
         await telemetryStaging.RecordInvocationAsync(telemetry, ct).ConfigureAwait(false);
 
-        return BuildResult(input, resolved, payload, hash, invocation.CardHash);
+        return BuildResult(input, resolved, payload, hash, invocation.CardHash, invocation.RemoteTaskId);
     }
 
     /// <summary>Builds the Model-Role Config resolution request for <paramref name="input"/>'s role (doc 08 §5).</summary>
@@ -199,23 +199,23 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
     internal static int ContextWindowOf(ChainEntry entry) => entry is ModelEntry model ? model.ContextWindow : 0;
 
     /// <summary>Builds the activity's result, projecting <paramref name="resolved"/> into the audit-facing <see cref="ResolvedModelSummary"/> (doc 08 §6).</summary>
-    internal static AgentTaskActivityResult BuildResult(AgentTaskActivityInput input, ResolvedModel resolved, string payload, string hash, string? cardHash = null) => new()
+    internal static AgentTaskActivityResult BuildResult(AgentTaskActivityInput input, ResolvedModel resolved, string payload, string hash, string? cardHash = null, string? remoteTaskId = null) => new()
     {
         NodeId = input.NodeId,
         ArtifactKey = input.ArtifactKey,
         OutputContractType = input.OutputContractType,
         OutputPayload = payload,
         OutputHash = hash,
-        ResolvedModel = ToSummary(resolved, cardHash),
+        ResolvedModel = ToSummary(resolved, cardHash, remoteTaskId),
         HostBuild = HostBuildInfo.Version,
     };
 
     /// <summary>
     /// Projects a <see cref="ResolvedModel"/> to its audit-facing <see cref="ResolvedModelSummary"/> (doc 08 §6). An agent
-    /// target adds its registry resource, version and the pinned card's hash the invoker reported (ADR-PA27 attribution);
-    /// a model adds nothing, so its bytes do not change.
+    /// target adds its registry resource, version, the pinned card's hash and the remote task id the invoker reported
+    /// (ADR-PA27 attribution); a model adds nothing, so its bytes do not change.
     /// </summary>
-    internal static ResolvedModelSummary ToSummary(ResolvedModel resolved, string? cardHash = null) => new()
+    internal static ResolvedModelSummary ToSummary(ResolvedModel resolved, string? cardHash = null, string? remoteTaskId = null) => new()
     {
         RoleId = resolved.RoleId,
         Provider = resolved.Provider,
@@ -226,6 +226,7 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
         ResourceName = (resolved.Entry as AgentEntry)?.ResourceName,
         ResourceVersion = (resolved.Entry as AgentEntry)?.ResourceVersion,
         CardHash = resolved.Entry is AgentEntry ? cardHash : null,
+        RemoteTaskId = resolved.Entry is AgentEntry ? remoteTaskId : null,
     };
 
     /// <summary>
@@ -244,7 +245,7 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
         NodeId = input.NodeId,
         ArtifactKey = input.ArtifactKey,
         AgentRole = input.Role,
-        ResolvedModel = ToSummary(resolved, invocation.CardHash),
+        ResolvedModel = ToSummary(resolved, invocation.CardHash, invocation.RemoteTaskId),
         InputContractType = input.InputContractType,
         InputHash = ComputeInputHash(inputPayload),
         OutputContractType = input.OutputContractType,
