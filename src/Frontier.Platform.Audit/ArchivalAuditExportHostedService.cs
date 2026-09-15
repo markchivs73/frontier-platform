@@ -25,7 +25,7 @@ internal sealed class ArchivalAuditExportHostedService(
     IOptions<CosmosOptions> options,
     IAuditRecordExporter exporter) : IHostedService
 {
-    private ChangeFeedProcessor? processor;
+    private ChangeFeedProcessorLifecycle? lifecycle;
 
     /// <summary>Blob container name for immutable audit record archives (doc 05 §8).</summary>
     internal const string AuditBlobContainerName = "audit-records-archive";
@@ -39,34 +39,20 @@ internal sealed class ArchivalAuditExportHostedService(
         return Task.CompletedTask;
     }
 
-    private async Task StartProcessorWithRetryAsync(CancellationToken cancellationToken)
+    private Task StartProcessorWithRetryAsync(CancellationToken cancellationToken)
     {
-        while (!cancellationToken.IsCancellationRequested)
-        {
-            try
+        lifecycle ??= new ChangeFeedProcessorLifecycle(
+            ct =>
             {
                 var database = client.GetDatabase(options.Value.Database);
-                var leaseContainer = database.GetContainer("archival-leases");
-                processor = await BuildProcessorAsync(database, leaseContainer, cancellationToken);
-                return;
-            }
-#pragma warning disable CA1031 // Retry loop must catch any transient startup failure (SSL, HTTP, Cosmos) without knowing all concrete types the SDK may throw
-            catch (Exception) when (!cancellationToken.IsCancellationRequested)
-#pragma warning restore CA1031
-            {
-                await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken).ConfigureAwait(false);
-            }
-        }
+                return BuildProcessorAsync(database, database.GetContainer("archival-leases"), ct);
+            },
+            TimeSpan.FromSeconds(5));
+        return lifecycle.StartWithRetryAsync(cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task StopAsync(CancellationToken cancellationToken)
-    {
-        if (processor is not null)
-        {
-            await processor.StopAsync();
-        }
-    }
+    public Task StopAsync(CancellationToken cancellationToken) => lifecycle?.StopAsync() ?? Task.CompletedTask;
 
     /// <summary>Builds and starts a change-feed processor copying audit-records into the archive Blob container.</summary>
     internal async Task<ChangeFeedProcessor> BuildProcessorAsync(Database database, Container leaseContainer, CancellationToken cancellationToken)
