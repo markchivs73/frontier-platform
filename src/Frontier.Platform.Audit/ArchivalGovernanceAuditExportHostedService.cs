@@ -12,13 +12,13 @@ namespace Frontier.Platform.Audit;
 /// canonical bytes to the <c>governance-audit-records-archive</c> Blob container. Heads and record-id
 /// markers are not archived; see <see cref="GovernanceAuditArchivalHandler"/>.
 /// </summary>
-[ExcludeFromCodeCoverage(Justification = "Cosmos change-feed SDK adapter (ADR-PA30); mirrors ArchivalAuditExportHostedService, exercised against the emulator and Azurite, not the unit-coverage gate.")]
-internal sealed class ArchivalGovernanceAuditExportHostedService(
-    CosmosClient client,
-    IOptions<CosmosOptions> options,
-    IAuditRecordExporter exporter) : IHostedService
+[ExcludeFromCodeCoverage(Justification = "Cosmos change-feed SDK adapter (ADR-PA30); lifecycle logic lives in ChangeFeedProcessorLifecycle, exercised against the emulator and Azurite, not the unit-coverage gate.")]
+internal sealed class ArchivalGovernanceAuditExportHostedService : IHostedService
 {
-    private ChangeFeedProcessor? processor;
+    private readonly CosmosClient client;
+    private readonly IOptions<CosmosOptions> options;
+    private readonly IAuditRecordExporter exporter;
+    private readonly ChangeFeedProcessorLifecycle lifecycle;
 
     /// <summary>The Blob container for governance archives.</summary>
     internal const string BlobContainerName = "governance-audit-records-archive";
@@ -26,46 +26,37 @@ internal sealed class ArchivalGovernanceAuditExportHostedService(
     /// <summary>The processor name, which is the lease prefix in <c>archival-leases</c>.</summary>
     internal const string ProcessorName = "archival-governance-audit-records";
 
+    /// <summary>Creates the service over the Cosmos client, options and archive exporter.</summary>
+    public ArchivalGovernanceAuditExportHostedService(CosmosClient client, IOptions<CosmosOptions> options, IAuditRecordExporter exporter)
+    {
+        this.client = client;
+        this.options = options;
+        this.exporter = exporter;
+        lifecycle = new ChangeFeedProcessorLifecycle(BuildProcessorAsync, TimeSpan.FromSeconds(5));
+    }
+
     /// <inheritdoc />
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        _ = StartProcessorWithRetryAsync(cancellationToken);
+        _ = lifecycle.StartWithRetryAsync(cancellationToken);
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
-    public async Task StopAsync(CancellationToken cancellationToken)
-    {
-        if (processor is not null)
-        {
-            await processor.StopAsync();
-        }
-    }
+    public Task StopAsync(CancellationToken cancellationToken) => lifecycle.StopAsync();
 
-    private async Task StartProcessorWithRetryAsync(CancellationToken cancellationToken)
+    private async Task<ChangeFeedProcessor> BuildProcessorAsync(CancellationToken cancellationToken)
     {
-        while (!cancellationToken.IsCancellationRequested)
-        {
-            try
-            {
-                var database = client.GetDatabase(options.Value.Database);
-                var handler = new GovernanceAuditArchivalHandler(new ArchivalAuditChangeFeedHandler(exporter, BlobContainerName));
-                processor = database.GetContainer(CosmosGovernanceAuditStore.ContainerName)
-                    .GetChangeFeedProcessorBuilder<JsonObject>(ProcessorName, handler.HandleChangesAsync)
-                    .WithInstanceName(Environment.MachineName)
-                    .WithLeaseContainer(database.GetContainer("archival-leases"))
-                    .WithPollInterval(TimeSpan.FromMilliseconds(500))
-                    .Build();
-                await processor.StartAsync();
-                return;
-            }
-#pragma warning disable CA1031 // Retry loop must catch any transient startup failure, as ArchivalAuditExportHostedService does
-            catch (Exception) when (!cancellationToken.IsCancellationRequested)
-#pragma warning restore CA1031
-            {
-                await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken).ConfigureAwait(false);
-            }
-        }
+        var database = client.GetDatabase(options.Value.Database);
+        var handler = new GovernanceAuditArchivalHandler(new ArchivalAuditChangeFeedHandler(exporter, BlobContainerName));
+        var processor = database.GetContainer(CosmosGovernanceAuditStore.ContainerName)
+            .GetChangeFeedProcessorBuilder<JsonObject>(ProcessorName, handler.HandleChangesAsync)
+            .WithInstanceName(Environment.MachineName)
+            .WithLeaseContainer(database.GetContainer("archival-leases"))
+            .WithPollInterval(TimeSpan.FromMilliseconds(500))
+            .Build();
+        await processor.StartAsync();
+        return processor;
     }
 }
 
