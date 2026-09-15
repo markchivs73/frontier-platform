@@ -24,11 +24,26 @@ internal sealed record SignedAuditRecordDocument
     [JsonPropertyName("record")]
     public required SignedAuditRecord Record { get; init; }
 
+    /// <summary>Doc 13 §5: a sandbox run's record purges after seven days; it is not an evidential record.</summary>
+    internal const int SandboxTtlSeconds = 7 * 24 * 60 * 60;
+
+    /// <summary>A real run's governance record never expires.</summary>
+    internal const int NeverExpires = -1;
+
+    /// <summary>
+    /// The per-item Cosmos TTL in seconds: <see cref="SandboxTtlSeconds"/> for a sandbox record,
+    /// <see cref="NeverExpires"/> otherwise. It sits outside <see cref="Record"/>, so it is not signed.
+    /// </summary>
+    [JsonPropertyOrder(3)]
+    [JsonPropertyName("ttl")]
+    public required int Ttl { get; init; }
+
     /// <summary>Wraps <paramref name="record"/> for storage under its deterministic id.</summary>
     internal static SignedAuditRecordDocument FromRecord(SignedAuditRecord record) => new()
     {
         Id = AuditRecordDocumentId.ForExecution(record.ExecutionId),
         EngagementId = record.EngagementId,
         Record = record,
+        Ttl = record.Sandbox == true ? SandboxTtlSeconds : NeverExpires,
     };
 }

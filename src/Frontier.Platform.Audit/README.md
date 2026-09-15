@@ -126,6 +126,10 @@ migrated. Git history holds the 1.0 bytes if they are ever needed.
 - **Sandbox runs are marked, not mixed.** `AuditRecord.Sandbox` is `true` for a `SANDBOX-`-prefixed
   engagement and omitted entirely otherwise, so existing golden bytes are unaffected and the
   aggregation layer can filter test runs out of empirical evidence with a one-line predicate.
+- **Sandbox records expire; real ones never do.** The stored document carries a per-item `ttl`:
+  seven days for a `sandbox: true` record (doc 13 §5 — not an evidential record), `-1` for every
+  other record. The ttl sits on the document wrapper, outside the signed record, and relies on
+  the `audit-records` container's `defaultTtl: -1`.
 
 ## Versioning
 
