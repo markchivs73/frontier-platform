@@ -461,3 +461,23 @@ Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome<TOutput>.RemoteT
 Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome<TOutput>.RemoteTaskId.init -> void
 Frontier.Platform.Workflow.Orchestration.AgentInvocationResult.RemoteTaskId.get -> string?
 Frontier.Platform.Workflow.Orchestration.AgentInvocationResult.RemoteTaskId.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.PinnedMapping.get -> Frontier.Platform.ModelRoleConfig.ModelRolePin?
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.PinnedMapping.init -> void
+Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.PinModelRoles.get -> bool?
+Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.PinModelRoles.init -> void
+Frontier.Platform.Workflow.Orchestration.PinMappingsActivity
+Frontier.Platform.Workflow.Orchestration.PinMappingsActivity.PinMappingsActivity(Frontier.Platform.ModelRoleConfig.IMappingPinner! pinner) -> void
+Frontier.Platform.Workflow.Orchestration.PinMappingsRequest
+Frontier.Platform.Workflow.Orchestration.PinMappingsRequest.<Clone>$() -> Frontier.Platform.Workflow.Orchestration.PinMappingsRequest!
+Frontier.Platform.Workflow.Orchestration.PinMappingsRequest.EngagementId.get -> string!
+Frontier.Platform.Workflow.Orchestration.PinMappingsRequest.EngagementId.init -> void
+Frontier.Platform.Workflow.Orchestration.PinMappingsRequest.Equals(Frontier.Platform.Workflow.Orchestration.PinMappingsRequest? other) -> bool
+Frontier.Platform.Workflow.Orchestration.PinMappingsRequest.PinMappingsRequest() -> void
+Frontier.Platform.Workflow.Orchestration.PinMappingsRequest.RoleIds.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Frontier.Platform.Workflow.Orchestration.PinMappingsRequest.RoleIds.init -> void
+override Frontier.Platform.Workflow.Orchestration.PinMappingsActivity.RunAsync(Microsoft.DurableTask.TaskActivityContext! context, Frontier.Platform.Workflow.Orchestration.PinMappingsRequest! input) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Frontier.Platform.ModelRoleConfig.ModelRolePin!>!>!
+override Frontier.Platform.Workflow.Orchestration.PinMappingsRequest.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Orchestration.PinMappingsRequest.GetHashCode() -> int
+override Frontier.Platform.Workflow.Orchestration.PinMappingsRequest.ToString() -> string!
+static Frontier.Platform.Workflow.Orchestration.PinMappingsRequest.operator !=(Frontier.Platform.Workflow.Orchestration.PinMappingsRequest? left, Frontier.Platform.Workflow.Orchestration.PinMappingsRequest? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.PinMappingsRequest.operator ==(Frontier.Platform.Workflow.Orchestration.PinMappingsRequest? left, Frontier.Platform.Workflow.Orchestration.PinMappingsRequest? right) -> bool

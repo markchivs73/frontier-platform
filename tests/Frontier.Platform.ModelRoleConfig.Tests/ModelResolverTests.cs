@@ -264,8 +264,8 @@ public sealed class ModelResolverTests
     [InlineData("eng-stable-a", 0, false)]
     public void IsInCanary_Deterministic_SameEngagementSameResult(string engagementId, int canaryPercent, bool expected)
     {
-        var first = ModelResolver.IsInCanary(engagementId, canaryPercent);
-        var second = ModelResolver.IsInCanary(engagementId, canaryPercent);
+        var first = ServedMappingSelector.IsInCanary(engagementId, canaryPercent);
+        var second = ServedMappingSelector.IsInCanary(engagementId, canaryPercent);
 
         Assert.Equal(expected, first);
         Assert.Equal(first, second);
@@ -275,14 +275,14 @@ public sealed class ModelResolverTests
     public void IsInCanary_100Percent_AllEngagementsIn()
     {
         for (var i = 0; i < 20; i++)
-            Assert.True(ModelResolver.IsInCanary($"eng-{i}", 100));
+            Assert.True(ServedMappingSelector.IsInCanary($"eng-{i}", 100));
     }
 
     [Fact]
     public void IsInCanary_ZeroPercent_NoEngagementsIn()
     {
         for (var i = 0; i < 20; i++)
-            Assert.False(ModelResolver.IsInCanary($"eng-{i}", 0));
+            Assert.False(ServedMappingSelector.IsInCanary($"eng-{i}", 0));
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
@@ -292,7 +292,7 @@ public sealed class ModelResolverTests
         for (var i = 0; i < 1000; i++)
         {
             var id = $"eng-{i}";
-            if (ModelResolver.IsInCanary(id, canaryPercent))
+            if (ServedMappingSelector.IsInCanary(id, canaryPercent))
                 return id;
         }
         throw new InvalidOperationException($"Could not find an engagement in the {canaryPercent}% canary after 1000 attempts.");
@@ -303,7 +303,7 @@ public sealed class ModelResolverTests
         for (var i = 0; i < 1000; i++)
         {
             var id = $"eng-{i}";
-            if (!ModelResolver.IsInCanary(id, canaryPercent))
+            if (!ServedMappingSelector.IsInCanary(id, canaryPercent))
                 return id;
         }
         throw new InvalidOperationException($"Could not find an engagement outside the {canaryPercent}% canary after 1000 attempts.");

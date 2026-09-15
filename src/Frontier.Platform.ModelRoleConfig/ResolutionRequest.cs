@@ -15,4 +15,12 @@ public sealed record ResolutionRequest
 
     /// <summary>The mapping version pinned at execution start, or <see langword="null"/> to resolve the active mapping (doc 08 §5).</summary>
     public int? MappingVersion { get; init; }
+
+    /// <summary>
+    /// The pin taken at execution start (ADR-PA29), or <see langword="null"/> for the unpinned
+    /// behaviour. When set, resolution reads exactly <see cref="ModelRolePin.MappingVersion"/> and
+    /// walks its fallback chain; rings are not re-evaluated, because the pin already records the
+    /// version that was served. Takes precedence over <see cref="MappingVersion"/>.
+    /// </summary>
+    public ModelRolePin? Pin { get; init; }
 }

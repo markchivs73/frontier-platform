@@ -59,3 +59,22 @@ static Frontier.Platform.ModelRoleConfig.ChainEntry.operator ==(Frontier.Platfor
 virtual Frontier.Platform.ModelRoleConfig.ChainEntry.EqualityContract.get -> System.Type!
 virtual Frontier.Platform.ModelRoleConfig.ChainEntry.Equals(Frontier.Platform.ModelRoleConfig.ChainEntry? other) -> bool
 virtual Frontier.Platform.ModelRoleConfig.ChainEntry.PrintMembers(System.Text.StringBuilder! builder) -> bool
+Frontier.Platform.ModelRoleConfig.IMappingPinner
+Frontier.Platform.ModelRoleConfig.IMappingPinner.PinAsync(string! engagementId, System.Collections.Generic.IEnumerable<string!>! roleIds, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Frontier.Platform.ModelRoleConfig.ModelRolePin!>!>!
+Frontier.Platform.ModelRoleConfig.ModelRolePin
+Frontier.Platform.ModelRoleConfig.ModelRolePin.<Clone>$() -> Frontier.Platform.ModelRoleConfig.ModelRolePin!
+Frontier.Platform.ModelRoleConfig.ModelRolePin.Equals(Frontier.Platform.ModelRoleConfig.ModelRolePin? other) -> bool
+Frontier.Platform.ModelRoleConfig.ModelRolePin.MappingVersion.get -> int
+Frontier.Platform.ModelRoleConfig.ModelRolePin.MappingVersion.init -> void
+Frontier.Platform.ModelRoleConfig.ModelRolePin.ModelRolePin() -> void
+Frontier.Platform.ModelRoleConfig.ModelRolePin.Ring.get -> Frontier.Platform.ModelRoleConfig.RolloutRing!
+Frontier.Platform.ModelRoleConfig.ModelRolePin.Ring.init -> void
+Frontier.Platform.ModelRoleConfig.ModelRolePin.RoleId.get -> string!
+Frontier.Platform.ModelRoleConfig.ModelRolePin.RoleId.init -> void
+Frontier.Platform.ModelRoleConfig.ResolutionRequest.Pin.get -> Frontier.Platform.ModelRoleConfig.ModelRolePin?
+Frontier.Platform.ModelRoleConfig.ResolutionRequest.Pin.init -> void
+override Frontier.Platform.ModelRoleConfig.ModelRolePin.Equals(object? obj) -> bool
+override Frontier.Platform.ModelRoleConfig.ModelRolePin.GetHashCode() -> int
+override Frontier.Platform.ModelRoleConfig.ModelRolePin.ToString() -> string!
+static Frontier.Platform.ModelRoleConfig.ModelRolePin.operator !=(Frontier.Platform.ModelRoleConfig.ModelRolePin? left, Frontier.Platform.ModelRoleConfig.ModelRolePin? right) -> bool
+static Frontier.Platform.ModelRoleConfig.ModelRolePin.operator ==(Frontier.Platform.ModelRoleConfig.ModelRolePin? left, Frontier.Platform.ModelRoleConfig.ModelRolePin? right) -> bool

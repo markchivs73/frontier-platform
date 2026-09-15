@@ -89,12 +89,13 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
         return BuildResult(input, resolved, payload, hash, invocation.CardHash, invocation.RemoteTaskId);
     }
 
-    /// <summary>Builds the Model-Role Config resolution request for <paramref name="input"/>'s role (doc 08 §5).</summary>
+    /// <summary>Builds the Model-Role Config resolution request for <paramref name="input"/>'s role (doc 08 §5), under the execution's pin when it took one (ADR-PA29).</summary>
     internal static ResolutionRequest BuildResolutionRequest(AgentTaskActivityInput input) => new()
     {
         RoleId = input.Role,
         EngagementId = input.EngagementId,
         MappingVersion = null,
+        Pin = input.PinnedMapping,
     };
 
     /// <summary>Composes and assembles the three-tier context package for <paramref name="input"/>, using <paramref name="resolved"/> for cache-strategy metadata.</summary>

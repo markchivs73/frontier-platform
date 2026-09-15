@@ -1,4 +1,5 @@
 using Frontier.Platform.Abstractions;
+using Frontier.Platform.ModelRoleConfig;
 using Frontier.Platform.Workflow.Model;
 
 namespace Frontier.Platform.Workflow.Orchestration;
@@ -27,6 +28,13 @@ internal sealed class GraphExecutionState
 
     /// <summary>The store's content hash of <see cref="DynamicContextEpoch"/>, kept beside it for the evidence records.</summary>
     internal string? DynamicContextHash { get; set; }
+
+    /// <summary>
+    /// The model-role pins taken at execution start, keyed by role id (ADR-PA29), or
+    /// <see langword="null"/> for an unpinned run. Sourced purely from the historized
+    /// <see cref="WorkflowActivityNames.PinMappingsActivity"/> result, so it is identical on replay.
+    /// </summary>
+    internal IReadOnlyDictionary<string, ModelRolePin>? PinnedMappings { get; init; }
 
     /// <summary>Completed steps, in execution order.</summary>
     internal List<StepCompletion> CompletedSteps { get; } = [];

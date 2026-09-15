@@ -2,6 +2,7 @@ using Frontier.Platform.Abstractions;
 using Frontier.Platform.Audit;
 using Frontier.Platform.ContextAssembly;
 using Frontier.Platform.Hitl;
+using Frontier.Platform.ModelRoleConfig;
 using Frontier.Platform.Resilience;
 using Microsoft.DurableTask;
 using Frontier.Platform.Workflow.Model;
@@ -70,7 +71,7 @@ internal static class GraphOrchestratorSteps
     /// gates run only at full quiescence (Decision 2), and a permanent failure lets
     /// in-flight siblings finish before the walk pauses attributed (Decision 4).
     /// </summary>
-    internal static async Task<GraphExecutionState> RunInitialWalkAsync(TaskOrchestrationContext context, GraphOrchestratorInput input, IRollbackPlanner rollbackPlanner, IResiliencePolicyProvider policyProvider, IMcpWriteClassifier mcpWriteClassifier)
+    internal static async Task<GraphExecutionState> RunInitialWalkAsync(TaskOrchestrationContext context, GraphOrchestratorInput input, IRollbackPlanner rollbackPlanner, IResiliencePolicyProvider policyProvider, IMcpWriteClassifier mcpWriteClassifier, IReadOnlyList<ModelRolePin>? pins = null)
     {
         EnsureSupported(input.Definition, input.WorkItemId);
 
@@ -79,6 +80,7 @@ internal static class GraphOrchestratorSteps
             StartedAtUtc = context.CurrentUtcDateTime,
             DynamicContextEpoch = input.DynamicContextEpoch,
             DynamicContextHash = input.DynamicContextHash,
+            PinnedMappings = pins?.ToDictionary(pin => pin.RoleId, StringComparer.Ordinal),
         };
         var walk = GraphWalk.Create(input.Definition);
 
@@ -126,6 +128,35 @@ internal static class GraphOrchestratorSteps
         walk.ThrowIfIncomplete();
         return state;
     }
+
+    /// <summary>
+    /// Pins every role the definition's agent nodes use (doc 08 §5, ADR-PA29) — the orchestrator's
+    /// first action, and only when <see cref="GraphOrchestratorInput.PinModelRoles"/> is
+    /// <see langword="true"/>. The gate is a replay contract, not a preference: history recorded
+    /// without the flag holds no pin action at sequence 0, so scheduling one there would fail replay.
+    /// The roles are collected from the inline definition (hard invariant 2); the store read is the
+    /// activity's. Reuses <see cref="SnapshotPersistenceProfile"/> — a Cosmos read with the same retry
+    /// characteristics — and an unmapped role is a contract violation that profile never retries.
+    /// </summary>
+    internal static async Task<IReadOnlyList<ModelRolePin>?> PinModelRolesAsync(TaskOrchestrationContext context, GraphOrchestratorInput input, IResiliencePolicyProvider policyProvider)
+    {
+        if (input.PinModelRoles != true)
+        {
+            return null;
+        }
+
+        var request = new PinMappingsRequest { EngagementId = input.EngagementId, RoleIds = RolesUsed(input.Definition) };
+        var taskOptions = policyProvider.GetTaskOptions(SnapshotPersistenceProfile);
+        return await context.CallActivityAsync<IReadOnlyList<ModelRolePin>>(WorkflowActivityNames.PinMappingsActivity, request, taskOptions);
+    }
+
+    /// <summary>
+    /// Every role the definition's <see cref="AgentTaskNode"/>s use, deduplicated and ordinally sorted
+    /// so the pin request's bytes are canonical. Nodes are a flat list — parallel and loop nodes refer
+    /// to other nodes by id and contain none — so this sees every agent node.
+    /// </summary>
+    internal static IReadOnlyList<string> RolesUsed(WorkflowDefinition definition) =>
+        [.. definition.Nodes.OfType<AgentTaskNode>().Select(node => node.Role).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)];
 
     /// <summary>
     /// Applies one consumed ADR-CR1 refresh signal (S13.62, doc 04 §8): calls
@@ -481,6 +512,7 @@ internal static class GraphOrchestratorSteps
         RevisionNote = revisionNote,
         ToolRefs = node.ToolRefs,
         DynamicContextEpoch = state.DynamicContextEpoch,
+        PinnedMapping = state.PinnedMappings?.GetValueOrDefault(node.Role),
     };
 
     /// <summary>

@@ -538,3 +538,4 @@ virtual Frontier.Platform.Workflow.Model.WorkflowNode.Equals(Frontier.Platform.W
 virtual Frontier.Platform.Workflow.Model.WorkflowNode.PrintMembers(System.Text.StringBuilder! builder) -> bool
 const Frontier.Platform.Workflow.Model.WorkflowActivityNames.RefreshDynamicContextActivity = "RefreshDynamicContextActivity" -> string!
 const Frontier.Platform.Workflow.Model.WorkflowActivityNames.ResolveDispatcherVersionActivity = "ResolveDispatcherVersionActivity" -> string!
+const Frontier.Platform.Workflow.Model.WorkflowActivityNames.PinMappingsActivity = "PinMappingsActivity" -> string!

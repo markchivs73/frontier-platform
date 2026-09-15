@@ -35,8 +35,9 @@ public sealed class GraphOrchestrator(IResiliencePolicyProvider policyProvider, 
 
         var startedAtUtc = context.CurrentUtcDateTime;
 
+        var pins = await GraphOrchestratorSteps.PinModelRolesAsync(context, input, policyProvider);
         await GraphOrchestratorSteps.WriteChildStartSnapshotAsync(context, input, startedAtUtc, policyProvider);
-        var state = await GraphOrchestratorSteps.RunInitialWalkAsync(context, input, rollbackPlanner, policyProvider, mcpWriteClassifier);
+        var state = await GraphOrchestratorSteps.RunInitialWalkAsync(context, input, rollbackPlanner, policyProvider, mcpWriteClassifier, pins);
         await GraphOrchestratorSteps.RunCascadeWalkAsync(context, input, state, policyProvider, mcpWriteClassifier);
         await GraphOrchestratorSteps.WriteFinalSnapshotAsync(context, input, state, policyProvider);
         await GraphOrchestratorSteps.ConsolidateAuditAsync(context, input, startedAtUtc, policyProvider);
