@@ -25,6 +25,20 @@ internal static class GraphOrchestratorSteps
     /// <summary>How long the orchestration waits for <see cref="ArtifactUpdatedEventName"/> before completing without a cascade (S2.2 PoC placeholder).</summary>
     internal static readonly TimeSpan ArtifactUpdateWaitWindow = TimeSpan.FromMinutes(5);
 
+    /// <summary>The engagement-id prefix minted only for sandbox test runs (S9.38a, doc 13 §5).</summary>
+    internal const string SandboxEngagementIdPrefix = "SANDBOX-";
+
+    /// <summary>
+    /// The cascade wait window for this run (S13.99): zero for a sandbox test run — nothing raises
+    /// <see cref="ArtifactUpdatedEventName"/> on one — and <see cref="ArtifactUpdateWaitWindow"/>
+    /// otherwise. Read from the input, never config (ADR-2). The sandbox wait is shortened, not
+    /// removed: the SDK still records its timer, so a sandbox run whose history already holds the
+    /// 5-minute timer replays against the same action shape (ADR-E15); DTF checks the action type
+    /// at that sequence number, never its fire time.
+    /// </summary>
+    internal static TimeSpan CascadeWaitWindow(GraphOrchestratorInput input) =>
+        input.EngagementId.StartsWith(SandboxEngagementIdPrefix, StringComparison.Ordinal) ? TimeSpan.Zero : ArtifactUpdateWaitWindow;
+
     /// <summary>The Resilience profile (doc 10 §4) for an <see cref="AgentTaskNode"/> that specifies no <see cref="RetryPolicySpec"/>.</summary>
     internal const string LlmDefaultProfile = "llm-default";
 
@@ -337,7 +351,7 @@ internal static class GraphOrchestratorSteps
     /// <summary>Waits for <see cref="ArtifactUpdatedEventName"/>; on receipt, evaluates the cascade and re-walks the downstream sections it returns.</summary>
     internal static async Task RunCascadeWalkAsync(TaskOrchestrationContext context, GraphOrchestratorInput input, GraphExecutionState state, IResiliencePolicyProvider policyProvider, IMcpWriteClassifier mcpWriteClassifier)
     {
-        var changedArtifact = await TryWaitForArtifactUpdateAsync(context);
+        var changedArtifact = await TryWaitForArtifactUpdateAsync(context, CascadeWaitWindow(input));
         if (changedArtifact is null)
         {
             return;
@@ -496,7 +510,7 @@ internal static class GraphOrchestratorSteps
     };
 
     /// <summary>
-    /// Waits up to <see cref="ArtifactUpdateWaitWindow"/> for <see cref="ArtifactUpdatedEventName"/>
+    /// Waits up to <paramref name="window"/> (see <see cref="CascadeWaitWindow"/>) for <see cref="ArtifactUpdatedEventName"/>
     /// via the SDK's built-in <c>WaitForExternalEvent(name, timeout)</c> overload, which manages
     /// its own internal <c>CreateTimer</c>/cancellation pairing (a hand-rolled
     /// <c>Task.WhenAny</c> + <c>CreateTimer</c> + <c>CancellationTokenSource.Cancel</c> races a
@@ -504,11 +518,11 @@ internal static class GraphOrchestratorSteps
     /// <see cref="InvalidOperationException"/>). Returns the changed section key, or
     /// <c>null</c> if the window elapses first.
     /// </summary>
-    internal static async Task<string?> TryWaitForArtifactUpdateAsync(TaskOrchestrationContext context)
+    internal static async Task<string?> TryWaitForArtifactUpdateAsync(TaskOrchestrationContext context, TimeSpan window)
     {
         try
         {
-            return await context.WaitForExternalEvent<string>(ArtifactUpdatedEventName, ArtifactUpdateWaitWindow);
+            return await context.WaitForExternalEvent<string>(ArtifactUpdatedEventName, window);
         }
         catch (TaskCanceledException)
         {
