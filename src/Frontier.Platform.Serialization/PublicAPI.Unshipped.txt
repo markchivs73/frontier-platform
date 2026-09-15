@@ -1,0 +1,43 @@
+Frontier.Platform.Workflow.Model.PayloadRef
+Frontier.Platform.Workflow.Model.PayloadRef.<Clone>$() -> Frontier.Platform.Workflow.Model.PayloadRef!
+Frontier.Platform.Workflow.Model.PayloadRef.ContentHash.get -> string!
+Frontier.Platform.Workflow.Model.PayloadRef.ContentHash.init -> void
+Frontier.Platform.Workflow.Model.PayloadRef.ContentType.get -> string!
+Frontier.Platform.Workflow.Model.PayloadRef.ContentType.init -> void
+Frontier.Platform.Workflow.Model.PayloadRef.Equals(Frontier.Platform.Workflow.Model.PayloadRef? other) -> bool
+Frontier.Platform.Workflow.Model.PayloadRef.PayloadRef() -> void
+Frontier.Platform.Workflow.Model.PayloadRef.SchemaVersion.get -> string!
+Frontier.Platform.Workflow.Model.PayloadRef.SchemaVersion.init -> void
+Frontier.Platform.Workflow.Model.PayloadRef.SizeBytes.get -> long
+Frontier.Platform.Workflow.Model.PayloadRef.SizeBytes.init -> void
+Frontier.Platform.Workflow.Model.PayloadRef.StorageUri.get -> System.Uri!
+Frontier.Platform.Workflow.Model.PayloadRef.StorageUri.init -> void
+Frontier.Platform.Workflow.Model.PayloadRef.Validate() -> void
+Frontier.Platform.Workflow.Model.TypedPayload
+Frontier.Platform.Workflow.Model.TypedPayload.<Clone>$() -> Frontier.Platform.Workflow.Model.TypedPayload!
+Frontier.Platform.Workflow.Model.TypedPayload.Equals(Frontier.Platform.Workflow.Model.TypedPayload? other) -> bool
+Frontier.Platform.Workflow.Model.TypedPayload.Facts.get -> System.Text.Json.JsonElement?
+Frontier.Platform.Workflow.Model.TypedPayload.Facts.init -> void
+Frontier.Platform.Workflow.Model.TypedPayload.Payload.get -> System.Text.Json.JsonElement?
+Frontier.Platform.Workflow.Model.TypedPayload.Payload.init -> void
+Frontier.Platform.Workflow.Model.TypedPayload.PayloadRef.get -> Frontier.Platform.Workflow.Model.PayloadRef?
+Frontier.Platform.Workflow.Model.TypedPayload.PayloadRef.init -> void
+Frontier.Platform.Workflow.Model.TypedPayload.SchemaRef.get -> string!
+Frontier.Platform.Workflow.Model.TypedPayload.SchemaRef.init -> void
+Frontier.Platform.Workflow.Model.TypedPayload.SchemaVersion.get -> string!
+Frontier.Platform.Workflow.Model.TypedPayload.SchemaVersion.init -> void
+Frontier.Platform.Workflow.Model.TypedPayload.TypedPayload() -> void
+Frontier.Platform.Workflow.Model.TypedPayload.Validate() -> void
+override Frontier.Platform.Workflow.Model.PayloadRef.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Model.PayloadRef.GetHashCode() -> int
+override Frontier.Platform.Workflow.Model.PayloadRef.ToString() -> string!
+override Frontier.Platform.Workflow.Model.TypedPayload.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Model.TypedPayload.GetHashCode() -> int
+override Frontier.Platform.Workflow.Model.TypedPayload.ToString() -> string!
+static Frontier.Platform.Workflow.Model.PayloadRef.operator !=(Frontier.Platform.Workflow.Model.PayloadRef? left, Frontier.Platform.Workflow.Model.PayloadRef? right) -> bool
+static Frontier.Platform.Workflow.Model.PayloadRef.operator ==(Frontier.Platform.Workflow.Model.PayloadRef? left, Frontier.Platform.Workflow.Model.PayloadRef? right) -> bool
+static Frontier.Platform.Workflow.Model.TypedPayload.operator !=(Frontier.Platform.Workflow.Model.TypedPayload? left, Frontier.Platform.Workflow.Model.TypedPayload? right) -> bool
+static Frontier.Platform.Workflow.Model.TypedPayload.operator ==(Frontier.Platform.Workflow.Model.TypedPayload? left, Frontier.Platform.Workflow.Model.TypedPayload? right) -> bool
+Frontier.Platform.Serialization.JsonCanonicalizer
+static Frontier.Platform.Serialization.JsonCanonicalizer.Canonicalize(System.ReadOnlySpan<byte> utf8Json) -> byte[]!
+static Frontier.Platform.Serialization.JsonCanonicalizer.Canonicalize(System.Text.Json.JsonElement element) -> byte[]!

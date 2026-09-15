@@ -1492,3 +1492,144 @@ Release: **minor, v0.32.0 — additive.** New optional members `GraphOrchestrato
 `IMappingPinner`, `PinMappingsRequest` and `PinMappingsActivity`; and the constant
 `WorkflowActivityNames.PinMappingsActivity`. Null members are omitted, so every recorded input
 keeps its bytes.
+
+## ADR-PA30 — governance changes get their own signed chain, and the ADR-E2 envelope moves down to carry it
+
+frontier-workflow's S13.103 found that doc 05's signed record covers executions only. An approver
+role created, edited or retired (S13.100), or a model-role mapping approved or rolled back
+(S13.101), left no evidential trail; the consumer's `IGovernanceAuditWriter` seam was a no-op. That
+is a K6 gap against ADR-E8's attribution rule and EU AI Act Art. 12's record-keeping obligation.
+Doc 15 §3 already promises that "each change passes through the consumer's governance audit seam;
+the signed governance audit record lands with S13.103". This ADR builds the platform half. Mark's
+decisions, 2026-09-15.
+
+**The record.** `SignedGovernanceAuditRecord` (schema 1.0, every property ordered, snake_case,
+omit-null): `schema_version`, `record_id`, `scope`, `sequence`, `event_type`, `subject_type`,
+`subject_id`, `subject_version?`, `actor`, `actor_upn?`, `reason`, `occurred_at_utc`,
+`correlation_id?`, `engagement_id?`, `change` (an ADR-E2 `TypedPayload`), `before_hash?`,
+`after_hash?`, `compensates_record_id?`, then `previous_record_hash`, `record_hash`, `signature`,
+`signing_key_id`. Callers submit a `GovernanceAuditEntry`, which carries the same caller fields. `subject_version` is a string, so a
+role version, a mapping version and a content hash all fit without the platform choosing.
+
+**Vocabulary neutrality.** `event_type` and `subject_type` are validated snake_case strings, not
+platform enums. The consumer owns the catalogue (ADR-E2, ADR-E3a). Validation is structural only:
+snake_case types and scope, non-empty `subject_id` and `reason`, and ADR-E8's actor rule. The actor
+is required, is never `unknown` in any case or padding, and a `system:` actor must name its origin.
+Every violation is a `ContractViolationException`, which is permanent and never retried.
+
+**Hashing.** `record_id = SHA-256("governance-entry:" ‖ JCS(canonical entry))`, so an identical
+retry derives the same id. `record_hash = SHA-256(JCS(canonical record with record_hash and
+signature empty))`, and `signature = HMAC-SHA256(record_hash, key)` (RFC 2104). The canonical
+profile fixes the typed shell. RFC 8785 JCS over the whole document fixes the untyped `change`
+content that rides inside it, as ADR-E2 decision 2 requires. Unlike the execution chain,
+`signing_key_id` is inside the hash, so swapping it to another valid version is a signature
+mismatch rather than a silent re-attribution. JCS numbers are IEEE-754 doubles, so a payload number
+beyond double precision is hashed at double precision. Callers who need exact values carry them as
+strings, as the canonical profile already does for decimals.
+
+**Chain scope and head allocation.** There is one chain per scope, and phase 1 has one scope,
+`deployment`. The chain is ordered by `sequence`, never by timestamp. Genesis is
+`SHA-256("governance:" + scope)`; the execution genesis hashes the bare engagement id. The two can
+only coincide if an engagement id is literally `governance:<scope>`, which composite engagement ids
+(`{a}::{b}::{c}`, doc 16 ADR-E2) do not produce. The head document `chain-head:{scope}` holds
+`{sequence, record_hash}`. An append reads the head and its ETag, allocates `sequence + 1`, signs,
+and then runs **one transactional batch** on the scope's partition. The batch creates
+`{scope}:{sequence:D12}`, creates a `record-id:{recordId}` marker, and creates the head (genesis) or
+replaces it with If-Match. The zero-padded id makes id order equal sequence order, and verification
+reads in that order. The marker makes idempotency hold under concurrency. Two identical appends
+that both miss the existence check cannot both land, because the second marker create conflicts;
+its retry then finds the stored record and returns it.
+
+**The retry is optimistic-concurrency re-hashing, not transient-fault handling.** A 412 (the head
+moved) or a 409 (sequence, head or marker already exists) means another writer won; the append
+re-reads, re-hashes and re-signs. The policy is data. `GovernanceAuditOptions` (section
+`GovernanceAudit`) holds `AppendMaxAttempts` 8, `AppendBaseDelayMs` 25 and `AppendMaxDelayMs` 1000,
+validated at start, with exponential backoff capped and jittered into its upper half. It is owned
+by Audit, not taken from the Resilience catalogue, because ADR-PA5 keeps governance libraries
+referencing only Abstractions and Serialization among platform packages. Throttling and
+unavailability are left to the Cosmos SDK's own retries (doc 10 §4's `storage` profile posture). A
+batch failing with any other status throws `GovernanceAuditAppendException`, as does exhausting the
+attempts.
+
+**Storage and partition key.** The container is `governance-audit-records`, partition key
+`/scope`, `defaultTtl: -1`; it is added to `CosmosTopologyCheck`. Invariant 4 does not apply,
+because this is not an engagement-hot container. Most governance changes (a deployment's role
+catalogue, its model mappings) belong to no engagement, and a transactional batch and an
+If-Match-guarded head require every write of one chain to share one logical partition. A partition
+per scope is the only key that gives a single serialisable chain. At phase-1 governance write
+rates, one partition is far inside Cosmos's per-partition limits. Signed records are archived to
+Blob `governance-audit-records-archive` by the existing change-feed pattern, under their own
+processor and lease prefix `archival-governance-audit-records`. Heads and markers are mutable
+bookkeeping and are not archived.
+
+**Key purpose.** A new `SigningKeyPurpose` (`execution_audit`, `governance_audit`) and
+`ISigningKeyRing.GetProvider(purpose)` are added. The registered `SharedSigningKeyRing` returns the
+one `IKeyProvider` for every purpose, so governance records reuse the versioned audit key and
+record `signing_key_id`. A separate governance key later is a new ring registration; no existing
+signature changes. The execution signer still takes `IKeyProvider` directly.
+
+**Fail closed, and compensation.** `AppendAsync` returns the stored, signed record or throws. The
+consumer turns `GovernanceAuditAppendException` into a 503 and does not perform the mutation. When
+the mutation fails *after* its audit landed, the consumer appends a compensating entry whose
+`compensates_record_id` names the earlier record. I chose a typed field over an `event_type`
+naming convention. The contract validates it (it must be non-empty, and the service refuses it with
+a `ContractViolationException` unless the named record exists in the scope), it is covered by the
+hash, and it keeps the event vocabulary wholly consumer-owned. Nothing stored is ever altered.
+
+**Verification.** The pure `GovernanceAuditChainVerifier.Verify(scope, records, head, keys)` backs
+`IGovernanceAuditService.VerifyAsync` and works equally over an archive copy. It never throws for a
+broken chain. It lists every break with its 1-based stored position, record id, recorded sequence
+and kind: `signature_mismatch` (content or hash altered), `sequence_gap` (a record missing before
+it), `out_of_order` (reordered or duplicated), `hash_link_break`, `unresolved_key`,
+`scope_mismatch`, or `head_mismatch` (a forged or stale head, or records without a head). As in
+ADR-PA22, each record's own key version is resolved, one provider call per distinct id, and an
+unresolvable version fails closed. Here that means `valid: false`, with the id also listed in
+`unresolved_key_ids`.
+
+**The envelope moves to Serialization.** `TypedPayload` and `PayloadRef` lived in
+`Frontier.Platform.Workflow.Model`, which is engine tier, so Audit could not carry them without
+breaking ADR-PA5. Both are now compiled into `Frontier.Platform.Serialization`, which both tiers
+may reference. They keep the namespace `Frontier.Platform.Workflow.Model` and are
+`[TypeForwardedTo]` from the Model assembly. A type forward requires the full type name to be
+unchanged, and keeping it means:
+*binary* compatibility, because an assembly compiled against Model still resolves the types through
+the forwards; *source* compatibility, because `using Frontier.Platform.Workflow.Model;` still finds
+them and Model now references Serialization, so every Model consumer receives the assembly
+transitively; and *wire* compatibility, because no bytes, goldens or schema versions change. The
+PublicAPI entries moved from Model's Unshipped file to Serialization's. Model lists the forwarded
+members with the analyzer's `(forwarded, contained in Frontier.Platform.Serialization)` suffix.
+Model's single-dependency comment was updated. No architecture test changed: Audit references only
+Abstractions and Serialization. **ADR-E2 deferral (b) is resolved:** `JsonCanonicalizer` (RFC 8785)
+lives in Serialization, and governance audit signing is its first in-repo consumer. It writes JSON
+text directly and constructs no `JsonSerializerOptions`, so K10's one-profile rule holds. It is
+tested against the RFC's §3.2.2 and §3.2.3 samples and Appendix B number vectors.
+
+**Out of scope.** (1) The execution chain is untouched. `AuditSigner`'s read-then-create can fork
+under concurrent closes on one engagement; that is S13.106, which will adopt this ADR's head-document
+pattern and decide the treatment of already-stored chains. (2) A Key Vault `IKeyProvider` is S13.107:
+`AddFrontierAudit` still registers only `DevKeyProvider`, so until then governance records, like
+execution records, are signed with the development key. (3) Multiple scopes and a separate
+governance key are enabled but not configured.
+
+*Evidence (accessed 2026-09-15):* RFC 8785, *JSON Canonicalization Scheme* (rfc-editor.org,
+Informational, 2020): property names sorted as UTF-16 code units, numbers per ECMA-262 §7.1.12.1,
+Appendix B vectors. RFC 2104, *HMAC* (1997), as already cited by ADR-PA22. NIST SP 800-57 Part 1
+Rev. 5, *Recommendation for Key Management: Part 1 – General* (May 2020): originator-usage versus
+recipient-usage periods, the basis for verifying old records under retired versions (as ADR-PA22).
+EU AI Act Article 12(1)–(2) (artificialintelligenceact.eu): automatic recording of events over the
+system's lifetime, including events relevant to substantial modification. Microsoft Learn,
+*Transactional batch operations in Azure Cosmos DB* (updated 2026-04-27): operations sharing a
+partition key succeed or fail together; a failed operation carries its own status (409 for an
+existing item) and the rest 424; limits of 100 operations, 2 MB and 5 s. Microsoft Learn,
+*Database transactions and optimistic concurrency control* (updated 2026-04-27): `_etag` with
+`if-match`, rejected with HTTP 412 when stale.
+
+Release: **minor, additive**. New public types in Audit (`GovernanceAuditEntry`,
+`SignedGovernanceAuditRecord`, `IGovernanceAuditService`, `GovernanceAuditQuery`,
+`GovernanceAuditPage`, `GovernanceAuditChainVerifier`, `GovernanceAuditVerificationResult`,
+`GovernanceAuditChainBreak`, `GovernanceAuditBreakKind`, `GovernanceAuditChainHead`,
+`GovernanceAuditScopes`, `GovernanceAuditOptions`, `GovernanceAuditAppendException`,
+`SigningKeyPurpose`, `ISigningKeyRing`) and in Serialization (`JsonCanonicalizer`, plus the moved
+envelope). `AddFrontierAudit` gains registrations, a hosted service and a topology row. The
+topology row means **a consumer must create `governance-audit-records` before upgrading**, or the
+boot check fails. Tracked as S13.103.

@@ -41,6 +41,10 @@ public sealed class AuditServiceCollectionExtensionsTests
         Assert.IsType<CosmosAuditRecordStore>(provider.GetRequiredService<IAuditRecordStore>());
         Assert.IsType<AuditSigner>(provider.GetRequiredService<IAuditSigner>());
         Assert.IsType<AuditQueryService>(provider.GetRequiredService<IAuditQueryService>());
+        Assert.IsType<SharedSigningKeyRing>(provider.GetRequiredService<ISigningKeyRing>());
+        Assert.IsType<CosmosGovernanceAuditStore>(provider.GetRequiredService<IGovernanceAuditStore>());
+        Assert.IsType<GovernanceAuditService>(provider.GetRequiredService<IGovernanceAuditService>());
+        Assert.Equal(8, provider.GetRequiredService<IOptions<GovernanceAuditOptions>>().Value.AppendMaxAttempts);
 
         var startupChecks = provider.GetServices<IStartupCheck>().ToArray();
         Assert.Contains(startupChecks, check => check is SigningKeyCheck);
@@ -105,6 +109,34 @@ public sealed class AuditServiceCollectionExtensionsTests
         using var provider = services.BuildServiceProvider();
 
         Assert.Throws<InvalidOperationException>(() => provider.GetRequiredService<Azure.Storage.Blobs.BlobServiceClient>());
+    }
+
+    [Fact]
+    public void AddFrontierAudit_RegistersTheGovernanceArchivalHostedService()
+    {
+        var services = new ServiceCollection();
+
+        services.AddFrontierAudit(BuildConfiguration([]));
+
+        Assert.Contains(services, descriptor => descriptor.ImplementationType == typeof(ArchivalGovernanceAuditExportHostedService));
+    }
+
+    [Fact]
+    public void AddFrontierAudit_GovernanceRetryOutOfRange_OptionsResolutionThrows()
+    {
+        var services = new ServiceCollection();
+        var configuration = BuildConfiguration(new Dictionary<string, string?>
+        {
+            ["Cosmos:Endpoint"] = "https://localhost:8081",
+            ["Cosmos:Database"] = "frontier-workflow",
+            ["Cosmos:Key"] = EmulatorKey,
+            ["GovernanceAudit:AppendMaxAttempts"] = "0",
+        });
+
+        services.AddFrontierAudit(configuration);
+        using var provider = services.BuildServiceProvider();
+
+        Assert.Throws<OptionsValidationException>(() => provider.GetRequiredService<IOptions<GovernanceAuditOptions>>().Value);
     }
 
     private static ServiceProvider BuildProvider()

@@ -20,11 +20,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- ADR-PA1/PA2: the contract kernel is this package's only dependency — SmartEnum<T>,
-         IVersionedContract and ContractMigrator live there. The model deliberately depends on
-         nothing else, including Serialization: it declares canonical wire shape via attributes
-         and leaves the profile that writes those bytes to the consumer. -->
+    <!-- ADR-PA1/PA2: the contract kernel — SmartEnum<T>, IVersionedContract and ContractMigrator
+         live there. ADR-PA30 adds Serialization: the ADR-E2 envelope (TypedPayload, PayloadRef)
+         moved there so the governance tier can carry it, and this package forwards both types.
+         The model still declares canonical wire shape only via attributes. -->
     <ProjectReference Include="..\Frontier.Platform.Abstractions\Frontier.Platform.Abstractions.csproj" />
+    <ProjectReference Include="..\Frontier.Platform.Serialization\Frontier.Platform.Serialization.csproj" />
   </ItemGroup>
 
 </Project>

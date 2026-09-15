@@ -68,6 +68,16 @@ naming, ordering, omit-null, converters — has drifted from what definition has
 audit signing were built against. It is the cheapest insurance in the platform, and if it fails,
 stored bytes have already changed meaning.
 
+### RFC 8785 canonicalisation and the ADR-E2 envelope (ADR-PA30)
+
+- `JsonCanonicalizer.Canonicalize` returns the RFC 8785 (JCS) bytes of any JSON: members sorted by
+  UTF-16 code units, `JSON.stringify` string escapes, ECMAScript number form, no whitespace. ADR-E2
+  requires it wherever untyped JSON is hashed, cached or signed. Hash the JCS form of the canonical
+  profile's output, never the output alone, when a contract carries a `JsonElement`.
+- `TypedPayload` and `PayloadRef` (namespace `Frontier.Platform.Workflow.Model`) are compiled here
+  and forwarded from `Frontier.Platform.Workflow.Model`, so governance libraries can carry the
+  envelope without depending on the engine.
+
 ## Key invariants
 
 - **Wire bytes never change for a style preference.** Renaming a member, reordering

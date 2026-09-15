@@ -131,6 +131,46 @@ migrated. Git history holds the 1.0 bytes if they are ever needed.
   other record. The ttl sits on the document wrapper, outside the signed record, and relies on
   the `audit-records` container's `defaultTtl: -1`.
 
+## Governance audit (ADR-PA30)
+
+Changes made **outside** an execution — an approver role edited or retired, a model-role mapping
+approved or rolled back — are recorded through `IGovernanceAuditService`, one signed record per
+mutation. The platform stays vocabulary-neutral: `event_type` and `subject_type` are snake_case
+strings the consumer owns.
+
+```csharp
+var record = await governanceAudit.AppendAsync(new GovernanceAuditEntry
+{
+    EventType = "approver_role_retired", SubjectType = "approver_role", SubjectId = "finance-lead",
+    Actor = principalOid, Reason = request.Reason, OccurredAtUtc = timeProvider.GetUtcNow().UtcDateTime,
+    Change = new TypedPayload { SchemaRef = "schemas/approver-role-change/1.0", Payload = diff },
+}, ct);
+```
+
+- **Fail closed.** `AppendAsync` returns the stored, signed record or throws. An invalid entry (empty
+  or `unknown` actor, empty reason, non-snake_case types) is a `ContractViolationException` — never
+  retry it. `GovernanceAuditAppendException` means the append did not land: answer 503 and do not
+  perform the mutation.
+- **Idempotent.** `record_id` is SHA-256 over the entry's JCS bytes, so resending the identical entry
+  returns the record already stored.
+- **Compensation.** When the mutation fails after its audit landed, append a second entry with
+  `compensates_record_id` set to the first record's id. Nothing stored is ever altered.
+- **One chain per scope** (`deployment` in phase 1), ordered by `sequence`, never by time. Genesis is
+  `SHA-256("governance:" + scope)`. An append reads the head document `chain-head:{scope}`, then in one
+  transactional batch creates `{scope}:{sequence:D12}`, a `record-id:{recordId}` marker, and replaces
+  the head with If-Match. On 412/409 it re-reads, re-hashes and retries per `GovernanceAuditOptions`
+  (section `GovernanceAudit`: `AppendMaxAttempts` 8, `AppendBaseDelayMs` 25, `AppendMaxDelayMs` 1000).
+- **Hashing.** `record_hash = SHA-256(JCS(canonical record with record_hash and signature empty))`;
+  `signature = HMAC-SHA256(record_hash, key)`. The key comes from `ISigningKeyRing` for
+  `SigningKeyPurpose.GovernanceAudit` — today the same versioned audit key.
+- **Verification** (`VerifyAsync`, or the pure `GovernanceAuditChainVerifier.Verify` over an archive
+  copy) never throws for a broken chain; it lists every break with its position and kind
+  (`signature_mismatch`, `sequence_gap`, `out_of_order`, `hash_link_break`, `unresolved_key`,
+  `scope_mismatch`, `head_mismatch`). An unresolvable key version fails closed.
+- **Storage.** Container `governance-audit-records`, partition key `/scope`, `defaultTtl: -1`, checked by
+  `CosmosTopologyCheck`. Records (not heads or markers) are archived to Blob
+  `governance-audit-records-archive` under the change-feed lease prefix `archival-governance-audit-records`.
+
 ## Versioning
 
 Published in lockstep with the rest of the platform under one `FrontierPlatformVersion`. Every
