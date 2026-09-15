@@ -1,17 +1,16 @@
-using System.Buffers.Binary;
-using System.Security.Cryptography;
-using System.Text;
-
 namespace Frontier.Platform.ModelRoleConfig;
 
 /// <summary>
 /// <see cref="IModelResolver"/> over <see cref="IRoleRegistry"/> and
-/// <see cref="ICircuitBreakerQuery"/> (doc 08 §5): resolves a role's pinned (or active)
-/// mapping, applies ring rules (shadow = never serve; canary = engagement-stable % check),
-/// and walks the fallback chain skipping entries whose circuit breaker is open.
+/// <see cref="ICircuitBreakerQuery"/> (doc 08 §5): resolves a role's mapping — exactly the pinned
+/// version under a <see cref="ResolutionRequest.Pin"/> (ADR-PA29), otherwise the ring rules of
+/// <see cref="ServedMappingSelector"/> — and walks the fallback chain skipping entries whose
+/// circuit breaker is open.
 /// </summary>
 internal sealed class ModelResolver(IRoleRegistry roleRegistry, ICircuitBreakerQuery circuitBreakerQuery) : IModelResolver
 {
+    private readonly ServedMappingSelector selector = new(roleRegistry);
+
     /// <inheritdoc />
     public async Task<ResolvedModel> ResolveAsync(ResolutionRequest request, CancellationToken cancellationToken)
     {
@@ -33,23 +32,13 @@ internal sealed class ModelResolver(IRoleRegistry roleRegistry, ICircuitBreakerQ
     }
 
     /// <summary>
-    /// Returns the mapping to serve, applying ring rules: shadow → fleet fallback;
-    /// canary → engagement-stable hash check → fleet fallback if not assigned.
+    /// Returns the mapping to serve: the pinned version as-is when <see cref="ResolutionRequest.Pin"/>
+    /// is set (rings were decided at pin time), otherwise <see cref="ServedMappingSelector.SelectAsync"/>.
     /// </summary>
-    internal async Task<RoleMapping> GetEffectiveMappingAsync(ResolutionRequest request, CancellationToken ct)
-    {
-        var mapping = request.MappingVersion is { } pinned
-            ? await roleRegistry.GetMappingVersionAsync(request.RoleId, pinned, ct)
-            : await roleRegistry.GetActiveMappingAsync(request.RoleId, ct);
-
-        if (mapping.Ring == RolloutRing.Shadow)
-            return await GetFleetFallbackAsync(request.RoleId, mapping, ct);
-
-        if (mapping.Ring == RolloutRing.Canary && !IsInCanary(request.EngagementId, mapping.CanaryPercent))
-            return await GetFleetFallbackAsync(request.RoleId, mapping, ct);
-
-        return mapping;
-    }
+    internal Task<RoleMapping> GetEffectiveMappingAsync(ResolutionRequest request, CancellationToken ct) =>
+        request.Pin is { } pin
+            ? roleRegistry.GetMappingVersionAsync(request.RoleId, pin.MappingVersion, ct)
+            : selector.SelectAsync(request.RoleId, request.EngagementId, request.MappingVersion, ct);
 
     /// <summary>
     /// Walks <see cref="RoleMapping.Chain"/> and returns the first healthy entry and its
@@ -67,26 +56,5 @@ internal sealed class ModelResolver(IRoleRegistry roleRegistry, ICircuitBreakerQ
 
         throw new InvalidOperationException(
             $"All models in chain for role '{mapping.RoleId}' v{mapping.MappingVersion} have open circuits (sev-1 event, doc 08 §9).");
-    }
-
-    /// <summary>
-    /// Deterministic engagement-stable canary assignment (doc 08 §5): SHA-256 hash of
-    /// <paramref name="engagementId"/>, first 4 bytes as a big-endian uint32, modulo 100.
-    /// An engagement is always wholly in or out of a canary ring.
-    /// </summary>
-    internal static bool IsInCanary(string engagementId, int canaryPercent)
-    {
-        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(engagementId));
-        var bucket = (int)(BinaryPrimitives.ReadUInt32BigEndian(hash) % 100);
-        return bucket < canaryPercent;
-    }
-
-    private async Task<RoleMapping> GetFleetFallbackAsync(string roleId, RoleMapping mapping, CancellationToken ct)
-    {
-        if (mapping.PredecessorFleetVersion is not { } fleetVersion)
-            throw new InvalidOperationException(
-                $"Role '{roleId}' mapping v{mapping.MappingVersion} has ring '{mapping.Ring.Name}' but PredecessorFleetVersion is not set.");
-
-        return await roleRegistry.GetMappingVersionAsync(roleId, fleetVersion, ct);
     }
 }

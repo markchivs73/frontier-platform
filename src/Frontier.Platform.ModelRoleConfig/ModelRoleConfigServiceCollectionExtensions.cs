@@ -15,7 +15,7 @@ public static class ModelRoleConfigServiceCollectionExtensions
     /// <summary>
     /// Binds and validates <see cref="CosmosOptions"/> (doc 12 §4 "options with teeth"),
     /// and registers the <see cref="CosmosClient"/>, <see cref="IRoleRegistry"/>,
-    /// <see cref="IModelResolver"/>, <see cref="IMappingGovernanceService"/>, and the
+    /// <see cref="IModelResolver"/>, <see cref="IMappingPinner"/>, <see cref="IMappingGovernanceService"/>, and the
     /// <see cref="CosmosTopologyCheck"/> and <see cref="RoleCatalogueCheck"/> boot
     /// invariants (doc 12 §6).
     /// </summary>
@@ -35,6 +35,7 @@ public static class ModelRoleConfigServiceCollectionExtensions
             .AddSingleton<IRoleMappingWriter>(sp => sp.GetRequiredService<CosmosRoleRegistry>())
             .AddSingleton<ICircuitBreakerQuery, AlwaysClosedCircuitBreakerQuery>()
             .AddSingleton<IModelResolver, ModelResolver>()
+            .AddSingleton<IMappingPinner, MappingPinner>()
             .AddSingleton<IMappingGovernanceService, MappingGovernanceService>()
             .AddSingleton<IStartupCheck, CosmosTopologyCheck>()
             .AddSingleton<IStartupCheck, RoleCatalogueCheck>();

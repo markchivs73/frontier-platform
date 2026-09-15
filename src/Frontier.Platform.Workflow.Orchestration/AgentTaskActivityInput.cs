@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Frontier.Platform.Abstractions;
+using Frontier.Platform.ModelRoleConfig;
 
 namespace Frontier.Platform.Workflow.Orchestration;
 
@@ -93,4 +94,14 @@ public sealed record AgentTaskActivityInput
     [JsonPropertyOrder(13)]
     [JsonPropertyName("dynamic_context_epoch")]
     public int? DynamicContextEpoch { get; init; }
+
+    /// <summary>
+    /// This node's role pin, taken at execution start (doc 08 §5, ADR-PA29): resolution reads exactly
+    /// that mapping version and never re-evaluates rings. <b>Additive and optional</b> per the ADR-E15
+    /// floor — <see langword="null"/> (every input recorded before this field, and every unpinned run)
+    /// resolves the current mapping, exactly as before.
+    /// </summary>
+    [JsonPropertyOrder(14)]
+    [JsonPropertyName("pinned_mapping")]
+    public ModelRolePin? PinnedMapping { get; init; }
 }

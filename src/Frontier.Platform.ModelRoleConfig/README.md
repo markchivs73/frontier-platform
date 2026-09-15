@@ -26,7 +26,7 @@ services.AddFrontierModelRoleConfig(configuration);
 
 Only the composition root should call this. It binds and validates the `Cosmos` section
 (`Cosmos:Endpoint`, `Cosmos:Key`, `Cosmos:Database`), registers a `CosmosClient` wired to the
-shared `CanonicalProfile`, the role registry, the resolver, the governance service, and two boot
+shared `CanonicalProfile`, the role registry, the resolver, the mapping pinner, the governance service, and two boot
 invariants: `CosmosTopologyCheck` and `RoleCatalogueCheck`.
 
 ### The consumer supplies one port
@@ -77,11 +77,19 @@ registration answers "always closed"; wire a real implementation when you want f
 |---|---|
 | `IRoleRegistry` | The catalogue, a role's active mapping, and any historical mapping version |
 | `IModelResolver` | `ResolutionRequest` → `ResolvedModel`: ring assignment, canary bucketing, and the fallback-chain walk |
+| `IMappingPinner` | Pins the version each role is **served** at execution start, one `ModelRolePin` per role (ADR-PA29) |
 | `IMappingGovernanceService` | Propose → approve → roll out, plus instant rollback to a prior version |
 
 `ResolvedModel` carries the audit fields as well as the model: which role, under which mapping
 version, and **which chain position was served**. A sustained non-zero chain position is an alarm
 signal, not a detail — it means the primary is failing and nobody noticed.
+
+**Pinning (ADR-PA29).** `ModelRolePin` records a role's served mapping version and its ring:
+canary assignment and the shadow/canary → fleet fallback are decided once, when the pin is taken.
+A `ResolutionRequest` carrying `Pin` reads exactly that version and walks its fallback chain; it
+never re-evaluates rings, so a rollback or promotion reaches new executions only. A role with no
+mapping fails the pin as a `ContractViolationException` — permanent, before any agent runs. The
+pin is a separate interface so `IModelResolver` and `IRoleRegistry` keep their published shape.
 
 ## Storage
 

@@ -70,4 +70,16 @@ public sealed record GraphOrchestratorInput
     [JsonPropertyOrder(6)]
     [JsonPropertyName("dynamic_context_hash")]
     public string? DynamicContextHash { get; init; }
+
+    /// <summary>
+    /// When <see langword="true"/>, <see cref="GraphOrchestrator"/> schedules
+    /// <see cref="WorkflowActivityNames.PinMappingsActivity"/> as its first action and every agent
+    /// invocation resolves under that pin (doc 08 §5, ADR-PA29). <b>Additive and optional</b> per the
+    /// ADR-E15 floor, and a replay gate: the substrate matches activity names against history, so an
+    /// input recorded without this flag (<see langword="null"/>) must replay without the pin and
+    /// resolves the current mapping, exactly as it did.
+    /// </summary>
+    [JsonPropertyOrder(7)]
+    [JsonPropertyName("pin_model_roles")]
+    public bool? PinModelRoles { get; init; }
 }

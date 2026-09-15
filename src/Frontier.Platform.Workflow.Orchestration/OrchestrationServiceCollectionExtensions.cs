@@ -53,6 +53,7 @@ public static class OrchestrationServiceCollectionExtensions
             .AddTransient<InvokeMcpToolActivity>()
             .AddTransient<RefreshDynamicContextActivity>()
             .AddTransient<ResolveDispatcherVersionActivity>()
+            .AddTransient<PinMappingsActivity>()
             .AddSingleton<IAuditConsolidator, AuditConsolidator>()
             .AddTransient<IAgentTaskActivityPipeline, AgentTaskActivityPipeline>()
             .AddTransient<IMcpToolInvocationPipeline, McpToolInvocationPipeline>()

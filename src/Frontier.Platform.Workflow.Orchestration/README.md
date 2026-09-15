@@ -57,6 +57,14 @@ substrate replays every decision: `IResiliencePolicyProvider`, `IRollbackPlanner
 their arguments, with no I/O, no clock, and the same answer on every replay. Everything
 non-deterministic belongs in an activity, which is where the rest of the surface lives.
 
+**Model-role pinning (ADR-PA29).** When `GraphOrchestratorInput.PinModelRoles` is true, the
+orchestrator's first action is `PinMappingsActivity`, and every agent invocation resolves under
+the pin it recorded. The flag exists because of replay: an input recorded without it replays
+unpinned. Consumers set the flag when starting an execution, and register `PinMappingsActivity`
+in their durable task registry. The DI registration is done here; the activity needs
+`IMappingPinner`, which `AddFrontierModelRoleConfig` registers. A dispatcher carries the flag to
+each child, and each child pins at its own start.
+
 Activity names are identity, not labels. They are matched against recorded history on replay, so
 renaming one is a breaking change to in-flight executions and no worker-side alias can soften it.
 

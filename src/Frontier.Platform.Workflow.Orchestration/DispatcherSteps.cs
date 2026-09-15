@@ -42,7 +42,8 @@ internal static class DispatcherSteps
     /// own signed audit records, so sharing the dispatcher's run id would collapse them into one
     /// run's evidence. It inherits the dispatcher's dynamic-context pin, without which two tickets
     /// dispatched from one generation could run against different epochs while their snapshots
-    /// claim the same provenance (S13.60/C-42). Attribution follows ADR-E8/S13.19: the work item's
+    /// claim the same provenance (S13.60/C-42). It carries <see cref="GraphOrchestratorInput.PinModelRoles"/>
+    /// forward, so each child pins model-role mappings at its own start; the router pins nothing (ADR-PA29). Attribution follows ADR-E8/S13.19: the work item's
     /// directing human wins, the dispatcher's own initiator is the fallback.
     /// </para>
     /// </summary>
@@ -55,6 +56,7 @@ internal static class DispatcherSteps
         RunId = context.NewGuid().ToString(),
         DynamicContextEpoch = input.DynamicContextEpoch,
         DynamicContextHash = input.DynamicContextHash,
+        PinModelRoles = input.PinModelRoles,
     };
 
     /// <summary>
@@ -75,6 +77,7 @@ internal static class DispatcherSteps
         RunId = input.RunId,
         DynamicContextEpoch = input.DynamicContextEpoch,
         DynamicContextHash = input.DynamicContextHash,
+        PinModelRoles = input.PinModelRoles,
     };
 
     /// <summary>Projects the dispatcher's pinned input into the S13.18 rollover request.</summary>

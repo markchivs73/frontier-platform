@@ -1422,3 +1422,73 @@ register, K6.
 
 Release: **minor, v0.31.0 — additive.** Two optional properties and one smart enum; no stored bytes
 change, nothing is renamed on the wire, and every golden is unchanged.
+
+## ADR-PA29 — an execution pins the model-role mapping version it was served, at its own start
+
+frontier-workflow's S13.102 found that doc 08 §5's pin was specified but never built:
+`AgentTaskActivityPipeline.BuildResolutionRequest` set `MappingVersion = null`, so every agent
+invocation resolved the *current* pointer. A rollback or an approval therefore changed a running
+execution between nodes. That contradicts doc 08 §2 principle 6, ADR-M1's execution-pinned
+versions, and ADR-M3's promise that a rollback reaches new executions while in-flight executions
+stay pinned.
+
+**Placement and the compatibility gate.** Doc 08 §5 puts the pin in `PinMappingsActivity`, called
+by the orchestrator at execution start. Doc 12 §5 sketched it factory-side; this ADR follows doc
+08, and the consumer amends doc 12 §5. The activity is `GraphOrchestrator`'s **first action**, and
+it is scheduled only when the new optional input member `GraphOrchestratorInput.pin_model_roles`
+(order 7) is true. The gate is required, not cautious. DurableTask.Core checks activity names
+against recorded history on replay, so an unconditional pin at sequence 0 would fail every
+in-flight run. An input recorded without the flag replays exactly as before: no pin, and
+resolution against the current mapping. The pin uses the `snapshot-persistence` retry profile.
+
+**The pin records the version actually served.** `ModelRolePin { role_id, mapping_version, ring }`
+is decided once, by `IMappingPinner`. That covers canary assignment (a hash of the engagement id
+against `CanaryPercent`) and the shadow or unassigned-canary fallback to `PredecessorFleetVersion`.
+`ModelResolver` shares the ring rules through one internal `ServedMappingSelector`, so the two
+cannot drift. A `ResolutionRequest` carrying the optional `Pin` reads exactly that version and
+walks its fallback chain. It **never re-evaluates rings**, because re-evaluating would re-ask a
+question the pin already answered. Doc 08 §5's continuity exception still holds: a fallback within
+the pinned version may serve, recorded as `ChainPosition > 0`, under the same `mapping_version`.
+The per-invocation `mapping_version` in the signed audit therefore equals the pinned version, and
+the record's shape is unchanged. `IModelResolver` and `IRoleRegistry` gain no members, because
+consumers' test doubles implement them. `IMappingPinner` is new, and `AddFrontierModelRoleConfig`
+registers it.
+
+**Roles and results.** The roles are collected purely from the inline definition (hard invariant
+2): every `AgentTaskNode`'s role, deduplicated and ordinally sorted. Nodes are a flat list, and
+parallel and loop nodes reference other nodes by id and contain none, so nothing is nested. The
+activity returns a list ordered by role id, not a dictionary, so its recorded bytes are canonical.
+The orchestrator keeps the pins in execution state, and each `AgentTaskActivityInput` carries its
+node's entry in the optional `pinned_mapping` (order 14). A null entry means the old behaviour.
+
+**An unmapped role fails the start.** The pinner turns a missing mapping into a
+`ContractViolationException` naming the role. That is a permanent failure, never retried
+(invariant 7), and it happens before any agent runs. Failing a run at its first node is better
+than failing it half-written.
+
+**Dispatcher.** The router pins nothing. `BuildChildInput` and `BuildNextGenerationInput` carry
+`pin_model_roles` forward, and each child pins at its own start. A long-lived dispatcher therefore
+gives every ticket the mapping current when that ticket began, which matches its per-child
+definition and epoch pins. Sandbox runs pin the same way.
+
+**Shadow-ready.** S13.101 sequences shadow execution after the cloud proof. A shadow candidate
+will be pinned alongside the served version as optional `candidate_version` and `candidate_ring`
+members on `ModelRolePin`, which is additive and needs no rework.
+
+**Residual skew — accepted and recorded under ADR-E15.** A Host on the new package could schedule
+a flagged run onto a worker still running an old package. That worker ignores the unknown member,
+so the run executes unpinned and resolves current, as every run did before this ADR. Nothing
+fails and nothing misreplays, because the old worker's history never holds a pin action. The run
+simply lacks the guarantee. Deploying workers before or with the Host closes the window.
+
+*Evidence:* frontier-workflow doc 08 §2 (principle 6), §5 (resolution flow and
+`PinMappingsActivity`), §7–§8 (rollback reaches new executions only), §11 ADR-M1; ADR-M3;
+DurableTask.Core 3.8.0's replay check on scheduled activity names (the S13.102 design check,
+2026-09-15). A live emulator replay has not yet verified this; the consumer's emulator test does
+that.
+
+Release: **minor, v0.32.0 — additive.** New optional members `GraphOrchestratorInput.pin_model_roles`,
+`AgentTaskActivityInput.pinned_mapping` and `ResolutionRequest.Pin`; new types `ModelRolePin`,
+`IMappingPinner`, `PinMappingsRequest` and `PinMappingsActivity`; and the constant
+`WorkflowActivityNames.PinMappingsActivity`. Null members are omitted, so every recorded input
+keeps its bytes.

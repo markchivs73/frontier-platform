@@ -37,6 +37,7 @@ public sealed class OrchestrationServiceCollectionExtensionsTests
         Assert.Contains(typeof(DispatcherOrchestrator), registered);
         Assert.Contains(typeof(AgentTaskActivity), registered);
         Assert.Contains(typeof(ConsolidateAuditActivity), registered);
+        Assert.Contains(typeof(PinMappingsActivity), registered);
         Assert.Contains(typeof(IAuditConsolidator), registered);
         Assert.Contains(typeof(IAgentTaskActivityPipeline), registered);
         Assert.Contains(typeof(IContractTypeRegistry), registered);

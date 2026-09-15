@@ -26,6 +26,9 @@ public static class WorkflowActivityNames
     /// <summary>Re-renders and merges an engagement's named dynamic-context components on an ADR-CR1 refresh signal (Orchestration, S13.62, doc 04 §8).</summary>
     public const string RefreshDynamicContextActivity = "RefreshDynamicContextActivity";
 
+    /// <summary>Pins the served model-role mapping version for every role a definition uses, the orchestrator's first action when the input asks for it (Orchestration, S13.102, doc 08 §5, ADR-PA29).</summary>
+    public const string PinMappingsActivity = "PinMappingsActivity";
+
     /// <summary>Resolves the definition version a dispatcher's next generation runs, at the <c>ContinueAsNew</c> boundary (Orchestration, S13.18, ADR-E15 D2, doc 16 §8).</summary>
     public const string ResolveDispatcherVersionActivity = "ResolveDispatcherVersionActivity";
 

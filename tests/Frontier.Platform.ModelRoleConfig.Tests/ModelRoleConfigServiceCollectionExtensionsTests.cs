@@ -42,6 +42,7 @@ public sealed class ModelRoleConfigServiceCollectionExtensionsTests
         Assert.IsType<CosmosRoleRegistry>(provider.GetRequiredService<IRoleMappingWriter>());
         Assert.IsType<AlwaysClosedCircuitBreakerQuery>(provider.GetRequiredService<ICircuitBreakerQuery>());
         Assert.IsType<ModelResolver>(provider.GetRequiredService<IModelResolver>());
+        Assert.IsType<MappingPinner>(provider.GetRequiredService<IMappingPinner>());
         Assert.IsType<MappingGovernanceService>(provider.GetRequiredService<IMappingGovernanceService>());
 
         var startupChecks = provider.GetServices<IStartupCheck>().ToList();
