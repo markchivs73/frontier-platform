@@ -27,3 +27,228 @@ Frontier.Platform.Audit.ToolCall.Note.init -> void
 Frontier.Platform.Audit.ToolCallProvenance
 static readonly Frontier.Platform.Audit.ToolCallProvenance.Observed -> Frontier.Platform.Audit.ToolCallProvenance!
 static readonly Frontier.Platform.Audit.ToolCallProvenance.SelfReported -> Frontier.Platform.Audit.ToolCallProvenance!
+Frontier.Platform.Audit.GovernanceAuditAppendException
+Frontier.Platform.Audit.GovernanceAuditAppendException.GovernanceAuditAppendException() -> void
+Frontier.Platform.Audit.GovernanceAuditAppendException.GovernanceAuditAppendException(string! message) -> void
+Frontier.Platform.Audit.GovernanceAuditAppendException.GovernanceAuditAppendException(string! message, System.Exception! innerException) -> void
+Frontier.Platform.Audit.GovernanceAuditBreakKind
+Frontier.Platform.Audit.GovernanceAuditChainBreak
+Frontier.Platform.Audit.GovernanceAuditChainBreak.<Clone>$() -> Frontier.Platform.Audit.GovernanceAuditChainBreak!
+Frontier.Platform.Audit.GovernanceAuditChainBreak.Equals(Frontier.Platform.Audit.GovernanceAuditChainBreak? other) -> bool
+Frontier.Platform.Audit.GovernanceAuditChainBreak.GovernanceAuditChainBreak() -> void
+Frontier.Platform.Audit.GovernanceAuditChainBreak.Kind.get -> Frontier.Platform.Audit.GovernanceAuditBreakKind!
+Frontier.Platform.Audit.GovernanceAuditChainBreak.Kind.init -> void
+Frontier.Platform.Audit.GovernanceAuditChainBreak.Position.get -> long
+Frontier.Platform.Audit.GovernanceAuditChainBreak.Position.init -> void
+Frontier.Platform.Audit.GovernanceAuditChainBreak.RecordId.get -> string?
+Frontier.Platform.Audit.GovernanceAuditChainBreak.RecordId.init -> void
+Frontier.Platform.Audit.GovernanceAuditChainBreak.RecordedSequence.get -> long?
+Frontier.Platform.Audit.GovernanceAuditChainBreak.RecordedSequence.init -> void
+Frontier.Platform.Audit.GovernanceAuditChainHead
+Frontier.Platform.Audit.GovernanceAuditChainHead.<Clone>$() -> Frontier.Platform.Audit.GovernanceAuditChainHead!
+Frontier.Platform.Audit.GovernanceAuditChainHead.Equals(Frontier.Platform.Audit.GovernanceAuditChainHead? other) -> bool
+Frontier.Platform.Audit.GovernanceAuditChainHead.GovernanceAuditChainHead() -> void
+Frontier.Platform.Audit.GovernanceAuditChainHead.RecordHash.get -> string!
+Frontier.Platform.Audit.GovernanceAuditChainHead.RecordHash.init -> void
+Frontier.Platform.Audit.GovernanceAuditChainHead.Scope.get -> string!
+Frontier.Platform.Audit.GovernanceAuditChainHead.Scope.init -> void
+Frontier.Platform.Audit.GovernanceAuditChainHead.Sequence.get -> long
+Frontier.Platform.Audit.GovernanceAuditChainHead.Sequence.init -> void
+Frontier.Platform.Audit.GovernanceAuditChainVerifier
+Frontier.Platform.Audit.GovernanceAuditEntry
+Frontier.Platform.Audit.GovernanceAuditEntry.<Clone>$() -> Frontier.Platform.Audit.GovernanceAuditEntry!
+Frontier.Platform.Audit.GovernanceAuditEntry.Actor.get -> string!
+Frontier.Platform.Audit.GovernanceAuditEntry.Actor.init -> void
+Frontier.Platform.Audit.GovernanceAuditEntry.ActorUpn.get -> string?
+Frontier.Platform.Audit.GovernanceAuditEntry.ActorUpn.init -> void
+Frontier.Platform.Audit.GovernanceAuditEntry.AfterHash.get -> string?
+Frontier.Platform.Audit.GovernanceAuditEntry.AfterHash.init -> void
+Frontier.Platform.Audit.GovernanceAuditEntry.BeforeHash.get -> string?
+Frontier.Platform.Audit.GovernanceAuditEntry.BeforeHash.init -> void
+Frontier.Platform.Audit.GovernanceAuditEntry.Change.get -> Frontier.Platform.Workflow.Model.TypedPayload!
+Frontier.Platform.Audit.GovernanceAuditEntry.Change.init -> void
+Frontier.Platform.Audit.GovernanceAuditEntry.CompensatesRecordId.get -> string?
+Frontier.Platform.Audit.GovernanceAuditEntry.CompensatesRecordId.init -> void
+Frontier.Platform.Audit.GovernanceAuditEntry.CorrelationId.get -> string?
+Frontier.Platform.Audit.GovernanceAuditEntry.CorrelationId.init -> void
+Frontier.Platform.Audit.GovernanceAuditEntry.EngagementId.get -> string?
+Frontier.Platform.Audit.GovernanceAuditEntry.EngagementId.init -> void
+Frontier.Platform.Audit.GovernanceAuditEntry.Equals(Frontier.Platform.Audit.GovernanceAuditEntry? other) -> bool
+Frontier.Platform.Audit.GovernanceAuditEntry.EventType.get -> string!
+Frontier.Platform.Audit.GovernanceAuditEntry.EventType.init -> void
+Frontier.Platform.Audit.GovernanceAuditEntry.GovernanceAuditEntry() -> void
+Frontier.Platform.Audit.GovernanceAuditEntry.OccurredAtUtc.get -> System.DateTime
+Frontier.Platform.Audit.GovernanceAuditEntry.OccurredAtUtc.init -> void
+Frontier.Platform.Audit.GovernanceAuditEntry.Reason.get -> string!
+Frontier.Platform.Audit.GovernanceAuditEntry.Reason.init -> void
+Frontier.Platform.Audit.GovernanceAuditEntry.SchemaVersion.get -> string!
+Frontier.Platform.Audit.GovernanceAuditEntry.SchemaVersion.init -> void
+Frontier.Platform.Audit.GovernanceAuditEntry.Scope.get -> string!
+Frontier.Platform.Audit.GovernanceAuditEntry.Scope.init -> void
+Frontier.Platform.Audit.GovernanceAuditEntry.SubjectId.get -> string!
+Frontier.Platform.Audit.GovernanceAuditEntry.SubjectId.init -> void
+Frontier.Platform.Audit.GovernanceAuditEntry.SubjectType.get -> string!
+Frontier.Platform.Audit.GovernanceAuditEntry.SubjectType.init -> void
+Frontier.Platform.Audit.GovernanceAuditEntry.SubjectVersion.get -> string?
+Frontier.Platform.Audit.GovernanceAuditEntry.SubjectVersion.init -> void
+Frontier.Platform.Audit.GovernanceAuditEntry.Validate() -> void
+Frontier.Platform.Audit.GovernanceAuditOptions
+Frontier.Platform.Audit.GovernanceAuditOptions.AppendBaseDelayMs.get -> int
+Frontier.Platform.Audit.GovernanceAuditOptions.AppendBaseDelayMs.init -> void
+Frontier.Platform.Audit.GovernanceAuditOptions.AppendMaxAttempts.get -> int
+Frontier.Platform.Audit.GovernanceAuditOptions.AppendMaxAttempts.init -> void
+Frontier.Platform.Audit.GovernanceAuditOptions.AppendMaxDelayMs.get -> int
+Frontier.Platform.Audit.GovernanceAuditOptions.AppendMaxDelayMs.init -> void
+Frontier.Platform.Audit.GovernanceAuditOptions.GovernanceAuditOptions() -> void
+Frontier.Platform.Audit.GovernanceAuditPage
+Frontier.Platform.Audit.GovernanceAuditPage.<Clone>$() -> Frontier.Platform.Audit.GovernanceAuditPage!
+Frontier.Platform.Audit.GovernanceAuditPage.ContinuationToken.get -> string?
+Frontier.Platform.Audit.GovernanceAuditPage.ContinuationToken.init -> void
+Frontier.Platform.Audit.GovernanceAuditPage.Equals(Frontier.Platform.Audit.GovernanceAuditPage? other) -> bool
+Frontier.Platform.Audit.GovernanceAuditPage.GovernanceAuditPage() -> void
+Frontier.Platform.Audit.GovernanceAuditPage.Records.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.SignedGovernanceAuditRecord!>!
+Frontier.Platform.Audit.GovernanceAuditPage.Records.init -> void
+Frontier.Platform.Audit.GovernanceAuditQuery
+Frontier.Platform.Audit.GovernanceAuditQuery.<Clone>$() -> Frontier.Platform.Audit.GovernanceAuditQuery!
+Frontier.Platform.Audit.GovernanceAuditQuery.Actor.get -> string?
+Frontier.Platform.Audit.GovernanceAuditQuery.Actor.init -> void
+Frontier.Platform.Audit.GovernanceAuditQuery.ContinuationToken.get -> string?
+Frontier.Platform.Audit.GovernanceAuditQuery.ContinuationToken.init -> void
+Frontier.Platform.Audit.GovernanceAuditQuery.Equals(Frontier.Platform.Audit.GovernanceAuditQuery? other) -> bool
+Frontier.Platform.Audit.GovernanceAuditQuery.EventType.get -> string?
+Frontier.Platform.Audit.GovernanceAuditQuery.EventType.init -> void
+Frontier.Platform.Audit.GovernanceAuditQuery.FromUtc.get -> System.DateTime?
+Frontier.Platform.Audit.GovernanceAuditQuery.FromUtc.init -> void
+Frontier.Platform.Audit.GovernanceAuditQuery.GovernanceAuditQuery() -> void
+Frontier.Platform.Audit.GovernanceAuditQuery.PageSize.get -> int
+Frontier.Platform.Audit.GovernanceAuditQuery.PageSize.init -> void
+Frontier.Platform.Audit.GovernanceAuditQuery.Scope.get -> string!
+Frontier.Platform.Audit.GovernanceAuditQuery.Scope.init -> void
+Frontier.Platform.Audit.GovernanceAuditQuery.SubjectId.get -> string?
+Frontier.Platform.Audit.GovernanceAuditQuery.SubjectId.init -> void
+Frontier.Platform.Audit.GovernanceAuditQuery.SubjectType.get -> string?
+Frontier.Platform.Audit.GovernanceAuditQuery.SubjectType.init -> void
+Frontier.Platform.Audit.GovernanceAuditQuery.ToUtc.get -> System.DateTime?
+Frontier.Platform.Audit.GovernanceAuditQuery.ToUtc.init -> void
+Frontier.Platform.Audit.GovernanceAuditScopes
+Frontier.Platform.Audit.GovernanceAuditVerificationResult
+Frontier.Platform.Audit.GovernanceAuditVerificationResult.<Clone>$() -> Frontier.Platform.Audit.GovernanceAuditVerificationResult!
+Frontier.Platform.Audit.GovernanceAuditVerificationResult.Breaks.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.GovernanceAuditChainBreak!>?
+Frontier.Platform.Audit.GovernanceAuditVerificationResult.Breaks.init -> void
+Frontier.Platform.Audit.GovernanceAuditVerificationResult.Equals(Frontier.Platform.Audit.GovernanceAuditVerificationResult? other) -> bool
+Frontier.Platform.Audit.GovernanceAuditVerificationResult.GovernanceAuditVerificationResult() -> void
+Frontier.Platform.Audit.GovernanceAuditVerificationResult.HeadSequence.get -> long?
+Frontier.Platform.Audit.GovernanceAuditVerificationResult.HeadSequence.init -> void
+Frontier.Platform.Audit.GovernanceAuditVerificationResult.RecordCount.get -> int
+Frontier.Platform.Audit.GovernanceAuditVerificationResult.RecordCount.init -> void
+Frontier.Platform.Audit.GovernanceAuditVerificationResult.Scope.get -> string!
+Frontier.Platform.Audit.GovernanceAuditVerificationResult.Scope.init -> void
+Frontier.Platform.Audit.GovernanceAuditVerificationResult.UnresolvedKeyIds.get -> System.Collections.Generic.IReadOnlyList<string!>?
+Frontier.Platform.Audit.GovernanceAuditVerificationResult.UnresolvedKeyIds.init -> void
+Frontier.Platform.Audit.GovernanceAuditVerificationResult.Valid.get -> bool
+Frontier.Platform.Audit.GovernanceAuditVerificationResult.Valid.init -> void
+Frontier.Platform.Audit.IGovernanceAuditService
+Frontier.Platform.Audit.IGovernanceAuditService.AppendAsync(Frontier.Platform.Audit.GovernanceAuditEntry! entry, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Audit.SignedGovernanceAuditRecord!>!
+Frontier.Platform.Audit.IGovernanceAuditService.GetAsync(string! recordId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Audit.SignedGovernanceAuditRecord?>!
+Frontier.Platform.Audit.IGovernanceAuditService.QueryAsync(Frontier.Platform.Audit.GovernanceAuditQuery! query, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Audit.GovernanceAuditPage!>!
+Frontier.Platform.Audit.IGovernanceAuditService.VerifyAsync(string! scope, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Audit.GovernanceAuditVerificationResult!>!
+Frontier.Platform.Audit.ISigningKeyRing
+Frontier.Platform.Audit.ISigningKeyRing.GetProvider(Frontier.Platform.Audit.SigningKeyPurpose! purpose) -> Frontier.Platform.Audit.IKeyProvider!
+Frontier.Platform.Audit.SignedGovernanceAuditRecord
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.<Clone>$() -> Frontier.Platform.Audit.SignedGovernanceAuditRecord!
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.Actor.get -> string!
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.Actor.init -> void
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.ActorUpn.get -> string?
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.ActorUpn.init -> void
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.AfterHash.get -> string?
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.AfterHash.init -> void
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.BeforeHash.get -> string?
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.BeforeHash.init -> void
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.Change.get -> Frontier.Platform.Workflow.Model.TypedPayload!
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.Change.init -> void
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.CompensatesRecordId.get -> string?
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.CompensatesRecordId.init -> void
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.CorrelationId.get -> string?
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.CorrelationId.init -> void
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.EngagementId.get -> string?
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.EngagementId.init -> void
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.Equals(Frontier.Platform.Audit.SignedGovernanceAuditRecord? other) -> bool
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.EventType.get -> string!
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.EventType.init -> void
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.OccurredAtUtc.get -> System.DateTime
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.OccurredAtUtc.init -> void
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.PreviousRecordHash.get -> string!
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.PreviousRecordHash.init -> void
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.Reason.get -> string!
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.Reason.init -> void
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.RecordHash.get -> string!
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.RecordHash.init -> void
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.RecordId.get -> string!
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.RecordId.init -> void
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.SchemaVersion.get -> string!
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.SchemaVersion.init -> void
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.Scope.get -> string!
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.Scope.init -> void
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.Sequence.get -> long
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.Sequence.init -> void
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.Signature.get -> string!
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.Signature.init -> void
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.SignedGovernanceAuditRecord() -> void
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.SigningKeyId.get -> string!
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.SigningKeyId.init -> void
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.SubjectId.get -> string!
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.SubjectId.init -> void
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.SubjectType.get -> string!
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.SubjectType.init -> void
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.SubjectVersion.get -> string?
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.SubjectVersion.init -> void
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.Validate() -> void
+Frontier.Platform.Audit.SigningKeyPurpose
+const Frontier.Platform.Audit.GovernanceAuditOptions.SectionName = "GovernanceAudit" -> string!
+const Frontier.Platform.Audit.GovernanceAuditQuery.MaxPageSize = 500 -> int
+const Frontier.Platform.Audit.GovernanceAuditScopes.Deployment = "deployment" -> string!
+override Frontier.Platform.Audit.GovernanceAuditChainBreak.Equals(object? obj) -> bool
+override Frontier.Platform.Audit.GovernanceAuditChainBreak.GetHashCode() -> int
+override Frontier.Platform.Audit.GovernanceAuditChainBreak.ToString() -> string!
+override Frontier.Platform.Audit.GovernanceAuditChainHead.Equals(object? obj) -> bool
+override Frontier.Platform.Audit.GovernanceAuditChainHead.GetHashCode() -> int
+override Frontier.Platform.Audit.GovernanceAuditChainHead.ToString() -> string!
+override Frontier.Platform.Audit.GovernanceAuditEntry.Equals(object? obj) -> bool
+override Frontier.Platform.Audit.GovernanceAuditEntry.GetHashCode() -> int
+override Frontier.Platform.Audit.GovernanceAuditEntry.ToString() -> string!
+override Frontier.Platform.Audit.GovernanceAuditPage.Equals(object? obj) -> bool
+override Frontier.Platform.Audit.GovernanceAuditPage.GetHashCode() -> int
+override Frontier.Platform.Audit.GovernanceAuditPage.ToString() -> string!
+override Frontier.Platform.Audit.GovernanceAuditQuery.Equals(object? obj) -> bool
+override Frontier.Platform.Audit.GovernanceAuditQuery.GetHashCode() -> int
+override Frontier.Platform.Audit.GovernanceAuditQuery.ToString() -> string!
+override Frontier.Platform.Audit.GovernanceAuditVerificationResult.Equals(object? obj) -> bool
+override Frontier.Platform.Audit.GovernanceAuditVerificationResult.GetHashCode() -> int
+override Frontier.Platform.Audit.GovernanceAuditVerificationResult.ToString() -> string!
+override Frontier.Platform.Audit.SignedGovernanceAuditRecord.Equals(object? obj) -> bool
+override Frontier.Platform.Audit.SignedGovernanceAuditRecord.GetHashCode() -> int
+override Frontier.Platform.Audit.SignedGovernanceAuditRecord.ToString() -> string!
+static Frontier.Platform.Audit.GovernanceAuditChainBreak.operator !=(Frontier.Platform.Audit.GovernanceAuditChainBreak? left, Frontier.Platform.Audit.GovernanceAuditChainBreak? right) -> bool
+static Frontier.Platform.Audit.GovernanceAuditChainBreak.operator ==(Frontier.Platform.Audit.GovernanceAuditChainBreak? left, Frontier.Platform.Audit.GovernanceAuditChainBreak? right) -> bool
+static Frontier.Platform.Audit.GovernanceAuditChainHead.operator !=(Frontier.Platform.Audit.GovernanceAuditChainHead? left, Frontier.Platform.Audit.GovernanceAuditChainHead? right) -> bool
+static Frontier.Platform.Audit.GovernanceAuditChainHead.operator ==(Frontier.Platform.Audit.GovernanceAuditChainHead? left, Frontier.Platform.Audit.GovernanceAuditChainHead? right) -> bool
+static Frontier.Platform.Audit.GovernanceAuditChainVerifier.Verify(string! scope, System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.SignedGovernanceAuditRecord!>! records, Frontier.Platform.Audit.GovernanceAuditChainHead? head, System.Collections.Generic.IReadOnlyDictionary<string!, Frontier.Platform.Audit.SigningKey!>! keys) -> Frontier.Platform.Audit.GovernanceAuditVerificationResult!
+static Frontier.Platform.Audit.GovernanceAuditEntry.operator !=(Frontier.Platform.Audit.GovernanceAuditEntry? left, Frontier.Platform.Audit.GovernanceAuditEntry? right) -> bool
+static Frontier.Platform.Audit.GovernanceAuditEntry.operator ==(Frontier.Platform.Audit.GovernanceAuditEntry? left, Frontier.Platform.Audit.GovernanceAuditEntry? right) -> bool
+static Frontier.Platform.Audit.GovernanceAuditPage.operator !=(Frontier.Platform.Audit.GovernanceAuditPage? left, Frontier.Platform.Audit.GovernanceAuditPage? right) -> bool
+static Frontier.Platform.Audit.GovernanceAuditPage.operator ==(Frontier.Platform.Audit.GovernanceAuditPage? left, Frontier.Platform.Audit.GovernanceAuditPage? right) -> bool
+static Frontier.Platform.Audit.GovernanceAuditQuery.operator !=(Frontier.Platform.Audit.GovernanceAuditQuery? left, Frontier.Platform.Audit.GovernanceAuditQuery? right) -> bool
+static Frontier.Platform.Audit.GovernanceAuditQuery.operator ==(Frontier.Platform.Audit.GovernanceAuditQuery? left, Frontier.Platform.Audit.GovernanceAuditQuery? right) -> bool
+static Frontier.Platform.Audit.GovernanceAuditVerificationResult.operator !=(Frontier.Platform.Audit.GovernanceAuditVerificationResult? left, Frontier.Platform.Audit.GovernanceAuditVerificationResult? right) -> bool
+static Frontier.Platform.Audit.GovernanceAuditVerificationResult.operator ==(Frontier.Platform.Audit.GovernanceAuditVerificationResult? left, Frontier.Platform.Audit.GovernanceAuditVerificationResult? right) -> bool
+static Frontier.Platform.Audit.SignedGovernanceAuditRecord.operator !=(Frontier.Platform.Audit.SignedGovernanceAuditRecord? left, Frontier.Platform.Audit.SignedGovernanceAuditRecord? right) -> bool
+static Frontier.Platform.Audit.SignedGovernanceAuditRecord.operator ==(Frontier.Platform.Audit.SignedGovernanceAuditRecord? left, Frontier.Platform.Audit.SignedGovernanceAuditRecord? right) -> bool
+static readonly Frontier.Platform.Audit.GovernanceAuditBreakKind.HashLinkBreak -> Frontier.Platform.Audit.GovernanceAuditBreakKind!
+static readonly Frontier.Platform.Audit.GovernanceAuditBreakKind.HeadMismatch -> Frontier.Platform.Audit.GovernanceAuditBreakKind!
+static readonly Frontier.Platform.Audit.GovernanceAuditBreakKind.OutOfOrder -> Frontier.Platform.Audit.GovernanceAuditBreakKind!
+static readonly Frontier.Platform.Audit.GovernanceAuditBreakKind.ScopeMismatch -> Frontier.Platform.Audit.GovernanceAuditBreakKind!
+static readonly Frontier.Platform.Audit.GovernanceAuditBreakKind.SequenceGap -> Frontier.Platform.Audit.GovernanceAuditBreakKind!
+static readonly Frontier.Platform.Audit.GovernanceAuditBreakKind.SignatureMismatch -> Frontier.Platform.Audit.GovernanceAuditBreakKind!
+static readonly Frontier.Platform.Audit.GovernanceAuditBreakKind.UnresolvedKey -> Frontier.Platform.Audit.GovernanceAuditBreakKind!
+static readonly Frontier.Platform.Audit.SigningKeyPurpose.ExecutionAudit -> Frontier.Platform.Audit.SigningKeyPurpose!
+static readonly Frontier.Platform.Audit.SigningKeyPurpose.GovernanceAudit -> Frontier.Platform.Audit.SigningKeyPurpose!

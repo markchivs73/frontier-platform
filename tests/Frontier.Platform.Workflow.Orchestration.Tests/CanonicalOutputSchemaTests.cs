@@ -40,7 +40,7 @@ public sealed class CanonicalOutputSchemaTests
         // reflection-based ContractTypeRegistry can name as an OutputContractType must
         // produce a schema Anthropic will accept. A new contract property whose type has
         // an unhandled custom converter fails here at PR time, not live with a 400.
-        var contractTypes = typeof(WorkflowDefinition).Assembly.GetTypes()
+        var contractTypes = ModelContractCandidates()
             .Where(t => t.IsClass && !t.IsAbstract && typeof(IVersionedContract).IsAssignableFrom(t)
                 && !CanonicalOutputSchema.IsRefused(t));   // deliberately refused, not schematised — see the two tests below
 
@@ -73,6 +73,27 @@ public sealed class CanonicalOutputSchemaTests
     /// A work item is not an agent output contract in any case.
     /// </summary>
     /// <summary>The non-generic entry point is reachable from a consumer's vendor adapter, so it guards its argument.</summary>
+    /// <summary>
+    /// The workflow model's types, including the ones it forwards. ADR-PA30 moved <see cref="TypedPayload"/>
+    /// and <see cref="PayloadRef"/> into Serialization behind type forwards, and
+    /// <c>Assembly.GetTypes()</c> does not return forwarded types; without them both sweeps would
+    /// silently lose the envelope.
+    /// </summary>
+    private static IEnumerable<Type> ModelContractCandidates()
+    {
+        var model = typeof(WorkflowDefinition).Assembly;
+        return model.GetTypes().Concat(model.GetForwardedTypes());
+    }
+
+    [Fact]
+    public void ModelContractCandidates_IncludeTheForwardedEnvelope()
+    {
+        var names = ModelContractCandidates().Select(type => type.Name).ToHashSet(StringComparer.Ordinal);
+
+        Assert.Contains(nameof(TypedPayload), names);
+        Assert.Contains(nameof(PayloadRef), names);
+    }
+
     [Fact]
     public void For_NullType_Throws() =>
         Assert.Throws<ArgumentNullException>(() => CanonicalOutputSchema.For(null!));
@@ -95,7 +116,7 @@ public sealed class CanonicalOutputSchemaTests
     [Fact]
     public void IsRefused_IsExactlyTypedPayloadAndTheContractsCarryingIt()
     {
-        var refused = typeof(WorkflowDefinition).Assembly.GetTypes()
+        var refused = ModelContractCandidates()
             .Where(t => t.IsClass && !t.IsAbstract && typeof(IVersionedContract).IsAssignableFrom(t) && CanonicalOutputSchema.IsRefused(t))
             .Select(t => t.Name)
             .Order(StringComparer.Ordinal)

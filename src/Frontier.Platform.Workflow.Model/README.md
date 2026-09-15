@@ -62,7 +62,9 @@ exactly that.
   `ArtifactStatus` per artifact. The durable history remains the source of truth; a snapshot
   that disagrees with it is rebuilt, never trusted.
 - `TypedPayload` and `PayloadRef` — a payload travels inline or by reference, so large
-  outputs never inflate orchestration state.
+  outputs never inflate orchestration state. Since ADR-PA30 both types are compiled into
+  `Frontier.Platform.Serialization` (same namespace) and forwarded from this assembly, so the
+  governance tier can carry the envelope; nothing a consumer writes changes.
 - `StepCompletion`, `ExternalEvent`, `WorkItem` — the units a run advances through. A
   `WorkItem` carries external input across the durable history boundary, so its content is a
   validated `TypedPayload` envelope rather than an untyped blob.

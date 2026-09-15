@@ -21,6 +21,7 @@ internal sealed class CosmosTopologyCheck(CosmosClient client, IOptions<CosmosOp
     {
         [CosmosAuditTelemetryStaging.ContainerName] = "/execution_id",
         [CosmosAuditRecordStore.ContainerName] = "/engagement_id",
+        [CosmosGovernanceAuditStore.ContainerName] = CosmosGovernanceAuditStore.PartitionKeyPath,
     };
 
     /// <inheritdoc />

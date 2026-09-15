@@ -12,11 +12,15 @@ namespace Frontier.Platform.Audit;
 internal sealed class SigningKeyResolver(IKeyProvider keyProvider)
 {
     /// <summary>Returns the resolvable keys of <paramref name="chain"/>, indexed by key id.</summary>
-    internal async Task<IReadOnlyDictionary<string, SigningKey>> ResolveAsync(IReadOnlyList<SignedAuditRecord> chain, CancellationToken cancellationToken)
+    internal Task<IReadOnlyDictionary<string, SigningKey>> ResolveAsync(IReadOnlyList<SignedAuditRecord> chain, CancellationToken cancellationToken) =>
+        ResolveKeyIdsAsync(chain.Select(record => record.SigningKeyId), cancellationToken);
+
+    /// <summary>Returns the resolvable keys among <paramref name="keyIds"/>, one provider call per distinct id (shared with the governance chain, ADR-PA30).</summary>
+    internal async Task<IReadOnlyDictionary<string, SigningKey>> ResolveKeyIdsAsync(IEnumerable<string> keyIds, CancellationToken cancellationToken)
     {
         var keys = new Dictionary<string, SigningKey>(StringComparer.Ordinal);
 
-        foreach (var keyId in chain.Select(record => record.SigningKeyId).Distinct(StringComparer.Ordinal))
+        foreach (var keyId in keyIds.Distinct(StringComparer.Ordinal))
         {
             var key = await keyProvider.GetKeyAsync(keyId, cancellationToken);
             if (key is not null)

@@ -202,21 +202,6 @@ Frontier.Platform.Workflow.Model.ParallelNode.Equals(Frontier.Platform.Workflow.
 Frontier.Platform.Workflow.Model.ParallelNode.JoinNodeId.get -> string!
 Frontier.Platform.Workflow.Model.ParallelNode.JoinNodeId.init -> void
 Frontier.Platform.Workflow.Model.ParallelNode.ParallelNode() -> void
-Frontier.Platform.Workflow.Model.PayloadRef
-Frontier.Platform.Workflow.Model.PayloadRef.<Clone>$() -> Frontier.Platform.Workflow.Model.PayloadRef!
-Frontier.Platform.Workflow.Model.PayloadRef.ContentHash.get -> string!
-Frontier.Platform.Workflow.Model.PayloadRef.ContentHash.init -> void
-Frontier.Platform.Workflow.Model.PayloadRef.ContentType.get -> string!
-Frontier.Platform.Workflow.Model.PayloadRef.ContentType.init -> void
-Frontier.Platform.Workflow.Model.PayloadRef.Equals(Frontier.Platform.Workflow.Model.PayloadRef? other) -> bool
-Frontier.Platform.Workflow.Model.PayloadRef.PayloadRef() -> void
-Frontier.Platform.Workflow.Model.PayloadRef.SchemaVersion.get -> string!
-Frontier.Platform.Workflow.Model.PayloadRef.SchemaVersion.init -> void
-Frontier.Platform.Workflow.Model.PayloadRef.SizeBytes.get -> long
-Frontier.Platform.Workflow.Model.PayloadRef.SizeBytes.init -> void
-Frontier.Platform.Workflow.Model.PayloadRef.StorageUri.get -> System.Uri!
-Frontier.Platform.Workflow.Model.PayloadRef.StorageUri.init -> void
-Frontier.Platform.Workflow.Model.PayloadRef.Validate() -> void
 Frontier.Platform.Workflow.Model.RetryPolicySpec
 Frontier.Platform.Workflow.Model.RetryPolicySpec.<Clone>$() -> Frontier.Platform.Workflow.Model.RetryPolicySpec!
 Frontier.Platform.Workflow.Model.RetryPolicySpec.Equals(Frontier.Platform.Workflow.Model.RetryPolicySpec? other) -> bool
@@ -257,21 +242,6 @@ Frontier.Platform.Workflow.Model.StepCompletion.RetryCount.init -> void
 Frontier.Platform.Workflow.Model.StepCompletion.SelectedBranchNodeId.get -> string?
 Frontier.Platform.Workflow.Model.StepCompletion.SelectedBranchNodeId.init -> void
 Frontier.Platform.Workflow.Model.StepCompletion.StepCompletion() -> void
-Frontier.Platform.Workflow.Model.TypedPayload
-Frontier.Platform.Workflow.Model.TypedPayload.<Clone>$() -> Frontier.Platform.Workflow.Model.TypedPayload!
-Frontier.Platform.Workflow.Model.TypedPayload.Equals(Frontier.Platform.Workflow.Model.TypedPayload? other) -> bool
-Frontier.Platform.Workflow.Model.TypedPayload.Facts.get -> System.Text.Json.JsonElement?
-Frontier.Platform.Workflow.Model.TypedPayload.Facts.init -> void
-Frontier.Platform.Workflow.Model.TypedPayload.Payload.get -> System.Text.Json.JsonElement?
-Frontier.Platform.Workflow.Model.TypedPayload.Payload.init -> void
-Frontier.Platform.Workflow.Model.TypedPayload.PayloadRef.get -> Frontier.Platform.Workflow.Model.PayloadRef?
-Frontier.Platform.Workflow.Model.TypedPayload.PayloadRef.init -> void
-Frontier.Platform.Workflow.Model.TypedPayload.SchemaRef.get -> string!
-Frontier.Platform.Workflow.Model.TypedPayload.SchemaRef.init -> void
-Frontier.Platform.Workflow.Model.TypedPayload.SchemaVersion.get -> string!
-Frontier.Platform.Workflow.Model.TypedPayload.SchemaVersion.init -> void
-Frontier.Platform.Workflow.Model.TypedPayload.TypedPayload() -> void
-Frontier.Platform.Workflow.Model.TypedPayload.Validate() -> void
 Frontier.Platform.Workflow.Model.WorkItem
 Frontier.Platform.Workflow.Model.WorkItem.<Clone>$() -> Frontier.Platform.Workflow.Model.WorkItem!
 Frontier.Platform.Workflow.Model.WorkItem.DirectedBy.get -> string?
@@ -414,18 +384,12 @@ override Frontier.Platform.Workflow.Model.ParallelNode.Equals(object? obj) -> bo
 override Frontier.Platform.Workflow.Model.ParallelNode.GetHashCode() -> int
 override Frontier.Platform.Workflow.Model.ParallelNode.NodeType.get -> Frontier.Platform.Workflow.Model.NodeType!
 override Frontier.Platform.Workflow.Model.ParallelNode.ToString() -> string!
-override Frontier.Platform.Workflow.Model.PayloadRef.Equals(object? obj) -> bool
-override Frontier.Platform.Workflow.Model.PayloadRef.GetHashCode() -> int
-override Frontier.Platform.Workflow.Model.PayloadRef.ToString() -> string!
 override Frontier.Platform.Workflow.Model.RetryPolicySpec.Equals(object? obj) -> bool
 override Frontier.Platform.Workflow.Model.RetryPolicySpec.GetHashCode() -> int
 override Frontier.Platform.Workflow.Model.RetryPolicySpec.ToString() -> string!
 override Frontier.Platform.Workflow.Model.StepCompletion.Equals(object? obj) -> bool
 override Frontier.Platform.Workflow.Model.StepCompletion.GetHashCode() -> int
 override Frontier.Platform.Workflow.Model.StepCompletion.ToString() -> string!
-override Frontier.Platform.Workflow.Model.TypedPayload.Equals(object? obj) -> bool
-override Frontier.Platform.Workflow.Model.TypedPayload.GetHashCode() -> int
-override Frontier.Platform.Workflow.Model.TypedPayload.ToString() -> string!
 override Frontier.Platform.Workflow.Model.WorkItem.Equals(object? obj) -> bool
 override Frontier.Platform.Workflow.Model.WorkItem.GetHashCode() -> int
 override Frontier.Platform.Workflow.Model.WorkItem.ToString() -> string!
@@ -484,14 +448,10 @@ static Frontier.Platform.Workflow.Model.MigratingWorkflowDefinitionConverter.Pro
 static Frontier.Platform.Workflow.Model.MigratingWorkflowDefinitionConverter.ReadMigrated(string! json, System.Text.Json.JsonSerializerOptions! options) -> Frontier.Platform.Workflow.Model.WorkflowDefinition?
 static Frontier.Platform.Workflow.Model.ParallelNode.operator !=(Frontier.Platform.Workflow.Model.ParallelNode? left, Frontier.Platform.Workflow.Model.ParallelNode? right) -> bool
 static Frontier.Platform.Workflow.Model.ParallelNode.operator ==(Frontier.Platform.Workflow.Model.ParallelNode? left, Frontier.Platform.Workflow.Model.ParallelNode? right) -> bool
-static Frontier.Platform.Workflow.Model.PayloadRef.operator !=(Frontier.Platform.Workflow.Model.PayloadRef? left, Frontier.Platform.Workflow.Model.PayloadRef? right) -> bool
-static Frontier.Platform.Workflow.Model.PayloadRef.operator ==(Frontier.Platform.Workflow.Model.PayloadRef? left, Frontier.Platform.Workflow.Model.PayloadRef? right) -> bool
 static Frontier.Platform.Workflow.Model.RetryPolicySpec.operator !=(Frontier.Platform.Workflow.Model.RetryPolicySpec? left, Frontier.Platform.Workflow.Model.RetryPolicySpec? right) -> bool
 static Frontier.Platform.Workflow.Model.RetryPolicySpec.operator ==(Frontier.Platform.Workflow.Model.RetryPolicySpec? left, Frontier.Platform.Workflow.Model.RetryPolicySpec? right) -> bool
 static Frontier.Platform.Workflow.Model.StepCompletion.operator !=(Frontier.Platform.Workflow.Model.StepCompletion? left, Frontier.Platform.Workflow.Model.StepCompletion? right) -> bool
 static Frontier.Platform.Workflow.Model.StepCompletion.operator ==(Frontier.Platform.Workflow.Model.StepCompletion? left, Frontier.Platform.Workflow.Model.StepCompletion? right) -> bool
-static Frontier.Platform.Workflow.Model.TypedPayload.operator !=(Frontier.Platform.Workflow.Model.TypedPayload? left, Frontier.Platform.Workflow.Model.TypedPayload? right) -> bool
-static Frontier.Platform.Workflow.Model.TypedPayload.operator ==(Frontier.Platform.Workflow.Model.TypedPayload? left, Frontier.Platform.Workflow.Model.TypedPayload? right) -> bool
 static Frontier.Platform.Workflow.Model.WorkItem.operator !=(Frontier.Platform.Workflow.Model.WorkItem? left, Frontier.Platform.Workflow.Model.WorkItem? right) -> bool
 static Frontier.Platform.Workflow.Model.WorkItem.operator ==(Frontier.Platform.Workflow.Model.WorkItem? left, Frontier.Platform.Workflow.Model.WorkItem? right) -> bool
 static Frontier.Platform.Workflow.Model.WorkflowDefinition.operator !=(Frontier.Platform.Workflow.Model.WorkflowDefinition? left, Frontier.Platform.Workflow.Model.WorkflowDefinition? right) -> bool
@@ -539,3 +499,43 @@ virtual Frontier.Platform.Workflow.Model.WorkflowNode.PrintMembers(System.Text.S
 const Frontier.Platform.Workflow.Model.WorkflowActivityNames.RefreshDynamicContextActivity = "RefreshDynamicContextActivity" -> string!
 const Frontier.Platform.Workflow.Model.WorkflowActivityNames.ResolveDispatcherVersionActivity = "ResolveDispatcherVersionActivity" -> string!
 const Frontier.Platform.Workflow.Model.WorkflowActivityNames.PinMappingsActivity = "PinMappingsActivity" -> string!
+Frontier.Platform.Workflow.Model.PayloadRef (forwarded, contained in Frontier.Platform.Serialization)
+Frontier.Platform.Workflow.Model.PayloadRef.<Clone>$() -> Frontier.Platform.Workflow.Model.PayloadRef! (forwarded, contained in Frontier.Platform.Serialization)
+Frontier.Platform.Workflow.Model.PayloadRef.ContentHash.get -> string! (forwarded, contained in Frontier.Platform.Serialization)
+Frontier.Platform.Workflow.Model.PayloadRef.ContentHash.init -> void (forwarded, contained in Frontier.Platform.Serialization)
+Frontier.Platform.Workflow.Model.PayloadRef.ContentType.get -> string! (forwarded, contained in Frontier.Platform.Serialization)
+Frontier.Platform.Workflow.Model.PayloadRef.ContentType.init -> void (forwarded, contained in Frontier.Platform.Serialization)
+Frontier.Platform.Workflow.Model.PayloadRef.Equals(Frontier.Platform.Workflow.Model.PayloadRef? other) -> bool (forwarded, contained in Frontier.Platform.Serialization)
+Frontier.Platform.Workflow.Model.PayloadRef.PayloadRef() -> void (forwarded, contained in Frontier.Platform.Serialization)
+Frontier.Platform.Workflow.Model.PayloadRef.SchemaVersion.get -> string! (forwarded, contained in Frontier.Platform.Serialization)
+Frontier.Platform.Workflow.Model.PayloadRef.SchemaVersion.init -> void (forwarded, contained in Frontier.Platform.Serialization)
+Frontier.Platform.Workflow.Model.PayloadRef.SizeBytes.get -> long (forwarded, contained in Frontier.Platform.Serialization)
+Frontier.Platform.Workflow.Model.PayloadRef.SizeBytes.init -> void (forwarded, contained in Frontier.Platform.Serialization)
+Frontier.Platform.Workflow.Model.PayloadRef.StorageUri.get -> System.Uri! (forwarded, contained in Frontier.Platform.Serialization)
+Frontier.Platform.Workflow.Model.PayloadRef.StorageUri.init -> void (forwarded, contained in Frontier.Platform.Serialization)
+Frontier.Platform.Workflow.Model.PayloadRef.Validate() -> void (forwarded, contained in Frontier.Platform.Serialization)
+Frontier.Platform.Workflow.Model.TypedPayload (forwarded, contained in Frontier.Platform.Serialization)
+Frontier.Platform.Workflow.Model.TypedPayload.<Clone>$() -> Frontier.Platform.Workflow.Model.TypedPayload! (forwarded, contained in Frontier.Platform.Serialization)
+Frontier.Platform.Workflow.Model.TypedPayload.Equals(Frontier.Platform.Workflow.Model.TypedPayload? other) -> bool (forwarded, contained in Frontier.Platform.Serialization)
+Frontier.Platform.Workflow.Model.TypedPayload.Facts.get -> System.Text.Json.JsonElement? (forwarded, contained in Frontier.Platform.Serialization)
+Frontier.Platform.Workflow.Model.TypedPayload.Facts.init -> void (forwarded, contained in Frontier.Platform.Serialization)
+Frontier.Platform.Workflow.Model.TypedPayload.Payload.get -> System.Text.Json.JsonElement? (forwarded, contained in Frontier.Platform.Serialization)
+Frontier.Platform.Workflow.Model.TypedPayload.Payload.init -> void (forwarded, contained in Frontier.Platform.Serialization)
+Frontier.Platform.Workflow.Model.TypedPayload.PayloadRef.get -> Frontier.Platform.Workflow.Model.PayloadRef? (forwarded, contained in Frontier.Platform.Serialization)
+Frontier.Platform.Workflow.Model.TypedPayload.PayloadRef.init -> void (forwarded, contained in Frontier.Platform.Serialization)
+Frontier.Platform.Workflow.Model.TypedPayload.SchemaRef.get -> string! (forwarded, contained in Frontier.Platform.Serialization)
+Frontier.Platform.Workflow.Model.TypedPayload.SchemaRef.init -> void (forwarded, contained in Frontier.Platform.Serialization)
+Frontier.Platform.Workflow.Model.TypedPayload.SchemaVersion.get -> string! (forwarded, contained in Frontier.Platform.Serialization)
+Frontier.Platform.Workflow.Model.TypedPayload.SchemaVersion.init -> void (forwarded, contained in Frontier.Platform.Serialization)
+Frontier.Platform.Workflow.Model.TypedPayload.TypedPayload() -> void (forwarded, contained in Frontier.Platform.Serialization)
+Frontier.Platform.Workflow.Model.TypedPayload.Validate() -> void (forwarded, contained in Frontier.Platform.Serialization)
+override Frontier.Platform.Workflow.Model.PayloadRef.Equals(object? obj) -> bool (forwarded, contained in Frontier.Platform.Serialization)
+override Frontier.Platform.Workflow.Model.PayloadRef.GetHashCode() -> int (forwarded, contained in Frontier.Platform.Serialization)
+override Frontier.Platform.Workflow.Model.PayloadRef.ToString() -> string! (forwarded, contained in Frontier.Platform.Serialization)
+override Frontier.Platform.Workflow.Model.TypedPayload.Equals(object? obj) -> bool (forwarded, contained in Frontier.Platform.Serialization)
+override Frontier.Platform.Workflow.Model.TypedPayload.GetHashCode() -> int (forwarded, contained in Frontier.Platform.Serialization)
+override Frontier.Platform.Workflow.Model.TypedPayload.ToString() -> string! (forwarded, contained in Frontier.Platform.Serialization)
+static Frontier.Platform.Workflow.Model.PayloadRef.operator !=(Frontier.Platform.Workflow.Model.PayloadRef? left, Frontier.Platform.Workflow.Model.PayloadRef? right) -> bool (forwarded, contained in Frontier.Platform.Serialization)
+static Frontier.Platform.Workflow.Model.PayloadRef.operator ==(Frontier.Platform.Workflow.Model.PayloadRef? left, Frontier.Platform.Workflow.Model.PayloadRef? right) -> bool (forwarded, contained in Frontier.Platform.Serialization)
+static Frontier.Platform.Workflow.Model.TypedPayload.operator !=(Frontier.Platform.Workflow.Model.TypedPayload? left, Frontier.Platform.Workflow.Model.TypedPayload? right) -> bool (forwarded, contained in Frontier.Platform.Serialization)
+static Frontier.Platform.Workflow.Model.TypedPayload.operator ==(Frontier.Platform.Workflow.Model.TypedPayload? left, Frontier.Platform.Workflow.Model.TypedPayload? right) -> bool (forwarded, contained in Frontier.Platform.Serialization)

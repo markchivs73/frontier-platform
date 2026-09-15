@@ -28,7 +28,9 @@ public static class AuditServiceCollectionExtensions
     /// and registers the <see cref="CosmosClient"/>, <see cref="BlobServiceClient"/>,
     /// <see cref="IAuditTelemetryStaging"/>, <see cref="IAuditRecordStore"/>,
     /// <see cref="IAuditSigner"/>, <see cref="IAuditQueryService"/>, archival exporter,
-    /// and hosted service alongside the signing-key seam and boot invariants.
+    /// and hosted service alongside the signing-key seam and boot invariants; and the governance
+    /// audit chain (ADR-PA30): <see cref="GovernanceAuditOptions"/>, <see cref="ISigningKeyRing"/>,
+    /// <see cref="IGovernanceAuditService"/> and its archival hosted service.
     /// </summary>
     public static IServiceCollection AddFrontierAudit(this IServiceCollection services, IConfiguration configuration)
     {
@@ -36,6 +38,11 @@ public static class AuditServiceCollectionExtensions
 
         services.AddOptions<CosmosOptions>()
             .Bind(configuration.GetSection("Cosmos"))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddOptions<GovernanceAuditOptions>()
+            .Bind(configuration.GetSection(GovernanceAuditOptions.SectionName))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
@@ -50,6 +57,10 @@ public static class AuditServiceCollectionExtensions
             .AddSingleton<IAuditRecordExporter, BlobAuditRecordExporter>()
             .AddSingleton(CreateBlobServiceClient)
             .AddHostedService<ArchivalAuditExportHostedService>()
+            .AddSingleton<ISigningKeyRing, SharedSigningKeyRing>()
+            .AddSingleton<IGovernanceAuditStore, CosmosGovernanceAuditStore>()
+            .AddSingleton<IGovernanceAuditService, GovernanceAuditService>()
+            .AddHostedService<ArchivalGovernanceAuditExportHostedService>()
             .AddSingleton<IStartupCheck, CosmosTopologyCheck>();
     }
 

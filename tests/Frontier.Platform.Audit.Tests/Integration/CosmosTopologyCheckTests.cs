@@ -26,6 +26,7 @@ public sealed class CosmosTopologyCheckTests
             ["audit-telemetry-staging"] = "/execution_id",
             ["execution-snapshots"] = "/engagement_id",
             ["audit-records"] = "/engagement_id",
+            ["governance-audit-records"] = "/scope",
         };
 
         var result = CosmosTopologyCheck.Evaluate(CosmosTopologyCheck.ExpectedContainers, actual);
@@ -84,5 +85,27 @@ public sealed class CosmosTopologyCheckTests
     public void ExpectedContainers_MatchesAuditRecordsContainerName()
     {
         Assert.Equal("/engagement_id", CosmosTopologyCheck.ExpectedContainers[CosmosAuditRecordStore.ContainerName]);
+    }
+
+    [Fact]
+    public void ExpectedContainers_IncludesGovernanceAuditRecordsPartitionedByScope()
+    {
+        // ADR-PA30: the governance chain partitions by scope, not engagement.
+        Assert.Equal("/scope", CosmosTopologyCheck.ExpectedContainers[CosmosGovernanceAuditStore.ContainerName]);
+    }
+
+    [Fact]
+    public void Evaluate_GovernanceContainerMissing_ReturnsFail()
+    {
+        var actual = new Dictionary<string, string?>(StringComparer.Ordinal)
+        {
+            ["audit-telemetry-staging"] = "/execution_id",
+            ["audit-records"] = "/engagement_id",
+        };
+
+        var result = CosmosTopologyCheck.Evaluate(CosmosTopologyCheck.ExpectedContainers, actual);
+
+        Assert.False(result.Passed);
+        Assert.Contains("governance-audit-records", result.FailureReason, StringComparison.Ordinal);
     }
 }
