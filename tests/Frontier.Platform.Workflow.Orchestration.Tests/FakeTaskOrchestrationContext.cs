@@ -147,7 +147,14 @@ internal sealed class FakeTaskOrchestrationContext : TaskOrchestrationContext
     }
 
     /// <inheritdoc />
-    public override Task CreateTimer(DateTime fireAt, CancellationToken cancellationToken) => Task.CompletedTask;
+    public override Task CreateTimer(DateTime fireAt, CancellationToken cancellationToken)
+    {
+        TimerFireAts.Add(fireAt);
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Every <see cref="CreateTimer"/> fire time, in order — the timer actions a real replay would match against history (S13.99).</summary>
+    public List<DateTime> TimerFireAts { get; } = [];
 
     /// <inheritdoc />
     public override Task<T> WaitForExternalEvent<T>(string eventName, CancellationToken cancellationToken = default)

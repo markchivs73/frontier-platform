@@ -357,7 +357,7 @@ public sealed class GraphOrchestratorStepsTests
     {
         var context = new FakeTaskOrchestrationContext();
 
-        var result = await GraphOrchestratorSteps.TryWaitForArtifactUpdateAsync(context);
+        var result = await GraphOrchestratorSteps.TryWaitForArtifactUpdateAsync(context, GraphOrchestratorSteps.ArtifactUpdateWaitWindow);
 
         Assert.Null(result);
     }
@@ -368,7 +368,7 @@ public sealed class GraphOrchestratorStepsTests
         var context = new FakeTaskOrchestrationContext();
         context.ExternalEvents[GraphOrchestratorSteps.ArtifactUpdatedEventName] = "scope";
 
-        var result = await GraphOrchestratorSteps.TryWaitForArtifactUpdateAsync(context);
+        var result = await GraphOrchestratorSteps.TryWaitForArtifactUpdateAsync(context, GraphOrchestratorSteps.ArtifactUpdateWaitWindow);
 
         Assert.Equal("scope", result);
     }
@@ -449,6 +449,44 @@ public sealed class GraphOrchestratorStepsTests
         await GraphOrchestratorSteps.RunCascadeWalkAsync(context, input, state, PolicyProvider, OrchestrationFixtures.WriteClassifier);
 
         Assert.Empty(state.CompletedSteps);
+    }
+
+    [Fact]
+    public async Task RunCascadeWalkAsync_SandboxRun_SchedulesItsOneTimerForNow()
+    {
+        var context = new FakeTaskOrchestrationContext();
+        var input = OrchestrationFixtures.Input(OrchestrationFixtures.ThreeArtifactChain(), "SANDBOX-0123abcd");
+        var state = new GraphExecutionState { StartedAtUtc = OrchestrationFixtures.StartedAtUtc };
+
+        await GraphOrchestratorSteps.RunCascadeWalkAsync(context, input, state, PolicyProvider, OrchestrationFixtures.WriteClassifier);
+
+        // One timer, as before S13.99 — the replay shape an in-flight sandbox run recorded — but due now.
+        Assert.Equal([context.CurrentUtcDateTime], context.TimerFireAts);
+        Assert.Empty(state.CompletedSteps);
+    }
+
+    [Fact]
+    public async Task RunCascadeWalkAsync_RealRun_KeepsTheFiveMinuteWait()
+    {
+        var context = new FakeTaskOrchestrationContext();
+        var input = OrchestrationFixtures.Input(OrchestrationFixtures.ThreeArtifactChain());
+        var state = new GraphExecutionState { StartedAtUtc = OrchestrationFixtures.StartedAtUtc };
+
+        await GraphOrchestratorSteps.RunCascadeWalkAsync(context, input, state, PolicyProvider, OrchestrationFixtures.WriteClassifier);
+
+        Assert.Equal([context.CurrentUtcDateTime.AddMinutes(5)], context.TimerFireAts);
+    }
+
+    [Theory]
+    [InlineData("SANDBOX-0123abcd", 0)]
+    [InlineData("eng-1", 5)]
+    [InlineData("sandbox-lowercase", 5)]
+    [InlineData("eng-SANDBOX-", 5)]
+    public void CascadeWaitWindow_IsZeroOnlyForASandboxEngagement(string engagementId, int expectedMinutes)
+    {
+        var input = OrchestrationFixtures.Input(OrchestrationFixtures.ThreeArtifactChain(), engagementId);
+
+        Assert.Equal(TimeSpan.FromMinutes(expectedMinutes), GraphOrchestratorSteps.CascadeWaitWindow(input));
     }
 
     [Fact]
