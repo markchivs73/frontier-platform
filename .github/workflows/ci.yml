@@ -156,7 +156,7 @@ jobs:
           COSMOS_EMULATOR_ENDPOINT: http://localhost:8081
         run: >-
           dotnet test FrontierPlatform.slnx -c Release --no-build
-          --filter "Category=Integration"
+          --filter "Category=Integration&Category!=RequiresAzureKeyVault"
 
       # "Connection refused" partway through the suite suggests the emulator container died
       # mid-run (e.g. OOM on a 2-CPU runner). Capture exit state, logs and kernel OOM activity.

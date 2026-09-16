@@ -2,12 +2,20 @@
 
   <PropertyGroup>
     <IsPackable>false</IsPackable>
+    <!-- The S13.107 live Key Vault gate reads AuditSigning:KeyIdentifier from user-secrets
+         when it is not in the environment; never a committed value. -->
+    <UserSecretsId>frontier-platform-audit-tests</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" />
+    <!-- Aliased exactly as the Audit library does: Azure.Core and Azure.Identity both declare
+         DefaultAzureCredential, so an unaliased reference is ambiguous (CS0433). -->
+    <PackageReference Include="Azure.Identity" Aliases="identity" />
     <PackageReference Include="Microsoft.Azure.Cosmos" />
     <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Extensions.Options" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
