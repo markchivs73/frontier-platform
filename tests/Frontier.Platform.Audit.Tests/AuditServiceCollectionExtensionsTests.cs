@@ -45,6 +45,12 @@ public sealed class AuditServiceCollectionExtensionsTests
         Assert.IsType<CosmosGovernanceAuditStore>(provider.GetRequiredService<IGovernanceAuditStore>());
         Assert.IsType<GovernanceAuditService>(provider.GetRequiredService<IGovernanceAuditService>());
         Assert.Equal(8, provider.GetRequiredService<IOptions<GovernanceAuditOptions>>().Value.AppendMaxAttempts);
+        Assert.Equal(8, provider.GetRequiredService<IOptions<ExecutionAuditOptions>>().Value.AppendMaxAttempts);
+
+        // ADR-PA31: the record store and the chain-head port must be the SAME instance — two
+        // instances would still work against Cosmos, but the registration would be lying about
+        // which object owns the container.
+        Assert.Same(provider.GetRequiredService<IAuditRecordStore>(), provider.GetRequiredService<IAuditChainHeadStore>());
 
         var startupChecks = provider.GetServices<IStartupCheck>().ToArray();
         Assert.Contains(startupChecks, check => check is SigningKeyCheck);
@@ -119,6 +125,24 @@ public sealed class AuditServiceCollectionExtensionsTests
         services.AddFrontierAudit(BuildConfiguration([]));
 
         Assert.Contains(services, descriptor => descriptor.ImplementationType == typeof(ArchivalGovernanceAuditExportHostedService));
+    }
+
+    [Fact]
+    public void AddFrontierAudit_ExecutionRetryOutOfRange_OptionsResolutionThrows()
+    {
+        var services = new ServiceCollection();
+        var configuration = BuildConfiguration(new Dictionary<string, string?>
+        {
+            ["Cosmos:Endpoint"] = "https://localhost:8081",
+            ["Cosmos:Database"] = "frontier-workflow",
+            ["Cosmos:Key"] = EmulatorKey,
+            ["ExecutionAudit:AppendMaxAttempts"] = "0",
+        });
+
+        services.AddFrontierAudit(configuration);
+        using var provider = services.BuildServiceProvider();
+
+        Assert.Throws<OptionsValidationException>(() => provider.GetRequiredService<IOptions<ExecutionAuditOptions>>().Value);
     }
 
     [Fact]

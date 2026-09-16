@@ -89,6 +89,41 @@ Each record's `previous_record_hash` is its predecessor's `record_hash`, back to
 reports both whether the target record's signature is valid and where — if anywhere — the chain
 first breaks.
 
+**Verification follows the hash links, not the stored order.** A hash chain's order *is* its append
+order, and every record names its predecessor. `closed_at_utc` is a business field that happened to
+agree with append order before the concurrency guard existed; under the guard, which close wins the
+head race is independent of its timestamp, so an intact chain is routinely stored out of timestamp
+order. Walking the stored order would report that as a break. Reads still come back in
+`closed_at_utc` order — only verification changed. A stored record the links cannot reach is reported
+in `unreachable_records`, its own finding, distinct from a signature mismatch and from a fork.
+
+**The append is guarded** (ADR-PA31). One engagement can run several workflows, so two executions
+can close at the same moment. Each engagement therefore has a head document,
+`chain-head:{engagementId}`, in the same container and partition as its records, holding the chain's
+length and its latest `record_hash`. An append reads the head with its ETag, signs against it, and
+writes the record and the new head in **one transactional batch** with If-Match on the head. Losing
+that race is not a failure: the signer re-reads, re-hashes, re-signs and tries again, per
+`ExecutionAuditOptions` (section `ExecutionAudit`: `AppendMaxAttempts` 8, `AppendBaseDelayMs` 25,
+`AppendMaxDelayMs` 1000). Exhausting the attempts throws `AuditChainAppendException` and the record
+is *not* stored — treat the audit as unwritten.
+
+Nothing about the signed record changed for this: the head is separate bookkeeping, `doc_type` sits
+on the document wrapper outside the signed `record`, and no schema version moved. Every record
+stored before ADR-PA31 verifies exactly as it did.
+
+**An engagement whose chain predates the upgrade has no head.** The first append after upgrading
+reads the head, finds none, falls back to the stored chain's tail, chains from it, and creates the
+head from it in the same batch — recording how many records already existed as
+`unguarded_record_count`. There is no backfill job and nothing stored is rewritten.
+
+**Forks are reported as forks, never as tampering.** If two records claim the same
+`previous_record_hash`, `VerificationResult.Forks` names them. A fork lying wholly within the records
+that predate the head is `legacy_fork` — the footprint of the pre-ADR-PA31 defect, where two closes
+read the same tail; every record in it still verifies against its own key, and none of it was
+altered. A fork reaching past that boundary is `guarded_fork`, which the platform cannot produce and
+which warrants investigation. Either kind makes `chain_valid` false: the kind explains a finding, it
+never clears one. Nothing forked is ever re-signed or rewritten.
+
 **Verification recomputes; it does not re-hash the stored bytes.** `AuditChainVerifier` rehydrates
 each record and re-serializes it through `CanonicalProfile`. That is why this package is one of
 the two hardest constraints on canonical serialization in the platform: a change to the profile,
@@ -115,6 +150,11 @@ migrated. Git history holds the 1.0 bytes if they are ever needed.
 
 - **`audit-records` is append-only.** `CreateAsync` throws if the `{executionId}:audit` document
   already exists. A retried sign is not expected to change a closed execution's record.
+- **The container holds two document kinds.** Signed records (`doc_type: "record"`, or absent on
+  records written before ADR-PA31) and one chain head per engagement (`doc_type: "chain_head"`).
+  Every reader filters on that — the chain query, the governance query projection, and the archival
+  change feed, which never archives a head because a head legitimately changes and an immutable
+  archive is for things that do not.
 - **Partition key is `/engagement_id`**, and the document id is deterministic
   (`{executionId}:audit`) so every read of a known execution is a point read.
 - **Bytes are evidential.** Never batch-rewrite a stored document — the signature is over the

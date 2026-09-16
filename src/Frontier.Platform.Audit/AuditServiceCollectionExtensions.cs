@@ -30,7 +30,9 @@ public static class AuditServiceCollectionExtensions
     /// <see cref="IAuditSigner"/>, <see cref="IAuditQueryService"/>, archival exporter,
     /// and hosted service alongside the signing-key seam and boot invariants; and the governance
     /// audit chain (ADR-PA30): <see cref="GovernanceAuditOptions"/>, <see cref="ISigningKeyRing"/>,
-    /// <see cref="IGovernanceAuditService"/> and its archival hosted service.
+    /// <see cref="IGovernanceAuditService"/> and its archival hosted service. ADR-PA31 adds
+    /// <see cref="ExecutionAuditOptions"/>; the one <see cref="CosmosAuditRecordStore"/> instance
+    /// serves both the public record store and the internal chain-head port.
     /// </summary>
     public static IServiceCollection AddFrontierAudit(this IServiceCollection services, IConfiguration configuration)
     {
@@ -46,12 +48,19 @@ public static class AuditServiceCollectionExtensions
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        services.AddOptions<ExecutionAuditOptions>()
+            .Bind(configuration.GetSection(ExecutionAuditOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
         return services
             .AddSingleton<IKeyProvider, DevKeyProvider>()
             .AddSingleton<IStartupCheck, SigningKeyCheck>()
             .AddSingleton(CreateCosmosClient)
             .AddSingleton<IAuditTelemetryStaging, CosmosAuditTelemetryStaging>()
-            .AddSingleton<IAuditRecordStore, CosmosAuditRecordStore>()
+            .AddSingleton<CosmosAuditRecordStore>()
+            .AddSingleton<IAuditRecordStore>(provider => provider.GetRequiredService<CosmosAuditRecordStore>())
+            .AddSingleton<IAuditChainHeadStore>(provider => provider.GetRequiredService<CosmosAuditRecordStore>())
             .AddSingleton<IAuditSigner, AuditSigner>()
             .AddSingleton<IAuditQueryService, AuditQueryService>()
             .AddSingleton<IAuditRecordExporter, BlobAuditRecordExporter>()

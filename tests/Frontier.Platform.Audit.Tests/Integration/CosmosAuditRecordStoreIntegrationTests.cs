@@ -121,6 +121,81 @@ public sealed class CosmosAuditRecordStoreIntegrationTests : IAsyncLifetime, IDi
         Assert.Equal(System.Net.HttpStatusCode.Conflict, ex.StatusCode);
     }
 
+    [Fact]
+    public async Task SignAsync_ParallelClosesOnOneEngagement_GiveALinearChainAgainstCosmos()
+    {
+        // S13.106 / ADR-PA31, against the real transactional batch and real If-Match semantics:
+        // the emulator, not a fake, is what proves the 412 actually arrives.
+        const int count = 8;
+        var engagementId = $"eng-{Guid.NewGuid():N}";
+        var signer = BuildSigner();
+
+        await Task.WhenAll(Enumerable.Range(1, count).Select(index => signer.SignAsync(
+            AuditRecordHasherTests.Sample() with
+            {
+                ExecutionId = $"{engagementId}::wf-{index}",
+                EngagementId = engagementId,
+                WorkflowId = $"wf-{index}",
+                ClosedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddMinutes(index),
+            },
+            CancellationToken.None)));
+
+        var chain = await store.GetChainAsync(engagementId, CancellationToken.None);
+        var verification = await signer.VerifyAsync(chain[0].ExecutionId, engagementId, CancellationToken.None);
+
+        Assert.Equal(count, chain.Count);
+        Assert.Equal(count, chain.Select(record => record.PreviousRecordHash).Distinct(StringComparer.Ordinal).Count());
+        Assert.True(verification.ChainValid);
+        Assert.Null(verification.BrokenLinkAt);
+        Assert.Null(verification.Forks);
+        Assert.Null(verification.UnreachableRecords);
+    }
+
+    [Fact]
+    public async Task GetChainAsync_ExcludesTheHeadDocument()
+    {
+        // The head shares the container and partition; it must never surface as a record.
+        var engagementId = $"eng-{Guid.NewGuid():N}";
+        var signer = BuildSigner();
+        await signer.SignAsync(
+            AuditRecordHasherTests.Sample() with { ExecutionId = $"{engagementId}::wf-1", EngagementId = engagementId, WorkflowId = "wf-1" },
+            CancellationToken.None);
+
+        var chain = await store.GetChainAsync(engagementId, CancellationToken.None);
+
+        Assert.Single(chain);
+        Assert.NotNull(await ((IAuditChainHeadStore)store).ReadHeadAsync(engagementId, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task SignAsync_ChainPredatingTheGuard_CreatesTheHeadFromTheStoredTail()
+    {
+        // The migration path against real storage: records written the old way (CreateAsync, no
+        // head), then one append under the new code.
+        var engagementId = $"eng-{Guid.NewGuid():N}";
+        var legacy = await Sign(engagementId, "wf-legacy");
+        await store.CreateAsync(legacy, CancellationToken.None);
+
+        var signed = await BuildSigner().SignAsync(
+            AuditRecordHasherTests.Sample() with
+            {
+                ExecutionId = $"{engagementId}::wf-2",
+                EngagementId = engagementId,
+                WorkflowId = "wf-2",
+                ClosedAtUtc = legacy.ClosedAtUtc.AddMinutes(1),
+            },
+            CancellationToken.None);
+
+        var head = await ((IAuditChainHeadStore)store).ReadHeadAsync(engagementId, CancellationToken.None);
+        Assert.Equal(legacy.RecordHash, signed.PreviousRecordHash);
+        Assert.Equal(2, head!.Head.Sequence);
+        Assert.Equal(1, head.Head.UnguardedRecordCount);
+    }
+
+    /// <summary>An <see cref="AuditSigner"/> over the emulator-backed store (ADR-PA31).</summary>
+    private AuditSigner BuildSigner() =>
+        new(store, store, keyProvider, Options.Create(new ExecutionAuditOptions { AppendMaxAttempts = 50, AppendBaseDelayMs = 5, AppendMaxDelayMs = 200 }));
+
     /// <summary>Builds a well-formed, correctly-signed <see cref="SignedAuditRecord"/> for <paramref name="engagementId"/>/<paramref name="workflowId"/>.</summary>
     private async Task<Frontier.Platform.Audit.SignedAuditRecord> Sign(string engagementId, string workflowId, DateTime? closedAtUtc = null)
     {

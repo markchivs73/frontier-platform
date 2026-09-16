@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using System.Net;
-using System.Security.Cryptography;
 
 namespace Frontier.Platform.Audit;
 
@@ -33,17 +32,14 @@ internal static class GovernanceAuditBackoff
 {
     /// <summary>
     /// <c>min(base × 2^(attempt−1), max)</c>, scaled into its upper half by <paramref name="jitter"/>
-    /// in [0, 1) so that contending writers spread out.
+    /// in [0, 1) so that contending writers spread out. Shared with the execution chain's append
+    /// (ADR-PA31) through <see cref="AuditAppendBackoff"/> — one curve, two callers.
     /// </summary>
-    internal static TimeSpan DelayFor(int attempt, GovernanceAuditOptions options, double jitter)
-    {
-        var exponential = options.AppendBaseDelayMs * Math.Pow(2, attempt - 1);
-        var capped = Math.Min(exponential, options.AppendMaxDelayMs);
-        return TimeSpan.FromMilliseconds(capped * (0.5 + (jitter / 2)));
-    }
+    internal static TimeSpan DelayFor(int attempt, GovernanceAuditOptions options, double jitter) =>
+        AuditAppendBackoff.DelayFor(attempt, options.AppendBaseDelayMs, options.AppendMaxDelayMs, jitter);
 
     /// <summary>A jitter value in [0, 1).</summary>
-    internal static double NextJitter() => RandomNumberGenerator.GetInt32(1_000) / 1_000.0;
+    internal static double NextJitter() => AuditAppendBackoff.NextJitter();
 }
 
 /// <summary>Classifies a transactional batch's status (ADR-PA30).</summary>

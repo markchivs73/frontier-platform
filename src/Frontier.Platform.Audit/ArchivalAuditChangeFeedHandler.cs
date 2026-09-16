@@ -19,11 +19,20 @@ internal sealed class ArchivalAuditChangeFeedHandler(IAuditRecordExporter export
     /// <summary>Exports every changed audit record in <paramref name="changes"/> (the change-feed processor's per-batch callback).</summary>
     internal async Task HandleChangesAsync(IReadOnlyCollection<JsonObject> changes, CancellationToken cancellationToken)
     {
-        foreach (var change in changes)
+        foreach (var change in changes.Where(IsRecordDocument))
         {
             await ExportAsync(change, cancellationToken);
         }
     }
+
+    /// <summary>
+    /// Whether <paramref name="document"/> is a signed record rather than an engagement's chain head
+    /// (ADR-PA31). Heads are mutable bookkeeping, not evidence: archiving them would put a document
+    /// that legitimately changes into an immutable archive, and they carry no <c>record</c> to export.
+    /// A record written before ADR-PA31 has no <c>doc_type</c>, so its absence means "record".
+    /// </summary>
+    internal static bool IsRecordDocument(JsonObject document) =>
+        document["doc_type"]?.GetValue<string>() is null or AuditRecordDocumentId.RecordDocType;
 
     /// <summary>Strips Cosmos system metadata from <paramref name="recordDocument"/> and exports the remaining canonical bytes under the record's execution id.</summary>
     internal async Task ExportAsync(JsonObject recordDocument, CancellationToken cancellationToken)
