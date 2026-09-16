@@ -18,7 +18,7 @@ public sealed class MappingGovernanceAuthorityTests
         var store = new FakeMappingProposalStore().WithVersion(FleetV1, current: true).WithProposal(Pending());
         var recorder = new FakeMappingDecisionRecorder();
 
-        var exception = await Assert.ThrowsAsync<ContractViolationException>(() =>
+        var exception = await Assert.ThrowsAnyAsync<ContractViolationException>(() =>
             Service(store, recorder).ProposeAsync(Change(), ThirdParty, CancellationToken.None));
 
         Assert.Contains("p-1", exception.Message, StringComparison.Ordinal);
@@ -34,7 +34,7 @@ public sealed class MappingGovernanceAuthorityTests
             .WithVersion(FleetV1, current: true)
             .WithProposal(Pending() with { State = MappingProposalState.Shadow });
 
-        await Assert.ThrowsAsync<ContractViolationException>(() =>
+        await Assert.ThrowsAnyAsync<ContractViolationException>(() =>
             Service(store, new FakeMappingDecisionRecorder()).ProposeAsync(Change(), ThirdParty, CancellationToken.None));
     }
 
@@ -108,7 +108,7 @@ public sealed class MappingGovernanceAuthorityTests
         var store = new FakeMappingProposalStore().WithProposal(Pending());
 
         var withdrawn = await Service(store, new FakeMappingDecisionRecorder())
-            .WithdrawAsync(RoleId, "p-1", Proposer, "superseded", CancellationToken.None);
+            .WithdrawAsync(RoleId, "p-1", Proposer, "superseded", null, CancellationToken.None);
 
         Assert.Equal(MappingProposalState.Withdrawn, withdrawn.State);
     }
@@ -118,8 +118,8 @@ public sealed class MappingGovernanceAuthorityTests
     {
         var store = new FakeMappingProposalStore().WithProposal(Pending());
 
-        var exception = await Assert.ThrowsAsync<ContractViolationException>(() =>
-            Service(store, new FakeMappingDecisionRecorder()).WithdrawAsync(RoleId, "p-1", Approver, "not mine to retract", CancellationToken.None));
+        var exception = await Assert.ThrowsAnyAsync<ContractViolationException>(() =>
+            Service(store, new FakeMappingDecisionRecorder()).WithdrawAsync(RoleId, "p-1", Approver, "not mine to retract", null, CancellationToken.None));
 
         Assert.Contains("only they may withdraw it", exception.Message, StringComparison.Ordinal);
         Assert.Equal(MappingProposalState.PendingApproval, store.Proposal("p-1")!.State);
@@ -131,8 +131,8 @@ public sealed class MappingGovernanceAuthorityTests
         // A rejection is a recorded decision on someone else's change; killing your own idea is a withdrawal.
         var store = new FakeMappingProposalStore().WithProposal(Pending());
 
-        var exception = await Assert.ThrowsAsync<ContractViolationException>(() =>
-            Service(store, new FakeMappingDecisionRecorder()).RejectAsync(RoleId, "p-1", Proposer, "changed my mind", CancellationToken.None));
+        var exception = await Assert.ThrowsAnyAsync<ContractViolationException>(() =>
+            Service(store, new FakeMappingDecisionRecorder()).RejectAsync(RoleId, "p-1", Proposer, "changed my mind", null, CancellationToken.None));
 
         Assert.Contains("withdraw it instead", exception.Message, StringComparison.Ordinal);
     }
@@ -143,7 +143,7 @@ public sealed class MappingGovernanceAuthorityTests
         var store = new FakeMappingProposalStore().WithProposal(Pending());
 
         var rejected = await Service(store, new FakeMappingDecisionRecorder())
-            .RejectAsync(RoleId, "p-1", Approver, "no evidence", CancellationToken.None);
+            .RejectAsync(RoleId, "p-1", Approver, "no evidence", null, CancellationToken.None);
 
         Assert.Equal(MappingProposalState.Rejected, rejected.State);
     }
@@ -155,7 +155,7 @@ public sealed class MappingGovernanceAuthorityTests
         // would approve a mapping that reports itself live in the canary ring while serving nobody.
         var change = Change() with { ProposedMapping = Change().ProposedMapping with { CanaryPercent = 0 } };
 
-        var exception = await Assert.ThrowsAsync<ContractViolationException>(() =>
+        var exception = await Assert.ThrowsAnyAsync<ContractViolationException>(() =>
             Service(new FakeMappingProposalStore(), new FakeMappingDecisionRecorder()).ProposeAsync(change, Proposer, CancellationToken.None));
 
         Assert.Contains("canary_percent", exception.Message, StringComparison.Ordinal);
@@ -182,7 +182,7 @@ public sealed class MappingGovernanceAuthorityTests
         var options = new MappingGovernanceOptions { DecisionMaxAttempts = 3, DecisionBaseDelayMs = 0, DecisionMaxDelayMs = 0 };
 
         await Assert.ThrowsAsync<MappingGovernanceException>(() =>
-            Service(store, recorder, options: options).ApproveAsync(RoleId, "p-1", Approver, "eval accepted", CancellationToken.None));
+            Service(store, recorder, options: options).ApproveAsync(RoleId, "p-1", Approver, "eval accepted", null, CancellationToken.None));
 
         Assert.Equal(3, recorder.Compensations.Count);
     }

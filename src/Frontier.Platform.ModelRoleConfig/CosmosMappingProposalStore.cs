@@ -36,6 +36,29 @@ internal sealed class CosmosMappingProposalStore(CosmosClient client, IOptions<C
     }
 
     /// <inheritdoc />
+    public async Task<IReadOnlyList<RoleMapping>> ListMappingsAsync(string roleId, CancellationToken cancellationToken)
+    {
+        // The same positive {roleId}:v prefix the version listing selects on, reading the documents
+        // themselves: a history panel needs every version's ring, chain and reason, and one query
+        // beats one point-read per row.
+        var query = new QueryDefinition("SELECT * FROM c WHERE STARTSWITH(c.id, @prefix) AND IS_DEFINED(c.mapping_version) ORDER BY c.mapping_version ASC")
+            .WithParameter("@prefix", ModelRoleConfigDocumentId.VersionPrefix(roleId));
+
+        var mappings = new List<RoleMapping>();
+        using var iterator = Container.GetItemQueryIterator<RoleMappingDocument>(
+            query, requestOptions: new QueryRequestOptions { PartitionKey = new PartitionKey(roleId) });
+        while (iterator.HasMoreResults)
+        {
+            foreach (var document in await iterator.ReadNextAsync(cancellationToken))
+            {
+                mappings.Add(document.ToDomain());
+            }
+        }
+
+        return mappings;
+    }
+
+    /// <inheritdoc />
     public async Task<RoleMapping?> FindMappingVersionAsync(string roleId, int version, CancellationToken cancellationToken)
     {
         try
@@ -72,7 +95,7 @@ internal sealed class CosmosMappingProposalStore(CosmosClient client, IOptions<C
         {
             var document = await Container.ReadItemAsync<MappingProposalDocument>(
                 ModelRoleConfigDocumentId.ForProposal(roleId, proposalId), new PartitionKey(roleId), cancellationToken: cancellationToken);
-            return new StoredMappingProposal(document.Resource.ToDomain(), document.ETag);
+            return new StoredMappingProposal(document.Resource.ToDomain() with { ConcurrencyToken = document.ETag }, document.ETag);
         }
         catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
@@ -85,23 +108,23 @@ internal sealed class CosmosMappingProposalStore(CosmosClient client, IOptions<C
         await Container.CreateItemAsync(MappingProposalDocument.FromDomain(proposal), new PartitionKey(proposal.RoleId), cancellationToken: cancellationToken);
 
     /// <inheritdoc />
-    public async Task<bool> TryReplaceProposalAsync(MappingChangeProposal proposal, string expectedETag, CancellationToken cancellationToken)
+    public async Task<string?> TryReplaceProposalAsync(MappingChangeProposal proposal, string expectedETag, CancellationToken cancellationToken)
     {
         var document = MappingProposalDocument.FromDomain(proposal);
         try
         {
-            await Container.ReplaceItemAsync(document, document.Id, new PartitionKey(proposal.RoleId),
+            var response = await Container.ReplaceItemAsync(document, document.Id, new PartitionKey(proposal.RoleId),
                 new ItemRequestOptions { IfMatchEtag = expectedETag }, cancellationToken);
-            return true;
+            return response.ETag;
         }
         catch (CosmosException ex) when (IsConcurrencyConflict(ex.StatusCode))
         {
-            return false;
+            return null;
         }
     }
 
     /// <inheritdoc />
-    public async Task<bool> TryAllocateVersionAsync(
+    public async Task<string?> TryAllocateVersionAsync(
         RoleMapping mapping,
         MappingChangeProposal proposal,
         string expectedETag,
@@ -121,11 +144,12 @@ internal sealed class CosmosMappingProposalStore(CosmosClient client, IOptions<C
         using var response = await batch.ExecuteAsync(cancellationToken);
         if (response.IsSuccessStatusCode)
         {
-            return true;
+            // Operation 1 is the proposal replace; its result carries the token the next decision needs.
+            return response[ProposalReplaceIndex].ETag;
         }
 
         return IsConcurrencyConflict(response.StatusCode)
-            ? false
+            ? null
             : throw new MappingGovernanceException(
                 $"The mapping-version batch for role '{mapping.RoleId}' v{mapping.MappingVersion} failed with status {(int)response.StatusCode}: {response.ErrorMessage}");
     }
@@ -179,7 +203,7 @@ internal sealed class CosmosMappingProposalStore(CosmosClient client, IOptions<C
         using var iterator = Container.GetItemQueryIterator<MappingProposalDocument>(
             MappingProposalQueryBuilder.Build(query),
             query.ContinuationToken,
-            new QueryRequestOptions { PartitionKey = new PartitionKey(query.RoleId), MaxItemCount = query.PageSize });
+            RequestOptionsFor(query));
 
         if (!iterator.HasMoreResults)
         {
@@ -189,10 +213,26 @@ internal sealed class CosmosMappingProposalStore(CosmosClient client, IOptions<C
         var page = await iterator.ReadNextAsync(cancellationToken);
         return new MappingProposalPage
         {
-            Proposals = [.. page.Select(document => document.ToDomain())],
+            Proposals = [.. page.Select(document => document.ToDomain() with { ConcurrencyToken = document.ETag })],
             ContinuationToken = page.ContinuationToken,
         };
     }
+
+    /// <summary>
+    /// Single-partition when the query names a role; otherwise a <b>bounded</b> cross-partition fan-out
+    /// (ADR-PA34). The page size caps the rows, the continuation token carries the paging, and the
+    /// concurrency cap stops one admin screen fanning out across every physical partition at once.
+    /// </summary>
+    internal static QueryRequestOptions RequestOptionsFor(MappingProposalQuery query) =>
+        query.RoleId is { } roleId
+            ? new QueryRequestOptions { PartitionKey = new PartitionKey(roleId), MaxItemCount = query.PageSize }
+            : new QueryRequestOptions { MaxItemCount = query.PageSize, MaxConcurrency = CrossPartitionConcurrency };
+
+    /// <summary>The fan-out cap for a cross-partition proposal query (ADR-PA34).</summary>
+    internal const int CrossPartitionConcurrency = 4;
+
+    /// <summary>The proposal replace's position in the allocation batch.</summary>
+    private const int ProposalReplaceIndex = 1;
 
     /// <summary>A 412 (the document moved) or 409 (the id is taken) means another writer won; anything else is a real failure.</summary>
     internal static bool IsConcurrencyConflict(HttpStatusCode status) =>
@@ -202,18 +242,29 @@ internal sealed class CosmosMappingProposalStore(CosmosClient client, IOptions<C
 /// <summary>Builds the parameterised proposal query (ADR-PA32). Pure and unit-tested.</summary>
 internal static class MappingProposalQueryBuilder
 {
-    /// <summary>Proposal documents only, optionally filtered by state, most recently proposed first.</summary>
+    /// <summary>
+    /// Proposal documents only, optionally filtered by a <b>set</b> of states, most recently proposed
+    /// first (ADR-PA34).
+    /// <para>
+    /// The filtered and ordered paths are <c>c.state</c> and <c>c.proposed_at_utc</c> — the document's
+    /// own flat shape. They read <c>c.proposal.*</c> before ADR-PA34, which matched no stored document:
+    /// the state filter silently returned nothing and the ordering was arbitrary.
+    /// </para>
+    /// </summary>
     internal static QueryDefinition Build(MappingProposalQuery query)
     {
+        var states = query.States ?? [];
         var clauses = "c.doc_type = @docType";
-        if (query.State is not null)
+        if (states.Count > 0)
         {
-            clauses += " AND c.proposal.state = @state";
+            clauses += " AND ARRAY_CONTAINS(@states, c.state)";
         }
 
-        var definition = new QueryDefinition($"SELECT * FROM c WHERE {clauses} ORDER BY c.proposal.proposed_at_utc DESC")
+        var definition = new QueryDefinition($"SELECT * FROM c WHERE {clauses} ORDER BY c.proposed_at_utc DESC")
             .WithParameter("@docType", MappingProposalDocument.ProposalDocType);
 
-        return query.State is null ? definition : definition.WithParameter("@state", query.State.Name);
+        return states.Count == 0
+            ? definition
+            : definition.WithParameter("@states", states.Select(state => state.Name).ToArray());
     }
 }

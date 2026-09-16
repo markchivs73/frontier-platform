@@ -24,7 +24,7 @@ public sealed class MappingProposalRulesTests
     {
         var change = Change() with { ProposedMapping = FleetV1 with { Chain = [] } };
 
-        var exception = Assert.Throws<ContractViolationException>(() => MappingProposalRules.ValidateChange(change));
+        var exception = Assert.ThrowsAny<ContractViolationException>(() => MappingProposalRules.ValidateChange(change));
 
         Assert.Contains("at least a primary entry", exception.Message, StringComparison.Ordinal);
     }
@@ -35,7 +35,7 @@ public sealed class MappingProposalRulesTests
         // ADR-PA27's guard applies at propose time too, so an ill-shaped chain is never stored.
         var change = Change() with { ProposedMapping = FleetV1 with { Chain = [FleetV1.Chain[0], Agent] } };
 
-        Assert.Throws<ContractViolationException>(() => MappingProposalRules.ValidateChange(change));
+        Assert.ThrowsAny<ContractViolationException>(() => MappingProposalRules.ValidateChange(change));
     }
 
     [Fact]
@@ -46,7 +46,7 @@ public sealed class MappingProposalRulesTests
         var blank = (ModelEntry)FleetV1.Chain[0] with { ModelId = "  " };
         var change = Change() with { ProposedMapping = FleetV1 with { Chain = [blank] } };
 
-        var exception = Assert.Throws<ContractViolationException>(() => MappingProposalRules.ValidateChange(change));
+        var exception = Assert.ThrowsAny<ContractViolationException>(() => MappingProposalRules.ValidateChange(change));
 
         Assert.Contains("names no target", exception.Message, StringComparison.Ordinal);
     }
@@ -56,7 +56,7 @@ public sealed class MappingProposalRulesTests
     {
         var change = Change() with { ProposedMapping = FleetV1 with { RoleId = "fast" } };
 
-        Assert.Throws<ContractViolationException>(() => MappingProposalRules.ValidateChange(change));
+        Assert.ThrowsAny<ContractViolationException>(() => MappingProposalRules.ValidateChange(change));
     }
 
     [Theory]
@@ -67,7 +67,7 @@ public sealed class MappingProposalRulesTests
     {
         var change = Change() with { ProposedMapping = FleetV1 with { CanaryPercent = percent } };
 
-        Assert.Throws<ContractViolationException>(() => MappingProposalRules.ValidateChange(change));
+        Assert.ThrowsAny<ContractViolationException>(() => MappingProposalRules.ValidateChange(change));
     }
 
     [Fact]
@@ -75,7 +75,7 @@ public sealed class MappingProposalRulesTests
     {
         // Reached directly rather than through ProposeAsync, whose argument guard throws first: a
         // remap without a reason is a config edit, which doc 08 §2 principle 3 forbids.
-        var exception = Assert.Throws<ContractViolationException>(() => MappingProposalRules.ValidateChange(Change() with { Reason = " " }));
+        var exception = Assert.ThrowsAny<ContractViolationException>(() => MappingProposalRules.ValidateChange(Change() with { Reason = " " }));
 
         Assert.Contains("reason is required", exception.Message, StringComparison.Ordinal);
     }
@@ -85,7 +85,7 @@ public sealed class MappingProposalRulesTests
     {
         var change = Change() with { RoleId = " ", ProposedMapping = FleetV1 with { RoleId = " " } };
 
-        Assert.Throws<ContractViolationException>(() => MappingProposalRules.ValidateChange(change));
+        Assert.ThrowsAny<ContractViolationException>(() => MappingProposalRules.ValidateChange(change));
     }
 
     [Fact]
@@ -100,7 +100,7 @@ public sealed class MappingProposalRulesTests
     {
         var proposal = Pending() with { ProposalId = proposalId, RoleId = roleId, ProposedBy = proposedBy };
 
-        Assert.Throws<ContractViolationException>(proposal.Validate);
+        Assert.ThrowsAny<ContractViolationException>(proposal.Validate);
     }
 
     [Fact]
@@ -108,7 +108,7 @@ public sealed class MappingProposalRulesTests
     {
         var approved = Pending() with { State = MappingProposalState.Approved };
 
-        var exception = Assert.Throws<ContractViolationException>(approved.Validate);
+        var exception = Assert.ThrowsAny<ContractViolationException>(approved.Validate);
 
         Assert.Contains("mapping_version", exception.Message, StringComparison.Ordinal);
         Assert.Contains("approver", exception.Message, StringComparison.Ordinal);
@@ -119,7 +119,7 @@ public sealed class MappingProposalRulesTests
     {
         var promoted = Pending() with { State = MappingProposalState.Promoted };
 
-        Assert.Throws<ContractViolationException>(promoted.Validate);
+        Assert.ThrowsAny<ContractViolationException>(promoted.Validate);
     }
 
     [Fact]
@@ -127,12 +127,12 @@ public sealed class MappingProposalRulesTests
     {
         var rolledBack = Pending() with { State = MappingProposalState.RolledBack };
 
-        Assert.Throws<ContractViolationException>(rolledBack.Validate);
+        Assert.ThrowsAny<ContractViolationException>(rolledBack.Validate);
     }
 
     [Fact]
     public void EnsureDistinctApprover_IsCaseInsensitive() =>
-        Assert.Throws<ContractViolationException>(() =>
+        Assert.ThrowsAny<ContractViolationException>(() =>
             MappingProposalRules.EnsureDistinctApprover(Pending(), Proposer.ToUpperInvariant()));
 
     [Fact]

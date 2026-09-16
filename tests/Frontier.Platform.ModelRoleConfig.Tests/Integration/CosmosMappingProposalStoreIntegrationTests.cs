@@ -56,7 +56,7 @@ public sealed class CosmosMappingProposalStoreIntegrationTests : IAsyncLifetime,
         var service = Service();
 
         var approved = await Task.WhenAll(proposals.Select(id =>
-            service.ApproveAsync(role, id, Approver, "concurrent approval", CancellationToken.None)));
+            service.ApproveAsync(role, id, Approver, "concurrent approval", null, CancellationToken.None)));
 
         var versions = approved.Select(proposal => proposal.MappingVersion!.Value).ToList();
         Assert.Equal(versions.Count, versions.Distinct().Count());
@@ -77,7 +77,7 @@ public sealed class CosmosMappingProposalStoreIntegrationTests : IAsyncLifetime,
 
         var service = Service();
         var approved = await Task.WhenAll(seeded.Select(entry =>
-            service.ApproveAsync(entry.Role, entry.ProposalId, Approver, "concurrent approval", CancellationToken.None)));
+            service.ApproveAsync(entry.Role, entry.ProposalId, Approver, "concurrent approval", null, CancellationToken.None)));
 
         Assert.All(approved, proposal => Assert.Equal(1, proposal.MappingVersion));
         foreach (var role in roles)
@@ -94,10 +94,10 @@ public sealed class CosmosMappingProposalStoreIntegrationTests : IAsyncLifetime,
         var change = ChangeFor(role);
 
         var first = await service.ProposeAsync(change, Proposer, CancellationToken.None);
-        await Assert.ThrowsAsync<Frontier.Platform.Abstractions.ContractViolationException>(() =>
+        await Assert.ThrowsAnyAsync<Frontier.Platform.Abstractions.ContractViolationException>(() =>
             service.ProposeAsync(change, Proposer, CancellationToken.None));
 
-        await service.RejectAsync(role, first.ProposalId, Approver, "superseded", CancellationToken.None);
+        await service.RejectAsync(role, first.ProposalId, Approver, "superseded", null, CancellationToken.None);
         var second = await service.ProposeAsync(change, Proposer, CancellationToken.None);
 
         Assert.NotEqual(first.ProposalId, second.ProposalId);
@@ -110,8 +110,8 @@ public sealed class CosmosMappingProposalStoreIntegrationTests : IAsyncLifetime,
         var proposalId = (await SeedAsync(role, count: 1))[0];
         var service = Service();
 
-        await service.ApproveAsync(role, proposalId, Approver, "eval accepted", CancellationToken.None);
-        var promoted = await service.PromoteAsync(role, proposalId, Approver, "clean week", CancellationToken.None);
+        await service.ApproveAsync(role, proposalId, Approver, "eval accepted", null, CancellationToken.None);
+        var promoted = await service.PromoteAsync(role, proposalId, Approver, "clean week", null, CancellationToken.None);
 
         Assert.Equal(MappingProposalState.Promoted, promoted.State);
         Assert.Equal(RolloutRing.Fleet, (await store.FindMappingVersionAsync(role, promoted.PromotedVersion!.Value, CancellationToken.None))!.Ring);

@@ -101,6 +101,22 @@ public sealed record MappingChangeProposal : IVersionedContract
     [JsonPropertyName("rolled_back_to_version")]
     public int? RolledBackToVersion { get; init; }
 
+    /// <summary>
+    /// The proposal's concurrency token as it was last read (ADR-PA34): the stored document's ETag,
+    /// which a decision may pass back as its expected token so a decision taken on a stale view is
+    /// refused rather than applied. Populated on every read — <c>GetProposalAsync</c>,
+    /// <c>ListProposalsAsync</c>, and the proposal each decision returns.
+    /// <para>
+    /// <b>Optional, and never stored</b> (ADR-E15's additive floor): it is a property of the stored
+    /// document rather than of the proposal, so it is not written into
+    /// <c>MappingProposalDocument</c> — bytes recorded before this property read back with it null,
+    /// and nothing downstream may require it.
+    /// </para>
+    /// </summary>
+    [JsonPropertyOrder(16)]
+    [JsonPropertyName("concurrency_token")]
+    public string? ConcurrencyToken { get; init; }
+
     /// <inheritdoc />
     public void Validate() =>
         MappingProposalRules.ValidateProposal(this);

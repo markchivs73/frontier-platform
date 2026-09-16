@@ -90,6 +90,7 @@ registration answers "always closed"; wire a real implementation when you want f
 | `IModelResolver` | `ResolutionRequest` → `ResolvedModel`: ring assignment, canary bucketing, and the fallback-chain walk |
 | `IMappingPinner` | Pins the version each role is **served** at execution start, one `ModelRolePin` per role (ADR-PA29) |
 | `IMappingGovernanceService` | Propose → approve (canary) → promote (fleet), with reject/withdraw, plus instant rollback |
+| `IMappingVersionHistory` | A role's append-only version history, each row marked with whether it is current |
 
 `ResolvedModel` carries the audit fields as well as the model: which role, under which mapping
 version, and **which chain position was served**. A sustained non-zero chain position is an alarm
@@ -116,8 +117,41 @@ Three properties are worth knowing because they are load-bearing:
   additive. A shadow version is stored and never pointed at, so it cannot serve and cannot trip
   `RoleCatalogueCheck`.
 
-Four rules the service enforces, each of which refuses with a `ContractViolationException` (map it to
-400, or 409 for the first — the request is not malformed, the role is occupied):
+**Every refusal has its own type (ADR-PA34).** They all derive from `ContractViolationException`, so
+they stay permanent failures that are never retried and every existing `catch` keeps working — but a
+caller maps a status code by catching a type rather than by matching message text:
+
+| Refusal | Means | Map to |
+|---|---|---|
+| `InvalidMappingChangeException` | No role or reason, empty/mixed chain, target-less entry, canary percent outside 1–100 | 400 |
+| `UnknownMappingProposalException` | The role holds no proposal by that id | 404 |
+| `UnknownMappingVersionException` | No such mapping version, or no `current` pointer | 404 |
+| `DistinctApproverRequiredException` | The decider is the proposer | 403 |
+| `ProposerOnlyWithdrawalException` | Someone other than the proposer tried to withdraw | 403 |
+| `IllegalMappingTransitionException` | The proposal is not in a state that decision may move | 409 |
+| `MappingProposalAlreadyPendingException` | The role already holds a proposal awaiting a decision | 409 |
+| `MappingVersionNotRollbackEligibleException` | The target version is a shadow that never served | 409 |
+| `MappingConcurrencyConflictException` | The expected concurrency token is stale | 409 |
+
+**Deciding safely against a stale view (ADR-PA34).** Every proposal you read carries a
+`ConcurrencyToken`. Pass it back as `expectedConcurrencyToken` and a decision taken on a view
+somebody else has already moved is **refused**, naming the proposal's new state and who decided it —
+which is what an operator has to see. Omit it and the decision proceeds unguarded, for a caller with
+no prior view to be stale.
+
+This is deliberately *not* the same thing as the decision retry. The retry loses a race for a mapping
+*version* and re-allocating still produces the decision you asked for, so it is retried silently. A
+stale token means the *proposal* moved, so retrying would decide something you have never seen — that
+one stops.
+
+**Listing proposals.** `MappingProposalQuery` takes an **optional** `RoleId` and a **set** of
+`States`. Naming a role keeps the query inside that role's partition; omitting it runs a bounded
+cross-partition query — page size capped, continuation-token paged, fan-out capped — which is what
+answers "every proposal awaiting a decision, across every role" for an admin screen. There is no
+default state filter: the caller chooses, so "everything" stays expressible.
+
+Four rules the service enforces (map the first to 409 — the request is not malformed, the role is
+occupied — and the rest per the table above):
 
 - **One undecided proposal per role.** A second propose is refused while one is awaiting a decision,
   and the refusal names the proposal in the way and who raised it. The slot is released once that

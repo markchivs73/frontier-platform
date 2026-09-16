@@ -4,8 +4,10 @@ namespace Frontier.Platform.ModelRoleConfig;
 
 /// <summary>
 /// The structural rules a proposal and its proposed chain must satisfy (ADR-PA32). Pure, so every
-/// branch is reachable from a test without a store. Every failure is a
-/// <see cref="ContractViolationException"/> — permanent, never retried (invariant 7).
+/// branch is reachable from a test without a store. Every failure is a typed
+/// <see cref="MappingGovernanceRefusalException"/> (ADR-PA34) — still a
+/// <see cref="ContractViolationException"/>, so still permanent and never retried (invariant 7),
+/// but each refusal now has its own catchable type so a consumer can map its status code.
 /// </summary>
 internal static class MappingProposalRules
 {
@@ -127,7 +129,7 @@ internal static class MappingProposalRules
     {
         if (!proposal.State.CanTransitionTo(to))
         {
-            throw new ContractViolationException(
+            throw new IllegalMappingTransitionException(
                 nameof(MappingChangeProposal),
                 [$"proposal '{proposal.ProposalId}' is '{proposal.State.Name}' and cannot move to '{to.Name}' (doc 08 §7)."]);
         }
@@ -143,7 +145,7 @@ internal static class MappingProposalRules
     {
         if (string.Equals(proposal.ProposedBy, approverId, StringComparison.OrdinalIgnoreCase))
         {
-            throw new ContractViolationException(
+            throw new DistinctApproverRequiredException(
                 nameof(MappingChangeProposal),
                 [$"proposal '{proposal.ProposalId}' was proposed by '{proposal.ProposedBy}', who cannot also decide it (requireDistinctApprover); withdraw it instead."]);
         }
@@ -158,7 +160,7 @@ internal static class MappingProposalRules
     {
         if (!string.Equals(proposal.ProposedBy, actor, StringComparison.OrdinalIgnoreCase))
         {
-            throw new ContractViolationException(
+            throw new ProposerOnlyWithdrawalException(
                 nameof(MappingChangeProposal),
                 [$"proposal '{proposal.ProposalId}' was proposed by '{proposal.ProposedBy}', and only they may withdraw it; another principal must reject it instead."]);
         }
@@ -169,7 +171,7 @@ internal static class MappingProposalRules
     {
         if (violations.Count > 0)
         {
-            throw new ContractViolationException(nameof(MappingChangeProposal), violations);
+            throw new InvalidMappingChangeException(nameof(MappingChangeProposal), violations);
         }
     }
 
