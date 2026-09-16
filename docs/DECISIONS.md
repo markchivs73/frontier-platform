@@ -1778,6 +1778,199 @@ an execution whose record already exists still throws `InvalidOperationException
 retrying to exhaustion, so the consolidator's idempotent-retry path (doc 05 §11) is unchanged.
 Tracked as S13.106.
 
+## ADR-PA32 — a mapping change is a proposal with a state machine, and its version is allocated create-only
+
+frontier-workflow's S13.101. `MappingGovernanceService.ProposeChangeAsync` and `ApproveAsync` threw
+`NotSupportedException`, so the consumer's API answered 500; `RollbackAsync` rewrote the `current`
+pointer with no audit, no existence check and no attribution, and an omitted target wrote a pointer
+to a nonexistent v0. Doc 08 §7 specifies the governance loop and §8 the rollback contract, but no
+proposal document had ever been designed. Mark's decisions, 2026-09-15.
+
+**Proposals live with the versions they may become.** A proposal is stored in `model-role-config` in
+the role's own `/role_id` partition, as `{roleId}:proposal:{proposalId}` with `doc_type`
+`mapping_proposal`. Co-location is not tidiness: a transactional batch requires one logical
+partition, and the batch is what makes an approval atomic. The `:proposal:` infix cannot collide
+with `:v{n}` or `:current`, so all three kinds share the partition unambiguously, and readers that
+predate this ADR are unaffected because they point-read ids they already know. A proposal is the one
+**mutable** document of the three — it carries a state machine, and each decision replaces it under
+an ETag guard — while the version an approval produces is append-only and never rewritten. The
+chain is lifted into the document's own `proposed_chain` (the `ChainEntryDocument` shape) and the
+nested copy emptied, so a chain is stored once, in the one shape that can read an abstract
+`ChainEntry` back (ADR-PA27), and can never disagree with itself.
+
+**Version allocation is the create-only write, not a counter.** An approval reads the role's stored
+versions, takes `max + 1`, and runs one transactional batch on the role's partition: **create**
+`{roleId}:v{n}`, replace the proposal with If-Match on its ETag, and upsert `current`. Because the
+version id is created and never upserted, two approvals that both computed the same `n` cannot both
+land — the loser gets 409, re-reads, re-allocates and retries, as ADR-PA30's head allocation does.
+There is deliberately no separate sequence document: the version documents *are* the allocation, so
+there is nothing for a counter to drift from. `MappingGovernanceException` is thrown when the
+attempts are exhausted, and a consumer maps it to 503.
+
+**The state machine, and the slot that is deliberately empty.** `MappingProposalState` is a smart
+enum: `pending_approval` → `shadow` | `approved` | `rejected` | `withdrawn`; `shadow` → `approved` |
+`rejected` | `withdrawn`; `approved` → `promoted` | `rolled_back`; `promoted` → `rolled_back`; and
+`rejected`, `withdrawn`, `rolled_back` are terminal. **Shadow execution is deferred** (S13.101
+sequences it after the cloud proof): nothing in this release duplicates an invocation, charges a
+shadow budget, or enters the `shadow` state. The slot ships now so that enabling it later is an
+additive transition rather than the rename of a shipped wire value. An approval therefore goes
+straight to the **canary** ring, and canary→fleet promotion is **manual only** — no auto-promotion
+after N clean days is built.
+
+**A shadow version never becomes `current`.** The batch repoints `current` only when the version's
+ring is not `shadow`, and `RollbackToVersionAsync` refuses a shadow target outright. Both matter for
+the same reason: a shadow mapping was never served, so making it current would put an unevaluated
+chain in front of every new execution and would fail `RoleCatalogueCheck` at the next boot, which
+admits only fleet and canary. The guard is structural rather than advisory.
+
+**Promotion appends a version; it does not edit one.** This follows from two rules already in force
+rather than from a new preference: a mapping version is immutable once written (doc 08 §6), and the
+ring is a property of the version (Mark's call — the ring stays per mapping version, doc 20 amended).
+Promoting to fleet therefore writes a *new* version carrying the same chain with `ring: fleet`,
+`canary_percent: 0` and no `predecessor_fleet_version`, and repoints `current` at it. Rewriting the
+canary document's ring in place would have been the cheaper edit and would have destroyed the record
+of what was live, in which ring, and when.
+
+**`PredecessorFleetVersion` is stamped at propose time** (the S6.6 verdict): the role's fleet version
+when the proposal was made, which is what an engagement outside the canary keeps being served and
+what `ServedMappingSelector` falls back to. `ApprovedBy` and `EffectiveFromUtc` are stamped by the
+service and never taken from the caller, and a proposal's mapping carries version 0 and an empty
+approver until an approver makes it real. A **distinct approver** is required under the existing
+`requireDistinctApprover` semantics: the principal who proposed a change may never approve it,
+compared case-insensitively.
+
+**Audit goes through a port, because the reference rule is the rule.** Every decision — propose,
+approve, reject, withdraw, promote, rollback — must reach S13.103's signed governance record (K6).
+`ModelRoleConfig` is governance-tier, so ADR-PA5 and
+`GovernanceLibrary_OnlyReferencesAbstractionsAndSerializationAmongPlatformLibraries` forbid it
+referencing `Frontier.Platform.Audit`. Weakening that test to let it call `IGovernanceAuditService`
+directly was rejected: the rule is what keeps each governance library independently consumable. The
+library therefore declares `IMappingDecisionRecorder` with a vocabulary it owns
+(`MappingGovernanceDecision`, `MappingGovernanceEventTypes`), free of platform audit types, and the
+consumer adapts it over the `IGovernanceAuditWriter` it already has on the signed chain (ADR-PA30).
+**There is no default registration**, following `IReferencedRolesSource`: a no-op default would make
+an unwired consumer a silent audit gap, which is precisely the K6 failure the port exists to close,
+so an unregistered recorder fails at composition instead. The ordering is ADR-PA30's — the record is
+appended **before** the change, and a change that fails afterwards appends a compensating record
+naming the first.
+
+**Propose-time validation.** A proposal is refused as a permanent `ContractViolationException` unless
+it names a role and a reason, its mapping's role matches the change's, its canary percent is 0–100,
+and its chain is non-empty and passes `ChainShape` (all-model or all-agent, ADR-PA27). K7's half that
+this library can enforce is that every chain entry names a target: an entry whose `TargetId` is
+absent or blank is refused at propose time rather than discovered at the first invocation. **Stated
+plainly, because it is a limit rather than a guarantee:** the platform holds no model catalogue —
+`Phase1RoleCatalogue` enumerates *roles*, not models — so "resolvable" here means structurally
+resolvable. Whether a given model id exists at its provider, like whether an agent resource is
+active, is the consumer's check, for the same ADR-PA2 reason.
+
+**The shipped surface.** `ProposeChangeAsync(change, ct)`, `ApproveAsync(proposalId, approverId, ct)`
+and `RollbackAsync(roleId, toVersion, reason, ct)` are kept and marked `[Obsolete]` with migration
+notes rather than removed, so no consumer's build breaks silently and the PublicAPI entries stay.
+The first two have thrown `NotSupportedException` since S4.3 and still do, so nothing regresses. The
+third *did* work, and now throws — recorded here as the one deliberate behaviour change on a working
+shipped member. It cannot be forwarded honestly: it carries no actor, and ADR-E8 forbids inventing
+one (`unknown` is the hole doc 15 §5 exists to close), so attributing a human rollback to a
+`system:` actor would have been a worse answer than a compile-time obsolete warning plus a runtime
+message naming `RollbackToVersionAsync`. Its only caller is the consumer's API, which S13.101's next
+slice rewrites.
+
+*Evidence.* K6 ("HMAC-chained audit for every governance fact") and K7 ("governance is data") are the
+positions this serves; doc 08 §2 principle 3 (a remap is a governed release), §6 (the container and
+its append-only versions), §7 (the propose → ring → approve loop) and §8/ADR-M3 (the rollback
+contract) are the specification, with doc 08 §7 amended so proposing requires `model-governance` and
+doc 20 amended so the ring is per mapping version. External sources are those ADR-PA30 already relied
+on and are carried forward rather than re-fetched (last accessed 2026-09-15, as recorded there):
+Microsoft Learn, *Transactional batch operations in Azure Cosmos DB* (updated 2026-04-27) —
+operations sharing a partition key succeed or fail together, and a failed operation carries its own
+status, 409 for an item that already exists, which is exactly what makes the create-only version id
+an allocation; Microsoft Learn, *Database transactions and optimistic concurrency control* (updated
+2026-04-27) — `_etag` with `if-match`, rejected with HTTP 412 when stale, which is the proposal
+guard. No live emulator run has yet exercised this; the Integration-category test written alongside
+it does that, and CI runs it.
+
+**Mark's decisions, 2026-09-16**, taken after the platform slice reported which questions its build
+had already settled and which were genuinely open.
+
+*One undecided proposal per role.* `ProposeAsync` refuses when the role already holds a proposal
+awaiting a decision, naming that proposal and its proposer so the caller goes and reviews it. It is a
+`ContractViolationException`, which a consumer maps to **409** — the request is not malformed, the
+role is occupied. **This is a governance rule, not a storage constraint:** an approver should never
+have to work out which of several competing proposals wins, and approving two in sequence must not
+quietly supersede the first rollout before anyone has judged it.
+
+**The two state sets are named explicitly in code, never derived from terminality.** The slot is held
+only by a proposal someone still has to decide — `pending_approval`, and `shadow` when that stage
+exists. It is released by `approved`, `promoted`, `rejected`, `withdrawn` and `rolled_back`, listed
+as exactly that set (`MappingProposalState.ReleasesRoleProposalSlot`, beside `IsAwaitingDecision`).
+Expressing the lock as "not terminal" would have been the natural shorthand and is **wrong**:
+`approved` and `promoted` are non-terminal, because a rollback can still move them, so a role whose
+mapping had reached fleet could never take another proposal until somebody rolled it back. A test
+pins that the two sets partition every declared value, so adding a state forces the choice rather
+than inheriting a default. (Caught by the docs agent while this was being implemented; the platform
+slice had already read Mark's intent this way, and the explicit naming is what stops the shorthand
+creeping back in later.)
+
+*A deliberate non-rule, recorded so nothing assumes otherwise:* a **live canary does not block** a new
+proposal. Once a proposal is approved, its canary is serving and the role is free to take the next
+change request. Whether a role with a canary in flight should refuse further proposals until that
+canary is promoted or rolled back is a plausible additional rule, and it is Mark's to add later — it
+is not implied by this one, and no code should be written as though it were. *Residual, recorded rather than hidden:* the check is
+check-then-act, not storage-guarded, so two genuinely simultaneous proposes could both pass it. A
+deterministic pending-marker document would close it, at the cost of a lifecycle that can leak a
+marker and block a role permanently. At human proposal rates the trade did not look worth it; if
+proposals ever become machine-driven, revisit.
+
+*Canary percent is 1–100.* Zero is refused at propose time, naming the field. A mapping approved at
+0% reports itself live in the canary ring while `ServedMappingSelector` sends every engagement to its
+fleet predecessor — live and serving nobody, with nothing to say so. The path that produced it is
+mundane: a consumer whose JSON omits `canary_percent` binds `int` as 0. A deliberately staged,
+non-serving version is what the shadow stage is for, which is exactly why that stage exists.
+
+*Withdrawal is the proposer's; rejection is someone else's.* Only the proposer may withdraw — that is
+the route for killing your own idea. Rejection now carries the same distinct-approver rule approval
+always had, because a rejection is a recorded decision on another principal's change. Previously
+`EnsureDistinctApprover` guarded approval alone, so a proposer could reject their own proposal and
+leave a governance record that read as someone else's judgement.
+
+*Evaluation evidence stays optional and unvalidated*, deliberately. Doc 08 §7 expects shadow
+evaluation to generate it, and shadow is deferred until after the cloud proof — requiring evidence
+now would require inventing a source for it. **The natural rule to add when shadow lands is that
+approval requires evidence**, and it is recorded here so it is adopted rather than rediscovered.
+
+*Retry policy is data.* `MappingGovernanceOptions` (section `ModelRoleGovernance`) holds
+`DecisionMaxAttempts` 8, `DecisionBaseDelayMs` 25 and `DecisionMaxDelayMs` 1000, validated at start,
+with the exponential curve jittered into its upper half. The `const` this replaced was the
+divergence; `GovernanceAuditOptions` (ADR-PA30) and `ExecutionAuditOptions` (ADR-PA31) are the
+precedent, and K7 is the reason. The curve is reimplemented locally rather than shared, because
+ADR-PA5 forbids this library referencing Audit and eight duplicated lines is the cheaper price.
+
+**Two robustness findings from the platform slice, both fixed rather than merely recorded.** The
+rollback that marks the owning proposal `rolled_back` used to scan one page of proposals, capped at
+200, so a role with more would have silently left its proposal open after a rollback; it is now a
+point query on the live version (`FindProposalByLiveVersionAsync`). And the mapping-version listing
+identified version documents by the *absence* of a `doc_type`, which would have silently returned an
+empty list — and therefore reallocated from v1 — the day version documents gained one; it now selects
+positively on the `{roleId}:v` id prefix, which neither the `current` pointer nor a proposal matches.
+
+Release: **minor — additive.** New public types (`MappingProposalState`, `MappingRollbackResult`,
+`MappingProposalQuery`, `MappingProposalPage`, `IMappingDecisionRecorder`,
+`MappingGovernanceDecision`, `MappingGovernanceEventTypes`, `MappingGovernanceException`,
+`MappingGovernanceOptions`), new
+optional members on `MappingChangeProposal`, and new members on `IMappingGovernanceService`. Three
+existing members become `[Obsolete]`; none is removed. `IRoleRegistry` and `IModelResolver` gain
+nothing — version listing and allocation went onto a new **internal** `IMappingProposalStore`, one
+step beyond the `IMappingPinner` precedent, because nothing outside this library needs to implement
+it and both shipped interfaces are implemented by consumers' test doubles. **Consumers must register
+an `IMappingDecisionRecorder`**: that is the one adoption step this release requires.
+
+Two compatibility notes, recorded rather than left to be discovered. First, `MappingChangeProposal`
+gains three `required` members (`RoleId`, `State`, `ProposedBy`), which is a **source break for any
+code that constructs one** — its wire shape and its three shipped members are unchanged, and nothing
+deserialized breaks, but an object initializer must now supply them. That is accepted rather than
+softened with defaults: a proposal with no role, no state and no proposer is not a proposal, and the
+type is now service-constructed on every real path. Second, `RollbackAsync` throwing is the
+behaviour change described above. Both are compile-time or immediate failures, never silent.
 ## ADR-PA33 — audit records are signed with ES256 inside Key Vault, and the key id says which algorithm verified them
 
 *Status:* accepted (Mark's decision, 2026-09-16). Supersedes the signing half of doc 05 §5; leaves
