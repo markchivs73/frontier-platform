@@ -38,7 +38,8 @@ public sealed class CosmosGovernanceAuditStoreIntegrationTests : IAsyncLifetime,
         await database.Database.CreateContainerIfNotExistsAsync(new ContainerProperties(CosmosGovernanceAuditStore.ContainerName, CosmosGovernanceAuditStore.PartitionKeyPath) { DefaultTimeToLive = -1 });
 
         var store = new CosmosGovernanceAuditStore(client, Options.Create(new CosmosOptions { Database = DatabaseId }));
-        service = new GovernanceAuditService(store, new SharedSigningKeyRing(new DevKeyProvider()), Options.Create(new GovernanceAuditOptions { AppendMaxAttempts = 50, AppendBaseDelayMs = 5, AppendMaxDelayMs = 200 }));
+        var devKeys = new DevKeyProvider();
+        service = new GovernanceAuditService(store, new SharedSigningKeyRing(devKeys, new HmacAuditSigningService(devKeys)), Options.Create(new GovernanceAuditOptions { AppendMaxAttempts = 50, AppendBaseDelayMs = 5, AppendMaxDelayMs = 200 }));
     }
 
     public async Task DisposeAsync() => await client.GetDatabase(DatabaseId).DeleteAsync();

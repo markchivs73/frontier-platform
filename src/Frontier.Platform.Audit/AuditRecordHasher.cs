@@ -25,9 +25,14 @@ internal static class AuditRecordHasher
     internal static string ComputeGenesisHash(string engagementId) =>
         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(engagementId)));
 
-    /// <summary>HMAC-SHA256(<paramref name="recordHash"/>, <paramref name="keyMaterial"/>), hex-encoded (doc 05 §5).</summary>
+    /// <summary>
+    /// HMAC-SHA256(<paramref name="recordHash"/>, <paramref name="keyMaterial"/>), hex-encoded — the
+    /// pre-ADR-PA33 signature, retained for the local profile and for verifying every record signed
+    /// under a <c>dev-key/*</c> version. New deployed signatures are ES256 and are produced inside
+    /// Key Vault by <see cref="KeyVaultAuditSigningService"/>, never here.
+    /// </summary>
     internal static string ComputeSignature(string recordHash, ReadOnlyMemory<byte> keyMaterial) =>
-        Convert.ToHexString(HMACSHA256.HashData(keyMaterial.Span, Encoding.UTF8.GetBytes(recordHash)));
+        AuditSignatureVerifier.SignHmac(recordHash, keyMaterial);
 
     /// <summary>Copies <paramref name="record"/>'s fields 0-13 into a <see cref="SignedAuditRecord"/> with the supplied chain/signature fields 14-17.</summary>
     internal static SignedAuditRecord ToSignedShape(AuditRecord record, string previousRecordHash, string recordHash, string signature, string signingKeyId) => new()

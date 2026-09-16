@@ -1777,3 +1777,118 @@ step**: the first append per engagement performs it. One behaviour is preserved 
 an execution whose record already exists still throws `InvalidOperationException` rather than
 retrying to exhaustion, so the consolidator's idempotent-retry path (doc 05 §11) is unchanged.
 Tracked as S13.106.
+
+## ADR-PA33 — audit records are signed with ES256 inside Key Vault, and the key id says which algorithm verified them
+
+*Status:* accepted (Mark's decision, 2026-09-16). Supersedes the signing half of doc 05 §5; leaves
+ADR-PA22 (key-version resolution) intact in every particular. Tracked as S13.107.
+
+**The defect.** `AddFrontierAudit` registered exactly one `IKeyProvider` — `DevKeyProvider`, holding
+the fixed key `dev-key/v1` whose material is a UTF-8 string committed to this repository. A deployed
+platform would therefore have signed every execution and governance audit record with a key known to
+anyone who can read the source. Such records verify perfectly and prove nothing: the signature
+attests that *someone with the repository* wrote them, which is everyone. Found by the S13.103 design
+check, before any deployed environment existed.
+
+**The investigation that changed the answer.** Doc 05 §5 specified `HMAC-SHA256(RecordHash, key)`
+with the key in Azure Key Vault, the signer holding *sign-only* access, and "key material never
+leaves Key Vault — use the Key Vault cryptography client". Read literally, that is not implementable
+on a standard Key Vault key, and the reason is worth recording because it is not obvious: **standard
+Key Vault vaults hold only RSA and EC keys.** Symmetric (`oct-HSM`) keys with HMAC `HS256` sign/verify
+exist in Managed HSM (GA) and, since recently, in Key Vault *Premium* — but there they are **public
+preview, "no service-level agreement, and not recommended for production workloads"**, and the
+documentation is internally inconsistent about whether `sign` is even enabled on a vault `oct-HSM`
+key. Managed HSM is the only GA way to keep HMAC inside a vault, and it costs **$3.20/hour — about
+$28,000 a year — to protect one signing key.** Meanwhile `Get` never returns symmetric key material
+at all, so the "HMAC key fetched from Key Vault" reading of the doc necessarily means a Key Vault
+*secret*, which is what doc 15 §8 separately specifies (`SecretClient`) — the two design docs already
+contradicted each other, and this ADR is where that was resolved rather than inherited.
+
+**Decision 1 — signing moves to ECDSA P-256 / SHA-256 (JWA `ES256`) on a standard Key Vault key.**
+The private key is generated in and never leaves the vault; the signing identity holds `sign` only,
+so doc 05 §5's sign-only requirement becomes literally true rather than aspirational — the port this
+package owns (`IKeyVaultSigningClient`) has no operation that could return key material.
+
+**Decision 2 — verification is local, free, and needs no vault access.** A key version's public part
+is fetched once, cached for the process lifetime (safe because a key version is immutable), and every
+signature is checked in-process. This is the argument that decided the choice over the alternatives:
+with HMAC, verifying is only possible for someone holding the secret, so an auditor needs the signing
+key and a long chain costs a vault round trip per record or a shared secret in memory. With ES256 an
+auditor needs *nothing secret at all*, and verifying a 500-record chain costs zero vault calls. The
+security property improved and the running cost fell at the same time; that rarely happens, and it is
+why this was worth doing before a deployed environment existed rather than after.
+
+**Decision 3 — `signing_key_id` is the algorithm discriminator, and the signed shape does not
+change.** A record's `signing_key_id` already names exactly one key version, and a key version has
+exactly one algorithm, so an algorithm field would have carried no information while changing the
+canonical bytes of every record ever written. Ids beginning `dev-key/` verify by HMAC; Key Vault key
+identifiers verify by ES256. Consequences: **no schema version bump, no migration adapter, no
+re-signing, and no golden-file change** — records written before this ADR verify unaltered, beside
+ES256 records, in the same chain. The signed payload is also unchanged (`UTF8(record_hash)` under
+both algorithms), so the hash chain is algorithm-independent and ADR-PA31's walk is untouched.
+
+**Decision 4 — the dev key is refused outside the local-emulator profile.** `SigningProfileCheck` is
+a boot invariant (doc 12 §6): no `AuditSigning:KeyIdentifier` plus a non-loopback Cosmos endpoint
+means the process refuses to start. The discriminator is the configured data-plane endpoint, not
+`ASPNETCORE_ENVIRONMENT` — a deployment can set the latter to `Development` and would then walk
+straight through the check that exists to stop it. An *absent* endpoint is deliberately not local, so
+a misconfiguration fails towards "deployed". `SigningKeyCheck` was strengthened alongside it: it now
+signs a probe through the real signing path and verifies the result, so an unreachable vault, a
+missing key or an unassigned `Key Vault Crypto User` role fails boot instead of surfacing at the
+first execution close, when the audit record cannot be written and the evidence is simply lost.
+
+**Decision 5 — signing and verification became two capabilities.** `IKeyProvider` keeps answering
+"what verifies key version X" (ADR-PA22, unchanged, including that an unresolvable version returns
+`null` and never falls back to the current key). The new `IAuditSigningService` performs the signing
+*operation*, because under ES256 signing happens where the private key lives and is no longer a
+calculation this process can do. `ISigningKeyRing` now hands out both. No credential, key or secret
+appears in configuration: the vault is reached with `DefaultAzureCredential` (ADR-SEC3, ADR-SEC5) and
+configuration holds only a location.
+
+**K6 is engaged, not ignored.** The keep reads "HMAC-chained audit for every governance fact"; the
+*chain* is SHA-256 and is untouched, but the signature algorithm named in K6 changes here. Its
+evidence is not weakened by the change: RFC 2104 (HMAC) and NIST SP 800-57 Part 1 Rev. 5's separation
+of originator-usage from recipient-usage periods — the basis of ADR-PA22's "old versions verify
+forever" — are algorithm-independent lifecycle properties that ES256 satisfies identically. What K6
+was protecting is *every governance fact carries a verifiable signature bound to a key version*, and
+that is strengthened rather than traded: the signature is now made where the key cannot be exfiltrated
+and can be checked by someone holding no secret. K6's wording should be updated to "signature-chained
+audit" at the next register pass.
+
+*Rejected.* **(a) Managed HSM, keeping HMAC and doc 05 §5 literally true** — ~$28k/year to protect a
+single key, and it makes verification *more* expensive (a vault call per record, or the secret in
+memory anyway). **(b) A Key Vault secret holding the HMAC key, fetched and cached** — the fast path,
+and already half-blessed by doc 15 §8, but it parks a live signing secret in process memory
+permanently, keeps verification impossible without that secret, and requires striking doc 05 §5's
+"never leaves Key Vault" sentence rather than satisfying it. **(b′) Key Vault Premium `oct-HSM` with
+`HS256`** — literally compliant and nearly free, but public preview with no SLA is not a foundation
+for the audit keep. **(c′) Ed25519**, which doc 05 §5's own Phase 2 note anticipates — **not available
+on a standard vault**: vaults support P-256/P-256K/P-384/P-521 only, the `EdDSA`/`Ed25519` additions
+in the SDKs are Managed HSM-only, and `az keyvault key create --curve Ed25519` returns "Unsupported
+curve". ES256 is the substitution, and it delivers the same external-verifiability property Ed25519
+was wanted for.
+
+**Doc 05 §5 must be amended** (frontier-workflow; the exact replacement wording is in the S13.107
+hand-off). In short: the Signature bullet becomes ES256 signed inside Key Vault with the signer
+holding sign-only access and verification performed locally from the public key; the Phase 2 Ed25519
+note becomes a note that external verifiability is already delivered and that Ed25519 remains
+unavailable on standard vaults.
+
+*Evidence.* Microsoft Learn, *About keys* and *Key types, algorithms, and operations* (Key Vault,
+pages dated 2026-07-07, updated 2026-07-30) — vaults support RSA and EC; `oct-HSM` symmetric support
+in Premium is public preview with no SLA; `Get` returns neither an asymmetric private key nor
+symmetric key material; EC sign/verify is `ES256/ES256K/ES384/ES512` over P-256/P-256K/P-384/P-521.
+Microsoft Learn, *Key types, algorithms, and operations* (Managed HSM, dated 2026-05-21, updated
+2026-06-12) — `oct-HSM` with `HS256/384/512` is GA there. Azure Retail Prices API, UK South, queried
+2026-09-16 — "Key Vault HSM Pool, Standard B1" at $3.20/hour. Azure/azure-cli issue #26898 — Ed25519
+unsupported on vaults. RFC 7518 (JWA) for `ES256`; RFC 2104 (HMAC) and NIST SP 800-57 Part 1 Rev. 5
+carried forward unchanged from ADR-PA22. All sources accessed **2026-09-16**.
+
+Release: **minor, additive**. New public types (`SigningAlgorithm`, `AuditSigningOptions`,
+`IAuditSigningService`, `AuditSignature`), a new `SigningKey.Algorithm` property defaulting to
+`hmac_sha256` so the shipped positional constructor keeps its exact meaning, `SigningKey.ForEs256`,
+and `ISigningKeyRing.GetSigningService` (that interface is unshipped, so adding to it breaks nobody).
+No shipped public member changes shape; no stored record changes; no container or schema version
+moves. **A deployed environment needs a vault, an EC-P256 key, and a `Key Vault Crypto User` role
+assignment scoped to that key before it can sign** — until `AuditSigning:KeyIdentifier` is set, a
+non-local deployment refuses to boot, which is the intended failure.

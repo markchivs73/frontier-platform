@@ -23,6 +23,7 @@ internal sealed class AuditSigner(
     IAuditRecordStore recordStore,
     IAuditChainHeadStore headStore,
     IKeyProvider keyProvider,
+    IAuditSigningService signingService,
     IOptions<ExecutionAuditOptions> options) : IAuditSigner
 {
     /// <inheritdoc />
@@ -77,9 +78,8 @@ internal sealed class AuditSigner(
         var anchor = await ReadAnchorAsync(record.EngagementId, cancellationToken);
 
         var recordHash = AuditRecordHasher.ComputeRecordHash(record, anchor.PreviousRecordHash);
-        var key = await keyProvider.GetCurrentKeyAsync(cancellationToken);
-        var signature = AuditRecordHasher.ComputeSignature(recordHash, key.KeyMaterial);
-        var signed = AuditRecordHasher.ToSignedShape(record, anchor.PreviousRecordHash, recordHash, signature, key.KeyId);
+        var signature = await signingService.SignAsync(recordHash, cancellationToken);
+        var signed = AuditRecordHasher.ToSignedShape(record, anchor.PreviousRecordHash, recordHash, signature.Signature, signature.KeyId);
 
         var head = new AuditChainHead(
             record.EngagementId,

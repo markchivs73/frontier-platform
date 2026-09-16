@@ -36,8 +36,19 @@ internal static class GovernanceAuditSamples
         return new TypedPayload { SchemaRef = "schemas/approver-role-change/1.0", Payload = document.RootElement.Clone() };
     }
 
-    internal static SignedGovernanceAuditRecord Seal(GovernanceAuditEntry entry, long sequence, string previousHash, SigningKey key) =>
-        GovernanceAuditHasher.Seal(entry, GovernanceAuditHasher.ComputeRecordId(entry), sequence, previousHash, key);
+    /// <summary>Seals a record under <paramref name="key"/> as the service would (ADR-PA33: prepare, then attach a signature made under the version the record names).</summary>
+    internal static SignedGovernanceAuditRecord Seal(GovernanceAuditEntry entry, long sequence, string previousHash, SigningKey key)
+    {
+        var prepared = GovernanceAuditHasher.Prepare(entry, GovernanceAuditHasher.ComputeRecordId(entry), sequence, previousHash, key.KeyId);
+
+        return GovernanceAuditHasher.Attach(prepared, Sign(prepared.RecordHash, key));
+    }
+
+    /// <summary>A signature over <paramref name="recordHash"/> under <paramref name="key"/>, whichever algorithm it names.</summary>
+    internal static AuditSignature Sign(string recordHash, SigningKey key) =>
+        new(key.KeyId, key.Algorithm == SigningAlgorithm.Es256
+            ? Convert.ToHexString(TestEs256Key.SignDigest(key.KeyId, AuditSignatureVerifier.ComputeEs256Digest(recordHash)))
+            : AuditRecordHasher.ComputeSignature(recordHash, key.KeyMaterial));
 
     /// <summary>A correctly linked deployment chain whose n-th record is signed with <paramref name="keys"/>[n].</summary>
     internal static List<SignedGovernanceAuditRecord> Chain(params SigningKey[] keys)

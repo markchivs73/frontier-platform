@@ -1,11 +1,18 @@
 namespace Frontier.Platform.Audit;
 
 /// <summary>
-/// Resolves the current signing key for audit-record HMAC signatures (doc 05 §9) and
-/// backs the boot-time <c>SigningKeyCheck</c> (doc 12 §6). Production deployments
-/// resolve <see cref="SigningKey"/> from Azure Key Vault (Stage 5); until then
-/// <see cref="DevKeyProvider"/> is the local-dev implementation registered by
-/// <see cref="AuditServiceCollectionExtensions.AddFrontierAudit"/>.
+/// Resolves the key material needed to <em>verify</em> audit-record signatures, by key version
+/// (doc 05 §5), and backs the boot-time <c>SigningKeyCheck</c> (doc 12 §6). Deployed environments
+/// get <see cref="KeyVaultKeyProvider"/>, which resolves ES256 public key versions from Azure Key
+/// Vault; the local-emulator profile gets <see cref="DevKeyProvider"/>'s HMAC key
+/// (<see cref="AuditServiceCollectionExtensions.AddFrontierAudit"/> chooses, and
+/// <see cref="SigningProfileCheck"/> refuses the dev key anywhere else).
+///
+/// <para>
+/// Signing is a separate capability under <see cref="IAuditSigningService"/> (ADR-PA33). This
+/// interface never returns anything that can sign in a deployed environment: what it hands back
+/// there is the key version's <em>public</em> part.
+/// </para>
 /// </summary>
 public interface IKeyProvider
 {

@@ -287,3 +287,33 @@ static readonly Frontier.Platform.Audit.AuditChainForkKind.Guarded -> Frontier.P
 static readonly Frontier.Platform.Audit.AuditChainForkKind.Legacy -> Frontier.Platform.Audit.AuditChainForkKind!
 Frontier.Platform.Audit.VerificationResult.UnreachableRecords.get -> System.Collections.Generic.IReadOnlyList<string!>?
 Frontier.Platform.Audit.VerificationResult.UnreachableRecords.init -> void
+Frontier.Platform.Audit.SigningAlgorithm
+static readonly Frontier.Platform.Audit.SigningAlgorithm.HmacSha256 -> Frontier.Platform.Audit.SigningAlgorithm!
+static readonly Frontier.Platform.Audit.SigningAlgorithm.Es256 -> Frontier.Platform.Audit.SigningAlgorithm!
+Frontier.Platform.Audit.SigningKey.Algorithm.get -> Frontier.Platform.Audit.SigningAlgorithm!
+Frontier.Platform.Audit.SigningKey.Algorithm.init -> void
+static Frontier.Platform.Audit.SigningKey.ForEs256(string! keyId, System.ReadOnlyMemory<byte> publicKeyDer) -> Frontier.Platform.Audit.SigningKey!
+Frontier.Platform.Audit.AuditSigningOptions
+Frontier.Platform.Audit.AuditSigningOptions.AuditSigningOptions() -> void
+const Frontier.Platform.Audit.AuditSigningOptions.SectionName = "AuditSigning" -> string!
+Frontier.Platform.Audit.AuditSigningOptions.KeyIdentifier.get -> string?
+Frontier.Platform.Audit.AuditSigningOptions.KeyIdentifier.init -> void
+Frontier.Platform.Audit.AuditSigningOptions.UsesKeyVault.get -> bool
+Frontier.Platform.Audit.IAuditSigningService
+Frontier.Platform.Audit.IAuditSigningService.SignAsync(string! recordHash, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Audit.AuditSignature!>!
+Frontier.Platform.Audit.IAuditSigningService.GetCurrentKeyIdAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<string!>!
+Frontier.Platform.Audit.ISigningKeyRing.GetSigningService(Frontier.Platform.Audit.SigningKeyPurpose! purpose) -> Frontier.Platform.Audit.IAuditSigningService!
+Frontier.Platform.Audit.AuditSignature
+Frontier.Platform.Audit.AuditSignature.AuditSignature(string! KeyId, string! Signature) -> void
+Frontier.Platform.Audit.AuditSignature.KeyId.get -> string!
+Frontier.Platform.Audit.AuditSignature.KeyId.init -> void
+Frontier.Platform.Audit.AuditSignature.Signature.get -> string!
+Frontier.Platform.Audit.AuditSignature.Signature.init -> void
+Frontier.Platform.Audit.AuditSignature.Deconstruct(out string! KeyId, out string! Signature) -> void
+Frontier.Platform.Audit.AuditSignature.Equals(Frontier.Platform.Audit.AuditSignature? other) -> bool
+Frontier.Platform.Audit.AuditSignature.<Clone>$() -> Frontier.Platform.Audit.AuditSignature!
+override Frontier.Platform.Audit.AuditSignature.Equals(object? obj) -> bool
+override Frontier.Platform.Audit.AuditSignature.GetHashCode() -> int
+override Frontier.Platform.Audit.AuditSignature.ToString() -> string!
+static Frontier.Platform.Audit.AuditSignature.operator !=(Frontier.Platform.Audit.AuditSignature? left, Frontier.Platform.Audit.AuditSignature? right) -> bool
+static Frontier.Platform.Audit.AuditSignature.operator ==(Frontier.Platform.Audit.AuditSignature? left, Frontier.Platform.Audit.AuditSignature? right) -> bool

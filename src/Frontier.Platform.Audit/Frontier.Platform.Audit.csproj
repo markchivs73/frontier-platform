@@ -6,6 +6,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Aliased: Azure.Core and Azure.Identity both declare DefaultAzureCredential, so an
+         unaliased reference makes every mention of it ambiguous (CS0433). -->
+    <PackageReference Include="Azure.Identity" Aliases="identity" />
+    <PackageReference Include="Azure.Security.KeyVault.Keys" />
     <PackageReference Include="Azure.Storage.Blobs" />
     <PackageReference Include="Microsoft.Azure.Cosmos" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />

@@ -106,9 +106,8 @@ public static class GovernanceAuditChainVerifier
         }
 
         var expectedHash = GovernanceAuditHasher.ComputeRecordHash(record);
-        var expectedSignature = AuditRecordHasher.ComputeSignature(expectedHash, key.KeyMaterial);
 
-        return expectedHash == record.RecordHash && expectedSignature == record.Signature
+        return expectedHash == record.RecordHash && AuditSignatureVerifier.Verify(expectedHash, record.Signature, key)
             ? null
             : GovernanceAuditBreakKind.SignatureMismatch;
     }

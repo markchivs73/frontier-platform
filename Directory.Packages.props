@@ -39,6 +39,13 @@
     <PackageVersion Include="Azure.Storage.Blobs" Version="12.29.0" />
   </ItemGroup>
 
+  <!-- Key Vault keys + the one credential (ADR-SEC3, ADR-PA33): ES256 audit-record signing
+       performed inside the vault, with the private key never leaving it. -->
+  <ItemGroup>
+    <PackageVersion Include="Azure.Security.KeyVault.Keys" Version="4.10.1" />
+    <PackageVersion Include="Azure.Identity" Version="1.17.1" />
+  </ItemGroup>
+
   <!-- Durable Task abstractions: retry-policy translation in Platform.Resilience -->
   <ItemGroup>
     <PackageVersion Include="Microsoft.DurableTask.Abstractions" Version="1.24.2" />

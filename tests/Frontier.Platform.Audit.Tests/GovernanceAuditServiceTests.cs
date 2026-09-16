@@ -214,7 +214,7 @@ public sealed class GovernanceAuditServiceTests
     }
 
     private GovernanceAuditService Service(int maxAttempts = 5) =>
-        new(store, new SharedSigningKeyRing(keys), Options.Create(new GovernanceAuditOptions { AppendMaxAttempts = maxAttempts, AppendBaseDelayMs = 0, AppendMaxDelayMs = 0 }));
+        new(store, new SharedSigningKeyRing(keys, new HmacAuditSigningService(keys)), Options.Create(new GovernanceAuditOptions { AppendMaxAttempts = maxAttempts, AppendBaseDelayMs = 0, AppendMaxDelayMs = 0 }));
 
     private sealed class RecordingKeyRing(IKeyProvider provider) : ISigningKeyRing
     {
@@ -224,6 +224,12 @@ public sealed class GovernanceAuditServiceTests
         {
             Purposes.Add(purpose);
             return provider;
+        }
+
+        public IAuditSigningService GetSigningService(SigningKeyPurpose purpose)
+        {
+            Purposes.Add(purpose);
+            return new HmacAuditSigningService(provider);
         }
     }
 }
