@@ -2,6 +2,7 @@ using Frontier.Platform.Serialization;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
 namespace Frontier.Platform.ModelRoleConfig;
@@ -28,6 +29,15 @@ public static class ModelRoleConfigServiceCollectionExtensions
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        services.AddOptions<MappingGovernanceOptions>()
+            .Bind(configuration.GetSection(MappingGovernanceOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        // The governance service stamps ApprovedBy/EffectiveFromUtc itself, so it needs a clock it can
+        // be tested against. TryAdd so a consumer that already registered a TimeProvider keeps theirs.
+        services.TryAddSingleton(TimeProvider.System);
+
         services
             .AddSingleton(CreateCosmosClient)
             .AddSingleton<CosmosRoleRegistry>()
@@ -36,6 +46,7 @@ public static class ModelRoleConfigServiceCollectionExtensions
             .AddSingleton<ICircuitBreakerQuery, AlwaysClosedCircuitBreakerQuery>()
             .AddSingleton<IModelResolver, ModelResolver>()
             .AddSingleton<IMappingPinner, MappingPinner>()
+            .AddSingleton<IMappingProposalStore, CosmosMappingProposalStore>()
             .AddSingleton<IMappingGovernanceService, MappingGovernanceService>()
             .AddSingleton<IStartupCheck, CosmosTopologyCheck>()
             .AddSingleton<IStartupCheck, RoleCatalogueCheck>();

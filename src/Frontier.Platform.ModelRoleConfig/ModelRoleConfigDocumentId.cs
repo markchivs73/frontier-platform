@@ -15,4 +15,19 @@ internal static class ModelRoleConfigDocumentId
     /// <summary>Builds the <c>current</c> pointer document id for <paramref name="roleId"/>.</summary>
     internal static string ForCurrent(string roleId) =>
         $"{roleId}:current";
+
+    /// <summary>
+    /// The id prefix every mapping-version document of <paramref name="roleId"/> shares, and which
+    /// neither the <c>current</c> pointer nor a proposal matches — the positive discriminator the
+    /// version listing selects on.
+    /// </summary>
+    internal static string VersionPrefix(string roleId) => $"{roleId}:v";
+
+    /// <summary>
+    /// Builds the proposal document id (ADR-PA32): <c>{roleId}:proposal:{proposalId}</c>. The
+    /// <c>:proposal:</c> infix cannot collide with <c>:v{n}</c> or <c>:current</c>, so all three kinds
+    /// share the role's partition without ambiguity.
+    /// </summary>
+    internal static string ForProposal(string roleId, string proposalId) =>
+        $"{roleId}:proposal:{proposalId}";
 }

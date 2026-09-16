@@ -35,10 +35,14 @@ public sealed class ModelRoleConfigServiceCollectionExtensionsTests
         // The IReferencedRolesSource port is consumer-owned (ADR-PA2, S11.4): Host registers
         // the real adapter; tests supply a stand-in so RoleCatalogueCheck can materialize.
         services.AddSingleton<IReferencedRolesSource>(new EmptyRolesSource());
+        // IMappingDecisionRecorder is deliberately left unregistered by the library (ADR-PA32): a
+        // no-op default would be a silent audit gap, so the consumer must supply one.
+        services.AddSingleton<IMappingDecisionRecorder>(new NoOpDecisionRecorder());
         using var provider = services.BuildServiceProvider();
 
         Assert.NotNull(provider.GetRequiredService<CosmosClient>());
         Assert.IsType<CosmosRoleRegistry>(provider.GetRequiredService<IRoleRegistry>());
+        Assert.IsType<CosmosMappingProposalStore>(provider.GetRequiredService<IMappingProposalStore>());
         Assert.IsType<CosmosRoleRegistry>(provider.GetRequiredService<IRoleMappingWriter>());
         Assert.IsType<AlwaysClosedCircuitBreakerQuery>(provider.GetRequiredService<ICircuitBreakerQuery>());
         Assert.IsType<ModelResolver>(provider.GetRequiredService<IModelResolver>());
@@ -99,6 +103,15 @@ public sealed class ModelRoleConfigServiceCollectionExtensionsTests
 
     private static IConfiguration BuildConfiguration(Dictionary<string, string?> values) =>
         new ConfigurationBuilder().AddInMemoryCollection(values).Build();
+
+    private sealed class NoOpDecisionRecorder : IMappingDecisionRecorder
+    {
+        public Task<string> RecordAsync(MappingGovernanceDecision decision, CancellationToken cancellationToken) =>
+            Task.FromResult("record-1");
+
+        public Task RecordCompensationAsync(MappingGovernanceDecision decision, string recordId, string failureReason, CancellationToken cancellationToken) =>
+            Task.CompletedTask;
+    }
 
     private sealed class EmptyRolesSource : IReferencedRolesSource
     {
