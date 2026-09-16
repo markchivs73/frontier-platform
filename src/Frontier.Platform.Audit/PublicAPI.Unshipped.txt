@@ -252,3 +252,38 @@ static readonly Frontier.Platform.Audit.GovernanceAuditBreakKind.SignatureMismat
 static readonly Frontier.Platform.Audit.GovernanceAuditBreakKind.UnresolvedKey -> Frontier.Platform.Audit.GovernanceAuditBreakKind!
 static readonly Frontier.Platform.Audit.SigningKeyPurpose.ExecutionAudit -> Frontier.Platform.Audit.SigningKeyPurpose!
 static readonly Frontier.Platform.Audit.SigningKeyPurpose.GovernanceAudit -> Frontier.Platform.Audit.SigningKeyPurpose!
+Frontier.Platform.Audit.AuditChainAppendException
+Frontier.Platform.Audit.AuditChainAppendException.AuditChainAppendException() -> void
+Frontier.Platform.Audit.AuditChainAppendException.AuditChainAppendException(string! message) -> void
+Frontier.Platform.Audit.AuditChainAppendException.AuditChainAppendException(string! message, System.Exception! innerException) -> void
+Frontier.Platform.Audit.AuditChainFork
+Frontier.Platform.Audit.AuditChainFork.<Clone>$() -> Frontier.Platform.Audit.AuditChainFork!
+Frontier.Platform.Audit.AuditChainFork.AuditChainFork() -> void
+Frontier.Platform.Audit.AuditChainFork.Equals(Frontier.Platform.Audit.AuditChainFork? other) -> bool
+Frontier.Platform.Audit.AuditChainFork.ExecutionIds.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Frontier.Platform.Audit.AuditChainFork.ExecutionIds.init -> void
+Frontier.Platform.Audit.AuditChainFork.Kind.get -> Frontier.Platform.Audit.AuditChainForkKind!
+Frontier.Platform.Audit.AuditChainFork.Kind.init -> void
+Frontier.Platform.Audit.AuditChainFork.PreviousRecordHash.get -> string!
+Frontier.Platform.Audit.AuditChainFork.PreviousRecordHash.init -> void
+Frontier.Platform.Audit.AuditChainForkKind
+Frontier.Platform.Audit.ExecutionAuditOptions
+Frontier.Platform.Audit.ExecutionAuditOptions.AppendBaseDelayMs.get -> int
+Frontier.Platform.Audit.ExecutionAuditOptions.AppendBaseDelayMs.init -> void
+Frontier.Platform.Audit.ExecutionAuditOptions.AppendMaxAttempts.get -> int
+Frontier.Platform.Audit.ExecutionAuditOptions.AppendMaxAttempts.init -> void
+Frontier.Platform.Audit.ExecutionAuditOptions.AppendMaxDelayMs.get -> int
+Frontier.Platform.Audit.ExecutionAuditOptions.AppendMaxDelayMs.init -> void
+Frontier.Platform.Audit.ExecutionAuditOptions.ExecutionAuditOptions() -> void
+Frontier.Platform.Audit.VerificationResult.Forks.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.AuditChainFork!>?
+Frontier.Platform.Audit.VerificationResult.Forks.init -> void
+const Frontier.Platform.Audit.ExecutionAuditOptions.SectionName = "ExecutionAudit" -> string!
+override Frontier.Platform.Audit.AuditChainFork.Equals(object? obj) -> bool
+override Frontier.Platform.Audit.AuditChainFork.GetHashCode() -> int
+override Frontier.Platform.Audit.AuditChainFork.ToString() -> string!
+static Frontier.Platform.Audit.AuditChainFork.operator !=(Frontier.Platform.Audit.AuditChainFork? left, Frontier.Platform.Audit.AuditChainFork? right) -> bool
+static Frontier.Platform.Audit.AuditChainFork.operator ==(Frontier.Platform.Audit.AuditChainFork? left, Frontier.Platform.Audit.AuditChainFork? right) -> bool
+static readonly Frontier.Platform.Audit.AuditChainForkKind.Guarded -> Frontier.Platform.Audit.AuditChainForkKind!
+static readonly Frontier.Platform.Audit.AuditChainForkKind.Legacy -> Frontier.Platform.Audit.AuditChainForkKind!
+Frontier.Platform.Audit.VerificationResult.UnreachableRecords.get -> System.Collections.Generic.IReadOnlyList<string!>?
+Frontier.Platform.Audit.VerificationResult.UnreachableRecords.init -> void

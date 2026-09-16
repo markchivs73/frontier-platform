@@ -25,7 +25,9 @@ internal static class AuditQueryBuilder
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        var clauses = new List<string>();
+        // ADR-PA31: the chain head shares this container, and it has no `record` property — without
+        // this clause every governance query would return a row of nulls per engagement.
+        var clauses = new List<string> { AuditRecordDocumentId.RecordDocumentPredicate };
         var parameters = new List<(string Name, object Value)>();
 
         AppendEngagementFilter(query, clauses, parameters);
@@ -35,8 +37,7 @@ internal static class AuditQueryBuilder
         AppendDateRangeFilters(query, clauses, parameters);
         AppendDefinitionHashFilter(query, clauses, parameters);
 
-        var sql = clauses.Count == 0 ? SelectClause : $"{SelectClause} WHERE {string.Join(" AND ", clauses)}";
-        var definition = new QueryDefinition(sql);
+        var definition = new QueryDefinition($"{SelectClause} WHERE {string.Join(" AND ", clauses)}");
         foreach (var (name, value) in parameters)
         {
             definition = definition.WithParameter(name, value);

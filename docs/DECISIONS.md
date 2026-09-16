@@ -1633,3 +1633,147 @@ Release: **minor, additive**. New public types in Audit (`GovernanceAuditEntry`,
 envelope). `AddFrontierAudit` gains registrations, a hosted service and a topology row. The
 topology row means **a consumer must create `governance-audit-records` before upgrading**, or the
 boot check fails. Tracked as S13.103.
+
+## ADR-PA31 — the execution audit chain is appended under a head-document guard, and a pre-fix fork says so
+
+frontier-workflow's S13.106. `AuditSigner.SignAsync` read the engagement's chain, took the last
+record's `record_hash`, signed, and created `{executionId}:audit` with **no concurrency guard**,
+while `CosmosAuditRecordStore` ordered the chain by `closed_at_utc`. K9 permits one live execution
+per engagement-*workflow*, so one engagement can run several workflows at once. Two of them closing
+in the same moment both read the same chain tail and both chained from it: two records, one
+`previous_record_hash`, a forked chain. Verification then walked the chain linearly, found the
+second record's predecessor hash not matching its neighbour's, and reported a broken link — the
+signal this package reserves for **altered evidence**. A concurrency defect was therefore
+indistinguishable from tampering, which is a K6 failure: the HMAC chain is only evidence if its
+findings mean what they say. Found by the S13.103 design check, 2026-09-15; Mark's decisions,
+2026-09-16.
+
+**The record shape does not change.** No new member on `SignedAuditRecord`, no schema version bump,
+no golden-file change. This is the binding constraint and everything else is built around it: every
+record already stored must keep verifying byte-for-byte, and verification *recomputes* canonical
+bytes rather than hashing the stored ones (ADR-PA4), so any addition to the signed shape would
+invalidate every record written before it. The guard therefore lives entirely in documents beside
+the record and in properties on the document wrapper, which is outside the signed `record` object.
+
+**Head-document allocation, as ADR-PA30 does it.** Each engagement gets one head document,
+`chain-head:{engagementId}`, in the **same** `audit-records` container and the same
+`/engagement_id` partition as its records — a transactional batch requires both. It holds
+`sequence`, `record_hash`, `last_execution_id` and `unguarded_record_count`. An append reads the head
+and its ETag, chains and signs against `record_hash`, and then runs one transactional batch on the
+engagement's partition: create `{executionId}:audit`, and create the head (first ever) or
+If-Match-replace it. A 412 (the head moved) or 409 (the head or record document already exists) means
+another close won; the append re-reads, re-hashes and re-signs. Nothing is ever written twice and no
+record is ever signed twice for the same chain position.
+
+**Reads still order by `closed_at_utc`.** The chain's read order is unchanged, so no query, index or
+consumer expectation moves. `sequence` on the head is allocation bookkeeping, not the read key — the
+opposite of the governance chain, which is ordered by `sequence` precisely because it had no
+timestamp it could trust. Two document kinds now share the container, so every reader filters on
+`doc_type`: the chain query, the `AuditQueryBuilder` projection (a head has no `record` property and
+would otherwise project a row of nulls per engagement), and the archival change feed, which never
+archives a head — a head legitimately changes, and an immutable archive is for things that do not.
+**Records written before this ADR carry no `doc_type` at all, so the predicate must treat its absence
+as "record"**; omitting that would hide every pre-upgrade record from its own chain.
+
+**The retry is data.** `ExecutionAuditOptions` (section `ExecutionAudit`) holds `AppendMaxAttempts`
+8, `AppendBaseDelayMs` 25 and `AppendMaxDelayMs` 1000, validated at start, exponential and jittered
+into the delay's upper half so contending closes spread out — the `GovernanceAuditOptions` precedent
+in this package, sharing one backoff curve. Exhausting the attempts throws
+`AuditChainAppendException` and the record is **not** stored: fail closed, never a silent gap.
+
+**Migration: the first append after the upgrade creates the head from the existing tail.** Every
+engagement in an upgraded deployment has records and no head. The append reads the head, finds none,
+falls back to `GetChainAsync`, chains from the stored tail's `record_hash` (or genesis for an empty
+chain), and the batch **creates** the head rather than replacing it. If a concurrent close created
+the head first, the create returns 409, and the retry now finds a head and takes the normal path. So
+migration is self-healing, needs no backfill job and rewrites nothing — which matters because
+batch-rewriting stored audit documents is itself forbidden. The head it creates records
+`unguarded_record_count` = the number of records that already existed, frozen at creation and carried
+forward unchanged by every later append. Note honestly that for a migrated engagement `sequence`
+counts *stored records*, not distinct chain links: if that chain already contains a fork it holds
+more records than links, so the sequence is a position, not a proof of length.
+
+**A pre-fix fork is reported as `legacy_fork`, never as tampering.** `VerificationResult` gains an
+optional `forks` list (`AuditChainFork`: the shared predecessor hash, the execution ids claiming it,
+and an `AuditChainForkKind` of `legacy_fork` or `guarded_fork`). A fork is *not* a signature
+mismatch and must never be presented as one — each forked record verifies perfectly against its own
+key, because nothing about it was altered. `signature_valid` is therefore unaffected by a fork, and a
+tampered record inside a forked chain still fails its own signature, as its own test pins. A fork
+does make `chain_valid` false: it is a real discontinuity, and suppressing it would be the dishonest
+half of this fix. Nothing stored is rewritten and nothing is ever re-signed.
+
+**How "predates the fix" is determined, and what that inference cannot do.** The signed record
+carries no "written under the guard" marker and this ADR deliberately declines to add one, so the
+classification is an inference from the head document. No head at all means nothing in the chain has
+been appended to since the upgrade, so every record predates the guard and any fork is `legacy_fork`.
+Where a head exists, the records that already existed when it was created are the unguarded ones and
+the head froze that count; a fork lying wholly inside that prefix could not have been created under
+the guard, and one reaching beyond it could not have been created by this platform at all and is
+reported `guarded_fork`. The limits, stated plainly: the head is **mutable bookkeeping, not signed
+evidence**, so someone with write access to it could inflate `unguarded_record_count` and have a
+genuine fork misclassified as legacy — which is exactly why a fork of either kind still invalidates
+the chain, and why the kind explains a finding rather than clearing one. The inference is also
+engagement-wide rather than per-record: it cannot say *which* of two forked records came first, only
+that the pair sits in the unguarded prefix. An auditor who needs more than that has the stored
+records themselves, which are unchanged and independently verifiable.
+
+*Evidence.* K6 ("HMAC-chained audit for every governance fact") is the position this repairs: the
+S13.103 design check found the defect while adopting ADR-PA30, and an audit chain whose break
+reporting cannot separate a concurrency artefact from tampering fails K6's purpose even while
+satisfying its letter. Doc 05 §5–§6 specify the per-engagement chain, the `closed_at_utc` read order
+and the append-only store, none of which this ADR changes. External sources are those ADR-PA30
+already relied on and are carried forward rather than re-fetched (last accessed 2026-09-15, as
+recorded there): Microsoft Learn, *Transactional batch operations in Azure Cosmos DB* (updated
+2026-04-27) — operations sharing a partition key succeed or fail together, a failed operation carries
+its own status (409 for an existing item) and the rest 424; Microsoft Learn, *Database transactions
+and optimistic concurrency control* (updated 2026-04-27) — `_etag` with `if-match`, rejected with
+HTTP 412 when stale, which is the whole basis of the guard. RFC 2104, *HMAC* (1997) and NIST SP
+800-57 Part 1 Rev. 5 (May 2020) continue to govern the signature and key lifecycle unchanged
+(ADR-PA22); this ADR touches neither.
+
+**Verification follows the hash links, not the stored order (Mark's decision, 2026-09-16).** Found
+while building this ADR's concurrency test. Before the guard, the signer chained from the last record
+in `closed_at_utc` order, so the hash links always followed the read order by construction. Under the
+guard it chains from the *head*, so the links follow the order in which closes won the head race,
+which is independent of their `closed_at_utc`. A 12-way concurrent-close test produced a provably
+intact chain (12 records, 12 distinct predecessors, no fork, every record reachable from genesis)
+that the old linear walk reported as `chain_valid: false` — the same false-tamper failure this ADR
+exists to remove, arriving through a different door.
+
+The rationale for the fix: **a hash chain's order *is* its append order.** Every record names its
+predecessor, and that is the only ordering the chain itself asserts. `closed_at_utc` is a *business*
+field that was merely incidentally aligned with append order while appends were serialised by the
+absent guard; treating it as the chain's order was always a coincidence rather than a design.
+`AuditChainVerifier` therefore walks each record's `previous_record_hash` from genesis. **Reads are
+unchanged** — `GetChainAsync` and the governance queries still return `closed_at_utc` order, which is
+what a human reading an engagement's history wants; only verification changed.
+
+A stored record the links cannot reach is reported in the new `VerificationResult.UnreachableRecords`
+— its own finding, distinct from a signature mismatch and from either fork kind, because such a
+record is typically well signed and the fault lies in what precedes it. Where a fork puts two records
+on one predecessor the walk takes the first in stored order deterministically, and the arms it does
+not take surface as unreachable beside the fork that explains them. A crafted cycle ends the walk
+rather than looping.
+
+**`broken_link_at` keeps its meaning for a genuine link break** and is worth stating precisely. It is
+the first record on the walk whose signature fails against an available key, or failing that the
+first record the links cannot reach. A record whose `previous_record_hash` points at nothing still
+names itself there, exactly as before — every pre-existing broken-link test passes unchanged, which
+is the evidence that the semantics were narrowed rather than replaced. What changed is only the
+concurrent case: a chain stored out of timestamp order by the head race now yields `null` here
+instead of a false break.
+
+Rejected: **(B)** keeping the linear walk and accepting false breaks on concurrent closes — that is
+the defect itself; and **(C)** giving each record a `sequence` so the stored order could be sorted
+into append order — it changes the signed shape, which decision 1 forbids, and would invalidate every
+record already stored. Doc 05 §5 is amended to match (frontier-workflow).
+
+Release: **minor, additive**. New public types (`ExecutionAuditOptions`, `AuditChainFork`,
+`AuditChainForkKind`, `AuditChainAppendException`) and `VerificationResult.Forks`. No public member
+changes shape and `IAuditRecordStore` is untouched — the head port is internal precisely because that
+interface is shipped and implemented by consumers, and adding to it would be a source break for every
+implementor. No container, partition key or topology row is added, so **a consumer needs no migration
+step**: the first append per engagement performs it. One behaviour is preserved deliberately: signing
+an execution whose record already exists still throws `InvalidOperationException` rather than
+retrying to exhaustion, so the consolidator's idempotent-retry path (doc 05 §11) is unchanged.
+Tracked as S13.106.

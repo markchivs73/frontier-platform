@@ -82,6 +82,42 @@ public sealed class ArchivalAuditChangeFeedHandlerTests
     }
 
     [Fact]
+    public async Task HandleChangesAsync_SkipsTheChainHeadAndExportsRecordsEitherSideOfIt()
+    {
+        // ADR-PA31: the head shares the container but is mutable bookkeeping, so it must never reach
+        // an immutable archive — and it carries no `record` to export. The three doc_type cases are
+        // covered together: absent (written before ADR-PA31), explicit "record", and the head.
+        var exporter = new FakeAuditRecordExporter();
+        var handler = new ArchivalAuditChangeFeedHandler(exporter, "archive");
+
+        var changes = new JsonObject[]
+        {
+            new() { ["id"] = "exec-1::audit", ["engagement_id"] = "eng-1" },
+            new() { ["id"] = "chain-head:eng-1", ["engagement_id"] = "eng-1", ["doc_type"] = "chain_head", ["sequence"] = 2 },
+            new() { ["id"] = "exec-2::audit", ["engagement_id"] = "eng-1", ["doc_type"] = "record" },
+        };
+
+        await handler.HandleChangesAsync(changes, CancellationToken.None);
+
+        Assert.Equal(["exec-1::audit", "exec-2::audit"], exporter.ExportedBlobs.Select(blob => blob.BlobName));
+    }
+
+    [Theory]
+    [InlineData(null, true)]
+    [InlineData("record", true)]
+    [InlineData("chain_head", false)]
+    public void IsRecordDocument_TreatsAnAbsentDocTypeAsARecordAndExcludesTheHead(string? docType, bool expected)
+    {
+        var document = new JsonObject { ["id"] = "exec-1::audit" };
+        if (docType is not null)
+        {
+            document["doc_type"] = docType;
+        }
+
+        Assert.Equal(expected, ArchivalAuditChangeFeedHandler.IsRecordDocument(document));
+    }
+
+    [Fact]
     public async Task HandleChangesAsync_WithEmptyChanges_ProducesNoExports()
     {
         var exporter = new FakeAuditRecordExporter();

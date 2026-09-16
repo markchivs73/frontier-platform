@@ -6,12 +6,25 @@ namespace Frontier.Platform.Audit.Tests;
 public sealed class AuditQueryBuilderTests
 {
     [Fact]
-    public void Build_EmptyQuery_ReturnsSelectClauseWithNoWhere()
+    public void Build_EmptyQuery_FiltersToRecordDocumentsAndAddsNoParameters()
     {
+        // ADR-PA31: the chain head shares the container and has no `record` property, so even an
+        // unfiltered query must exclude it — otherwise every engagement contributes a row of nulls.
         var definition = AuditQueryBuilder.Build(new AuditQuery());
 
-        Assert.Equal(AuditQueryBuilder.SelectClause, definition.QueryText);
+        Assert.Equal($"{AuditQueryBuilder.SelectClause} WHERE {AuditRecordDocumentId.RecordDocumentPredicate}", definition.QueryText);
         Assert.Empty(definition.GetQueryParameters());
+    }
+
+    [Fact]
+    public void Build_AnyQuery_AlwaysExcludesTheChainHeadAndKeepsPreAdrRecords()
+    {
+        // The predicate must match documents with no doc_type at all: records written before
+        // ADR-PA31 have none, and hiding them from governance queries would be evidence loss.
+        var definition = AuditQueryBuilder.Build(new AuditQuery { EngagementId = "eng-1" });
+
+        Assert.Contains("NOT IS_DEFINED(c.doc_type)", definition.QueryText, StringComparison.Ordinal);
+        Assert.Contains("c.doc_type = \"record\"", definition.QueryText, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -61,7 +74,8 @@ public sealed class AuditQueryBuilderTests
     {
         var definition = AuditQueryBuilder.Build(new AuditQuery { OverridesOnly = false });
 
-        Assert.Equal(AuditQueryBuilder.SelectClause, definition.QueryText);
+        Assert.Equal($"{AuditQueryBuilder.SelectClause} WHERE {AuditRecordDocumentId.RecordDocumentPredicate}", definition.QueryText);
+        Assert.Empty(definition.GetQueryParameters());
     }
 
     [Fact]
