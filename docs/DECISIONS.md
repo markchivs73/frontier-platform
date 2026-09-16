@@ -2086,6 +2086,25 @@ moves. **A deployed environment needs a vault, an EC-P256 key, and a `Key Vault 
 assignment scoped to that key before it can sign** — until `AuditSigning:KeyIdentifier` is set, a
 non-local deployment refuses to boot, which is the intended failure.
 
+*Verified live, 2026-09-16.* This ADR was built and tested entirely against a faked
+`IKeyVaultSigningClient` and had never made a real call. It has now been exercised against a real
+vault (EC P-256, `sign`/`verify`, `DefaultAzureCredential`) by
+`KeyVaultLiveSigningTests` — an on-demand gate carrying `Integration` + `RequiresAzureKeyVault`,
+excluded from both CI jobs and skipped with a message when `AuditSigning:KeyIdentifier` is unset.
+**Passed first attempt, 5/5 in 8.3 s**, proving against the live service: an execution audit record
+signs through `KeyVaultAuditSigningService` and **verifies locally from the cached public key with no
+vault call** (decision 2); the signature carries the **full versioned key identifier** while
+configuration stays versionless, verification resolves that exact version, and a version the vault
+never issued resolves to `null` rather than falling back to current (decision 5 / ADR-PA22, confirmed
+against the service's real 404); a legacy `dev-key/*` HMAC record and a real ES256 record **verify
+side by side in one chain**, unaltered and un-re-signed (decision 3); and `SigningKeyCheck`'s boot
+probe signs and verifies against the vault and passes (decision 4). `SigningProfileCheck`'s refusal
+of the dev key outside the local profile is asserted in the same suite and needs no vault. Nothing
+was created or modified in the vault — the only operations are public-key reads and signs. **No
+surprises: the code needed no change to work against real Azure.** The one thing the fake could not
+have told us is now pinned by an assertion — Key Vault returns ES256 signatures as raw `r ‖ s`
+(IEEE P1363), not DER, and `AuditSignatureVerifier` was already right about it.
+
 ## ADR-PA34 — the mapping governance surface says who changed what, refuses staleness by name, and answers across roles
 
 frontier-workflow's S13.101 API slice stopped: doc 20's model-role endpoints and doc 19's D3 screen

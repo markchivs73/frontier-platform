@@ -41,6 +41,20 @@ Configuration it expects:
 The vault is reached with `DefaultAzureCredential` (ADR-SEC3). No key, secret or connection string
 for signing appears in configuration — only the key's location (ADR-SEC5).
 
+**To prove the signing path against a real vault** (on demand; needs an EC P-256 key with `sign`/`verify`
+and the `Key Vault Crypto User` role, plus an `az login`):
+
+```bash
+AuditSigning__KeyIdentifier="https://{vault}.vault.azure.net/keys/{name}" \
+  dotnet test tests/Frontier.Platform.Audit.Tests --filter "Category=RequiresAzureKeyVault"
+```
+
+`KeyVaultLiveSigningTests` signs, verifies locally from the public key, resolves the exact key
+version, verifies a legacy HMAC record beside an ES256 one in a single chain, and runs the
+`SigningKeyCheck` boot probe. It creates and modifies nothing in the vault, is excluded from both CI
+jobs by trait, and skips with a clear message when `AuditSigning:KeyIdentifier` is unset (it also
+reads it from user-secrets on that test project).
+
 ## What it contains
 
 **The contracts**
