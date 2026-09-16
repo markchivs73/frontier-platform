@@ -80,10 +80,12 @@ internal sealed class GovernanceAuditService(
         }
 
         var head = await store.ReadHeadAsync(entry.Scope, cancellationToken);
-        var key = await GovernanceKeys.GetCurrentKeyAsync(cancellationToken);
+        var signing = GovernanceSigning;
+        var keyId = await signing.GetCurrentKeyIdAsync(cancellationToken);
         var sequence = (head?.Head.Sequence ?? 0) + 1;
         var previousHash = head?.Head.RecordHash ?? GovernanceAuditHasher.ComputeGenesisHash(entry.Scope);
-        var record = GovernanceAuditHasher.Seal(entry, recordId, sequence, previousHash, key);
+        var prepared = GovernanceAuditHasher.Prepare(entry, recordId, sequence, previousHash, keyId);
+        var record = GovernanceAuditHasher.Attach(prepared, await signing.SignAsync(prepared.RecordHash, cancellationToken));
 
         return await store.TryAppendAsync(record, head?.ETag, cancellationToken) ? record : null;
     }
@@ -103,4 +105,6 @@ internal sealed class GovernanceAuditService(
     }
 
     private IKeyProvider GovernanceKeys => keyRing.GetProvider(SigningKeyPurpose.GovernanceAudit);
+
+    private IAuditSigningService GovernanceSigning => keyRing.GetSigningService(SigningKeyPurpose.GovernanceAudit);
 }

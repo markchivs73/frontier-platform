@@ -241,13 +241,16 @@ public sealed class GovernanceAuditContractTests
     }
 
     [Fact]
-    public void SharedKeyRing_GivesEveryPurposeTheOneProvider()
+    public void SharedKeyRing_GivesEveryPurposeTheOneProviderAndSigningService()
     {
         var provider = new FakeRotatingKeyProvider();
-        var ring = new SharedSigningKeyRing(provider);
+        var signing = new HmacAuditSigningService(provider);
+        var ring = new SharedSigningKeyRing(provider, signing);
 
         Assert.All(SigningKeyPurpose.List, purpose => Assert.Same(provider, ring.GetProvider(purpose)));
+        Assert.All(SigningKeyPurpose.List, purpose => Assert.Same(signing, ring.GetSigningService(purpose)));
         Assert.Throws<ArgumentNullException>(() => ring.GetProvider(null!));
+        Assert.Throws<ArgumentNullException>(() => ring.GetSigningService(null!));
         Assert.Equal(["execution_audit", "governance_audit"], SigningKeyPurpose.List.Select(purpose => purpose.Name));
     }
 

@@ -1,3 +1,5 @@
+extern alias identity;
+
 using System.Diagnostics.CodeAnalysis;
 using Azure.Storage.Blobs;
 using Frontier.Platform.Serialization;
@@ -53,9 +55,15 @@ public static class AuditServiceCollectionExtensions
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        services.AddOptions<AuditSigningOptions>()
+            .Bind(configuration.GetSection(AuditSigningOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
         return services
-            .AddSingleton<IKeyProvider, DevKeyProvider>()
+            .AddSigningProfile(configuration)
             .AddSingleton<IStartupCheck, SigningKeyCheck>()
+            .AddSingleton<IStartupCheck, SigningProfileCheck>()
             .AddSingleton(CreateCosmosClient)
             .AddSingleton<IAuditTelemetryStaging, CosmosAuditTelemetryStaging>()
             .AddSingleton<CosmosAuditRecordStore>()
@@ -71,6 +79,35 @@ public static class AuditServiceCollectionExtensions
             .AddSingleton<IGovernanceAuditService, GovernanceAuditService>()
             .AddHostedService<ArchivalGovernanceAuditExportHostedService>()
             .AddSingleton<IStartupCheck, CosmosTopologyCheck>();
+    }
+
+    /// <summary>
+    /// Registers the signing profile (ADR-PA33): a Key Vault key when <c>AuditSigning:KeyUri</c>
+    /// names one, and the committed HMAC dev key otherwise.
+    ///
+    /// <para>
+    /// The choice is made from configuration alone, so it is visible in a deployment's settings
+    /// rather than inferred from build configuration, and it is checked again at boot by
+    /// <see cref="SigningProfileCheck"/> — registration decides what to use, the boot check decides
+    /// whether that was allowed. Nothing here reads a secret: the vault is reached with
+    /// <c>DefaultAzureCredential</c> (ADR-SEC3, ADR-SEC5).
+    /// </para>
+    /// </summary>
+    internal static IServiceCollection AddSigningProfile(this IServiceCollection services, IConfiguration configuration)
+    {
+        var keyIdentifier = configuration.GetSection(AuditSigningOptions.SectionName)["KeyIdentifier"];
+
+        if (string.IsNullOrWhiteSpace(keyIdentifier))
+        {
+            return services
+                .AddSingleton<IKeyProvider, DevKeyProvider>()
+                .AddSingleton<IAuditSigningService, HmacAuditSigningService>();
+        }
+
+        return services
+            .AddSingleton<IKeyVaultSigningClient>(_ => new AzureKeyVaultSigningClient(keyIdentifier, new identity::Azure.Identity.DefaultAzureCredential()))
+            .AddSingleton<IKeyProvider, KeyVaultKeyProvider>()
+            .AddSingleton<IAuditSigningService, KeyVaultAuditSigningService>();
     }
 
     /// <summary>
@@ -90,7 +127,7 @@ public static class AuditServiceCollectionExtensions
             ConnectionMode = ConnectionMode.Gateway,
             // The Cosmos emulator uses a self-signed TLS cert that is not in the OS trust
             // store. Bypass validation when connecting to localhost (emulator only).
-            HttpClientFactory = IsLocalEmulator(options.Endpoint)
+            HttpClientFactory = LocalProfile.IsLocalEndpoint(options.Endpoint)
                 ? () => new HttpClient(new HttpClientHandler { CheckCertificateRevocationList = true, ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator })
                 : null
         };
@@ -119,10 +156,4 @@ public static class AuditServiceCollectionExtensions
         var options = new BlobClientOptions(BlobClientOptions.ServiceVersion.V2025_01_05);
         return new BlobServiceClient(connectionString, options);
     }
-
-    private static bool IsLocalEmulator(string endpoint) =>
-        endpoint.StartsWith("https://localhost", StringComparison.OrdinalIgnoreCase) ||
-        endpoint.StartsWith("https://127.0.0.1", StringComparison.OrdinalIgnoreCase) ||
-        endpoint.StartsWith("http://localhost", StringComparison.OrdinalIgnoreCase) ||
-        endpoint.StartsWith("http://127.0.0.1", StringComparison.OrdinalIgnoreCase);
 }

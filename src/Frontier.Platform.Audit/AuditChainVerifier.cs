@@ -63,9 +63,11 @@ internal static class AuditChainVerifier
 
         var auditRecord = AuditRecordHasher.ToAuditRecord(record);
         var expectedRecordHash = AuditRecordHasher.ComputeRecordHash(auditRecord, record.PreviousRecordHash);
-        var expectedSignature = AuditRecordHasher.ComputeSignature(expectedRecordHash, key.KeyMaterial);
 
-        return expectedRecordHash == record.RecordHash && expectedSignature == record.Signature;
+        // The algorithm comes from the resolved key version, not the record (ADR-PA33): a record's
+        // signing_key_id names exactly one version, and that version has exactly one algorithm.
+        return expectedRecordHash == record.RecordHash &&
+            AuditSignatureVerifier.Verify(expectedRecordHash, record.Signature, key);
     }
 
     /// <summary>

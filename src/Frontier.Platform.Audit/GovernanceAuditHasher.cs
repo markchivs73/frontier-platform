@@ -34,17 +34,40 @@ internal static class GovernanceAuditHasher
     internal static string ComputeRecordHash(SignedGovernanceAuditRecord record) =>
         Convert.ToHexString(SHA256.HashData(GetCanonicalBytes(record)));
 
-    /// <summary>Allocates <paramref name="entry"/> at <paramref name="sequence"/> after <paramref name="previousRecordHash"/>, and hashes and signs it with <paramref name="key"/>.</summary>
-    internal static SignedGovernanceAuditRecord Seal(GovernanceAuditEntry entry, string recordId, long sequence, string previousRecordHash, SigningKey key)
+    /// <summary>
+    /// Allocates <paramref name="entry"/> at <paramref name="sequence"/> after
+    /// <paramref name="previousRecordHash"/> and hashes it, ready to be signed under
+    /// <paramref name="signingKeyId"/>.
+    ///
+    /// <para>
+    /// Sealing is two steps rather than one because this chain hashes <c>signing_key_id</c> — unlike
+    /// the execution chain, which clears it — so the key version must be chosen <em>before</em> the
+    /// hash exists, and the signature can only be made afterwards. <see cref="Attach"/> closes the
+    /// gap by refusing a signature from a different version.
+    /// </para>
+    /// </summary>
+    internal static SignedGovernanceAuditRecord Prepare(GovernanceAuditEntry entry, string recordId, long sequence, string previousRecordHash, string signingKeyId)
     {
-        var unsigned = ToUnsignedRecord(entry, recordId, sequence, previousRecordHash, key.KeyId);
-        var recordHash = ComputeRecordHash(unsigned);
+        var unsigned = ToUnsignedRecord(entry, recordId, sequence, previousRecordHash, signingKeyId);
 
-        return unsigned with
+        return unsigned with { RecordHash = ComputeRecordHash(unsigned) };
+    }
+
+    /// <summary>
+    /// Attaches <paramref name="signature"/> to a <see cref="Prepare"/>d record. A signature made
+    /// under a different key version than the record names is refused: a rotation that landed
+    /// between choosing the version and signing would otherwise store a record whose
+    /// <c>signing_key_id</c> is a lie, and it would fail verification forever.
+    /// </summary>
+    internal static SignedGovernanceAuditRecord Attach(SignedGovernanceAuditRecord prepared, AuditSignature signature)
+    {
+        if (!string.Equals(prepared.SigningKeyId, signature.KeyId, StringComparison.Ordinal))
         {
-            RecordHash = recordHash,
-            Signature = AuditRecordHasher.ComputeSignature(recordHash, key.KeyMaterial),
-        };
+            throw new InvalidOperationException(
+                $"The governance record was hashed for key version '{prepared.SigningKeyId}' but signed by '{signature.KeyId}' (a rotation raced the append, ADR-PA33). The record is NOT stored.");
+        }
+
+        return prepared with { Signature = signature.Signature };
     }
 
     /// <summary>Projects a stored record back to the entry it was made from.</summary>

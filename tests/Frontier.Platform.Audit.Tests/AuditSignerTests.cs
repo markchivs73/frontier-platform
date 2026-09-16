@@ -12,8 +12,8 @@ public sealed class AuditSignerTests
     /// The signer under test. The fake is both the record store and the chain-head store, as
     /// <see cref="CosmosAuditRecordStore"/> is. Delays are zeroed so the retry tests do not sleep.
     /// </summary>
-    private static AuditSigner Signer(FakeAuditRecordStore store, IKeyProvider? keyProvider = null, int maxAttempts = 8) =>
-        new(store, store, keyProvider ?? KeyProvider, Options.Create(new ExecutionAuditOptions
+    private static AuditSigner Signer(FakeAuditRecordStore store, IKeyProvider? keyProvider = null, int maxAttempts = 8, IAuditSigningService? signingService = null) =>
+        new(store, store, keyProvider ?? KeyProvider, signingService ?? new HmacAuditSigningService(keyProvider ?? KeyProvider), Options.Create(new ExecutionAuditOptions
         {
             AppendMaxAttempts = maxAttempts,
             AppendBaseDelayMs = 0,

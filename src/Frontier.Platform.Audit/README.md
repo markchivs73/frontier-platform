@@ -27,7 +27,8 @@ services.AddFrontierAudit(configuration);
 Only the composition root should call this. It binds and validates the `Cosmos` configuration
 section, registers the `CosmosClient` and `BlobServiceClient` (both wired to the shared
 `CanonicalProfile`), the record store, signer, query service and telemetry staging, the archival
-export hosted service, and two boot invariants: `SigningKeyCheck` and `CosmosTopologyCheck`.
+export hosted service, and three boot invariants: `SigningKeyCheck`, `SigningProfileCheck` and
+`CosmosTopologyCheck`.
 
 Configuration it expects:
 
@@ -35,6 +36,10 @@ Configuration it expects:
 |---|---|
 | `Cosmos:Endpoint`, `Cosmos:Key`, `Cosmos:Database` | The account holding `audit-records` |
 | `ConnectionStrings:AzureWebJobsStorage` | Blob storage for archival export |
+| `AuditSigning:KeyIdentifier` | The Key Vault key records are signed with, e.g. `https://{vault}.vault.azure.net/keys/{name}` (versionless). Unset selects the local HMAC dev key, which `SigningProfileCheck` **refuses outside the local-emulator profile** (ADR-PA33) |
+
+The vault is reached with `DefaultAzureCredential` (ADR-SEC3). No key, secret or connection string
+for signing appears in configuration — only the key's location (ADR-SEC5).
 
 ## What it contains
 
@@ -62,7 +67,9 @@ Configuration it expects:
 | `IAuditSigner` | Chain, sign, persist; and re-verify a record's signature and its chain back to genesis |
 | `IAuditQueryService` | The governance and empirical-validation reads: one record, a filtered list, a full chain |
 | `IAuditTelemetryStaging` | Per-invocation staging, upserted idempotently under activity retry |
-| `IKeyProvider` | Resolves the current signing key. `DevKeyProvider` is registered for local dev; a Key Vault-backed implementation swaps in here without touching a consumer |
+| `IKeyProvider` | Resolves the material that **verifies** a given key version. `KeyVaultKeyProvider` returns ES256 public keys; `DevKeyProvider` serves the local HMAC key |
+| `IAuditSigningService` | **Signs** a record hash with the current key version. `KeyVaultAuditSigningService` signs inside Key Vault (sign-only access); `HmacAuditSigningService` is the local profile |
+| `ISigningKeyRing` | Chooses both of the above per `SigningKeyPurpose` (execution vs governance) |
 | `IAuditRecordExporter` | Writes a record's canonical bytes to immutable Blob storage (internal; driven by the change-feed handler) |
 
 **Archival**
@@ -81,8 +88,17 @@ Records chain **per engagement**, in `closed_at_utc` order:
 ```
 genesis = SHA-256(engagementId)
 record_hash  = SHA-256(canonical bytes of fields 0–14, with 15–17 cleared)
-signature    = HMAC-SHA256(record_hash, signing key)
+signature    = ES256(record_hash, Key Vault key version)     # deployed (ADR-PA33)
+             = HMAC-SHA256(record_hash, dev key)             # local profile, and every record
+                                                             # written before ADR-PA33
 ```
+
+**`signing_key_id` is the algorithm discriminator.** A key version has exactly one algorithm, so the
+record needs no algorithm field and none was added: ids beginning `dev-key/` verify by HMAC, Key
+Vault key identifiers verify by ES256. The signed payload is `UTF8(record_hash)` either way, so the
+hash chain is algorithm-independent and records written across the change verify side by side with
+no re-signing and no schema version bump. Verification is **local under both** — under ES256 it needs
+only the version's public key, so an auditor verifies a whole chain with no vault call and no grant.
 
 Each record's `previous_record_hash` is its predecessor's `record_hash`, back to genesis.
 `IAuditSigner.VerifyAsync` re-derives the whole chain, recomputes every hash and signature, and
@@ -201,8 +217,11 @@ var record = await governanceAudit.AppendAsync(new GovernanceAuditEntry
   the head with If-Match. On 412/409 it re-reads, re-hashes and retries per `GovernanceAuditOptions`
   (section `GovernanceAudit`: `AppendMaxAttempts` 8, `AppendBaseDelayMs` 25, `AppendMaxDelayMs` 1000).
 - **Hashing.** `record_hash = SHA-256(JCS(canonical record with record_hash and signature empty))`;
-  `signature = HMAC-SHA256(record_hash, key)`. The key comes from `ISigningKeyRing` for
-  `SigningKeyPurpose.GovernanceAudit` — today the same versioned audit key.
+  the signature is ES256 (or HMAC in the local profile), as for the execution chain. The key comes
+  from `ISigningKeyRing` for `SigningKeyPurpose.GovernanceAudit` — today the same versioned audit key.
+  Unlike the execution chain this one **hashes `signing_key_id`**, so the version is chosen before the
+  hash exists and `GovernanceAuditHasher.Attach` refuses a signature made under a different version
+  (a rotation racing the append), rather than storing a record whose key id is wrong.
 - **Verification** (`VerifyAsync`, or the pure `GovernanceAuditChainVerifier.Verify` over an archive
   copy) never throws for a broken chain; it lists every break with its position and kind
   (`signature_mismatch`, `sequence_gap`, `out_of_order`, `hash_link_break`, `unresolved_key`,

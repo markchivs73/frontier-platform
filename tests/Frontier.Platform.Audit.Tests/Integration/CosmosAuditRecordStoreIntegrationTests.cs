@@ -194,7 +194,7 @@ public sealed class CosmosAuditRecordStoreIntegrationTests : IAsyncLifetime, IDi
 
     /// <summary>An <see cref="AuditSigner"/> over the emulator-backed store (ADR-PA31).</summary>
     private AuditSigner BuildSigner() =>
-        new(store, store, keyProvider, Options.Create(new ExecutionAuditOptions { AppendMaxAttempts = 50, AppendBaseDelayMs = 5, AppendMaxDelayMs = 200 }));
+        new(store, store, keyProvider, new HmacAuditSigningService(keyProvider), Options.Create(new ExecutionAuditOptions { AppendMaxAttempts = 50, AppendBaseDelayMs = 5, AppendMaxDelayMs = 200 }));
 
     /// <summary>Builds a well-formed, correctly-signed <see cref="SignedAuditRecord"/> for <paramref name="engagementId"/>/<paramref name="workflowId"/>.</summary>
     private async Task<Frontier.Platform.Audit.SignedAuditRecord> Sign(string engagementId, string workflowId, DateTime? closedAtUtc = null)
