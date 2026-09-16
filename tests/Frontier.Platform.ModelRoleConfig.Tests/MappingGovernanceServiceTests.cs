@@ -108,7 +108,7 @@ public sealed class MappingGovernanceServiceTests
         var store = new FakeMappingProposalStore().WithVersion(FleetV1, current: true).WithProposal(Pending());
         var recorder = new FakeMappingDecisionRecorder();
 
-        var approved = await Service(store, recorder).ApproveAsync(RoleId, "p-1", Approver, "eval evidence accepted", CancellationToken.None);
+        var approved = await Service(store, recorder).ApproveAsync(RoleId, "p-1", Approver, "eval evidence accepted", null, CancellationToken.None);
 
         Assert.Equal(MappingProposalState.Approved, approved.State);
         Assert.Equal(2, approved.MappingVersion);
@@ -125,7 +125,7 @@ public sealed class MappingGovernanceServiceTests
         var store = new FakeMappingProposalStore().WithProposal(Pending());
 
         var approved = await Service(store, new FakeMappingDecisionRecorder())
-            .ApproveAsync(RoleId, "p-1", Approver, "first mapping", CancellationToken.None);
+            .ApproveAsync(RoleId, "p-1", Approver, "first mapping", null, CancellationToken.None);
 
         Assert.Equal(1, approved.MappingVersion);
     }
@@ -135,8 +135,8 @@ public sealed class MappingGovernanceServiceTests
     {
         var store = new FakeMappingProposalStore().WithVersion(FleetV1, current: true).WithProposal(Pending());
 
-        var exception = await Assert.ThrowsAsync<ContractViolationException>(() =>
-            Service(store, new FakeMappingDecisionRecorder()).ApproveAsync(RoleId, "p-1", Proposer, "self approval", CancellationToken.None));
+        var exception = await Assert.ThrowsAnyAsync<ContractViolationException>(() =>
+            Service(store, new FakeMappingDecisionRecorder()).ApproveAsync(RoleId, "p-1", Proposer, "self approval", null, CancellationToken.None));
 
         Assert.Contains("cannot also decide it", exception.Message, StringComparison.Ordinal);
         Assert.Null(store.Version(2));
@@ -144,9 +144,9 @@ public sealed class MappingGovernanceServiceTests
 
     [Fact]
     public async Task ApproveAsync_UnknownProposal_IsRefused() =>
-        await Assert.ThrowsAsync<ContractViolationException>(() =>
+        await Assert.ThrowsAnyAsync<ContractViolationException>(() =>
             Service(new FakeMappingProposalStore(), new FakeMappingDecisionRecorder())
-                .ApproveAsync(RoleId, "missing", Approver, "reason", CancellationToken.None));
+                .ApproveAsync(RoleId, "missing", Approver, "reason", null, CancellationToken.None));
 
     [Fact]
     public async Task ApproveAsync_AlreadyApproved_IsRefused()
@@ -154,8 +154,8 @@ public sealed class MappingGovernanceServiceTests
         var approved = Pending() with { State = MappingProposalState.Approved, MappingVersion = 2, ApprovedBy = Approver };
         var store = new FakeMappingProposalStore().WithProposal(approved);
 
-        await Assert.ThrowsAsync<ContractViolationException>(() =>
-            Service(store, new FakeMappingDecisionRecorder()).ApproveAsync(RoleId, "p-1", Approver, "again", CancellationToken.None));
+        await Assert.ThrowsAnyAsync<ContractViolationException>(() =>
+            Service(store, new FakeMappingDecisionRecorder()).ApproveAsync(RoleId, "p-1", Approver, "again", null, CancellationToken.None));
     }
 
     [Fact]
@@ -176,7 +176,7 @@ public sealed class MappingGovernanceServiceTests
             return Task.CompletedTask;
         };
 
-        var approved = await Service(store, recorder).ApproveAsync(RoleId, "p-1", Approver, "eval accepted", CancellationToken.None);
+        var approved = await Service(store, recorder).ApproveAsync(RoleId, "p-1", Approver, "eval accepted", null, CancellationToken.None);
 
         Assert.Equal(3, approved.MappingVersion);
         Assert.Equal(2, recorder.Decisions.Count);
@@ -192,7 +192,7 @@ public sealed class MappingGovernanceServiceTests
         store.BeforeAllocate = () => store.CreateProposalAsync(Pending(), CancellationToken.None);
 
         await Assert.ThrowsAsync<MappingGovernanceException>(() =>
-            Service(store, recorder).ApproveAsync(RoleId, "p-1", Approver, "eval accepted", CancellationToken.None));
+            Service(store, recorder).ApproveAsync(RoleId, "p-1", Approver, "eval accepted", null, CancellationToken.None));
 
         Assert.Equal(FastRetry.DecisionMaxAttempts, recorder.Compensations.Count);
     }
@@ -205,7 +205,7 @@ public sealed class MappingGovernanceServiceTests
         var recorder = new FakeMappingDecisionRecorder();
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            Service(store, recorder).ApproveAsync(RoleId, "p-1", Approver, "eval accepted", CancellationToken.None));
+            Service(store, recorder).ApproveAsync(RoleId, "p-1", Approver, "eval accepted", null, CancellationToken.None));
 
         Assert.Contains(recorder.Compensations, entry => entry.Reason.Contains("cosmos down", StringComparison.Ordinal));
     }
@@ -218,7 +218,7 @@ public sealed class MappingGovernanceServiceTests
         var store = new FakeMappingProposalStore().WithVersion(FleetV1, current: true).WithProposal(Pending());
 
         var approved = await Service(store, new FakeMappingDecisionRecorder())
-            .ApproveAsync(RoleId, "p-1", Approver, "eval accepted", CancellationToken.None);
+            .ApproveAsync(RoleId, "p-1", Approver, "eval accepted", null, CancellationToken.None);
 
         Assert.NotEqual(RolloutRing.Shadow, store.Version(approved.MappingVersion!.Value)!.Ring);
         Assert.All(store.MadeCurrent, version => Assert.NotEqual(RolloutRing.Shadow, store.Version(version)!.Ring));
@@ -231,7 +231,7 @@ public sealed class MappingGovernanceServiceTests
         var store = new FakeMappingProposalStore().WithVersion(FleetV1).WithVersion(FleetV1 with { MappingVersion = 2, Ring = RolloutRing.Canary, PredecessorFleetVersion = 1 }, current: true).WithProposal(approved);
         var recorder = new FakeMappingDecisionRecorder();
 
-        var promoted = await Service(store, recorder).PromoteAsync(RoleId, "p-1", Approver, "7 clean days", CancellationToken.None);
+        var promoted = await Service(store, recorder).PromoteAsync(RoleId, "p-1", Approver, "7 clean days", null, CancellationToken.None);
 
         Assert.Equal(MappingProposalState.Promoted, promoted.State);
         Assert.Equal(3, promoted.PromotedVersion);
@@ -248,8 +248,8 @@ public sealed class MappingGovernanceServiceTests
     {
         var store = new FakeMappingProposalStore().WithProposal(Pending());
 
-        await Assert.ThrowsAsync<ContractViolationException>(() =>
-            Service(store, new FakeMappingDecisionRecorder()).PromoteAsync(RoleId, "p-1", Approver, "too early", CancellationToken.None));
+        await Assert.ThrowsAnyAsync<ContractViolationException>(() =>
+            Service(store, new FakeMappingDecisionRecorder()).PromoteAsync(RoleId, "p-1", Approver, "too early", null, CancellationToken.None));
     }
 
     [Fact]
@@ -258,7 +258,7 @@ public sealed class MappingGovernanceServiceTests
         var store = new FakeMappingProposalStore().WithProposal(Pending());
         var recorder = new FakeMappingDecisionRecorder();
 
-        var rejected = await Service(store, recorder).RejectAsync(RoleId, "p-1", Approver, "no evidence", CancellationToken.None);
+        var rejected = await Service(store, recorder).RejectAsync(RoleId, "p-1", Approver, "no evidence", null, CancellationToken.None);
 
         Assert.Equal(MappingProposalState.Rejected, rejected.State);
         Assert.True(rejected.State.IsTerminal);
@@ -274,7 +274,7 @@ public sealed class MappingGovernanceServiceTests
         var store = new FakeMappingProposalStore().WithProposal(Pending());
         var recorder = new FakeMappingDecisionRecorder();
 
-        var withdrawn = await Service(store, recorder).WithdrawAsync(RoleId, "p-1", Proposer, "superseded", CancellationToken.None);
+        var withdrawn = await Service(store, recorder).WithdrawAsync(RoleId, "p-1", Proposer, "superseded", null, CancellationToken.None);
 
         Assert.Equal(MappingProposalState.Withdrawn, withdrawn.State);
         Assert.Equal(MappingGovernanceEventTypes.Withdrawn, Assert.Single(recorder.Decisions).EventType);
@@ -285,8 +285,8 @@ public sealed class MappingGovernanceServiceTests
     {
         var store = new FakeMappingProposalStore().WithProposal(Pending() with { State = MappingProposalState.Rejected });
 
-        await Assert.ThrowsAsync<ContractViolationException>(() =>
-            Service(store, new FakeMappingDecisionRecorder()).RejectAsync(RoleId, "p-1", Approver, "again", CancellationToken.None));
+        await Assert.ThrowsAnyAsync<ContractViolationException>(() =>
+            Service(store, new FakeMappingDecisionRecorder()).RejectAsync(RoleId, "p-1", Approver, "again", null, CancellationToken.None));
     }
 
     [Fact]
@@ -301,7 +301,7 @@ public sealed class MappingGovernanceServiceTests
             Microsoft.Extensions.Options.Options.Create(FastRetry));
 
         await Assert.ThrowsAsync<MappingGovernanceException>(() =>
-            service.RejectAsync(RoleId, "p-1", Approver, "no", CancellationToken.None));
+            service.RejectAsync(RoleId, "p-1", Approver, "no", null, CancellationToken.None));
 
         Assert.Equal(FastRetry.DecisionMaxAttempts, recorder.Compensations.Count);
     }
@@ -332,7 +332,7 @@ public sealed class MappingGovernanceServiceTests
         var store = new FakeMappingProposalStore().WithVersion(FleetV1, current: true);
         var writer = new FakeRoleMappingWriter();
 
-        var exception = await Assert.ThrowsAsync<ContractViolationException>(() =>
+        var exception = await Assert.ThrowsAnyAsync<ContractViolationException>(() =>
             Service(store, new FakeMappingDecisionRecorder(), writer).RollbackToVersionAsync(RoleId, 99, Approver, "revert", CancellationToken.None));
 
         Assert.Contains("no mapping version 99", exception.Message, StringComparison.Ordinal);
@@ -345,7 +345,7 @@ public sealed class MappingGovernanceServiceTests
         var store = new FakeMappingProposalStore().WithVersion(FleetV1, current: true).WithVersion(ShadowV2);
         var writer = new FakeRoleMappingWriter();
 
-        var exception = await Assert.ThrowsAsync<ContractViolationException>(() =>
+        var exception = await Assert.ThrowsAnyAsync<ContractViolationException>(() =>
             Service(store, new FakeMappingDecisionRecorder(), writer).RollbackToVersionAsync(RoleId, 2, Approver, "revert", CancellationToken.None));
 
         Assert.Contains("shadow version", exception.Message, StringComparison.Ordinal);
@@ -357,7 +357,7 @@ public sealed class MappingGovernanceServiceTests
     {
         var store = new FakeMappingProposalStore().WithVersion(FleetV1);
 
-        await Assert.ThrowsAsync<ContractViolationException>(() =>
+        await Assert.ThrowsAnyAsync<ContractViolationException>(() =>
             Service(store, new FakeMappingDecisionRecorder()).RollbackToVersionAsync(RoleId, 1, Approver, "revert", CancellationToken.None));
     }
 
@@ -447,7 +447,8 @@ public sealed class MappingGovernanceServiceTests
             .WithProposal(Pending("p-2") with { State = MappingProposalState.Rejected });
         var service = Service(store, new FakeMappingDecisionRecorder());
 
-        var pending = await service.ListProposalsAsync(new MappingProposalQuery { RoleId = RoleId, State = MappingProposalState.PendingApproval }, CancellationToken.None);
+        var pending = await service.ListProposalsAsync(
+            new MappingProposalQuery { RoleId = RoleId, States = [MappingProposalState.PendingApproval] }, CancellationToken.None);
 
         Assert.Equal("p-1", Assert.Single(pending.Proposals).ProposalId);
     }
@@ -458,13 +459,12 @@ public sealed class MappingGovernanceServiceTests
             Service(new FakeMappingProposalStore(), new FakeMappingDecisionRecorder()).ListProposalsAsync(null!, CancellationToken.None));
 
     [Theory]
-    [InlineData(" ", 10)]
-    [InlineData("role", 0)]
-    [InlineData("role", MappingProposalQuery.MaxPageSize + 1)]
-    public async Task ListProposalsAsync_InvalidQuery_Throws(string roleId, int pageSize) =>
+    [InlineData(0)]
+    [InlineData(MappingProposalQuery.MaxPageSize + 1)]
+    public async Task ListProposalsAsync_InvalidPageSize_Throws(int pageSize) =>
         await Assert.ThrowsAnyAsync<ArgumentException>(() =>
             Service(new FakeMappingProposalStore(), new FakeMappingDecisionRecorder())
-                .ListProposalsAsync(new MappingProposalQuery { RoleId = roleId, PageSize = pageSize }, CancellationToken.None));
+                .ListProposalsAsync(new MappingProposalQuery { RoleId = "role", PageSize = pageSize }, CancellationToken.None));
 
     [Fact]
     public async Task ObsoleteMembers_DirectToTheirReplacements()
@@ -497,10 +497,12 @@ public sealed class MappingGovernanceServiceTests
 
         public Task CreateProposalAsync(MappingChangeProposal proposal, CancellationToken ct) => inner.CreateProposalAsync(proposal, ct);
 
-        public Task<bool> TryReplaceProposalAsync(MappingChangeProposal proposal, string expectedETag, CancellationToken ct) =>
+        public Task<string?> TryReplaceProposalAsync(MappingChangeProposal proposal, string expectedETag, CancellationToken ct) =>
             inner.TryReplaceProposalAsync(proposal, expectedETag, ct);
 
-        public Task<bool> TryAllocateVersionAsync(RoleMapping mapping, MappingChangeProposal proposal, string expectedETag, bool makeCurrent, CancellationToken ct) =>
+        public Task<IReadOnlyList<RoleMapping>> ListMappingsAsync(string roleId, CancellationToken ct) => inner.ListMappingsAsync(roleId, ct);
+
+        public Task<string?> TryAllocateVersionAsync(RoleMapping mapping, MappingChangeProposal proposal, string expectedETag, bool makeCurrent, CancellationToken ct) =>
             inner.TryAllocateVersionAsync(mapping, proposal, expectedETag, makeCurrent, ct);
 
         public Task<MappingProposalPage> QueryProposalsAsync(MappingProposalQuery query, CancellationToken ct) => inner.QueryProposalsAsync(query, ct);
@@ -527,10 +529,12 @@ public sealed class MappingGovernanceServiceTests
 
         public Task CreateProposalAsync(MappingChangeProposal proposal, CancellationToken ct) => inner.CreateProposalAsync(proposal, ct);
 
-        public Task<bool> TryReplaceProposalAsync(MappingChangeProposal proposal, string expectedETag, CancellationToken ct) =>
+        public Task<string?> TryReplaceProposalAsync(MappingChangeProposal proposal, string expectedETag, CancellationToken ct) =>
             inner.TryReplaceProposalAsync(proposal, expectedETag, ct);
 
-        public Task<bool> TryAllocateVersionAsync(RoleMapping mapping, MappingChangeProposal proposal, string expectedETag, bool makeCurrent, CancellationToken ct) =>
+        public Task<IReadOnlyList<RoleMapping>> ListMappingsAsync(string roleId, CancellationToken ct) => inner.ListMappingsAsync(roleId, ct);
+
+        public Task<string?> TryAllocateVersionAsync(RoleMapping mapping, MappingChangeProposal proposal, string expectedETag, bool makeCurrent, CancellationToken ct) =>
             inner.TryAllocateVersionAsync(mapping, proposal, expectedETag, makeCurrent, ct);
 
         public Task<MappingProposalPage> QueryProposalsAsync(MappingProposalQuery query, CancellationToken ct) => inner.QueryProposalsAsync(query, ct);

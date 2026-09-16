@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Frontier.Platform.ModelRoleConfig.Tests;
 
 /// <summary>
@@ -50,6 +52,9 @@ internal sealed class FakeMappingProposalStore : IMappingProposalStore
     /// <summary>The stored proposal, for assertions.</summary>
     internal MappingChangeProposal? Proposal(string proposalId) => proposals.GetValueOrDefault(proposalId)?.Proposal;
 
+    /// <summary>The stored proposal's current concurrency token, for tests that pass a fresh or stale one.</summary>
+    internal string? Token(string proposalId) => proposals.GetValueOrDefault(proposalId)?.ETag;
+
     public Task<IReadOnlyList<int>> ListMappingVersionsAsync(string roleId, CancellationToken cancellationToken)
     {
         lock (gate)
@@ -78,9 +83,13 @@ internal sealed class FakeMappingProposalStore : IMappingProposalStore
     {
         lock (gate)
         {
-            return Task.FromResult(proposals.GetValueOrDefault(proposalId));
+            return Task.FromResult(WithToken(proposals.GetValueOrDefault(proposalId)));
         }
     }
+
+    /// <summary>Stamps the stored token onto the proposal, as the Cosmos adapter does on read.</summary>
+    private static StoredMappingProposal? WithToken(StoredMappingProposal? stored) =>
+        stored is null ? null : stored with { Proposal = stored.Proposal with { ConcurrencyToken = stored.ETag } };
 
     public Task CreateProposalAsync(MappingChangeProposal proposal, CancellationToken cancellationToken)
     {
@@ -91,7 +100,7 @@ internal sealed class FakeMappingProposalStore : IMappingProposalStore
         }
     }
 
-    public Task<bool> TryReplaceProposalAsync(MappingChangeProposal proposal, string expectedETag, CancellationToken cancellationToken)
+    public Task<string?> TryReplaceProposalAsync(MappingChangeProposal proposal, string expectedETag, CancellationToken cancellationToken)
     {
         lock (gate)
         {
@@ -99,7 +108,15 @@ internal sealed class FakeMappingProposalStore : IMappingProposalStore
         }
     }
 
-    public async Task<bool> TryAllocateVersionAsync(
+    public Task<IReadOnlyList<RoleMapping>> ListMappingsAsync(string roleId, CancellationToken cancellationToken)
+    {
+        lock (gate)
+        {
+            return Task.FromResult<IReadOnlyList<RoleMapping>>([.. versions.Values.OrderBy(mapping => mapping.MappingVersion)]);
+        }
+    }
+
+    public async Task<string?> TryAllocateVersionAsync(
         RoleMapping mapping, MappingChangeProposal proposal, string expectedETag, bool makeCurrent, CancellationToken cancellationToken)
     {
         if (BeforeAllocate is { } hook)
@@ -115,9 +132,14 @@ internal sealed class FakeMappingProposalStore : IMappingProposalStore
         lock (gate)
         {
             // Create-only on {roleId}:v{n}: a version another approval already allocated is a conflict.
-            if (versions.ContainsKey(mapping.MappingVersion) || !TryReplace(proposal, expectedETag))
+            if (versions.ContainsKey(mapping.MappingVersion))
             {
-                return false;
+                return null;
+            }
+
+            if (TryReplace(proposal, expectedETag) is not { } token)
+            {
+                return null;
             }
 
             versions[mapping.MappingVersion] = mapping;
@@ -127,7 +149,7 @@ internal sealed class FakeMappingProposalStore : IMappingProposalStore
                 MadeCurrent.Add(mapping.MappingVersion);
             }
 
-            return true;
+            return token;
         }
     }
 
@@ -153,25 +175,35 @@ internal sealed class FakeMappingProposalStore : IMappingProposalStore
         lock (gate)
         {
             var matching = proposals.Values
-                .Select(stored => stored.Proposal)
-                .Where(proposal => query.State is null || proposal.State == query.State)
-                .OrderByDescending(proposal => proposal.ProposedAtUtc)
+                .Where(stored => query.RoleId is null || stored.Proposal.RoleId == query.RoleId)
+                .Where(stored => query.States is null || query.States.Count == 0 || query.States.Contains(stored.Proposal.State))
+                .OrderByDescending(stored => stored.Proposal.ProposedAtUtc)
+                .ThenBy(stored => stored.Proposal.ProposalId, StringComparer.Ordinal)
                 .ToList();
 
-            return Task.FromResult(new MappingProposalPage { Proposals = [.. matching.Take(query.PageSize)] });
+            var start = query.ContinuationToken is null ? 0 : int.Parse(query.ContinuationToken, CultureInfo.InvariantCulture);
+            var page = matching.Skip(start).Take(query.PageSize).ToList();
+            var consumed = start + page.Count;
+
+            return Task.FromResult(new MappingProposalPage
+            {
+                Proposals = [.. page.Select(stored => stored.Proposal with { ConcurrencyToken = stored.ETag })],
+                ContinuationToken = consumed < matching.Count ? consumed.ToString(CultureInfo.InvariantCulture) : null,
+            });
         }
     }
 
-    /// <summary>Replaces a proposal under its ETag, minting a new one; false when the token is stale.</summary>
-    private bool TryReplace(MappingChangeProposal proposal, string expectedETag)
+    /// <summary>Replaces a proposal under its ETag, minting a new one; null when the token is stale.</summary>
+    private string? TryReplace(MappingChangeProposal proposal, string expectedETag)
     {
         if (!proposals.TryGetValue(proposal.ProposalId, out var stored) || stored.ETag != expectedETag)
         {
-            return false;
+            return null;
         }
 
-        proposals[proposal.ProposalId] = new StoredMappingProposal(proposal, $"etag-{++etagCounter}");
-        return true;
+        var token = $"etag-{++etagCounter}";
+        proposals[proposal.ProposalId] = new StoredMappingProposal(proposal, token);
+        return token;
     }
 }
 

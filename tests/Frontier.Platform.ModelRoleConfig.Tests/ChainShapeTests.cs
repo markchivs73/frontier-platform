@@ -37,7 +37,7 @@ public sealed class ChainShapeTests
     {
         var mapping = Phase1RoleCatalogue.DeepReasoningMappingV1 with { Chain = [Model, EchoAgent] };
 
-        var exception = Assert.Throws<ContractViolationException>(() => ChainShape.EnsureValid(mapping));
+        var exception = Assert.ThrowsAny<ContractViolationException>(() => ChainShape.EnsureValid(mapping));
 
         Assert.Contains("never mixed", Assert.Single(exception.Violations), StringComparison.Ordinal);
     }

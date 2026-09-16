@@ -57,7 +57,7 @@ public sealed class MappingPinnerTests
     {
         var registry = new MovableRoleRegistry(Fleet(1));
 
-        var ex = await Assert.ThrowsAsync<ContractViolationException>(() =>
+        var ex = await Assert.ThrowsAnyAsync<ContractViolationException>(() =>
             new MappingPinner(registry).PinAsync("eng-1", [Role, "unmapped-role"], CancellationToken.None));
 
         Assert.Contains("unmapped-role", Assert.Single(ex.Violations), StringComparison.Ordinal);

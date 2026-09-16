@@ -2085,3 +2085,147 @@ No shipped public member changes shape; no stored record changes; no container o
 moves. **A deployed environment needs a vault, an EC-P256 key, and a `Key Vault Crypto User` role
 assignment scoped to that key before it can sign** — until `AuditSigning:KeyIdentifier` is set, a
 non-local deployment refuses to boot, which is the intended failure.
+
+## ADR-PA34 — the mapping governance surface says who changed what, refuses staleness by name, and answers across roles
+
+frontier-workflow's S13.101 API slice stopped: doc 20's model-role endpoints and doc 19's D3 screen
+specify four things `Frontier.Platform.ModelRoleConfig` could not express, and Mark's call
+(2026-09-16) was to fix the platform rather than amend the docs down to what shipped. ADR-PA32 built
+the proposal store and the governance flow; this extends its surface without changing how a decision
+is stored, allocated or audited.
+
+**1. The proposal carries its concurrency token, and a decision may name the one it expects.**
+`MappingChangeProposal` gains an **optional** `ConcurrencyToken` (`concurrency_token`), stamped from
+the stored document's ETag on every read — `GetProposalAsync`, `ListProposalsAsync`, and the proposal
+each decision returns. `ApproveAsync`, `RejectAsync`, `WithdrawAsync` and `PromoteAsync` take an
+optional `expectedConcurrencyToken`; when it is supplied and stale, the decision is refused with
+`MappingConcurrencyConflictException`. D3 needs exactly this: doc 19 requires every mutating call to
+send `If-Match` from the loaded row and to render a **409** saying *"this proposal changed while you
+were deciding: it is now {state}, decided by {actor}"* — which is unimplementable if the caller can
+never learn the token, and unenforceable if the service ignores it. The token is **never stored**:
+it is a property of the document, not of the proposal, so `MappingProposalDocument.FromDomain` does
+not write it and stored bytes are unchanged. ADR-E15's floor holds — the member is additive and
+optional, and proposals recorded before it read back with it null.
+
+*Why an optional token and not a required one:* a caller with no prior view — a script, a migration,
+a test — has nothing to be stale about, and forcing it to read-then-decide would add a race rather
+than remove one. The consumer's HTTP layer makes `If-Match` required; the platform makes the guard
+available.
+
+**2. Refuse the stale token; keep retrying the allocation race. They are different failures.**
+This is the distinction the code and the types now make explicit, because conflating them is the
+easy mistake. The **allocation** retry (ADR-PA32, `DecisionMaxAttempts`) loses a race for a mapping
+*version*: two approvals computed the same `n`, the create-only `{roleId}:v{n}` write let exactly one
+land, and the loser re-reads, re-allocates and tries again — which produces **the decision the caller
+asked for**, just at a different version number. Retrying is correct and invisible. A **stale token**
+means the *proposal itself* moved: somebody else approved, rejected or withdrew it. Re-reading and
+proceeding would take a decision on a proposal the caller has never seen — so the only correct answer
+is to stop and say who got there first. `EnsureExpectedToken` therefore runs **before** the
+transition and authority checks: a caller reasoning about a state that no longer exists has had every
+later judgement invalidated too, so the first thing to report is the staleness. Both behaviours are
+tested: stale-token refusal and fresh-token success on all four decisions, and the allocation race
+still retrying to success and still exhausting into `MappingGovernanceException`.
+
+**3. The proposals query loses its required role and gains a state set.** `MappingProposalQuery.RoleId`
+becomes optional and `State` becomes `States`, a repeatable set. D3's Proposals tab is a **cross-role**
+view — "everything awaiting a decision, across every role" — which no per-role query can answer, and
+doc 20 documents `state` as optional and repeatable. There is deliberately **no default state filter**:
+D3 defaults its own filter to `pending_approval`, but a store that silently applied that default would
+make "show me everything" unexpressible and would hide decided proposals from any caller that forgot
+the filter. The caller chooses.
+
+*The cross-partition cost, recorded honestly.* With no role the query fans out across every physical
+partition of `model-role-config` and its RU cost grows with the number of partitions, not with the
+number of rows returned — the cosmos-conventions rule that a cross-partition query in a **hot** path
+is a design smell. This one is bounded and deliberate: it is an admin screen behind `model-governance`,
+driven by a human, not an execution path. It is bounded three ways — `PageSize` (default 50, max 200)
+caps the rows, `ContinuationToken` does the paging rather than a `TOP`-less scan, and `MaxConcurrency`
+is capped at 4 so one screen cannot fan out across every partition at once. A query that *does* name a
+role stays single-partition exactly as before. If proposal volume ever makes this hurt, the fix is a
+per-state projection document, not a bigger page.
+
+**4. Version listing becomes public through a new interface, not a new member on a shipped one.**
+D3 renders each role's append-only history — version, ring, canary percent, chain, change reason,
+approved by, and which one is current — and doc 20 returns it as `version_history`. Listing existed
+only on the internal `IMappingProposalStore`. It is exposed as a **new** `IMappingVersionHistory`
+returning `MappingVersionSummary`, rather than as a member on `IRoleRegistry`. *Why:* `IRoleRegistry`
+and `IModelResolver` are implemented by consumers' test doubles, so a new member on either breaks
+every implementor at compile time — the same reasoning that produced `IMappingPinner` (ADR-PA29), and
+the precedent this follows. A new interface costs one DI registration and breaks nobody. The
+implementation reads the role's version documents in **one** query plus one pointer read, rather than
+a point-read per version, which would have cost one request per row of a history panel.
+
+**5. Typed refusals, so a caller maps a status code by `catch` rather than by string matching.**
+One `ContractViolationException` covered unknown role, unknown proposal, illegal transition,
+distinct-approver, proposer-only, already-pending and invalid input, so the consumer could only tell
+them apart by parsing message text — and doc 20 needs 400, 403, 404 and 409 to be distinguishable.
+Each refusal now has its own type under an abstract `MappingGovernanceRefusalException`:
+`InvalidMappingChangeException` (400), `UnknownMappingProposalException` and
+`UnknownMappingVersionException` (404), `DistinctApproverRequiredException` and
+`ProposerOnlyWithdrawalException` (403), `IllegalMappingTransitionException`,
+`MappingProposalAlreadyPendingException`, `MappingVersionNotRollbackEligibleException` and
+`MappingConcurrencyConflictException` (409).
+
+**`ContractViolationException` is unsealed to carry them, and that is the load-bearing decision here.**
+The alternative — a parallel hierarchy beside it — was rejected because it would have been a silent
+*behaviour* break rather than a compile-time one: every `catch (ContractViolationException)` in the
+consumer's API (four sites) would have stopped catching these refusals, and, worse, the permanent-failure
+classification would have been lost. `FailureClassifier` maps `ContractViolationException => Permanent`
+by type pattern and DTF's outer retry handler asks `TaskFailureDetails.IsCausedBy<ContractViolationException>()`;
+both honour base types, so a *derived* refusal stays permanent and is never retried (invariant 7),
+while a sibling type would have become **retryable** — the platform would have quietly retried a
+rejected approval. Deriving keeps every existing catch, every classification, and the K4 rule that a
+contract violation is never retried. Unsealing is source- and binary-compatible and adds no member,
+so no `PublicAPI` entry for `ContractViolationException` changes. The type's doc comment now records
+why it is open, so "sealed by default" is not re-applied to it by habit.
+
+*Residual, recorded rather than hidden:* `IsCausedBy<T>` resolves the failure's `ErrorType` **by name**
+and returns false if the type cannot be loaded, so classification across a process boundary depends on
+the refusal's assembly being loadable in the worker — which it is, since the Host loads this package.
+Nothing in this library throws a refusal from inside a DTF activity today; if one ever does, this is
+the line to re-check.
+
+**A defect fixed in passing, because the change exposed it.** `MappingProposalQueryBuilder` filtered on
+`c.proposal.state` and ordered by `c.proposal.proposed_at_utc`. Proposal documents are **flat** —
+`state` and `proposed_at_utc` sit at the root, as `FindUndecidedProposalAsync` already assumed — so
+the state filter matched no document and the ordering was arbitrary. It went unnoticed because the
+only test asserted the query *text* rather than its behaviour against a document, and no emulator test
+covered the filter. Both paths are corrected and the tests now assert the shape the documents actually
+have.
+
+**Source breaks — every one, named.** *(a)* `ApproveAsync`, `RejectAsync`, `WithdrawAsync` and
+`PromoteAsync` take `expectedConcurrencyToken` **before** `cancellationToken`, so an existing call
+passing the token positionally does not compile until it passes the token (or names the argument).
+This is deliberate rather than absorbed into an overload: doc 20 makes `If-Match` **required** on all
+four endpoints, so a second, unguarded overload would institutionalise exactly the call this change
+exists to prevent, and a break the compiler catches is cheaper than a guard silently not applied.
+*(b)* `MappingProposalQuery.State` is replaced by `States`, and `RoleId` is now nullable — a break for
+object-initialiser callers. *(c)* The internal `IMappingProposalStore` now returns the new token from
+`TryReplaceProposalAsync`/`TryAllocateVersionAsync` instead of a bool and gains `ListMappingsAsync`;
+internal, so it breaks nobody outside this library. Members (a) and (b) were released in v0.34.0 but
+the consumer is still on 0.22.2 and its S13.101 slice has not been built against them, so the real
+adoption cost is zero. Nothing else changes shape; no stored document, container, schema version or
+wire byte moves.
+
+*Explicitly not built:* `base_version` and its approve-time 409 (doc 20's proposal shape). Mark dropped
+it on 2026-09-16 — the concurrency token covers the same concern more precisely, since it detects that
+*this proposal* moved rather than that the role's version pointer moved, and doc 20 is being amended
+consumer-side.
+
+*Evidence.* The Cosmos sources are ADR-PA32's, carried forward unchanged rather than re-fetched
+(last accessed 2026-09-15, as recorded there): Microsoft Learn, *Transactional batch operations in
+Azure Cosmos DB* — batch operations share a partition key and each carries its own status, which is
+what returns the replaced proposal's new ETag from the allocation batch; *Database transactions and
+optimistic concurrency control* — `_etag` with `if-match`, rejected with HTTP 412, which is the
+proposal guard the expected token is compared against. For the classification claim the source is the
+shipped package itself, inspected 2026-09-16: `Microsoft.DurableTask.Abstractions` 1.24.2's XML
+documentation for `TaskFailureDetails.IsCausedBy<T>` states "Base types are supported" and that an
+unloadable type returns `false` — which is both why deriving works and the residual recorded above.
+Cross-partition query cost is the standard Cosmos behaviour documented alongside those pages and is
+recorded here as a bounded, deliberate admin-path cost rather than as a new claim.
+
+Release: **minor — additive, with the four named source breaks above.** New public types
+(`IMappingVersionHistory`, `MappingVersionSummary`, `MappingGovernanceRefusalException` and the nine
+refusals), a new optional `MappingChangeProposal.ConcurrencyToken`, a relaxed `MappingProposalQuery`,
+and the token parameter on the four decisions. `ContractViolationException` becomes unsealed. No
+stored bytes, container, partition key or schema version changes.

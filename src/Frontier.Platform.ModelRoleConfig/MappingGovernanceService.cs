@@ -36,20 +36,24 @@ internal sealed class MappingGovernanceService(
     }
 
     /// <inheritdoc />
-    public Task<MappingChangeProposal> ApproveAsync(string roleId, string proposalId, string approverId, string reason, CancellationToken cancellationToken) =>
-        AllocateAsync(roleId, proposalId, approverId, reason, MappingProposalState.Approved, cancellationToken);
+    public Task<MappingChangeProposal> ApproveAsync(
+        string roleId, string proposalId, string approverId, string reason, string? expectedConcurrencyToken, CancellationToken cancellationToken) =>
+        AllocateAsync(roleId, proposalId, approverId, reason, MappingProposalState.Approved, expectedConcurrencyToken, cancellationToken);
 
     /// <inheritdoc />
-    public Task<MappingChangeProposal> PromoteAsync(string roleId, string proposalId, string actor, string reason, CancellationToken cancellationToken) =>
-        AllocateAsync(roleId, proposalId, actor, reason, MappingProposalState.Promoted, cancellationToken);
+    public Task<MappingChangeProposal> PromoteAsync(
+        string roleId, string proposalId, string actor, string reason, string? expectedConcurrencyToken, CancellationToken cancellationToken) =>
+        AllocateAsync(roleId, proposalId, actor, reason, MappingProposalState.Promoted, expectedConcurrencyToken, cancellationToken);
 
     /// <inheritdoc />
-    public Task<MappingChangeProposal> RejectAsync(string roleId, string proposalId, string approverId, string reason, CancellationToken cancellationToken) =>
-        DecideAsync(roleId, proposalId, approverId, reason, MappingProposalState.Rejected, MappingGovernanceEventTypes.Rejected, cancellationToken);
+    public Task<MappingChangeProposal> RejectAsync(
+        string roleId, string proposalId, string approverId, string reason, string? expectedConcurrencyToken, CancellationToken cancellationToken) =>
+        DecideAsync(roleId, proposalId, approverId, reason, MappingProposalState.Rejected, MappingGovernanceEventTypes.Rejected, expectedConcurrencyToken, cancellationToken);
 
     /// <inheritdoc />
-    public Task<MappingChangeProposal> WithdrawAsync(string roleId, string proposalId, string actor, string reason, CancellationToken cancellationToken) =>
-        DecideAsync(roleId, proposalId, actor, reason, MappingProposalState.Withdrawn, MappingGovernanceEventTypes.Withdrawn, cancellationToken);
+    public Task<MappingChangeProposal> WithdrawAsync(
+        string roleId, string proposalId, string actor, string reason, string? expectedConcurrencyToken, CancellationToken cancellationToken) =>
+        DecideAsync(roleId, proposalId, actor, reason, MappingProposalState.Withdrawn, MappingGovernanceEventTypes.Withdrawn, expectedConcurrencyToken, cancellationToken);
 
     /// <inheritdoc />
     public async Task<MappingChangeProposal?> GetProposalAsync(string roleId, string proposalId, CancellationToken cancellationToken)
@@ -57,14 +61,15 @@ internal sealed class MappingGovernanceService(
         ArgumentException.ThrowIfNullOrWhiteSpace(roleId);
         ArgumentException.ThrowIfNullOrWhiteSpace(proposalId);
 
-        return (await store.FindProposalAsync(roleId, proposalId, cancellationToken))?.Proposal;
+        var stored = await store.FindProposalAsync(roleId, proposalId, cancellationToken);
+        return stored is null ? null : stored.Proposal with { ConcurrencyToken = stored.ETag };
     }
 
     /// <inheritdoc />
     public Task<MappingProposalPage> ListProposalsAsync(MappingProposalQuery query, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(query);
-        ArgumentException.ThrowIfNullOrWhiteSpace(query.RoleId, nameof(query));
+        // No role is legitimate (ADR-PA34): it is D3's cross-role "everything awaiting a decision" view.
         ArgumentOutOfRangeException.ThrowIfLessThan(query.PageSize, 1, nameof(query));
         ArgumentOutOfRangeException.ThrowIfGreaterThan(query.PageSize, MappingProposalQuery.MaxPageSize, nameof(query));
 
@@ -79,7 +84,7 @@ internal sealed class MappingGovernanceService(
 
         var target = await EnsureRollbackTargetAsync(roleId, toVersion, cancellationToken);
         var previous = await store.FindCurrentVersionAsync(roleId, cancellationToken)
-            ?? throw Violation($"role '{roleId}' has no current mapping pointer to roll back.");
+            ?? throw new UnknownMappingVersionException(nameof(IMappingGovernanceService), [$"role '{roleId}' has no current mapping pointer to roll back."]);
 
         var now = timeProvider.GetUtcNow().UtcDateTime;
         var decision = RollbackDecision(roleId, actor, reason, now, previous, toVersion, target.Ring);
@@ -110,9 +115,10 @@ internal sealed class MappingGovernanceService(
             return;
         }
 
-        throw Violation(
-            $"role '{roleId}' already has proposal '{existing.Proposal.ProposalId}' awaiting a decision, raised by "
-            + $"'{existing.Proposal.ProposedBy}'; decide that proposal before raising another.");
+        throw new MappingProposalAlreadyPendingException(
+            nameof(IMappingGovernanceService),
+            [$"role '{roleId}' already has proposal '{existing.Proposal.ProposalId}' awaiting a decision, raised by "
+             + $"'{existing.Proposal.ProposedBy}'; decide that proposal before raising another."]);
     }
 
     /// <summary>
@@ -123,10 +129,13 @@ internal sealed class MappingGovernanceService(
     internal async Task<RoleMapping> EnsureRollbackTargetAsync(string roleId, int toVersion, CancellationToken cancellationToken)
     {
         var target = await store.FindMappingVersionAsync(roleId, toVersion, cancellationToken)
-            ?? throw Violation($"role '{roleId}' has no mapping version {toVersion} to roll back to.");
+            ?? throw new UnknownMappingVersionException(
+                nameof(IMappingGovernanceService), [$"role '{roleId}' has no mapping version {toVersion} to roll back to."]);
 
         return target.Ring == RolloutRing.Shadow
-            ? throw Violation($"role '{roleId}' mapping v{toVersion} is a shadow version and has never served; it cannot become current.")
+            ? throw new MappingVersionNotRollbackEligibleException(
+                nameof(IMappingGovernanceService),
+                [$"role '{roleId}' mapping v{toVersion} is a shadow version and has never served; it cannot become current."])
             : target;
     }
 
@@ -163,7 +172,7 @@ internal sealed class MappingGovernanceService(
     /// fresh record whenever another writer got there first.
     /// </summary>
     internal async Task<MappingChangeProposal> AllocateAsync(
-        string roleId, string proposalId, string actor, string reason, MappingProposalState target, CancellationToken cancellationToken)
+        string roleId, string proposalId, string actor, string reason, MappingProposalState target, string? expectedToken, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(roleId);
         ArgumentException.ThrowIfNullOrWhiteSpace(proposalId);
@@ -172,7 +181,7 @@ internal sealed class MappingGovernanceService(
         var retry = options.Value;
         for (var attempt = 1; attempt <= retry.DecisionMaxAttempts; attempt++)
         {
-            var stored = await LoadForTransitionAsync(roleId, proposalId, target, cancellationToken);
+            var stored = await LoadForTransitionAsync(roleId, proposalId, target, expectedToken, cancellationToken);
             MappingProposalRules.EnsureDistinctApprover(stored.Proposal, actor);
 
             if (await TryAllocateOnceAsync(stored, actor, reason, target, cancellationToken) is { } updated)
@@ -206,16 +215,16 @@ internal sealed class MappingGovernanceService(
         };
 
         var recordId = await recorder.RecordAsync(decision, cancellationToken);
-        var landed = await TryLandAsync(mapping, updated, stored.ETag, decision, recordId, cancellationToken);
+        var token = await TryLandAsync(mapping, updated, stored.ETag, decision, recordId, cancellationToken);
 
-        return landed ? updated : null;
+        return token is null ? null : updated with { ConcurrencyToken = token };
     }
 
     /// <summary>Runs the conditional batch, compensating the audit record when it does not land.</summary>
-    internal async Task<bool> TryLandAsync(
+    internal async Task<string?> TryLandAsync(
         RoleMapping mapping, MappingChangeProposal updated, string etag, MappingGovernanceDecision decision, string recordId, CancellationToken cancellationToken)
     {
-        bool landed;
+        string? landed;
         try
         {
             // A shadow version is stored but never pointed at: it has not served and must not serve.
@@ -227,7 +236,7 @@ internal sealed class MappingGovernanceService(
             throw;
         }
 
-        if (!landed)
+        if (landed is null)
         {
             await recorder.RecordCompensationAsync(decision, recordId, "another writer allocated this mapping version first; the decision was retried.", CancellationToken.None);
         }
@@ -237,7 +246,7 @@ internal sealed class MappingGovernanceService(
 
     /// <summary>Reject and withdraw share one shape: no version, one ETag-guarded replace.</summary>
     internal async Task<MappingChangeProposal> DecideAsync(
-        string roleId, string proposalId, string actor, string reason, MappingProposalState target, string eventType, CancellationToken cancellationToken)
+        string roleId, string proposalId, string actor, string reason, MappingProposalState target, string eventType, string? expectedToken, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(roleId);
         ArgumentException.ThrowIfNullOrWhiteSpace(proposalId);
@@ -246,16 +255,16 @@ internal sealed class MappingGovernanceService(
         var retry = options.Value;
         for (var attempt = 1; attempt <= retry.DecisionMaxAttempts; attempt++)
         {
-            var stored = await LoadForTransitionAsync(roleId, proposalId, target, cancellationToken);
+            var stored = await LoadForTransitionAsync(roleId, proposalId, target, expectedToken, cancellationToken);
             EnsureDecisionAuthority(stored.Proposal, actor, target);
             var now = timeProvider.GetUtcNow().UtcDateTime;
             var updated = stored.Proposal with { State = target, DecidedBy = actor, DecidedAtUtc = now, DecisionReason = reason };
             var decision = Decision(eventType, updated, actor, reason, now);
 
             var recordId = await recorder.RecordAsync(decision, cancellationToken);
-            if (await store.TryReplaceProposalAsync(updated, stored.ETag, cancellationToken))
+            if (await store.TryReplaceProposalAsync(updated, stored.ETag, cancellationToken) is { } token)
             {
-                return updated;
+                return updated with { ConcurrencyToken = token };
             }
 
             await recorder.RecordCompensationAsync(decision, recordId, "another decision reached this proposal first; the decision was retried.", CancellationToken.None);
@@ -288,14 +297,46 @@ internal sealed class MappingGovernanceService(
             ? Task.Delay(MappingGovernanceBackoff.DelayFor(attempt, retry, MappingGovernanceBackoff.NextJitter()), cancellationToken)
             : Task.CompletedTask;
 
-    /// <summary>Reads a proposal and refuses the decision unless the move is legal from where it is.</summary>
-    internal async Task<StoredMappingProposal> LoadForTransitionAsync(string roleId, string proposalId, MappingProposalState target, CancellationToken cancellationToken)
+    /// <summary>
+    /// Reads a proposal and refuses the decision unless it may legally be taken: the caller's view is
+    /// current (when it supplied a token), and the move is legal from where the proposal is.
+    /// The token is checked <b>first</b> — a caller looking at a stale proposal is reasoning about a
+    /// state that no longer exists, so every later judgement it made is suspect.
+    /// </summary>
+    internal async Task<StoredMappingProposal> LoadForTransitionAsync(
+        string roleId, string proposalId, MappingProposalState target, string? expectedToken, CancellationToken cancellationToken)
     {
         var stored = await store.FindProposalAsync(roleId, proposalId, cancellationToken)
-            ?? throw Violation($"role '{roleId}' has no proposal '{proposalId}'.");
+            ?? throw new UnknownMappingProposalException(nameof(IMappingGovernanceService), [$"role '{roleId}' has no proposal '{proposalId}'."]);
 
+        EnsureExpectedToken(stored, expectedToken);
         MappingProposalRules.EnsureTransition(stored.Proposal, target);
         return stored;
+    }
+
+    /// <summary>
+    /// Refuses the decision when the caller named a concurrency token the stored proposal no longer
+    /// carries (ADR-PA34): somebody else decided it in the meantime.
+    /// <para>
+    /// <b>Refused, never retried — and that is the distinction from the retry above.</b> The
+    /// allocation retry loses a race for a mapping <i>version</i>, where re-reading and re-allocating
+    /// still produces the decision the caller asked for. A stale token means the <i>proposal</i>
+    /// moved, so retrying would decide something the caller has never seen. An omitted token opts out
+    /// entirely, for a caller with no prior view to be stale.
+    /// </para>
+    /// </summary>
+    internal static void EnsureExpectedToken(StoredMappingProposal stored, string? expectedToken)
+    {
+        if (expectedToken is null || string.Equals(stored.ETag, expectedToken, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var decided = stored.Proposal.DecidedBy is { } actor ? $", decided by '{actor}'" : string.Empty;
+        throw new MappingConcurrencyConflictException(
+            nameof(IMappingGovernanceService),
+            [$"proposal '{stored.Proposal.ProposalId}' changed while it was being decided: it is now "
+             + $"'{stored.Proposal.State.Name}'{decided}. Re-read it before deciding again."]);
     }
 
     /// <summary>Appends the record, then performs the change — compensating the record if the change fails (ADR-PA30's ordering).</summary>
@@ -409,10 +450,6 @@ internal sealed class MappingGovernanceService(
         State = MappingProposalState.RolledBack,
     };
 
-    /// <summary>A permanent contract violation naming the governance surface.</summary>
-    internal static ContractViolationException Violation(string message) =>
-        new(nameof(IMappingGovernanceService), [message]);
-
     /// <inheritdoc />
     [Obsolete("Superseded by ProposeAsync(change, proposedBy, cancellationToken); see IMappingGovernanceService.")]
     public Task<MappingChangeProposal> ProposeChangeAsync(MappingChange change, CancellationToken cancellationToken) =>
@@ -421,7 +458,7 @@ internal sealed class MappingGovernanceService(
     /// <inheritdoc />
     [Obsolete("Superseded by ApproveAsync(roleId, proposalId, approverId, reason, cancellationToken); see IMappingGovernanceService.")]
     public Task ApproveAsync(string proposalId, string approverId, CancellationToken cancellationToken) =>
-        throw new NotSupportedException("An approval needs its role and a reason for the governance record. Use ApproveAsync(roleId, proposalId, approverId, reason, cancellationToken).");
+        throw new NotSupportedException("An approval needs its role and a reason for the governance record. Use ApproveAsync(roleId, proposalId, approverId, reason, expectedConcurrencyToken, cancellationToken).");
 
     /// <inheritdoc />
     [Obsolete("Superseded by RollbackToVersionAsync(roleId, toVersion, actor, reason, cancellationToken); see IMappingGovernanceService.")]

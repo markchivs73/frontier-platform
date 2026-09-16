@@ -15,21 +15,74 @@ public sealed class MappingProposalQueryBuilderTests
         var definition = MappingProposalQueryBuilder.Build(new MappingProposalQuery { RoleId = RoleId });
 
         Assert.Contains("c.doc_type = @docType", definition.QueryText, StringComparison.Ordinal);
-        Assert.DoesNotContain("c.proposal.state", definition.QueryText, StringComparison.Ordinal);
-        Assert.Contains("ORDER BY c.proposal.proposed_at_utc DESC", definition.QueryText, StringComparison.Ordinal);
+        Assert.DoesNotContain("ARRAY_CONTAINS(@states", definition.QueryText, StringComparison.Ordinal);
+        Assert.Contains("ORDER BY c.proposed_at_utc DESC", definition.QueryText, StringComparison.Ordinal);
         var parameters = definition.GetQueryParameters();
         Assert.Equal(("@docType", (object)MappingProposalDocument.ProposalDocType), Assert.Single(parameters));
     }
 
     [Fact]
-    public void Build_WithAStateFilter_AddsItAsAParameter()
+    public void Build_FiltersAndOrdersOnThePathsTheDocumentActuallyHas()
     {
-        var query = new MappingProposalQuery { RoleId = RoleId, State = MappingProposalState.PendingApproval };
+        // ADR-PA34: these read c.proposal.state / c.proposal.proposed_at_utc before, which matched no
+        // stored document - proposal documents are flat. The filter returned nothing and the ordering
+        // was arbitrary, and the old test passed because it asserted the wrong text rather than a document.
+        var definition = MappingProposalQueryBuilder.Build(
+            new MappingProposalQuery { States = [MappingProposalState.PendingApproval] });
+
+        Assert.DoesNotContain("c.proposal.", definition.QueryText, StringComparison.Ordinal);
+        Assert.Contains("c.state", definition.QueryText, StringComparison.Ordinal);
+        Assert.Contains("c.proposed_at_utc", definition.QueryText, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Build_WithOneState_PassesItAsASetParameter()
+    {
+        var query = new MappingProposalQuery { RoleId = RoleId, States = [MappingProposalState.PendingApproval] };
 
         var definition = MappingProposalQueryBuilder.Build(query);
 
-        Assert.Contains("c.proposal.state = @state", definition.QueryText, StringComparison.Ordinal);
-        Assert.Contains(definition.GetQueryParameters(), parameter => parameter.Name == "@state" && (string)parameter.Value == "pending_approval");
+        Assert.Contains("ARRAY_CONTAINS(@states, c.state)", definition.QueryText, StringComparison.Ordinal);
+        Assert.Contains(definition.GetQueryParameters(), parameter =>
+            parameter.Name == "@states" && ((string[])parameter.Value).SequenceEqual(new[] { "pending_approval" }));
+    }
+
+    [Fact]
+    public void Build_WithSeveralStates_PassesThemAll()
+    {
+        var query = new MappingProposalQuery
+        {
+            States = [MappingProposalState.PendingApproval, MappingProposalState.Approved],
+        };
+
+        var definition = MappingProposalQueryBuilder.Build(query);
+
+        Assert.Contains(definition.GetQueryParameters(), parameter =>
+            parameter.Name == "@states" && ((string[])parameter.Value).SequenceEqual(new[] { "pending_approval", "approved" }));
+    }
+
+    [Fact]
+    public void Build_WithAnEmptyStateSet_FiltersOnNothing()
+    {
+        // An empty set means "every state", not "no proposals": the caller chose no filter (ADR-PA34).
+        var definition = MappingProposalQueryBuilder.Build(new MappingProposalQuery { States = [] });
+
+        Assert.DoesNotContain("ARRAY_CONTAINS", definition.QueryText, StringComparison.Ordinal);
+        Assert.Single(definition.GetQueryParameters());
+    }
+
+    [Fact]
+    public void RequestOptionsFor_NamesThePartitionOnlyWhenTheQueryNamesARole()
+    {
+        // The cross-partition fan-out is bounded rather than unbounded (ADR-PA34).
+        var scoped = CosmosMappingProposalStore.RequestOptionsFor(new MappingProposalQuery { RoleId = RoleId, PageSize = 10 });
+        var crossPartition = CosmosMappingProposalStore.RequestOptionsFor(new MappingProposalQuery { PageSize = 10 });
+
+        Assert.Equal(new Microsoft.Azure.Cosmos.PartitionKey(RoleId), scoped.PartitionKey);
+        Assert.Equal(10, scoped.MaxItemCount);
+        Assert.Null(crossPartition.PartitionKey);
+        Assert.Equal(10, crossPartition.MaxItemCount);
+        Assert.Equal(CosmosMappingProposalStore.CrossPartitionConcurrency, crossPartition.MaxConcurrency);
     }
 
     [Fact]

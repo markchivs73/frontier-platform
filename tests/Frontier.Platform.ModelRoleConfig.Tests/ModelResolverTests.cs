@@ -254,7 +254,7 @@ public sealed class ModelResolverTests
         var resolver = new ModelResolver(new FakeRoleRegistry(FleetMapping() with { Chain = [FleetPrimary, EchoAgent] }), new AlwaysClosedCircuitBreakerQuery());
         var request = new ResolutionRequest { RoleId = "deep-reasoning", EngagementId = "engagement-1" };
 
-        await Assert.ThrowsAsync<Frontier.Platform.Abstractions.ContractViolationException>(() => resolver.ResolveAsync(request, CancellationToken.None));
+        await Assert.ThrowsAnyAsync<Frontier.Platform.Abstractions.ContractViolationException>(() => resolver.ResolveAsync(request, CancellationToken.None));
     }
 
     // ─── IsInCanary helper (determinism) ─────────────────────────────────────

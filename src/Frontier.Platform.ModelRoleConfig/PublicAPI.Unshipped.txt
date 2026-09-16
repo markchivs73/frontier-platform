@@ -78,18 +78,13 @@ override Frontier.Platform.ModelRoleConfig.ModelRolePin.GetHashCode() -> int
 override Frontier.Platform.ModelRoleConfig.ModelRolePin.ToString() -> string!
 static Frontier.Platform.ModelRoleConfig.ModelRolePin.operator !=(Frontier.Platform.ModelRoleConfig.ModelRolePin? left, Frontier.Platform.ModelRoleConfig.ModelRolePin? right) -> bool
 static Frontier.Platform.ModelRoleConfig.ModelRolePin.operator ==(Frontier.Platform.ModelRoleConfig.ModelRolePin? left, Frontier.Platform.ModelRoleConfig.ModelRolePin? right) -> bool
-
 Frontier.Platform.ModelRoleConfig.IMappingDecisionRecorder
 Frontier.Platform.ModelRoleConfig.IMappingDecisionRecorder.RecordAsync(Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision! decision, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<string!>!
 Frontier.Platform.ModelRoleConfig.IMappingDecisionRecorder.RecordCompensationAsync(Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision! decision, string! recordId, string! failureReason, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
-Frontier.Platform.ModelRoleConfig.IMappingGovernanceService.ApproveAsync(string! roleId, string! proposalId, string! approverId, string! reason, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.MappingChangeProposal!>!
 Frontier.Platform.ModelRoleConfig.IMappingGovernanceService.GetProposalAsync(string! roleId, string! proposalId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.MappingChangeProposal?>!
 Frontier.Platform.ModelRoleConfig.IMappingGovernanceService.ListProposalsAsync(Frontier.Platform.ModelRoleConfig.MappingProposalQuery! query, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.MappingProposalPage!>!
-Frontier.Platform.ModelRoleConfig.IMappingGovernanceService.PromoteAsync(string! roleId, string! proposalId, string! actor, string! reason, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.MappingChangeProposal!>!
 Frontier.Platform.ModelRoleConfig.IMappingGovernanceService.ProposeAsync(Frontier.Platform.ModelRoleConfig.MappingChange! change, string! proposedBy, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.MappingChangeProposal!>!
-Frontier.Platform.ModelRoleConfig.IMappingGovernanceService.RejectAsync(string! roleId, string! proposalId, string! approverId, string! reason, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.MappingChangeProposal!>!
 Frontier.Platform.ModelRoleConfig.IMappingGovernanceService.RollbackToVersionAsync(string! roleId, int toVersion, string! actor, string! reason, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.MappingRollbackResult!>!
-Frontier.Platform.ModelRoleConfig.IMappingGovernanceService.WithdrawAsync(string! roleId, string! proposalId, string! actor, string! reason, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.MappingChangeProposal!>!
 Frontier.Platform.ModelRoleConfig.MappingChangeProposal.ApprovedBy.get -> string?
 Frontier.Platform.ModelRoleConfig.MappingChangeProposal.ApprovedBy.init -> void
 Frontier.Platform.ModelRoleConfig.MappingChangeProposal.DecidedAtUtc.get -> System.DateTime?
@@ -162,10 +157,7 @@ Frontier.Platform.ModelRoleConfig.MappingProposalQuery.Equals(Frontier.Platform.
 Frontier.Platform.ModelRoleConfig.MappingProposalQuery.MappingProposalQuery() -> void
 Frontier.Platform.ModelRoleConfig.MappingProposalQuery.PageSize.get -> int
 Frontier.Platform.ModelRoleConfig.MappingProposalQuery.PageSize.init -> void
-Frontier.Platform.ModelRoleConfig.MappingProposalQuery.RoleId.get -> string!
 Frontier.Platform.ModelRoleConfig.MappingProposalQuery.RoleId.init -> void
-Frontier.Platform.ModelRoleConfig.MappingProposalQuery.State.get -> Frontier.Platform.ModelRoleConfig.MappingProposalState?
-Frontier.Platform.ModelRoleConfig.MappingProposalQuery.State.init -> void
 Frontier.Platform.ModelRoleConfig.MappingProposalState
 Frontier.Platform.ModelRoleConfig.MappingProposalState.CanTransitionTo(Frontier.Platform.ModelRoleConfig.MappingProposalState! next) -> bool
 Frontier.Platform.ModelRoleConfig.MappingProposalState.IsTerminal.get -> bool
@@ -228,3 +220,59 @@ Frontier.Platform.ModelRoleConfig.MappingGovernanceOptions.MappingGovernanceOpti
 Frontier.Platform.ModelRoleConfig.MappingProposalState.IsAwaitingDecision.get -> bool
 const Frontier.Platform.ModelRoleConfig.MappingGovernanceOptions.SectionName = "ModelRoleGovernance" -> string!
 Frontier.Platform.ModelRoleConfig.MappingProposalState.ReleasesRoleProposalSlot.get -> bool
+Frontier.Platform.ModelRoleConfig.DistinctApproverRequiredException
+Frontier.Platform.ModelRoleConfig.DistinctApproverRequiredException.DistinctApproverRequiredException(string! contractType, System.Collections.Generic.IReadOnlyList<string!>! violations) -> void
+Frontier.Platform.ModelRoleConfig.IMappingGovernanceService.ApproveAsync(string! roleId, string! proposalId, string! approverId, string! reason, string? expectedConcurrencyToken, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.MappingChangeProposal!>!
+Frontier.Platform.ModelRoleConfig.IMappingGovernanceService.PromoteAsync(string! roleId, string! proposalId, string! actor, string! reason, string? expectedConcurrencyToken, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.MappingChangeProposal!>!
+Frontier.Platform.ModelRoleConfig.IMappingGovernanceService.RejectAsync(string! roleId, string! proposalId, string! approverId, string! reason, string? expectedConcurrencyToken, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.MappingChangeProposal!>!
+Frontier.Platform.ModelRoleConfig.IMappingGovernanceService.WithdrawAsync(string! roleId, string! proposalId, string! actor, string! reason, string? expectedConcurrencyToken, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.MappingChangeProposal!>!
+Frontier.Platform.ModelRoleConfig.IMappingVersionHistory
+Frontier.Platform.ModelRoleConfig.IMappingVersionHistory.GetVersionHistoryAsync(string! roleId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Frontier.Platform.ModelRoleConfig.MappingVersionSummary!>!>!
+Frontier.Platform.ModelRoleConfig.IllegalMappingTransitionException
+Frontier.Platform.ModelRoleConfig.IllegalMappingTransitionException.IllegalMappingTransitionException(string! contractType, System.Collections.Generic.IReadOnlyList<string!>! violations) -> void
+Frontier.Platform.ModelRoleConfig.InvalidMappingChangeException
+Frontier.Platform.ModelRoleConfig.InvalidMappingChangeException.InvalidMappingChangeException(string! contractType, System.Collections.Generic.IReadOnlyList<string!>! violations) -> void
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.ConcurrencyToken.get -> string?
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.ConcurrencyToken.init -> void
+Frontier.Platform.ModelRoleConfig.MappingConcurrencyConflictException
+Frontier.Platform.ModelRoleConfig.MappingConcurrencyConflictException.MappingConcurrencyConflictException(string! contractType, System.Collections.Generic.IReadOnlyList<string!>! violations) -> void
+Frontier.Platform.ModelRoleConfig.MappingGovernanceRefusalException
+Frontier.Platform.ModelRoleConfig.MappingGovernanceRefusalException.MappingGovernanceRefusalException(string! contractType, System.Collections.Generic.IReadOnlyList<string!>! violations) -> void
+Frontier.Platform.ModelRoleConfig.MappingProposalAlreadyPendingException
+Frontier.Platform.ModelRoleConfig.MappingProposalAlreadyPendingException.MappingProposalAlreadyPendingException(string! contractType, System.Collections.Generic.IReadOnlyList<string!>! violations) -> void
+Frontier.Platform.ModelRoleConfig.MappingProposalQuery.RoleId.get -> string?
+Frontier.Platform.ModelRoleConfig.MappingProposalQuery.States.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.ModelRoleConfig.MappingProposalState!>?
+Frontier.Platform.ModelRoleConfig.MappingProposalQuery.States.init -> void
+Frontier.Platform.ModelRoleConfig.MappingVersionNotRollbackEligibleException
+Frontier.Platform.ModelRoleConfig.MappingVersionNotRollbackEligibleException.MappingVersionNotRollbackEligibleException(string! contractType, System.Collections.Generic.IReadOnlyList<string!>! violations) -> void
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.<Clone>$() -> Frontier.Platform.ModelRoleConfig.MappingVersionSummary!
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.ApprovedBy.get -> string!
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.ApprovedBy.init -> void
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.CanaryPercent.get -> int
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.CanaryPercent.init -> void
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.Chain.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.ModelRoleConfig.ChainEntry!>!
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.Chain.init -> void
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.ChangeReason.get -> string!
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.ChangeReason.init -> void
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.EffectiveFromUtc.get -> System.DateTime
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.EffectiveFromUtc.init -> void
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.Equals(Frontier.Platform.ModelRoleConfig.MappingVersionSummary? other) -> bool
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.IsCurrent.get -> bool
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.IsCurrent.init -> void
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.MappingVersion.get -> int
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.MappingVersion.init -> void
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.MappingVersionSummary() -> void
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.Ring.get -> Frontier.Platform.ModelRoleConfig.RolloutRing!
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.Ring.init -> void
+Frontier.Platform.ModelRoleConfig.ProposerOnlyWithdrawalException
+Frontier.Platform.ModelRoleConfig.ProposerOnlyWithdrawalException.ProposerOnlyWithdrawalException(string! contractType, System.Collections.Generic.IReadOnlyList<string!>! violations) -> void
+Frontier.Platform.ModelRoleConfig.UnknownMappingProposalException
+Frontier.Platform.ModelRoleConfig.UnknownMappingProposalException.UnknownMappingProposalException(string! contractType, System.Collections.Generic.IReadOnlyList<string!>! violations) -> void
+Frontier.Platform.ModelRoleConfig.UnknownMappingVersionException
+Frontier.Platform.ModelRoleConfig.UnknownMappingVersionException.UnknownMappingVersionException(string! contractType, System.Collections.Generic.IReadOnlyList<string!>! violations) -> void
+override Frontier.Platform.ModelRoleConfig.MappingVersionSummary.Equals(object? obj) -> bool
+override Frontier.Platform.ModelRoleConfig.MappingVersionSummary.GetHashCode() -> int
+override Frontier.Platform.ModelRoleConfig.MappingVersionSummary.ToString() -> string!
+static Frontier.Platform.ModelRoleConfig.MappingVersionSummary.operator !=(Frontier.Platform.ModelRoleConfig.MappingVersionSummary? left, Frontier.Platform.ModelRoleConfig.MappingVersionSummary? right) -> bool
+static Frontier.Platform.ModelRoleConfig.MappingVersionSummary.operator ==(Frontier.Platform.ModelRoleConfig.MappingVersionSummary? left, Frontier.Platform.ModelRoleConfig.MappingVersionSummary? right) -> bool

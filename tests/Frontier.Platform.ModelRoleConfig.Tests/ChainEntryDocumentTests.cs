@@ -78,7 +78,7 @@ public sealed class ChainEntryDocumentTests
     {
         var document = ChainEntryDocument.FromDomain(EchoAgent) with { Target = "robot" };
 
-        var exception = Assert.Throws<ContractViolationException>(() => document.ToDomain());
+        var exception = Assert.ThrowsAny<ContractViolationException>(() => document.ToDomain());
 
         Assert.Contains("target 'robot'", Assert.Single(exception.Violations), StringComparison.Ordinal);
     }
@@ -103,7 +103,7 @@ public sealed class ChainEntryDocumentTests
             _ => complete with { MaxOutputTokens = null },
         };
 
-        var exception = Assert.Throws<ContractViolationException>(() => document.ToDomain());
+        var exception = Assert.ThrowsAny<ContractViolationException>(() => document.ToDomain());
 
         Assert.StartsWith(field, Assert.Single(exception.Violations), StringComparison.Ordinal);
     }
@@ -122,7 +122,7 @@ public sealed class ChainEntryDocumentTests
             _ => complete with { CostPerInvocation = null },
         };
 
-        var exception = Assert.Throws<ContractViolationException>(() => document.ToDomain());
+        var exception = Assert.ThrowsAny<ContractViolationException>(() => document.ToDomain());
 
         Assert.StartsWith(field, Assert.Single(exception.Violations), StringComparison.Ordinal);
     }

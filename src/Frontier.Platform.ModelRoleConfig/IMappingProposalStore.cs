@@ -16,6 +16,13 @@ internal interface IMappingProposalStore
     /// <summary>Every mapping version stored for <paramref name="roleId"/>, ascending. Empty when the role has none.</summary>
     Task<IReadOnlyList<int>> ListMappingVersionsAsync(string roleId, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Every stored mapping version for <paramref name="roleId"/> in full, ascending — one query
+    /// rather than a point-read per version, which is what <see cref="IMappingVersionHistory"/>
+    /// renders a D3 history panel from (ADR-PA34).
+    /// </summary>
+    Task<IReadOnlyList<RoleMapping>> ListMappingsAsync(string roleId, CancellationToken cancellationToken);
+
     /// <summary>The stored mapping version, or <see langword="null"/> when it does not exist.</summary>
     Task<RoleMapping?> FindMappingVersionAsync(string roleId, int version, CancellationToken cancellationToken);
 
@@ -35,10 +42,15 @@ internal interface IMappingProposalStore
     Task CreateProposalAsync(MappingChangeProposal proposal, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Replaces <paramref name="proposal"/> if it still carries <paramref name="expectedETag"/>. Returns
-    /// <see langword="false"/> when another decision won the race.
+    /// Replaces <paramref name="proposal"/> if it still carries <paramref name="expectedETag"/>.
     /// </summary>
-    Task<bool> TryReplaceProposalAsync(MappingChangeProposal proposal, string expectedETag, CancellationToken cancellationToken);
+    /// <returns>
+    /// The stored document's <b>new</b> concurrency token, or <see langword="null"/> when another
+    /// decision won the race. Returning the token rather than a bool (ADR-PA34) is what lets a
+    /// decision hand its caller a proposal that is immediately usable for the next decision, instead
+    /// of forcing a re-read to discover the token it just minted.
+    /// </returns>
+    Task<string?> TryReplaceProposalAsync(MappingChangeProposal proposal, string expectedETag, CancellationToken cancellationToken);
 
     /// <summary>
     /// Atomically creates the mapping-version document for <paramref name="mapping"/>, replaces
@@ -50,8 +62,11 @@ internal interface IMappingProposalStore
     /// re-reads. That create is the allocation — there is no separate counter to disagree with it.
     /// </para>
     /// </summary>
-    /// <returns><see langword="false"/> on a concurrency conflict; the caller re-reads, re-allocates and retries.</returns>
-    Task<bool> TryAllocateVersionAsync(
+    /// <returns>
+    /// The proposal's new concurrency token, or <see langword="null"/> on a concurrency conflict —
+    /// in which case the caller re-reads, re-allocates and retries.
+    /// </returns>
+    Task<string?> TryAllocateVersionAsync(
         RoleMapping mapping,
         MappingChangeProposal proposal,
         string expectedETag,

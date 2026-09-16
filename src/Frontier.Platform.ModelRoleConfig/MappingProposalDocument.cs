@@ -134,6 +134,16 @@ internal sealed record MappingProposalDocument
     [JsonPropertyName("ttl")]
     public int Ttl { get; init; } = -1;
 
+    /// <summary>
+    /// The Cosmos-assigned concurrency token (ADR-PA34). Populated by the service on read so a
+    /// queried proposal carries its token without a second point-read; never set by
+    /// <see cref="FromDomain"/>, so it is absent from written bytes (the canonical profile omits
+    /// nulls) and the stored document shape is unchanged.
+    /// </summary>
+    [JsonPropertyOrder(22)]
+    [JsonPropertyName("_etag")]
+    public string? ETag { get; init; }
+
     /// <summary>Flattens <paramref name="proposal"/> onto its stored document.</summary>
     internal static MappingProposalDocument FromDomain(MappingChangeProposal proposal)
     {
