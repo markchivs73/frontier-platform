@@ -20,6 +20,11 @@ public sealed class ContractGoldenFileTests
     public void ExecutionSnapshot_PausedOnFailure_SerializesStablyAndRoundTrips() =>
         ContractRoundTripAssertions.AssertStableAndRoundTrips(ContractSamples.ExecutionSnapshotPausedOnFailure(), "execution_snapshot_paused_on_failure.json");
 
+    /// <summary>S13.120: the <c>failure_detail</c> wire shape — node, exception type, bounded message — appended after everything the paused-on-failure golden already pins.</summary>
+    [Fact]
+    public void ExecutionSnapshotWithFailureDetail_SerializesStablyAndRoundTrips() =>
+        ContractRoundTripAssertions.AssertStableAndRoundTrips(ContractSamples.ExecutionSnapshotWithFailureDetail(), "execution_snapshot_failure_detail.json");
+
     /// <summary>
     /// ADR-PA26: a dispatcher child's snapshot carries its mode and its work item. New golden —
     /// every existing snapshot golden above is untouched, which is the compatibility claim.

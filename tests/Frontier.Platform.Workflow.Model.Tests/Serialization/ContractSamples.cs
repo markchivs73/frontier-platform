@@ -151,6 +151,17 @@ internal static class ContractSamples
         CheckpointedAtUtc = new DateTime(2026, 1, 1, 1, 0, 0, DateTimeKind.Utc),
     };
 
+    /// <summary>S13.120: the paused-on-failure snapshot carrying <c>failure_detail</c> — new golden; the sample above and its golden are untouched, which is the compatibility claim.</summary>
+    public static ExecutionSnapshot ExecutionSnapshotWithFailureDetail() => ExecutionSnapshotPausedOnFailure() with
+    {
+        FailureDetail = new ExecutionFailureDetail
+        {
+            NodeId = "gen-scope",
+            ExceptionType = "Frontier.Platform.Abstractions.ContractViolationException",
+            Message = "ScopeSection: objectives must not be empty.",
+        },
+    };
+
     /// <summary>A well-formed <see cref="WorkflowDefinition"/> exercising all eight <see cref="WorkflowNode"/> subtypes.</summary>
     public static WorkflowDefinition WorkflowDefinition() => new()
     {

@@ -61,6 +61,9 @@ exactly that.
 - `ExecutionSnapshot` — the read-optimised projection of an execution's state, with
   `ArtifactStatus` per artifact. The durable history remains the source of truth; a snapshot
   that disagrees with it is rebuilt, never trusted.
+- `ExecutionFailureDetail` — why a run paused on a failure: the first faulting node, the
+  exception's type and a bounded, secret-free message, beside the snapshot's reason code.
+  Optional and additive — absent on snapshots written before it existed.
 - `TypedPayload` and `PayloadRef` — a payload travels inline or by reference, so large
   outputs never inflate orchestration state. Since ADR-PA30 both types are compiled into
   `Frontier.Platform.Serialization` (same namespace) and forwarded from this assembly, so the

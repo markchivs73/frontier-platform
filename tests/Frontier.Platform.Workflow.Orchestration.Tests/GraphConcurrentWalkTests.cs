@@ -280,6 +280,30 @@ public sealed class GraphConcurrentWalkTests
             new TaskFailedException("AgentTaskActivity", 1, new TaskFailureDetails(typeof(BudgetExceededException).FullName!, "over", null, null, null))));
     }
 
+    /// <summary>
+    /// S13.120: the paused checkpoint says <em>which</em> failure, not only what kind — the first
+    /// faulting node, the exception's type and its message — and every checkpoint before it says
+    /// nothing of the sort.
+    /// </summary>
+    [Fact]
+    public async Task FanOut_BranchFails_PausedCheckpointCarriesTheFailureDetail()
+    {
+        var harness = new WalkHarness(OrchestrationFixtures.FanOutJoin(), deferred: ["b-booking", "b-ticket"]);
+        var walk = harness.StartWalk();
+
+        harness.FailNode("b-booking", new ContractViolationException(nameof(AgentTaskActivityInput), ["output failed validation."]));
+        harness.CompleteNode("b-ticket");
+
+        await Assert.ThrowsAsync<ContractViolationException>(() => walk);
+
+        var final = harness.Snapshots[^1];
+        var detail = Assert.IsType<ExecutionFailureDetail>(final.FailureDetail);
+        Assert.Equal("b-booking", detail.NodeId);
+        Assert.Equal(typeof(ContractViolationException).FullName, detail.ExceptionType);
+        Assert.Equal("AgentTaskActivityInput: output failed validation.", detail.Message);
+        Assert.All(harness.Snapshots[..^1], snapshot => Assert.Null(snapshot.FailureDetail));
+    }
+
     private static HitlDecision Decision(DecisionKind kind) => new()
     {
         GateId = "gate-scope",

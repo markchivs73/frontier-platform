@@ -70,6 +70,16 @@ Frontier.Platform.Workflow.Model.DecisionNode.Predicate.get -> string?
 Frontier.Platform.Workflow.Model.DecisionNode.Predicate.init -> void
 Frontier.Platform.Workflow.Model.DefinitionSchemaCompatibility
 Frontier.Platform.Workflow.Model.EdgeKind
+Frontier.Platform.Workflow.Model.ExecutionFailureDetail
+Frontier.Platform.Workflow.Model.ExecutionFailureDetail.<Clone>$() -> Frontier.Platform.Workflow.Model.ExecutionFailureDetail!
+Frontier.Platform.Workflow.Model.ExecutionFailureDetail.Equals(Frontier.Platform.Workflow.Model.ExecutionFailureDetail? other) -> bool
+Frontier.Platform.Workflow.Model.ExecutionFailureDetail.ExceptionType.get -> string!
+Frontier.Platform.Workflow.Model.ExecutionFailureDetail.ExceptionType.init -> void
+Frontier.Platform.Workflow.Model.ExecutionFailureDetail.ExecutionFailureDetail() -> void
+Frontier.Platform.Workflow.Model.ExecutionFailureDetail.Message.get -> string!
+Frontier.Platform.Workflow.Model.ExecutionFailureDetail.Message.init -> void
+Frontier.Platform.Workflow.Model.ExecutionFailureDetail.NodeId.get -> string!
+Frontier.Platform.Workflow.Model.ExecutionFailureDetail.NodeId.init -> void
 Frontier.Platform.Workflow.Model.ExecutionMode
 Frontier.Platform.Workflow.Model.ExecutionSnapshot
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.<Clone>$() -> Frontier.Platform.Workflow.Model.ExecutionSnapshot!
@@ -101,6 +111,8 @@ Frontier.Platform.Workflow.Model.ExecutionSnapshot.ExecutionMode.init -> void
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.ExecutionSnapshot() -> void
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.FailureClassification.get -> string?
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.FailureClassification.init -> void
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.FailureDetail.get -> Frontier.Platform.Workflow.Model.ExecutionFailureDetail?
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.FailureDetail.init -> void
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.InitiatedBy.get -> string?
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.InitiatedBy.init -> void
 Frontier.Platform.Workflow.Model.ExecutionSnapshot.PausedAtGateId.get -> string?
@@ -308,6 +320,7 @@ abstract Frontier.Platform.Workflow.Model.WorkflowNode.NodeType.get -> Frontier.
 const Frontier.Platform.Workflow.Model.ArtifactVocabularyMigration.PreRenameSchemaVersion = "1.0" -> string!
 const Frontier.Platform.Workflow.Model.ArtifactVocabularyMigration.RenamedSchemaVersion = "2.0" -> string!
 const Frontier.Platform.Workflow.Model.ChatClientOptionKeys.AdaptiveThinking = "adaptive_thinking" -> string!
+const Frontier.Platform.Workflow.Model.ExecutionFailureDetail.MaxMessageLength = 512 -> int
 const Frontier.Platform.Workflow.Model.WorkflowActivityNames.AgentTaskActivity = "AgentTaskActivity" -> string!
 const Frontier.Platform.Workflow.Model.WorkflowActivityNames.ArtifactStateActivity = "ArtifactStateActivity" -> string!
 const Frontier.Platform.Workflow.Model.WorkflowActivityNames.ConsolidateAuditActivity = "ConsolidateAuditActivity" -> string!
@@ -348,6 +361,9 @@ override Frontier.Platform.Workflow.Model.DecisionNode.Equals(object? obj) -> bo
 override Frontier.Platform.Workflow.Model.DecisionNode.GetHashCode() -> int
 override Frontier.Platform.Workflow.Model.DecisionNode.NodeType.get -> Frontier.Platform.Workflow.Model.NodeType!
 override Frontier.Platform.Workflow.Model.DecisionNode.ToString() -> string!
+override Frontier.Platform.Workflow.Model.ExecutionFailureDetail.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Model.ExecutionFailureDetail.GetHashCode() -> int
+override Frontier.Platform.Workflow.Model.ExecutionFailureDetail.ToString() -> string!
 override Frontier.Platform.Workflow.Model.ExecutionSnapshot.Equals(object? obj) -> bool
 override Frontier.Platform.Workflow.Model.ExecutionSnapshot.GetHashCode() -> int
 override Frontier.Platform.Workflow.Model.ExecutionSnapshot.ToString() -> string!
@@ -430,6 +446,8 @@ static Frontier.Platform.Workflow.Model.DecisionNode.operator !=(Frontier.Platfo
 static Frontier.Platform.Workflow.Model.DecisionNode.operator ==(Frontier.Platform.Workflow.Model.DecisionNode? left, Frontier.Platform.Workflow.Model.DecisionNode? right) -> bool
 static Frontier.Platform.Workflow.Model.DefinitionSchemaCompatibility.Classify(string? storedSchemaVersion) -> Frontier.Platform.Workflow.Model.SchemaCompatibility
 static Frontier.Platform.Workflow.Model.DefinitionSchemaCompatibility.CurrentSchemaVersion.get -> string!
+static Frontier.Platform.Workflow.Model.ExecutionFailureDetail.operator !=(Frontier.Platform.Workflow.Model.ExecutionFailureDetail? left, Frontier.Platform.Workflow.Model.ExecutionFailureDetail? right) -> bool
+static Frontier.Platform.Workflow.Model.ExecutionFailureDetail.operator ==(Frontier.Platform.Workflow.Model.ExecutionFailureDetail? left, Frontier.Platform.Workflow.Model.ExecutionFailureDetail? right) -> bool
 static Frontier.Platform.Workflow.Model.ExecutionSnapshot.operator !=(Frontier.Platform.Workflow.Model.ExecutionSnapshot? left, Frontier.Platform.Workflow.Model.ExecutionSnapshot? right) -> bool
 static Frontier.Platform.Workflow.Model.ExecutionSnapshot.operator ==(Frontier.Platform.Workflow.Model.ExecutionSnapshot? left, Frontier.Platform.Workflow.Model.ExecutionSnapshot? right) -> bool
 static Frontier.Platform.Workflow.Model.ExternalEvent.operator !=(Frontier.Platform.Workflow.Model.ExternalEvent? left, Frontier.Platform.Workflow.Model.ExternalEvent? right) -> bool

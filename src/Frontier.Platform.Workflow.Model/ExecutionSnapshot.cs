@@ -197,6 +197,22 @@ public sealed record ExecutionSnapshot : IVersionedContract
     [JsonPropertyName("work_item_id")]
     public string? WorkItemId { get; init; }
 
+    /// <summary>
+    /// Why this execution paused on a failure (S13.120) — the first faulting node, the exception's
+    /// type and its bounded, secret-free message — beside <see cref="FailureClassification"/>'s
+    /// reason code. Written by the orchestrator from the failure it observed. Absent on snapshots
+    /// written before this field existed, and on those a consumer's recovery sweep heals: the sweep
+    /// sees the orchestration's fault rather than the node's, and saying nothing is better than
+    /// naming the wrong node.
+    /// <para>
+    /// <b>Additive and optional</b> per the ADR-E15 floor: snapshots and activity inputs recorded
+    /// before this field read as <see langword="null"/>, and <see cref="Validate"/> does not require it.
+    /// </para>
+    /// </summary>
+    [JsonPropertyOrder(23)]
+    [JsonPropertyName("failure_detail")]
+    public ExecutionFailureDetail? FailureDetail { get; init; }
+
     /// <inheritdoc />
     public void Validate()
     {
@@ -220,6 +236,11 @@ public sealed record ExecutionSnapshot : IVersionedContract
         if (Status == ExecutionStatus.PausedOnFailure && string.IsNullOrWhiteSpace(FailureClassification))
         {
             violations.Add("failure_classification is required when status is paused_on_failure.");
+        }
+
+        if (FailureDetail is not null)
+        {
+            violations.AddRange(FailureDetail.Violations());
         }
 
         if (violations.Count > 0)
