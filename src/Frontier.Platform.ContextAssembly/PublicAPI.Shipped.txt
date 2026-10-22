@@ -105,6 +105,14 @@ Frontier.Platform.ContextAssembly.ContextTier
 Frontier.Platform.ContextAssembly.ContextTier.Baseline = 0 -> Frontier.Platform.ContextAssembly.ContextTier
 Frontier.Platform.ContextAssembly.ContextTier.Dynamic = 1 -> Frontier.Platform.ContextAssembly.ContextTier
 Frontier.Platform.ContextAssembly.ContextTier.RealTime = 2 -> Frontier.Platform.ContextAssembly.ContextTier
+Frontier.Platform.ContextAssembly.CosmosOptions
+Frontier.Platform.ContextAssembly.CosmosOptions.CosmosOptions() -> void
+Frontier.Platform.ContextAssembly.CosmosOptions.Database.get -> string!
+Frontier.Platform.ContextAssembly.CosmosOptions.Database.init -> void
+Frontier.Platform.ContextAssembly.CosmosOptions.Endpoint.get -> string!
+Frontier.Platform.ContextAssembly.CosmosOptions.Endpoint.init -> void
+Frontier.Platform.ContextAssembly.CosmosOptions.Key.get -> string!
+Frontier.Platform.ContextAssembly.CosmosOptions.Key.init -> void
 Frontier.Platform.ContextAssembly.DynamicContextRefreshResult
 Frontier.Platform.ContextAssembly.DynamicContextRefreshResult.<Clone>$() -> Frontier.Platform.ContextAssembly.DynamicContextRefreshResult!
 Frontier.Platform.ContextAssembly.DynamicContextRefreshResult.ContentHash.get -> string!
@@ -118,6 +126,17 @@ Frontier.Platform.ContextAssembly.DynamicTierComparison.Deconstruct(out string! 
 Frontier.Platform.ContextAssembly.DynamicTierComparison.DynamicTierComparison(string! ContentHash, string! CacheVerdict, bool ChangedFromPrevious, int? EpochIfAvailable) -> void
 Frontier.Platform.ContextAssembly.DynamicTierComparison.EpochIfAvailable.get -> int?
 Frontier.Platform.ContextAssembly.DynamicTierComparison.Equals(Frontier.Platform.ContextAssembly.DynamicTierComparison? other) -> bool
+Frontier.Platform.ContextAssembly.DynamicTierProvenance
+Frontier.Platform.ContextAssembly.DynamicTierProvenance.<Clone>$() -> Frontier.Platform.ContextAssembly.DynamicTierProvenance!
+Frontier.Platform.ContextAssembly.DynamicTierProvenance.AssembledFromSnapshotRef.get -> string!
+Frontier.Platform.ContextAssembly.DynamicTierProvenance.AssembledFromSnapshotRef.init -> void
+Frontier.Platform.ContextAssembly.DynamicTierProvenance.Deconstruct(out Frontier.Platform.Abstractions.EngagementId! EngagementId, out int Epoch, out string! AssembledFromSnapshotRef) -> void
+Frontier.Platform.ContextAssembly.DynamicTierProvenance.DynamicTierProvenance(Frontier.Platform.Abstractions.EngagementId! EngagementId, int Epoch, string! AssembledFromSnapshotRef) -> void
+Frontier.Platform.ContextAssembly.DynamicTierProvenance.EngagementId.get -> Frontier.Platform.Abstractions.EngagementId!
+Frontier.Platform.ContextAssembly.DynamicTierProvenance.EngagementId.init -> void
+Frontier.Platform.ContextAssembly.DynamicTierProvenance.Epoch.get -> int
+Frontier.Platform.ContextAssembly.DynamicTierProvenance.Epoch.init -> void
+Frontier.Platform.ContextAssembly.DynamicTierProvenance.Equals(Frontier.Platform.ContextAssembly.DynamicTierProvenance? other) -> bool
 Frontier.Platform.ContextAssembly.EngagementContextEpoch
 Frontier.Platform.ContextAssembly.EngagementContextEpoch.<Clone>$() -> Frontier.Platform.ContextAssembly.EngagementContextEpoch!
 Frontier.Platform.ContextAssembly.EngagementContextEpoch.Content.get -> string!
@@ -137,6 +156,7 @@ Frontier.Platform.ContextAssembly.EngagementContextEpoch.Id.get -> string!
 Frontier.Platform.ContextAssembly.EngagementContextEpoch.Id.init -> void
 Frontier.Platform.ContextAssembly.EngagementContextEpoch.SchemaVersion.get -> string!
 Frontier.Platform.ContextAssembly.EngagementContextEpoch.Validate() -> void
+Frontier.Platform.ContextAssembly.EngagementContextMerge
 Frontier.Platform.ContextAssembly.EngagementContextPointer
 Frontier.Platform.ContextAssembly.EngagementContextPointer.<Clone>$() -> Frontier.Platform.ContextAssembly.EngagementContextPointer!
 Frontier.Platform.ContextAssembly.EngagementContextPointer.ContentHash.get -> string!
@@ -154,6 +174,19 @@ Frontier.Platform.ContextAssembly.EngagementContextPointer.SchemaVersion.get -> 
 Frontier.Platform.ContextAssembly.EngagementContextPointer.UpdatedAtUtc.get -> System.DateTime
 Frontier.Platform.ContextAssembly.EngagementContextPointer.UpdatedAtUtc.init -> void
 Frontier.Platform.ContextAssembly.EngagementContextPointer.Validate() -> void
+Frontier.Platform.ContextAssembly.EngagementContextSnapshot
+Frontier.Platform.ContextAssembly.EngagementContextSnapshot.<Clone>$() -> Frontier.Platform.ContextAssembly.EngagementContextSnapshot!
+Frontier.Platform.ContextAssembly.EngagementContextSnapshot.Content.get -> string!
+Frontier.Platform.ContextAssembly.EngagementContextSnapshot.Content.init -> void
+Frontier.Platform.ContextAssembly.EngagementContextSnapshot.ContentHash.get -> string!
+Frontier.Platform.ContextAssembly.EngagementContextSnapshot.ContentHash.init -> void
+Frontier.Platform.ContextAssembly.EngagementContextSnapshot.Deconstruct(out int Epoch, out string! Ref, out string! ContentHash, out string! Content) -> void
+Frontier.Platform.ContextAssembly.EngagementContextSnapshot.EngagementContextSnapshot(int Epoch, string! Ref, string! ContentHash, string! Content) -> void
+Frontier.Platform.ContextAssembly.EngagementContextSnapshot.Epoch.get -> int
+Frontier.Platform.ContextAssembly.EngagementContextSnapshot.Epoch.init -> void
+Frontier.Platform.ContextAssembly.EngagementContextSnapshot.Equals(Frontier.Platform.ContextAssembly.EngagementContextSnapshot? other) -> bool
+Frontier.Platform.ContextAssembly.EngagementContextSnapshot.Ref.get -> string!
+Frontier.Platform.ContextAssembly.EngagementContextSnapshot.Ref.init -> void
 Frontier.Platform.ContextAssembly.IBaselineCatalogueStore
 Frontier.Platform.ContextAssembly.IBaselineCatalogueStore.GetBaselineCatalogueAsync(string! catalogueId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<string?>!
 Frontier.Platform.ContextAssembly.ICachingStrategy
@@ -165,16 +198,19 @@ Frontier.Platform.ContextAssembly.ICachingStrategyRegistry
 Frontier.Platform.ContextAssembly.ICachingStrategyRegistry.Resolve(string! provider, string! modelId, string? modelVersion = null) -> Frontier.Platform.ContextAssembly.ICachingStrategy?
 Frontier.Platform.ContextAssembly.ICachingStrategyRegistry.ResolveStrategy(string! provider) -> Frontier.Platform.ContextAssembly.ICachingStrategy?
 Frontier.Platform.ContextAssembly.IContextAssembler
-Frontier.Platform.ContextAssembly.IContextAssembler.AssembleAsync(Frontier.Platform.ContextAssembly.CachingMetadata! metadata, string! baselineContent, string! dynamicContent, string! realTimeContent, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Frontier.Platform.Serialization.ContextPackage!>!
+Frontier.Platform.ContextAssembly.IContextAssembler.AssembleAsync(Frontier.Platform.ContextAssembly.CachingMetadata! metadata, string! baselineContent, string! dynamicContent, string! realTimeContent, Frontier.Platform.ContextAssembly.DynamicTierProvenance? dynamicProvenance = null, System.Threading.CancellationToken ct = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Frontier.Platform.Serialization.ContextPackage!>!
 Frontier.Platform.ContextAssembly.IContextDebugger
 Frontier.Platform.ContextAssembly.IContextDebugger.CompareAsync(Frontier.Platform.Serialization.ContextPackage! current, Frontier.Platform.Serialization.ContextPackage? previous, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.ContextAssembly.ContextComparisonResult!>!
 Frontier.Platform.ContextAssembly.IContextDebugger.DumpContextAsync(string! executionId, Frontier.Platform.Serialization.ContextPackage! package, Frontier.Platform.ContextAssembly.ProviderMessageLayout! layout, System.IO.TextWriter! output, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task!
 Frontier.Platform.ContextAssembly.IContextValidator
 Frontier.Platform.ContextAssembly.IContextValidator.ValidateRequest(Frontier.Platform.Abstractions.ContextRequest! request, Frontier.Platform.ContextAssembly.BaselineCatalogue! catalogue) -> System.Collections.Generic.IReadOnlyList<string!>!
 Frontier.Platform.ContextAssembly.IDynamicContextRefresher
+Frontier.Platform.ContextAssembly.IDynamicContextRefresher.RefreshComponentsAsync(Frontier.Platform.Abstractions.EngagementId! engagementId, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! components, string! refreshReason, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.ContextAssembly.DynamicContextRefreshResult!>!
 Frontier.Platform.ContextAssembly.IDynamicContextRefresher.RefreshDynamicAsync(Frontier.Platform.Abstractions.EngagementId! engagementId, string! newDynamicContent, string! refreshReason, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.ContextAssembly.DynamicContextRefreshResult!>!
 Frontier.Platform.ContextAssembly.IEngagementContextStore
 Frontier.Platform.ContextAssembly.IEngagementContextStore.GetDynamicContextAsync(Frontier.Platform.Abstractions.EngagementId! engagementId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<string?>!
+Frontier.Platform.ContextAssembly.IEngagementContextStore.GetDynamicContextSnapshotAsync(Frontier.Platform.Abstractions.EngagementId! engagementId, int? epoch, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.ContextAssembly.EngagementContextSnapshot?>!
+Frontier.Platform.ContextAssembly.IEngagementContextStore.MergeDynamicContextAsync(Frontier.Platform.Abstractions.EngagementId! engagementId, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! components, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<int>!
 Frontier.Platform.ContextAssembly.IEngagementContextStore.UpsertDynamicContextAsync(Frontier.Platform.Abstractions.EngagementId! engagementId, string! dynamicContent, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<int>!
 Frontier.Platform.ContextAssembly.Phase1ContextCatalogue
 Frontier.Platform.ContextAssembly.ProviderCacheDirective
@@ -250,12 +286,18 @@ override Frontier.Platform.ContextAssembly.DynamicTierComparison.<Clone>$() -> F
 override Frontier.Platform.ContextAssembly.DynamicTierComparison.Equals(object? obj) -> bool
 override Frontier.Platform.ContextAssembly.DynamicTierComparison.GetHashCode() -> int
 override Frontier.Platform.ContextAssembly.DynamicTierComparison.ToString() -> string!
+override Frontier.Platform.ContextAssembly.DynamicTierProvenance.Equals(object? obj) -> bool
+override Frontier.Platform.ContextAssembly.DynamicTierProvenance.GetHashCode() -> int
+override Frontier.Platform.ContextAssembly.DynamicTierProvenance.ToString() -> string!
 override Frontier.Platform.ContextAssembly.EngagementContextEpoch.Equals(object? obj) -> bool
 override Frontier.Platform.ContextAssembly.EngagementContextEpoch.GetHashCode() -> int
 override Frontier.Platform.ContextAssembly.EngagementContextEpoch.ToString() -> string!
 override Frontier.Platform.ContextAssembly.EngagementContextPointer.Equals(object? obj) -> bool
 override Frontier.Platform.ContextAssembly.EngagementContextPointer.GetHashCode() -> int
 override Frontier.Platform.ContextAssembly.EngagementContextPointer.ToString() -> string!
+override Frontier.Platform.ContextAssembly.EngagementContextSnapshot.Equals(object? obj) -> bool
+override Frontier.Platform.ContextAssembly.EngagementContextSnapshot.GetHashCode() -> int
+override Frontier.Platform.ContextAssembly.EngagementContextSnapshot.ToString() -> string!
 override Frontier.Platform.ContextAssembly.ProviderCacheDirective.Equals(object? obj) -> bool
 override Frontier.Platform.ContextAssembly.ProviderCacheDirective.GetHashCode() -> int
 override Frontier.Platform.ContextAssembly.ProviderCacheDirective.ToString() -> string!
@@ -285,6 +327,7 @@ static Frontier.Platform.ContextAssembly.CachingMetadata.operator ==(Frontier.Pl
 static Frontier.Platform.ContextAssembly.ContextAssemblyOptions.operator !=(Frontier.Platform.ContextAssembly.ContextAssemblyOptions? left, Frontier.Platform.ContextAssembly.ContextAssemblyOptions? right) -> bool
 static Frontier.Platform.ContextAssembly.ContextAssemblyOptions.operator ==(Frontier.Platform.ContextAssembly.ContextAssemblyOptions? left, Frontier.Platform.ContextAssembly.ContextAssemblyOptions? right) -> bool
 static Frontier.Platform.ContextAssembly.ContextAssemblyServiceCollectionExtensions.AddFrontierContextAssembly(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Frontier.Platform.ContextAssembly.ContextAssemblyOptions!>? configure = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Frontier.Platform.ContextAssembly.ContextAssemblyServiceCollectionExtensions.AddFrontierCosmosEngagementContext(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Microsoft.Extensions.Configuration.IConfiguration! configuration) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Frontier.Platform.ContextAssembly.ContextComparisonResult.operator !=(Frontier.Platform.ContextAssembly.ContextComparisonResult? left, Frontier.Platform.ContextAssembly.ContextComparisonResult? right) -> bool
 static Frontier.Platform.ContextAssembly.ContextComparisonResult.operator ==(Frontier.Platform.ContextAssembly.ContextComparisonResult? left, Frontier.Platform.ContextAssembly.ContextComparisonResult? right) -> bool
 static Frontier.Platform.ContextAssembly.ContextPackageMetadata.operator !=(Frontier.Platform.ContextAssembly.ContextPackageMetadata? left, Frontier.Platform.ContextAssembly.ContextPackageMetadata? right) -> bool
@@ -293,10 +336,16 @@ static Frontier.Platform.ContextAssembly.DynamicContextRefreshResult.operator !=
 static Frontier.Platform.ContextAssembly.DynamicContextRefreshResult.operator ==(Frontier.Platform.ContextAssembly.DynamicContextRefreshResult? left, Frontier.Platform.ContextAssembly.DynamicContextRefreshResult? right) -> bool
 static Frontier.Platform.ContextAssembly.DynamicTierComparison.operator !=(Frontier.Platform.ContextAssembly.DynamicTierComparison? left, Frontier.Platform.ContextAssembly.DynamicTierComparison? right) -> bool
 static Frontier.Platform.ContextAssembly.DynamicTierComparison.operator ==(Frontier.Platform.ContextAssembly.DynamicTierComparison? left, Frontier.Platform.ContextAssembly.DynamicTierComparison? right) -> bool
+static Frontier.Platform.ContextAssembly.DynamicTierProvenance.operator !=(Frontier.Platform.ContextAssembly.DynamicTierProvenance? left, Frontier.Platform.ContextAssembly.DynamicTierProvenance? right) -> bool
+static Frontier.Platform.ContextAssembly.DynamicTierProvenance.operator ==(Frontier.Platform.ContextAssembly.DynamicTierProvenance? left, Frontier.Platform.ContextAssembly.DynamicTierProvenance? right) -> bool
 static Frontier.Platform.ContextAssembly.EngagementContextEpoch.operator !=(Frontier.Platform.ContextAssembly.EngagementContextEpoch? left, Frontier.Platform.ContextAssembly.EngagementContextEpoch? right) -> bool
 static Frontier.Platform.ContextAssembly.EngagementContextEpoch.operator ==(Frontier.Platform.ContextAssembly.EngagementContextEpoch? left, Frontier.Platform.ContextAssembly.EngagementContextEpoch? right) -> bool
+static Frontier.Platform.ContextAssembly.EngagementContextMerge.Apply(string? currentJson, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! components) -> string!
+static Frontier.Platform.ContextAssembly.EngagementContextMerge.ApplyThroughAsync(Frontier.Platform.ContextAssembly.IEngagementContextStore! store, Frontier.Platform.Abstractions.EngagementId! engagementId, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! components, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<int>!
 static Frontier.Platform.ContextAssembly.EngagementContextPointer.operator !=(Frontier.Platform.ContextAssembly.EngagementContextPointer? left, Frontier.Platform.ContextAssembly.EngagementContextPointer? right) -> bool
 static Frontier.Platform.ContextAssembly.EngagementContextPointer.operator ==(Frontier.Platform.ContextAssembly.EngagementContextPointer? left, Frontier.Platform.ContextAssembly.EngagementContextPointer? right) -> bool
+static Frontier.Platform.ContextAssembly.EngagementContextSnapshot.operator !=(Frontier.Platform.ContextAssembly.EngagementContextSnapshot? left, Frontier.Platform.ContextAssembly.EngagementContextSnapshot? right) -> bool
+static Frontier.Platform.ContextAssembly.EngagementContextSnapshot.operator ==(Frontier.Platform.ContextAssembly.EngagementContextSnapshot? left, Frontier.Platform.ContextAssembly.EngagementContextSnapshot? right) -> bool
 static Frontier.Platform.ContextAssembly.ProviderCacheDirective.operator !=(Frontier.Platform.ContextAssembly.ProviderCacheDirective? left, Frontier.Platform.ContextAssembly.ProviderCacheDirective? right) -> bool
 static Frontier.Platform.ContextAssembly.ProviderCacheDirective.operator ==(Frontier.Platform.ContextAssembly.ProviderCacheDirective? left, Frontier.Platform.ContextAssembly.ProviderCacheDirective? right) -> bool
 static Frontier.Platform.ContextAssembly.ProviderMessageLayout.operator !=(Frontier.Platform.ContextAssembly.ProviderMessageLayout? left, Frontier.Platform.ContextAssembly.ProviderMessageLayout? right) -> bool
