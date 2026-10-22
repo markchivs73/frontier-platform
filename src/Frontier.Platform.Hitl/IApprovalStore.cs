@@ -1,3 +1,5 @@
+using Frontier.Platform.Abstractions;
+
 namespace Frontier.Platform.Hitl;
 
 /// <summary>
@@ -11,6 +13,19 @@ public interface IApprovalStore
 {
     /// <summary>Upserts <paramref name="request"/> into the <c>approvals</c> container.</summary>
     Task UpsertAsync(ApprovalRequest request, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Doc 06 §9's one non-append-only write: the ETag-guarded transition of the request
+    /// <paramref name="approvalId"/> in partition <paramref name="engagementId"/> from
+    /// <see cref="ApprovalRequestStatus.Pending"/> or <see cref="ApprovalRequestStatus.Escalated"/>
+    /// to <see cref="ApprovalRequestStatus.Decided"/>, with <paramref name="decision"/> embedded.
+    /// Exactly one decision wins: a request already decided is left as it stands and comes back as
+    /// <see cref="ApprovalDecisionOutcome.AlreadyDecided"/> with the winning record; an unknown id is
+    /// <see cref="ApprovalDecisionOutcome.NotFound"/>. The caller raises the orchestration's gate event
+    /// only after <see cref="ApprovalDecisionOutcome.Decided"/>, in that order, so doc 12 §8's recovery
+    /// sweep can re-raise a decision whose raise was lost.
+    /// </summary>
+    Task<ApprovalDecisionResult> DecideAsync(string engagementId, string approvalId, HitlDecision decision, CancellationToken cancellationToken);
 
     /// <summary>
     /// The doc 12 §8 recovery-sweep's gate-reraise check: every

@@ -218,7 +218,7 @@ Frontier.Platform.Workflow.Compiler.ITestRunArtifactReader
 Frontier.Platform.Workflow.Compiler.ITestRunArtifactReader.GetArtifactContentAsync(string! executionId, string! engagementId, string! sectionKey, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<string?>!
 Frontier.Platform.Workflow.Compiler.ITestRunExecutor
 Frontier.Platform.Workflow.Compiler.ITestRunExecutor.GetSnapshotAsync(string! executionId, string! engagementId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Model.ExecutionSnapshot?>!
-Frontier.Platform.Workflow.Compiler.ITestRunExecutor.RaiseGateDecisionAsync(string! executionId, string! gateId, string! approverId, Frontier.Platform.Abstractions.DecisionKind! decision, string? notes, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task!
+Frontier.Platform.Workflow.Compiler.ITestRunExecutor.RaiseGateDecisionAsync(string! executionId, string? engagementId, string! gateId, string! approverId, Frontier.Platform.Abstractions.DecisionKind! decision, string? notes, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task!
 Frontier.Platform.Workflow.Compiler.ITestRunExecutor.StartAsync(string! engagementId, Frontier.Platform.Workflow.Model.WorkflowDefinition! definition, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<string!>!
 Frontier.Platform.Workflow.Compiler.ITestRunExecutor.StartAsync(string! engagementId, Frontier.Platform.Workflow.Model.WorkflowDefinition! definition, string? dynamicContextJson, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<string!>!
 Frontier.Platform.Workflow.Compiler.ITestRunInputSchemaProvider

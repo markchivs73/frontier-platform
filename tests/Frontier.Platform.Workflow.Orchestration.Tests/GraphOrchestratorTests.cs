@@ -133,7 +133,7 @@ public sealed class GraphOrchestratorTests
         context.ExternalEvents[GraphOrchestratorSteps.GateEventName("gate-business-1")] = new HitlDecision
         {
             GateId = "gate-business-1",
-            RequestId = "eng-1::wf-chain-gate:gate-business-1:0",
+            RequestId = "eng-1::wf-chain:gate-business-1:0",
             ApproverId = "user:approver-1",
             Kind = DecisionKind.Approve,
             DecidedAtUtc = context.CurrentUtcDateTime,

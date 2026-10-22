@@ -776,14 +776,33 @@ internal static class GraphOrchestratorSteps
         var eventName = GateEventName(gate.NodeId);
         var decision = await WaitForGateDecisionAsync(context, gate, eventName, approvalRequest);
 
-        while (decision.Kind == DecisionKind.Escalate)
+        while (true)
         {
+            if (IsStale(decision, approvalRequest))
+            {
+                decision = await context.WaitForExternalEvent<HitlDecision>(eventName);
+                continue;
+            }
+
+            if (decision.Kind != DecisionKind.Escalate)
+            {
+                return decision;
+            }
+
             await EscalateAsync(context, approvalRequest);
             decision = await context.WaitForExternalEvent<HitlDecision>(eventName);
         }
-
-        return decision;
     }
+
+    /// <summary>
+    /// Whether <paramref name="decision"/> answers a different visit of this gate. A decision
+    /// names its request (<see cref="HitlDecision.RequestId"/>, doc 06 §9) but the event name
+    /// carries only the gate id, so doc 12 §8's re-raise of an earlier visit's decision can
+    /// reach a later visit's wait — it must never satisfy it (K5: every visit is decided on
+    /// its own). Pure comparison, so replay-safe: no activity, no history.
+    /// </summary>
+    internal static bool IsStale(HitlDecision decision, ApprovalRequest approvalRequest) =>
+        !string.Equals(decision.RequestId, approvalRequest.Id, StringComparison.Ordinal);
 
     /// <summary>
     /// Waits for <paramref name="eventName"/> up to <see cref="HumanGateNode.TimeoutMinutes"/>
