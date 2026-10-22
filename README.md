@@ -86,8 +86,14 @@ Versions are derived from git tags by [MinVer](https://github.com/adamralph/minv
 last tag.
 
 All twelve packages version in **lockstep** from a single tag — a change to one library
-republishes all twelve at the new version. That is a deliberate trade: one tag and one changelog
-instead of twelve of each. See `docs/DECISIONS.md`.
+republishes all twelve at the new version. That is a deliberate trade: one tag and one set of
+release notes instead of twelve of each. See `docs/DECISIONS.md`.
+
+A release is a `release: Ship vX.Y.Z` pull request that moves every package's
+`PublicAPI.Unshipped.txt` entries into `PublicAPI.Shipped.txt` (`python3 tools/ship-public-api.py`),
+then a tag on its merge commit. The publish workflow refuses any other tag, and once the packages
+are pushed it creates the GitHub Release with notes generated from the pull-request titles since
+the previous tag. The git-workflow skill has the steps.
 
 While the major version is `0`, breaking changes may appear in a minor release.
 

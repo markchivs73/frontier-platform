@@ -13,14 +13,25 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write   # only for the GitHub Release created after the push
       packages: write
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
         with:
-          fetch-depth: 0  # MinVer derives the version from tag history
+          fetch-depth: 0  # MinVer derives the version from tag history; the release gate reads main and the previous tag
+
+      # The release gate (git-workflow skill, "Releasing"): a tag publishes only from a
+      # `release: Ship vX.Y.Z` commit on main whose PublicAPI.Unshipped.txt files hold no
+      # entry. Both checks run before anything is built, so a tag on the wrong commit, or one
+      # placed before the public API was shipped, fails in seconds and publishes nothing:
+      # delete the tag, ship the API in a release PR, tag its merge commit.
+      - name: Check the tag is on a release commit
+        run: bash .github/scripts/check-release-tag.sh "$GITHUB_REF_NAME"
+
+      - name: Check no public API is unshipped
+        run: python3 tools/ship-public-api.py --check
 
       # Same composite action ci.yml runs: build with warnings as errors, vulnerability
       # scan, unit + architecture tests, and the per-assembly coverage gate. Packing from
@@ -39,3 +50,11 @@ jobs:
           --api-key "${{ secrets.GITHUB_TOKEN }}"
           --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
           --skip-duplicate
+
+      # The published form of the changelog: release notes generated from the pull-request
+      # titles since the previous tag. Created only after the push succeeded, so a release
+      # exists exactly when its packages do.
+      - name: Create the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/create-release.sh "$GITHUB_REF_NAME"

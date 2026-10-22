@@ -28,7 +28,8 @@ done < <(
     | sort
 )
 
-all_scopes+=(meta ci docs deps)
+# release: the commit that ships the public API before a tag (git-workflow skill, "Releasing").
+all_scopes+=(meta ci docs deps release)
 
 scope_alternation="$(IFS='|'; echo "${all_scopes[*]}")"
 # scope, optional '!', ': ', then a summary starting with a capital.
