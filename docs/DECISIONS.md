@@ -778,6 +778,27 @@ is "nothing"). The executor writes it before scheduling; what a run with no cont
 implementation's call — the consumer seeds a default brief when the entry node needs one.
 Breaking for implementors of `ITestRunExecutor`; the consumer's adapter is the only one.
 
+### ADR-PA17 — amended 2026-10-22: a gate decision names the visit it answers, and is recorded before it is raised
+
+Found by the consumer's S13.112 run and fixed as its S13.119. Doc 06 §9 always specified the
+approval record's one non-append-only write — the ETag-guarded `pending → decided` transition,
+made **before** the gate event is raised so doc 12 §8's sweep can re-raise a lost raise — but
+`IApprovalStore` had no member for it, so every decided gate stayed `pending` in the projection.
+`IApprovalStore.DecideAsync` is that write: exactly one decision wins (`Decided`), the loser is
+told who won (`AlreadyDecided` with the record), an unknown id is `NotFound`; the pure half,
+`ApprovalDecisionTransition`, takes a decision from `pending` or `escalated` only (escalation never
+decides, doc 06 §7) and refuses one addressed to another request.
+
+Two consequences follow. A decision's `RequestId` is now load-bearing: the gate event name carries
+only the gate id, so the sweep can deliver an earlier visit's decision to a later visit's wait;
+`GraphOrchestratorSteps.DecideAsync` ignores a decision whose `RequestId` is not the open request's
+id and keeps waiting — a pure comparison, replay-safe, no new activity. And the sandbox channel must
+therefore name the real visit: `ITestRunExecutor.RaiseGateDecisionAsync` takes the run's engagement
+id so the implementation can find the open request, give the decision its id and record it the way a
+published run's gate does; `null` for a test-run document from before the engagement was stored.
+Breaking for implementors of `ITestRunExecutor`; the consumer's adapter is the only one, and it
+hard-coded occurrence `1` where every first visit is `0`.
+
 
 ---
 

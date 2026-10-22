@@ -33,8 +33,12 @@ public interface ITestRunExecutor
     /// <summary>
     /// Raises a gate decision (doc 13 §5 <c>gateMode: auto-approve</c> or the S9.38d
     /// interactive designer-decides path) by raising the same external event a real
-    /// approver's decision would raise.
+    /// approver's decision would raise. <paramref name="engagementId"/> is the run's sandbox
+    /// engagement, so the implementation can find the gate's open approval request and give the
+    /// decision that request's id (doc 06 §9 — a decision names the visit it answers; S13.119) and
+    /// record it before raising; <see langword="null"/> for a test-run document from before the
+    /// engagement was stored, when the first visit's id is the only one the implementation can name.
     /// </summary>
     [SuppressMessage("Design", "CA1030:Use events where appropriate", Justification = "Mirrors IOrchestrationFactory.RaiseEventAsync's established naming (doc 12 §5).")]
-    Task RaiseGateDecisionAsync(string executionId, string gateId, string approverId, DecisionKind decision, string? notes, CancellationToken ct);
+    Task RaiseGateDecisionAsync(string executionId, string? engagementId, string gateId, string approverId, DecisionKind decision, string? notes, CancellationToken ct);
 }

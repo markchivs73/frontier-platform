@@ -392,7 +392,7 @@ public sealed class GraphRefreshSignalWalkTests
         private static HitlDecision Approval(string gateId) => new()
         {
             GateId = gateId,
-            RequestId = $"eng-1::wf-chain-gate:{gateId}:0",
+            RequestId = $"eng-1::wf-chain:{gateId}:0",
             ApproverId = "user:approver-1",
             Kind = DecisionKind.Approve,
             DecidedAtUtc = OrchestrationFixtures.StartedAtUtc,

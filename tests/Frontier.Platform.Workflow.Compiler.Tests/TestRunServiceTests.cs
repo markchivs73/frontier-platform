@@ -406,7 +406,7 @@ public sealed class TestRunServiceTests
 
         var result = await _service.ReconcileAsync(doc.TestRunId, CancellationToken.None);
 
-        _executor.Verify(e => e.RaiseGateDecisionAsync(doc.TestRunId, "gate-1", TestRunService.AutoApproveApproverId, DecisionKind.Approve, null, It.IsAny<CancellationToken>()), Times.Once);
+        _executor.Verify(e => e.RaiseGateDecisionAsync(doc.TestRunId, doc.EngagementId, "gate-1", TestRunService.AutoApproveApproverId, DecisionKind.Approve, null, It.IsAny<CancellationToken>()), Times.Once);
         Assert.Equal(TestRunStatus.Running, result!.Status); // the pause is being consumed, not surfaced
         _store.Verify(s => s.PersistTestRunAsync(It.IsAny<TestRunDocument>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -429,7 +429,7 @@ public sealed class TestRunServiceTests
         Assert.Null(persisted()!.CompletedAtUtc); // paused is not completed
         Assert.Equal(doc.Id, persisted()!.Id);    // update-in-place, never a duplicate document
         Assert.Equal(TestRunStatus.PausedAtGate, result!.Status);
-        _executor.Verify(e => e.RaiseGateDecisionAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DecisionKind>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+        _executor.Verify(e => e.RaiseGateDecisionAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DecisionKind>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -686,7 +686,7 @@ public sealed class TestRunServiceTests
         var result = await _service.DecideGateAsync("SANDBOX-abc::wf-test", "gate-1", DecisionKind.Approve, null, CancellationToken.None);
 
         Assert.Null(result);
-        _executor.Verify(e => e.RaiseGateDecisionAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DecisionKind>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+        _executor.Verify(e => e.RaiseGateDecisionAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DecisionKind>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -703,7 +703,7 @@ public sealed class TestRunServiceTests
 
         var result = await _service.DecideGateAsync(doc.TestRunId, "gate-1", DecisionKind.Approve, "looks good", CancellationToken.None);
 
-        _executor.Verify(e => e.RaiseGateDecisionAsync(doc.TestRunId, "gate-1", TestRunService.DesignerApproverId, DecisionKind.Approve, "looks good", It.IsAny<CancellationToken>()), Times.Once);
+        _executor.Verify(e => e.RaiseGateDecisionAsync(doc.TestRunId, doc.EngagementId, "gate-1", TestRunService.DesignerApproverId, DecisionKind.Approve, "looks good", It.IsAny<CancellationToken>()), Times.Once);
         Assert.Equal(TestRunStatus.PausedAtGate, result!.Status); // not yet processed — the poll observes what happens next
     }
 

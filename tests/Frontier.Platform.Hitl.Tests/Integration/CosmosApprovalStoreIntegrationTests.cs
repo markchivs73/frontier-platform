@@ -84,4 +84,57 @@ public sealed class CosmosApprovalStoreIntegrationTests : IAsyncLifetime, IDispo
         Assert.DoesNotContain(results, r => r.Id == escalated.Id);
         Assert.DoesNotContain(results, r => r.Id == expired.Id);
     }
+
+    [Fact]
+    public async Task DecideAsync_PendingRequest_EmbedsTheDecisionAndBecomesVisibleToTheSweep()
+    {
+        var pending = HitlFixtures.PendingRequest() with { Id = $"req-{Guid.NewGuid():N}", EngagementId = "eng-decide" };
+        await store.UpsertAsync(pending, CancellationToken.None);
+        var decision = ApprovalDecisionTransitionTests.DecisionFor(pending);
+
+        var result = await store.DecideAsync(pending.EngagementId, pending.Id, decision, CancellationToken.None);
+
+        Assert.Equal(ApprovalDecisionOutcome.Decided, result.Outcome);
+        Assert.Equal(ApprovalRequestStatus.Decided, result.Request!.Status);
+        Assert.Equal(decision, result.Request.Decision);
+        var stored = Assert.Single(await store.GetDecidedAsync(CancellationToken.None), r => r.Id == pending.Id);
+        Assert.Equal(decision, stored.Decision);
+    }
+
+    [Fact]
+    public async Task DecideAsync_SecondDecision_LosesAndIsToldWhoWon()
+    {
+        var pending = HitlFixtures.PendingRequest() with { Id = $"req-{Guid.NewGuid():N}", EngagementId = "eng-race" };
+        await store.UpsertAsync(pending, CancellationToken.None);
+        var first = ApprovalDecisionTransitionTests.DecisionFor(pending);
+        var second = first with { ApproverId = "user:approver-2", Kind = DecisionKind.Reject };
+        await store.DecideAsync(pending.EngagementId, pending.Id, first, CancellationToken.None);
+
+        var result = await store.DecideAsync(pending.EngagementId, pending.Id, second, CancellationToken.None);
+
+        Assert.Equal(ApprovalDecisionOutcome.AlreadyDecided, result.Outcome);
+        Assert.Equal(first, result.Request!.Decision);
+    }
+
+    [Fact]
+    public async Task DecideAsync_EscalatedRequest_StillTakesTheDecision()
+    {
+        var escalated = HitlFixtures.PendingRequest() with { Id = $"req-{Guid.NewGuid():N}", EngagementId = "eng-escalated-decide", Status = ApprovalRequestStatus.Escalated };
+        await store.UpsertAsync(escalated, CancellationToken.None);
+
+        var result = await store.DecideAsync(escalated.EngagementId, escalated.Id, ApprovalDecisionTransitionTests.DecisionFor(escalated), CancellationToken.None);
+
+        Assert.Equal(ApprovalDecisionOutcome.Decided, result.Outcome);
+    }
+
+    [Fact]
+    public async Task DecideAsync_UnknownRequest_IsNotFound()
+    {
+        var ghost = HitlFixtures.PendingRequest() with { Id = $"req-{Guid.NewGuid():N}", EngagementId = "eng-ghost" };
+
+        var result = await store.DecideAsync(ghost.EngagementId, ghost.Id, ApprovalDecisionTransitionTests.DecisionFor(ghost), CancellationToken.None);
+
+        Assert.Equal(ApprovalDecisionOutcome.NotFound, result.Outcome);
+        Assert.Null(result.Request);
+    }
 }

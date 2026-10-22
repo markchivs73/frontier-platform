@@ -114,7 +114,7 @@ public sealed class TestRunService : ITestRunService
             // Advance (policy): the deleted S9.38a poll loop auto-approved in-loop at 1s; the
             // reconciler advances one gate per invocation instead — the A4 viewer poll (~2s) and
             // the S9.86 sweep both drive it. No persist: the gate pause is being consumed.
-            await _executor.RaiseGateDecisionAsync(doc.TestRunId, gateId, AutoApproveApproverId, DecisionKind.Approve, null, ct);
+            await _executor.RaiseGateDecisionAsync(doc.TestRunId, engagementId, gateId, AutoApproveApproverId, DecisionKind.Approve, null, ct);
             return await BuildLiveResultAsync(doc, snapshot, ct);
         }
 
@@ -155,7 +155,7 @@ public sealed class TestRunService : ITestRunService
         if (doc is null)
             return null;
 
-        await _executor.RaiseGateDecisionAsync(testRunId, gateId, DesignerApproverId, decision, note, ct);
+        await _executor.RaiseGateDecisionAsync(testRunId, doc.EngagementId, gateId, DesignerApproverId, decision, note, ct);
 
         return await ReconcileAsync(testRunId, ct);
     }

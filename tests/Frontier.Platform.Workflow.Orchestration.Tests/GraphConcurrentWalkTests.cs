@@ -283,7 +283,7 @@ public sealed class GraphConcurrentWalkTests
     private static HitlDecision Decision(DecisionKind kind) => new()
     {
         GateId = "gate-scope",
-        RequestId = "eng-1::wf-gate-barrier:gate-scope:0",
+        RequestId = "eng-1::wf-chain:gate-scope:0",
         ApproverId = "user:approver-1",
         Kind = kind,
         DecidedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),

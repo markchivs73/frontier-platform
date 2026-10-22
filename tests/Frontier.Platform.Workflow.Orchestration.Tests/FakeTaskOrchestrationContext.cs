@@ -156,6 +156,12 @@ internal sealed class FakeTaskOrchestrationContext : TaskOrchestrationContext
     /// <summary>Every <see cref="CreateTimer"/> fire time, in order — the timer actions a real replay would match against history (S13.99).</summary>
     public List<DateTime> TimerFireAts { get; } = [];
 
+    /// <summary>How many times a plain (non-queued) external event value may be re-delivered before the wait is treated as a spin.</summary>
+    internal const int PlainDeliveryLimit = 1000;
+
+    /// <summary>Re-deliveries of a plain external event value, per event name.</summary>
+    internal Dictionary<string, int> PlainDeliveries { get; } = new(StringComparer.Ordinal);
+
     /// <inheritdoc />
     public override Task<T> WaitForExternalEvent<T>(string eventName, CancellationToken cancellationToken = default)
     {
@@ -176,7 +182,21 @@ internal sealed class FakeTaskOrchestrationContext : TaskOrchestrationContext
                 return pendingEvent.Next<T>();
             }
 
-            return Task.FromResult(value is Queue<object> queue ? (T)queue.Dequeue() : (T)value);
+            if (value is Queue<object> queue)
+            {
+                return Task.FromResult((T)queue.Dequeue());
+            }
+
+            // S13.119: a plain value is re-delivered on every wait. An orchestrator that keeps
+            // waiting on it — a gate ignoring a decision whose RequestId names another visit —
+            // would spin forever; fail loudly instead, naming the fixture to fix.
+            PlainDeliveries[eventName] = PlainDeliveries.GetValueOrDefault(eventName) + 1;
+            if (PlainDeliveries[eventName] > PlainDeliveryLimit)
+            {
+                throw new InvalidOperationException($"External event '{eventName}' was re-delivered {PlainDeliveryLimit} times unchanged; the orchestrator keeps waiting — is the fixture's decision RequestId the approval's id?");
+            }
+
+            return Task.FromResult((T)value);
         }
 
         var tcs = new TaskCompletionSource<T>();

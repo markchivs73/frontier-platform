@@ -546,7 +546,8 @@ public sealed class GraphOrchestratorStepsTests
         context.ExternalEvents[GraphOrchestratorSteps.GateEventName("gate-business-1")] = new Queue<object>(
         [
             Decision(DecisionKind.Reject, notes: "redo scope", rollbackToNodeId: "scope-agent"),
-            Decision(DecisionKind.Approve),
+            // S13.119: the re-visit opens request occurrence 1, and a decision names the visit it answers.
+            Decision(DecisionKind.Approve) with { RequestId = "eng-1::wf-chain:gate-business-1:1" },
         ]);
         var input = OrchestrationFixtures.Input(OrchestrationFixtures.ChainWithBusinessGate());
 
@@ -624,6 +625,27 @@ public sealed class GraphOrchestratorStepsTests
 
         Assert.Equal(DecisionKind.Approve, decision.Kind);
         Assert.Single(escalated);
+    }
+
+    [Fact]
+    public async Task DecideAsync_StaleDecisionForAnEarlierVisit_IsIgnoredAndTheGateKeepsWaiting()
+    {
+        // S13.119: doc 12 §8's re-raise can deliver an earlier visit's decision under the same
+        // gate event name; it must neither decide nor escalate this visit.
+        var context = new FakeTaskOrchestrationContext();
+        var escalated = RegisterEscalateApprovalActivity(context);
+        var gate = (HumanGateNode)OrchestrationFixtures.ChainWithBusinessGate().Nodes[3];
+        var approvalRequest = BuildApprovalRequest(gate, occurrence: 1);
+        var stale = Decision(DecisionKind.Escalate) with { RequestId = BuildApprovalRequest(gate, occurrence: 0).Id };
+        var current = Decision(DecisionKind.Reject) with { RequestId = approvalRequest.Id };
+        context.ExternalEvents[GraphOrchestratorSteps.GateEventName(gate.NodeId)] = new Queue<object>([stale, current]);
+
+        var decision = await GraphOrchestratorSteps.DecideAsync(context, gate, approvalRequest);
+
+        Assert.Same(current, decision);
+        Assert.Empty(escalated);
+        Assert.True(GraphOrchestratorSteps.IsStale(stale, approvalRequest));
+        Assert.False(GraphOrchestratorSteps.IsStale(current, approvalRequest));
     }
 
     [Fact]
@@ -858,7 +880,7 @@ public sealed class GraphOrchestratorStepsTests
     private static HitlDecision Decision(DecisionKind kind, string? notes = null, string? rollbackToNodeId = null) => new()
     {
         GateId = "gate-business-1",
-        RequestId = "eng-1::wf-chain-gate:gate-business-1:0",
+        RequestId = "eng-1::wf-chain:gate-business-1:0",
         ApproverId = "user:approver-1",
         Kind = kind,
         Notes = notes,
@@ -884,7 +906,7 @@ public sealed class GraphOrchestratorStepsTests
     /// <summary>Builds a pending <see cref="ApprovalRequest"/> for <paramref name="gate"/> at <paramref name="occurrence"/>, for tests that call <see cref="GraphOrchestratorSteps.DecideAsync"/> directly.</summary>
     private static ApprovalRequest BuildApprovalRequest(HumanGateNode gate, int occurrence) => BuildApprovalRequest(new GateOpenRequest
     {
-        ExecutionId = "eng-1::wf-chain-gate",
+        ExecutionId = "eng-1::wf-chain",
         EngagementId = "eng-1",
         GateId = gate.NodeId,
         GateKind = gate.GateKind,
