@@ -1327,6 +1327,32 @@ the pre-change golden rather than by inspection.
 Release: **minor, v0.27.0 proposed** — purely additive, but the consumer's fan-out exclusion needs
 a version to bump to.
 
+### ADR-PA26 — amended 2026-10-22: the projection also records why a run paused on a failure
+
+Found by the consumer's S13.112 run and fixed as its S13.120. A `paused_on_failure` snapshot carried
+only `failure_classification` — doc 10 §3's reason code — while the exception behind it lived in
+durable history and the worker's console, so diagnosing a paused run meant reading its artifacts in
+Cosmos or reproducing the call by hand. `ExecutionSnapshot.failure_detail` (property order 23) is an
+`ExecutionFailureDetail` — `node_id`, `exception_type`, `message` — built by the orchestrator from the
+walk's first failure, a pure function of the exception it already held (invariant 2), and written
+through the same `SnapshotStateActivity` call as the classification.
+
+What it carries is a decision, not a convenience. **Only the exception's message** — never its
+`ToString()`, stack trace or data. An activity failure's `TaskFailureDetails` chain is read head-first,
+so the type is the one the classification was read from, and inner messages follow an arrow. The
+result is bounded to 512 characters, ending in an ellipsis, and credential-shaped fragments — a
+`Bearer`/`Basic` token, `sig=`, `key=`, `api_key=`, `token=`, `secret=`, `password=` and their
+spellings — have their values replaced with `[redacted]` before the detail is written, because a
+projection is read by every visitor to the execution screen and must never carry a bearer credential
+(ADR-SEC5). Additive and optional under the ADR-E15 floor: nothing is renumbered, no member of the
+snapshot is `required`, `Validate()` does not demand it, and the existing paused-on-failure golden is
+byte-identical — pinned by a test that re-serializes the unchanged sample against it. A snapshot a
+consumer's recovery sweep heals carries no detail: the sweep sees the orchestration's fault rather
+than the node's, and saying nothing is better than naming the wrong node.
+
+Release: **minor, v0.37.0 proposed** — purely additive; the consumer's B3 failure band needs a
+version to bump to.
+
 ## ADR-PA27 — a role's chain may resolve to a remote agent; the invoker learns what it resolved to
 
 frontier-workflow is wiring A2A agents hosted in Azure AI Foundry into workflows (its S13.80–S13.89).

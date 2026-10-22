@@ -339,18 +339,21 @@ internal static class GraphOrchestratorSteps
     /// <summary>
     /// After a failure drain (ADR-5 Decision 4): writes the final
     /// <see cref="ExecutionStatus.PausedOnFailure"/> checkpoint carrying the actually
-    /// failing node id and its doc 10 §3 classification — the real-execution half of the
-    /// C-35 attribution fix — then rethrows the original failure so DTF records it.
+    /// failing node id, its doc 10 §3 classification — the real-execution half of the
+    /// C-35 attribution fix — and, since S13.120, the failure itself (type and bounded
+    /// message, <see cref="FailureDetailSummary"/>), then rethrows the original failure so
+    /// DTF records it.
     /// </summary>
     internal static async Task ThrowIfFailedAsync(TaskOrchestrationContext context, GraphOrchestratorInput input, GraphExecutionState state, GraphWalk walk, IResiliencePolicyProvider policyProvider)
     {
-        if (walk.FirstFailure is null)
+        if (walk.FirstFailure is not { } failure)
         {
             return;
         }
 
-        await WriteSnapshotAsync(context, input, state, ExecutionStatus.PausedOnFailure, walk.FailedNodeId, policyProvider, failureClassification: ClassifyFailure(walk.FirstFailure));
-        System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(walk.FirstFailure).Throw();
+        var detail = FailureDetailSummary.Describe(walk.FailedNodeId!, failure);
+        await WriteSnapshotAsync(context, input, state, ExecutionStatus.PausedOnFailure, walk.FailedNodeId, policyProvider, failureClassification: ClassifyFailure(failure), failureDetail: detail);
+        System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(failure).Throw();
     }
 
     /// <summary>Unwraps the single inner exception a faulted node task carries.</summary>
@@ -631,16 +634,16 @@ internal static class GraphOrchestratorSteps
     /// <see cref="GraphExecutionState.Sequence"/>, then advances the counter (doc 02 §5:
     /// sequence is the orchestrator's own checkpoint counter, never wall-clock).
     /// </summary>
-    internal static async Task WriteSnapshotAsync(TaskOrchestrationContext context, GraphOrchestratorInput input, GraphExecutionState state, ExecutionStatus status, string? currentNodeId, IResiliencePolicyProvider policyProvider, string? pausedAtGateId = null, string? failureClassification = null)
+    internal static async Task WriteSnapshotAsync(TaskOrchestrationContext context, GraphOrchestratorInput input, GraphExecutionState state, ExecutionStatus status, string? currentNodeId, IResiliencePolicyProvider policyProvider, string? pausedAtGateId = null, string? failureClassification = null, ExecutionFailureDetail? failureDetail = null)
     {
-        var snapshot = BuildSnapshot(context, input, state, status, currentNodeId, pausedAtGateId, failureClassification);
+        var snapshot = BuildSnapshot(context, input, state, status, currentNodeId, pausedAtGateId, failureClassification, failureDetail);
         var taskOptions = policyProvider.GetTaskOptions(SnapshotPersistenceProfile);
         await context.CallActivityAsync<SnapshotActivityResponse>(WorkflowActivityNames.SnapshotStateActivity, snapshot, taskOptions);
         state.Sequence++;
     }
 
     /// <summary>Projects <paramref name="state"/> into the <see cref="ExecutionSnapshot"/> for the current checkpoint (doc 02 §2, §5).</summary>
-    internal static ExecutionSnapshot BuildSnapshot(TaskOrchestrationContext context, GraphOrchestratorInput input, GraphExecutionState state, ExecutionStatus status, string? currentNodeId, string? pausedAtGateId = null, string? failureClassification = null) => new()
+    internal static ExecutionSnapshot BuildSnapshot(TaskOrchestrationContext context, GraphOrchestratorInput input, GraphExecutionState state, ExecutionStatus status, string? currentNodeId, string? pausedAtGateId = null, string? failureClassification = null, ExecutionFailureDetail? failureDetail = null) => new()
     {
         ExecutionId = context.InstanceId,
         EngagementId = input.EngagementId,
@@ -651,6 +654,7 @@ internal static class GraphOrchestratorSteps
         CurrentNodeId = currentNodeId,
         PausedAtGateId = pausedAtGateId,
         FailureClassification = failureClassification,
+        FailureDetail = failureDetail,
         SkippedNodeIds = state.SkippedNodeIds.Count > 0 ? [.. state.SkippedNodeIds] : null,
         Artifacts = new Dictionary<string, ArtifactStatus>(state.ArtifactStatuses),
         CompletedSteps = [.. state.CompletedSteps],
