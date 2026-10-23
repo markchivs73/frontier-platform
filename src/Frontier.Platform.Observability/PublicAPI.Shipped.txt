@@ -200,17 +200,19 @@ Frontier.Platform.Observability.NodeMetrics.AgentMaturity.get -> Frontier.Platfo
 Frontier.Platform.Observability.NodeMetrics.AgentMaturity.init -> void
 Frontier.Platform.Observability.NodeMetrics.BaselineHitRate.get -> decimal?
 Frontier.Platform.Observability.NodeMetrics.BaselineHitRate.init -> void
-Frontier.Platform.Observability.NodeMetrics.Deconstruct(out decimal MeanCostGbp, out long P50LatencyMs, out long P95LatencyMs, out decimal ValidatorPassRate, out decimal MeanRetries, out decimal? BaselineHitRate, out decimal? DynamicHitRate, out decimal? HitlRejectRate, out Frontier.Platform.Observability.MaturityBand? AgentMaturity) -> void
+Frontier.Platform.Observability.NodeMetrics.Currency.get -> string!
+Frontier.Platform.Observability.NodeMetrics.Currency.init -> void
+Frontier.Platform.Observability.NodeMetrics.Deconstruct(out decimal MeanCost, out string! Currency, out long P50LatencyMs, out long P95LatencyMs, out decimal ValidatorPassRate, out decimal MeanRetries, out decimal? BaselineHitRate, out decimal? DynamicHitRate, out decimal? HitlRejectRate, out Frontier.Platform.Observability.MaturityBand? AgentMaturity) -> void
 Frontier.Platform.Observability.NodeMetrics.DynamicHitRate.get -> decimal?
 Frontier.Platform.Observability.NodeMetrics.DynamicHitRate.init -> void
 Frontier.Platform.Observability.NodeMetrics.Equals(Frontier.Platform.Observability.NodeMetrics? other) -> bool
 Frontier.Platform.Observability.NodeMetrics.HitlRejectRate.get -> decimal?
 Frontier.Platform.Observability.NodeMetrics.HitlRejectRate.init -> void
-Frontier.Platform.Observability.NodeMetrics.MeanCostGbp.get -> decimal
-Frontier.Platform.Observability.NodeMetrics.MeanCostGbp.init -> void
+Frontier.Platform.Observability.NodeMetrics.MeanCost.get -> decimal
+Frontier.Platform.Observability.NodeMetrics.MeanCost.init -> void
 Frontier.Platform.Observability.NodeMetrics.MeanRetries.get -> decimal
 Frontier.Platform.Observability.NodeMetrics.MeanRetries.init -> void
-Frontier.Platform.Observability.NodeMetrics.NodeMetrics(decimal MeanCostGbp, long P50LatencyMs, long P95LatencyMs, decimal ValidatorPassRate, decimal MeanRetries, decimal? BaselineHitRate, decimal? DynamicHitRate, decimal? HitlRejectRate, Frontier.Platform.Observability.MaturityBand? AgentMaturity) -> void
+Frontier.Platform.Observability.NodeMetrics.NodeMetrics(decimal MeanCost, string! Currency, long P50LatencyMs, long P95LatencyMs, decimal ValidatorPassRate, decimal MeanRetries, decimal? BaselineHitRate, decimal? DynamicHitRate, decimal? HitlRejectRate, Frontier.Platform.Observability.MaturityBand? AgentMaturity) -> void
 Frontier.Platform.Observability.NodeMetrics.P50LatencyMs.get -> long
 Frontier.Platform.Observability.NodeMetrics.P50LatencyMs.init -> void
 Frontier.Platform.Observability.NodeMetrics.P95LatencyMs.get -> long
@@ -262,26 +264,30 @@ Frontier.Platform.Observability.RetryDistributionRow.ReasonCode.init -> void
 Frontier.Platform.Observability.RetryDistributionRow.RetryDistributionRow(string! ReasonCode, string! Model, int Count, decimal RatePercent) -> void
 Frontier.Platform.Observability.TierEconomics
 Frontier.Platform.Observability.TierEconomics.<Clone>$() -> Frontier.Platform.Observability.TierEconomics!
-Frontier.Platform.Observability.TierEconomics.Deconstruct(out System.Collections.Generic.IReadOnlyList<Frontier.Platform.Observability.TierEconomicsRow!>! Rows, out decimal TotalCostSavedGbp, out int TotalExecutions) -> void
+Frontier.Platform.Observability.TierEconomics.Currency.get -> string?
+Frontier.Platform.Observability.TierEconomics.Currency.init -> void
+Frontier.Platform.Observability.TierEconomics.Deconstruct(out System.Collections.Generic.IReadOnlyList<Frontier.Platform.Observability.TierEconomicsRow!>! Rows, out decimal TotalCostSaved, out string? Currency, out int TotalExecutions) -> void
 Frontier.Platform.Observability.TierEconomics.Equals(Frontier.Platform.Observability.TierEconomics? other) -> bool
 Frontier.Platform.Observability.TierEconomics.Rows.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Observability.TierEconomicsRow!>!
 Frontier.Platform.Observability.TierEconomics.Rows.init -> void
-Frontier.Platform.Observability.TierEconomics.TierEconomics(System.Collections.Generic.IReadOnlyList<Frontier.Platform.Observability.TierEconomicsRow!>! Rows, decimal TotalCostSavedGbp, int TotalExecutions) -> void
-Frontier.Platform.Observability.TierEconomics.TotalCostSavedGbp.get -> decimal
-Frontier.Platform.Observability.TierEconomics.TotalCostSavedGbp.init -> void
+Frontier.Platform.Observability.TierEconomics.TierEconomics(System.Collections.Generic.IReadOnlyList<Frontier.Platform.Observability.TierEconomicsRow!>! Rows, decimal TotalCostSaved, string? Currency, int TotalExecutions) -> void
+Frontier.Platform.Observability.TierEconomics.TotalCostSaved.get -> decimal
+Frontier.Platform.Observability.TierEconomics.TotalCostSaved.init -> void
 Frontier.Platform.Observability.TierEconomics.TotalExecutions.get -> int
 Frontier.Platform.Observability.TierEconomics.TotalExecutions.init -> void
 Frontier.Platform.Observability.TierEconomicsRow
 Frontier.Platform.Observability.TierEconomicsRow.<Clone>$() -> Frontier.Platform.Observability.TierEconomicsRow!
-Frontier.Platform.Observability.TierEconomicsRow.CostSavedGbp.get -> decimal
-Frontier.Platform.Observability.TierEconomicsRow.CostSavedGbp.init -> void
-Frontier.Platform.Observability.TierEconomicsRow.Deconstruct(out string! Tier, out decimal HitRate, out long TokensTotal, out long TokensCached, out decimal CostSavedGbp) -> void
+Frontier.Platform.Observability.TierEconomicsRow.CostSaved.get -> decimal
+Frontier.Platform.Observability.TierEconomicsRow.CostSaved.init -> void
+Frontier.Platform.Observability.TierEconomicsRow.Currency.get -> string!
+Frontier.Platform.Observability.TierEconomicsRow.Currency.init -> void
+Frontier.Platform.Observability.TierEconomicsRow.Deconstruct(out string! Tier, out decimal HitRate, out long TokensTotal, out long TokensCached, out decimal CostSaved, out string! Currency) -> void
 Frontier.Platform.Observability.TierEconomicsRow.Equals(Frontier.Platform.Observability.TierEconomicsRow? other) -> bool
 Frontier.Platform.Observability.TierEconomicsRow.HitRate.get -> decimal
 Frontier.Platform.Observability.TierEconomicsRow.HitRate.init -> void
 Frontier.Platform.Observability.TierEconomicsRow.Tier.get -> string!
 Frontier.Platform.Observability.TierEconomicsRow.Tier.init -> void
-Frontier.Platform.Observability.TierEconomicsRow.TierEconomicsRow(string! Tier, decimal HitRate, long TokensTotal, long TokensCached, decimal CostSavedGbp) -> void
+Frontier.Platform.Observability.TierEconomicsRow.TierEconomicsRow(string! Tier, decimal HitRate, long TokensTotal, long TokensCached, decimal CostSaved, string! Currency) -> void
 Frontier.Platform.Observability.TierEconomicsRow.TokensCached.get -> long
 Frontier.Platform.Observability.TierEconomicsRow.TokensCached.init -> void
 Frontier.Platform.Observability.TierEconomicsRow.TokensTotal.get -> long

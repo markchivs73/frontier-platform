@@ -20,6 +20,8 @@ Frontier.Platform.Guardrails.AdmissionResult.ProceedWithWarning = 1 -> Frontier.
 Frontier.Platform.Guardrails.BudgetLedgerDocument
 Frontier.Platform.Guardrails.BudgetLedgerDocument.<Clone>$() -> Frontier.Platform.Guardrails.BudgetLedgerDocument!
 Frontier.Platform.Guardrails.BudgetLedgerDocument.BudgetLedgerDocument() -> void
+Frontier.Platform.Guardrails.BudgetLedgerDocument.Currency.get -> string!
+Frontier.Platform.Guardrails.BudgetLedgerDocument.Currency.init -> void
 Frontier.Platform.Guardrails.BudgetLedgerDocument.ETag.get -> string?
 Frontier.Platform.Guardrails.BudgetLedgerDocument.ETag.init -> void
 Frontier.Platform.Guardrails.BudgetLedgerDocument.EngagementId.get -> string!
@@ -35,8 +37,8 @@ Frontier.Platform.Guardrails.BudgetLedgerDocument.PartitionKey.get -> string!
 Frontier.Platform.Guardrails.BudgetLedgerDocument.PartitionKey.init -> void
 Frontier.Platform.Guardrails.BudgetLedgerDocument.Timestamp.get -> long?
 Frontier.Platform.Guardrails.BudgetLedgerDocument.Timestamp.init -> void
-Frontier.Platform.Guardrails.BudgetLedgerDocument.TotalCostGbp.get -> decimal
-Frontier.Platform.Guardrails.BudgetLedgerDocument.TotalCostGbp.init -> void
+Frontier.Platform.Guardrails.BudgetLedgerDocument.TotalCost.get -> decimal
+Frontier.Platform.Guardrails.BudgetLedgerDocument.TotalCost.init -> void
 Frontier.Platform.Guardrails.BudgetLedgerDocument.TotalInputTokens.get -> long
 Frontier.Platform.Guardrails.BudgetLedgerDocument.TotalInputTokens.init -> void
 Frontier.Platform.Guardrails.BudgetLedgerDocument.TotalOutputTokens.get -> long
@@ -57,10 +59,12 @@ Frontier.Platform.Guardrails.BudgetScopeRef.Kind.get -> Frontier.Platform.Guardr
 Frontier.Platform.Guardrails.BudgetScopeRef.Kind.init -> void
 Frontier.Platform.Guardrails.BudgetSnapshot
 Frontier.Platform.Guardrails.BudgetSnapshot.<Clone>$() -> Frontier.Platform.Guardrails.BudgetSnapshot!
-Frontier.Platform.Guardrails.BudgetSnapshot.BudgetSnapshot(Frontier.Platform.Guardrails.BudgetScopeRef! Scope, long TokensUsed, decimal CostGbp, int InvocationCount) -> void
-Frontier.Platform.Guardrails.BudgetSnapshot.CostGbp.get -> decimal
-Frontier.Platform.Guardrails.BudgetSnapshot.CostGbp.init -> void
-Frontier.Platform.Guardrails.BudgetSnapshot.Deconstruct(out Frontier.Platform.Guardrails.BudgetScopeRef! Scope, out long TokensUsed, out decimal CostGbp, out int InvocationCount) -> void
+Frontier.Platform.Guardrails.BudgetSnapshot.BudgetSnapshot(Frontier.Platform.Guardrails.BudgetScopeRef! Scope, long TokensUsed, decimal Cost, string? Currency, int InvocationCount) -> void
+Frontier.Platform.Guardrails.BudgetSnapshot.Cost.get -> decimal
+Frontier.Platform.Guardrails.BudgetSnapshot.Cost.init -> void
+Frontier.Platform.Guardrails.BudgetSnapshot.Currency.get -> string?
+Frontier.Platform.Guardrails.BudgetSnapshot.Currency.init -> void
+Frontier.Platform.Guardrails.BudgetSnapshot.Deconstruct(out Frontier.Platform.Guardrails.BudgetScopeRef! Scope, out long TokensUsed, out decimal Cost, out string? Currency, out int InvocationCount) -> void
 Frontier.Platform.Guardrails.BudgetSnapshot.Equals(Frontier.Platform.Guardrails.BudgetSnapshot? other) -> bool
 Frontier.Platform.Guardrails.BudgetSnapshot.InvocationCount.get -> int
 Frontier.Platform.Guardrails.BudgetSnapshot.InvocationCount.init -> void
@@ -70,28 +74,32 @@ Frontier.Platform.Guardrails.BudgetSnapshot.TokensUsed.get -> long
 Frontier.Platform.Guardrails.BudgetSnapshot.TokensUsed.init -> void
 Frontier.Platform.Guardrails.BudgetSpec
 Frontier.Platform.Guardrails.BudgetSpec.<Clone>$() -> Frontier.Platform.Guardrails.BudgetSpec!
-Frontier.Platform.Guardrails.BudgetSpec.BudgetSpec(long? MaxTokens, decimal? MaxCostGbp, int? MaxAgentInvocations) -> void
-Frontier.Platform.Guardrails.BudgetSpec.Deconstruct(out long? MaxTokens, out decimal? MaxCostGbp, out int? MaxAgentInvocations) -> void
+Frontier.Platform.Guardrails.BudgetSpec.BudgetSpec(long? MaxTokens, decimal? MaxCost, string? Currency, int? MaxAgentInvocations) -> void
+Frontier.Platform.Guardrails.BudgetSpec.Currency.get -> string?
+Frontier.Platform.Guardrails.BudgetSpec.Currency.init -> void
+Frontier.Platform.Guardrails.BudgetSpec.Deconstruct(out long? MaxTokens, out decimal? MaxCost, out string? Currency, out int? MaxAgentInvocations) -> void
 Frontier.Platform.Guardrails.BudgetSpec.Equals(Frontier.Platform.Guardrails.BudgetSpec? other) -> bool
 Frontier.Platform.Guardrails.BudgetSpec.MaxAgentInvocations.get -> int?
 Frontier.Platform.Guardrails.BudgetSpec.MaxAgentInvocations.init -> void
-Frontier.Platform.Guardrails.BudgetSpec.MaxCostGbp.get -> decimal?
-Frontier.Platform.Guardrails.BudgetSpec.MaxCostGbp.init -> void
+Frontier.Platform.Guardrails.BudgetSpec.MaxCost.get -> decimal?
+Frontier.Platform.Guardrails.BudgetSpec.MaxCost.init -> void
 Frontier.Platform.Guardrails.BudgetSpec.MaxTokens.get -> long?
 Frontier.Platform.Guardrails.BudgetSpec.MaxTokens.init -> void
 Frontier.Platform.Guardrails.ExecutionLedgerSnapshot
 Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.<Clone>$() -> Frontier.Platform.Guardrails.ExecutionLedgerSnapshot!
-Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.Deconstruct(out string! ExecutionId, out long TotalTokens, out decimal TotalCostGbp, out int InvocationCount, out System.DateTime LastUpdatedUtc) -> void
+Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.Currency.get -> string!
+Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.Currency.init -> void
+Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.Deconstruct(out string! ExecutionId, out long TotalTokens, out decimal TotalCost, out string! Currency, out int InvocationCount, out System.DateTime LastUpdatedUtc) -> void
 Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.Equals(Frontier.Platform.Guardrails.ExecutionLedgerSnapshot? other) -> bool
 Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.ExecutionId.get -> string!
 Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.ExecutionId.init -> void
-Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.ExecutionLedgerSnapshot(string! ExecutionId, long TotalTokens, decimal TotalCostGbp, int InvocationCount, System.DateTime LastUpdatedUtc) -> void
+Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.ExecutionLedgerSnapshot(string! ExecutionId, long TotalTokens, decimal TotalCost, string! Currency, int InvocationCount, System.DateTime LastUpdatedUtc) -> void
 Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.InvocationCount.get -> int
 Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.InvocationCount.init -> void
 Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.LastUpdatedUtc.get -> System.DateTime
 Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.LastUpdatedUtc.init -> void
-Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.TotalCostGbp.get -> decimal
-Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.TotalCostGbp.init -> void
+Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.TotalCost.get -> decimal
+Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.TotalCost.init -> void
 Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.TotalTokens.get -> long
 Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.TotalTokens.init -> void
 Frontier.Platform.Guardrails.FailureMode
@@ -133,15 +141,17 @@ Frontier.Platform.Guardrails.InvocationCostEstimate.AgentRole.get -> string!
 Frontier.Platform.Guardrails.InvocationCostEstimate.AgentRole.init -> void
 Frontier.Platform.Guardrails.InvocationCostEstimate.CorrelationId.get -> string!
 Frontier.Platform.Guardrails.InvocationCostEstimate.CorrelationId.init -> void
-Frontier.Platform.Guardrails.InvocationCostEstimate.Deconstruct(out string! CorrelationId, out string! ExecutionId, out string! EngagementId, out string! NodeId, out string! AgentRole, out string! ResolvedModel, out long PromptTokens, out long MaxOutputTokens, out decimal EstimatedCostGbp) -> void
+Frontier.Platform.Guardrails.InvocationCostEstimate.Currency.get -> string!
+Frontier.Platform.Guardrails.InvocationCostEstimate.Currency.init -> void
+Frontier.Platform.Guardrails.InvocationCostEstimate.Deconstruct(out string! CorrelationId, out string! ExecutionId, out string! EngagementId, out string! NodeId, out string! AgentRole, out string! ResolvedModel, out long PromptTokens, out long MaxOutputTokens, out decimal EstimatedCost, out string! Currency) -> void
 Frontier.Platform.Guardrails.InvocationCostEstimate.EngagementId.get -> string!
 Frontier.Platform.Guardrails.InvocationCostEstimate.EngagementId.init -> void
 Frontier.Platform.Guardrails.InvocationCostEstimate.Equals(Frontier.Platform.Guardrails.InvocationCostEstimate? other) -> bool
-Frontier.Platform.Guardrails.InvocationCostEstimate.EstimatedCostGbp.get -> decimal
-Frontier.Platform.Guardrails.InvocationCostEstimate.EstimatedCostGbp.init -> void
+Frontier.Platform.Guardrails.InvocationCostEstimate.EstimatedCost.get -> decimal
+Frontier.Platform.Guardrails.InvocationCostEstimate.EstimatedCost.init -> void
 Frontier.Platform.Guardrails.InvocationCostEstimate.ExecutionId.get -> string!
 Frontier.Platform.Guardrails.InvocationCostEstimate.ExecutionId.init -> void
-Frontier.Platform.Guardrails.InvocationCostEstimate.InvocationCostEstimate(string! CorrelationId, string! ExecutionId, string! EngagementId, string! NodeId, string! AgentRole, string! ResolvedModel, long PromptTokens, long MaxOutputTokens, decimal EstimatedCostGbp) -> void
+Frontier.Platform.Guardrails.InvocationCostEstimate.InvocationCostEstimate(string! CorrelationId, string! ExecutionId, string! EngagementId, string! NodeId, string! AgentRole, string! ResolvedModel, long PromptTokens, long MaxOutputTokens, decimal EstimatedCost, string! Currency) -> void
 Frontier.Platform.Guardrails.InvocationCostEstimate.MaxOutputTokens.get -> long
 Frontier.Platform.Guardrails.InvocationCostEstimate.MaxOutputTokens.init -> void
 Frontier.Platform.Guardrails.InvocationCostEstimate.NodeId.get -> string!
@@ -157,9 +167,11 @@ Frontier.Platform.Guardrails.UsageRecord.AgentRole.get -> string!
 Frontier.Platform.Guardrails.UsageRecord.AgentRole.init -> void
 Frontier.Platform.Guardrails.UsageRecord.CorrelationId.get -> string!
 Frontier.Platform.Guardrails.UsageRecord.CorrelationId.init -> void
-Frontier.Platform.Guardrails.UsageRecord.CostGbp.get -> decimal
-Frontier.Platform.Guardrails.UsageRecord.CostGbp.init -> void
-Frontier.Platform.Guardrails.UsageRecord.Deconstruct(out string! CorrelationId, out string! ExecutionId, out string! EngagementId, out string! NodeId, out string! AgentRole, out string! ResolvedModel, out long InputTokens, out long OutputTokens, out decimal CostGbp) -> void
+Frontier.Platform.Guardrails.UsageRecord.Cost.get -> decimal
+Frontier.Platform.Guardrails.UsageRecord.Cost.init -> void
+Frontier.Platform.Guardrails.UsageRecord.Currency.get -> string!
+Frontier.Platform.Guardrails.UsageRecord.Currency.init -> void
+Frontier.Platform.Guardrails.UsageRecord.Deconstruct(out string! CorrelationId, out string! ExecutionId, out string! EngagementId, out string! NodeId, out string! AgentRole, out string! ResolvedModel, out long InputTokens, out long OutputTokens, out decimal Cost, out string! Currency) -> void
 Frontier.Platform.Guardrails.UsageRecord.EngagementId.get -> string!
 Frontier.Platform.Guardrails.UsageRecord.EngagementId.init -> void
 Frontier.Platform.Guardrails.UsageRecord.Equals(Frontier.Platform.Guardrails.UsageRecord? other) -> bool
@@ -173,7 +185,7 @@ Frontier.Platform.Guardrails.UsageRecord.OutputTokens.get -> long
 Frontier.Platform.Guardrails.UsageRecord.OutputTokens.init -> void
 Frontier.Platform.Guardrails.UsageRecord.ResolvedModel.get -> string!
 Frontier.Platform.Guardrails.UsageRecord.ResolvedModel.init -> void
-Frontier.Platform.Guardrails.UsageRecord.UsageRecord(string! CorrelationId, string! ExecutionId, string! EngagementId, string! NodeId, string! AgentRole, string! ResolvedModel, long InputTokens, long OutputTokens, decimal CostGbp) -> void
+Frontier.Platform.Guardrails.UsageRecord.UsageRecord(string! CorrelationId, string! ExecutionId, string! EngagementId, string! NodeId, string! AgentRole, string! ResolvedModel, long InputTokens, long OutputTokens, decimal Cost, string! Currency) -> void
 override Frontier.Platform.Guardrails.AdmissionDecision.Equals(object? obj) -> bool
 override Frontier.Platform.Guardrails.AdmissionDecision.GetHashCode() -> int
 override Frontier.Platform.Guardrails.AdmissionDecision.ToString() -> string!

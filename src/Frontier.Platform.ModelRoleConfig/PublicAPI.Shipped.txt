@@ -1,4 +1,13 @@
 #nullable enable
+Frontier.Platform.ModelRoleConfig.AgentEntry
+Frontier.Platform.ModelRoleConfig.AgentEntry.AgentEntry() -> void
+Frontier.Platform.ModelRoleConfig.AgentEntry.CostPerInvocation.get -> decimal
+Frontier.Platform.ModelRoleConfig.AgentEntry.CostPerInvocation.init -> void
+Frontier.Platform.ModelRoleConfig.AgentEntry.Equals(Frontier.Platform.ModelRoleConfig.AgentEntry? other) -> bool
+Frontier.Platform.ModelRoleConfig.AgentEntry.ResourceName.get -> string!
+Frontier.Platform.ModelRoleConfig.AgentEntry.ResourceName.init -> void
+Frontier.Platform.ModelRoleConfig.AgentEntry.ResourceVersion.get -> string!
+Frontier.Platform.ModelRoleConfig.AgentEntry.ResourceVersion.init -> void
 Frontier.Platform.ModelRoleConfig.CapabilityRequirements
 Frontier.Platform.ModelRoleConfig.CapabilityRequirements.<Clone>$() -> Frontier.Platform.ModelRoleConfig.CapabilityRequirements!
 Frontier.Platform.ModelRoleConfig.CapabilityRequirements.CapabilityRequirements() -> void
@@ -11,6 +20,13 @@ Frontier.Platform.ModelRoleConfig.CapabilityRequirements.NeedsStructuredOutput.g
 Frontier.Platform.ModelRoleConfig.CapabilityRequirements.NeedsStructuredOutput.init -> void
 Frontier.Platform.ModelRoleConfig.CapabilityRequirements.NeedsToolUse.get -> bool
 Frontier.Platform.ModelRoleConfig.CapabilityRequirements.NeedsToolUse.init -> void
+Frontier.Platform.ModelRoleConfig.ChainEntry
+Frontier.Platform.ModelRoleConfig.ChainEntry.ChainEntry() -> void
+Frontier.Platform.ModelRoleConfig.ChainEntry.ChainEntry(Frontier.Platform.ModelRoleConfig.ChainEntry! original) -> void
+Frontier.Platform.ModelRoleConfig.ChainEntry.Currency.get -> string!
+Frontier.Platform.ModelRoleConfig.ChainEntry.Currency.init -> void
+Frontier.Platform.ModelRoleConfig.ChainEntry.Provider.get -> string!
+Frontier.Platform.ModelRoleConfig.ChainEntry.Provider.init -> void
 Frontier.Platform.ModelRoleConfig.CosmosOptions
 Frontier.Platform.ModelRoleConfig.CosmosOptions.CosmosOptions() -> void
 Frontier.Platform.ModelRoleConfig.CosmosOptions.Database.get -> string!
@@ -19,12 +35,29 @@ Frontier.Platform.ModelRoleConfig.CosmosOptions.Endpoint.get -> string!
 Frontier.Platform.ModelRoleConfig.CosmosOptions.Endpoint.init -> void
 Frontier.Platform.ModelRoleConfig.CosmosOptions.Key.get -> string!
 Frontier.Platform.ModelRoleConfig.CosmosOptions.Key.init -> void
+Frontier.Platform.ModelRoleConfig.DistinctApproverRequiredException
+Frontier.Platform.ModelRoleConfig.DistinctApproverRequiredException.DistinctApproverRequiredException(string! contractType, System.Collections.Generic.IReadOnlyList<string!>! violations) -> void
 Frontier.Platform.ModelRoleConfig.ICircuitBreakerQuery
 Frontier.Platform.ModelRoleConfig.ICircuitBreakerQuery.IsOpen(string! provider, string! modelId) -> bool
+Frontier.Platform.ModelRoleConfig.IMappingDecisionRecorder
+Frontier.Platform.ModelRoleConfig.IMappingDecisionRecorder.RecordAsync(Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision! decision, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<string!>!
+Frontier.Platform.ModelRoleConfig.IMappingDecisionRecorder.RecordCompensationAsync(Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision! decision, string! recordId, string! failureReason, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 Frontier.Platform.ModelRoleConfig.IMappingGovernanceService
 Frontier.Platform.ModelRoleConfig.IMappingGovernanceService.ApproveAsync(string! proposalId, string! approverId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Frontier.Platform.ModelRoleConfig.IMappingGovernanceService.ApproveAsync(string! roleId, string! proposalId, string! approverId, string! reason, string? expectedConcurrencyToken, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.MappingChangeProposal!>!
+Frontier.Platform.ModelRoleConfig.IMappingGovernanceService.GetProposalAsync(string! roleId, string! proposalId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.MappingChangeProposal?>!
+Frontier.Platform.ModelRoleConfig.IMappingGovernanceService.ListProposalsAsync(Frontier.Platform.ModelRoleConfig.MappingProposalQuery! query, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.MappingProposalPage!>!
+Frontier.Platform.ModelRoleConfig.IMappingGovernanceService.PromoteAsync(string! roleId, string! proposalId, string! actor, string! reason, string? expectedConcurrencyToken, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.MappingChangeProposal!>!
+Frontier.Platform.ModelRoleConfig.IMappingGovernanceService.ProposeAsync(Frontier.Platform.ModelRoleConfig.MappingChange! change, string! proposedBy, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.MappingChangeProposal!>!
 Frontier.Platform.ModelRoleConfig.IMappingGovernanceService.ProposeChangeAsync(Frontier.Platform.ModelRoleConfig.MappingChange! change, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.MappingChangeProposal!>!
+Frontier.Platform.ModelRoleConfig.IMappingGovernanceService.RejectAsync(string! roleId, string! proposalId, string! approverId, string! reason, string? expectedConcurrencyToken, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.MappingChangeProposal!>!
 Frontier.Platform.ModelRoleConfig.IMappingGovernanceService.RollbackAsync(string! roleId, int toVersion, string! reason, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Frontier.Platform.ModelRoleConfig.IMappingGovernanceService.RollbackToVersionAsync(string! roleId, int toVersion, string! actor, string! reason, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.MappingRollbackResult!>!
+Frontier.Platform.ModelRoleConfig.IMappingGovernanceService.WithdrawAsync(string! roleId, string! proposalId, string! actor, string! reason, string? expectedConcurrencyToken, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.MappingChangeProposal!>!
+Frontier.Platform.ModelRoleConfig.IMappingPinner
+Frontier.Platform.ModelRoleConfig.IMappingPinner.PinAsync(string! engagementId, System.Collections.Generic.IEnumerable<string!>! roleIds, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Frontier.Platform.ModelRoleConfig.ModelRolePin!>!>!
+Frontier.Platform.ModelRoleConfig.IMappingVersionHistory
+Frontier.Platform.ModelRoleConfig.IMappingVersionHistory.GetVersionHistoryAsync(string! roleId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Frontier.Platform.ModelRoleConfig.MappingVersionSummary!>!>!
 Frontier.Platform.ModelRoleConfig.IModelResolver
 Frontier.Platform.ModelRoleConfig.IModelResolver.ResolveAsync(Frontier.Platform.ModelRoleConfig.ResolutionRequest! request, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.ResolvedModel!>!
 Frontier.Platform.ModelRoleConfig.IReferencedRolesSource
@@ -33,6 +66,10 @@ Frontier.Platform.ModelRoleConfig.IRoleRegistry
 Frontier.Platform.ModelRoleConfig.IRoleRegistry.GetActiveMappingAsync(string! roleId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.RoleMapping!>!
 Frontier.Platform.ModelRoleConfig.IRoleRegistry.GetCatalogueAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.RoleCatalogue!>!
 Frontier.Platform.ModelRoleConfig.IRoleRegistry.GetMappingVersionAsync(string! roleId, int version, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.RoleMapping!>!
+Frontier.Platform.ModelRoleConfig.IllegalMappingTransitionException
+Frontier.Platform.ModelRoleConfig.IllegalMappingTransitionException.IllegalMappingTransitionException(string! contractType, System.Collections.Generic.IReadOnlyList<string!>! violations) -> void
+Frontier.Platform.ModelRoleConfig.InvalidMappingChangeException
+Frontier.Platform.ModelRoleConfig.InvalidMappingChangeException.InvalidMappingChangeException(string! contractType, System.Collections.Generic.IReadOnlyList<string!>! violations) -> void
 Frontier.Platform.ModelRoleConfig.MappingChange
 Frontier.Platform.ModelRoleConfig.MappingChange.<Clone>$() -> Frontier.Platform.ModelRoleConfig.MappingChange!
 Frontier.Platform.ModelRoleConfig.MappingChange.Equals(Frontier.Platform.ModelRoleConfig.MappingChange? other) -> bool
@@ -45,36 +82,182 @@ Frontier.Platform.ModelRoleConfig.MappingChange.RoleId.get -> string!
 Frontier.Platform.ModelRoleConfig.MappingChange.RoleId.init -> void
 Frontier.Platform.ModelRoleConfig.MappingChangeProposal
 Frontier.Platform.ModelRoleConfig.MappingChangeProposal.<Clone>$() -> Frontier.Platform.ModelRoleConfig.MappingChangeProposal!
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.ApprovedBy.get -> string?
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.ApprovedBy.init -> void
 Frontier.Platform.ModelRoleConfig.MappingChangeProposal.Change.get -> Frontier.Platform.ModelRoleConfig.MappingChange!
 Frontier.Platform.ModelRoleConfig.MappingChangeProposal.Change.init -> void
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.ConcurrencyToken.get -> string?
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.ConcurrencyToken.init -> void
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.DecidedAtUtc.get -> System.DateTime?
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.DecidedAtUtc.init -> void
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.DecidedBy.get -> string?
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.DecidedBy.init -> void
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.DecisionReason.get -> string?
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.DecisionReason.init -> void
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.EffectiveFromUtc.get -> System.DateTime?
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.EffectiveFromUtc.init -> void
 Frontier.Platform.ModelRoleConfig.MappingChangeProposal.Equals(Frontier.Platform.ModelRoleConfig.MappingChangeProposal? other) -> bool
 Frontier.Platform.ModelRoleConfig.MappingChangeProposal.MappingChangeProposal() -> void
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.MappingVersion.get -> int?
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.MappingVersion.init -> void
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.PredecessorFleetVersion.get -> int?
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.PredecessorFleetVersion.init -> void
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.PromotedVersion.get -> int?
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.PromotedVersion.init -> void
 Frontier.Platform.ModelRoleConfig.MappingChangeProposal.ProposalId.get -> string!
 Frontier.Platform.ModelRoleConfig.MappingChangeProposal.ProposalId.init -> void
 Frontier.Platform.ModelRoleConfig.MappingChangeProposal.ProposedAtUtc.get -> System.DateTime
 Frontier.Platform.ModelRoleConfig.MappingChangeProposal.ProposedAtUtc.init -> void
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.ProposedBy.get -> string!
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.ProposedBy.init -> void
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.RoleId.get -> string!
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.RoleId.init -> void
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.RolledBackToVersion.get -> int?
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.RolledBackToVersion.init -> void
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.SchemaVersion.get -> string!
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.SchemaVersion.init -> void
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.State.get -> Frontier.Platform.ModelRoleConfig.MappingProposalState!
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.State.init -> void
+Frontier.Platform.ModelRoleConfig.MappingChangeProposal.Validate() -> void
+Frontier.Platform.ModelRoleConfig.MappingConcurrencyConflictException
+Frontier.Platform.ModelRoleConfig.MappingConcurrencyConflictException.MappingConcurrencyConflictException(string! contractType, System.Collections.Generic.IReadOnlyList<string!>! violations) -> void
+Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision
+Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision.<Clone>$() -> Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision!
+Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision.Actor.get -> string!
+Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision.Actor.init -> void
+Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision.Equals(Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision? other) -> bool
+Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision.EventType.get -> string!
+Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision.EventType.init -> void
+Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision.FromVersion.get -> int?
+Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision.FromVersion.init -> void
+Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision.MappingGovernanceDecision() -> void
+Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision.OccurredAtUtc.get -> System.DateTime
+Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision.OccurredAtUtc.init -> void
+Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision.ProposalId.get -> string?
+Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision.ProposalId.init -> void
+Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision.Reason.get -> string!
+Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision.Reason.init -> void
+Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision.Ring.get -> Frontier.Platform.ModelRoleConfig.RolloutRing?
+Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision.Ring.init -> void
+Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision.RoleId.get -> string!
+Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision.RoleId.init -> void
+Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision.State.get -> Frontier.Platform.ModelRoleConfig.MappingProposalState?
+Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision.State.init -> void
+Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision.ToVersion.get -> int?
+Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision.ToVersion.init -> void
+Frontier.Platform.ModelRoleConfig.MappingGovernanceEventTypes
+Frontier.Platform.ModelRoleConfig.MappingGovernanceException
+Frontier.Platform.ModelRoleConfig.MappingGovernanceException.MappingGovernanceException() -> void
+Frontier.Platform.ModelRoleConfig.MappingGovernanceException.MappingGovernanceException(string! message) -> void
+Frontier.Platform.ModelRoleConfig.MappingGovernanceException.MappingGovernanceException(string! message, System.Exception! innerException) -> void
+Frontier.Platform.ModelRoleConfig.MappingGovernanceOptions
+Frontier.Platform.ModelRoleConfig.MappingGovernanceOptions.DecisionBaseDelayMs.get -> int
+Frontier.Platform.ModelRoleConfig.MappingGovernanceOptions.DecisionBaseDelayMs.init -> void
+Frontier.Platform.ModelRoleConfig.MappingGovernanceOptions.DecisionMaxAttempts.get -> int
+Frontier.Platform.ModelRoleConfig.MappingGovernanceOptions.DecisionMaxAttempts.init -> void
+Frontier.Platform.ModelRoleConfig.MappingGovernanceOptions.DecisionMaxDelayMs.get -> int
+Frontier.Platform.ModelRoleConfig.MappingGovernanceOptions.DecisionMaxDelayMs.init -> void
+Frontier.Platform.ModelRoleConfig.MappingGovernanceOptions.MappingGovernanceOptions() -> void
+Frontier.Platform.ModelRoleConfig.MappingGovernanceRefusalException
+Frontier.Platform.ModelRoleConfig.MappingGovernanceRefusalException.MappingGovernanceRefusalException(string! contractType, System.Collections.Generic.IReadOnlyList<string!>! violations) -> void
+Frontier.Platform.ModelRoleConfig.MappingProposalAlreadyPendingException
+Frontier.Platform.ModelRoleConfig.MappingProposalAlreadyPendingException.MappingProposalAlreadyPendingException(string! contractType, System.Collections.Generic.IReadOnlyList<string!>! violations) -> void
+Frontier.Platform.ModelRoleConfig.MappingProposalPage
+Frontier.Platform.ModelRoleConfig.MappingProposalPage.<Clone>$() -> Frontier.Platform.ModelRoleConfig.MappingProposalPage!
+Frontier.Platform.ModelRoleConfig.MappingProposalPage.ContinuationToken.get -> string?
+Frontier.Platform.ModelRoleConfig.MappingProposalPage.ContinuationToken.init -> void
+Frontier.Platform.ModelRoleConfig.MappingProposalPage.Equals(Frontier.Platform.ModelRoleConfig.MappingProposalPage? other) -> bool
+Frontier.Platform.ModelRoleConfig.MappingProposalPage.MappingProposalPage() -> void
+Frontier.Platform.ModelRoleConfig.MappingProposalPage.Proposals.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.ModelRoleConfig.MappingChangeProposal!>!
+Frontier.Platform.ModelRoleConfig.MappingProposalPage.Proposals.init -> void
+Frontier.Platform.ModelRoleConfig.MappingProposalQuery
+Frontier.Platform.ModelRoleConfig.MappingProposalQuery.<Clone>$() -> Frontier.Platform.ModelRoleConfig.MappingProposalQuery!
+Frontier.Platform.ModelRoleConfig.MappingProposalQuery.ContinuationToken.get -> string?
+Frontier.Platform.ModelRoleConfig.MappingProposalQuery.ContinuationToken.init -> void
+Frontier.Platform.ModelRoleConfig.MappingProposalQuery.Equals(Frontier.Platform.ModelRoleConfig.MappingProposalQuery? other) -> bool
+Frontier.Platform.ModelRoleConfig.MappingProposalQuery.MappingProposalQuery() -> void
+Frontier.Platform.ModelRoleConfig.MappingProposalQuery.PageSize.get -> int
+Frontier.Platform.ModelRoleConfig.MappingProposalQuery.PageSize.init -> void
+Frontier.Platform.ModelRoleConfig.MappingProposalQuery.RoleId.get -> string?
+Frontier.Platform.ModelRoleConfig.MappingProposalQuery.RoleId.init -> void
+Frontier.Platform.ModelRoleConfig.MappingProposalQuery.States.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.ModelRoleConfig.MappingProposalState!>?
+Frontier.Platform.ModelRoleConfig.MappingProposalQuery.States.init -> void
+Frontier.Platform.ModelRoleConfig.MappingProposalState
+Frontier.Platform.ModelRoleConfig.MappingProposalState.CanTransitionTo(Frontier.Platform.ModelRoleConfig.MappingProposalState! next) -> bool
+Frontier.Platform.ModelRoleConfig.MappingProposalState.IsAwaitingDecision.get -> bool
+Frontier.Platform.ModelRoleConfig.MappingProposalState.IsTerminal.get -> bool
+Frontier.Platform.ModelRoleConfig.MappingProposalState.ReleasesRoleProposalSlot.get -> bool
+Frontier.Platform.ModelRoleConfig.MappingRollbackResult
+Frontier.Platform.ModelRoleConfig.MappingRollbackResult.<Clone>$() -> Frontier.Platform.ModelRoleConfig.MappingRollbackResult!
+Frontier.Platform.ModelRoleConfig.MappingRollbackResult.CurrentVersion.get -> int
+Frontier.Platform.ModelRoleConfig.MappingRollbackResult.CurrentVersion.init -> void
+Frontier.Platform.ModelRoleConfig.MappingRollbackResult.EffectiveAtUtc.get -> System.DateTime
+Frontier.Platform.ModelRoleConfig.MappingRollbackResult.EffectiveAtUtc.init -> void
+Frontier.Platform.ModelRoleConfig.MappingRollbackResult.Equals(Frontier.Platform.ModelRoleConfig.MappingRollbackResult? other) -> bool
+Frontier.Platform.ModelRoleConfig.MappingRollbackResult.MappingRollbackResult() -> void
+Frontier.Platform.ModelRoleConfig.MappingRollbackResult.PreviousVersion.get -> int
+Frontier.Platform.ModelRoleConfig.MappingRollbackResult.PreviousVersion.init -> void
+Frontier.Platform.ModelRoleConfig.MappingRollbackResult.Ring.get -> Frontier.Platform.ModelRoleConfig.RolloutRing!
+Frontier.Platform.ModelRoleConfig.MappingRollbackResult.Ring.init -> void
+Frontier.Platform.ModelRoleConfig.MappingRollbackResult.RoleId.get -> string!
+Frontier.Platform.ModelRoleConfig.MappingRollbackResult.RoleId.init -> void
+Frontier.Platform.ModelRoleConfig.MappingVersionNotRollbackEligibleException
+Frontier.Platform.ModelRoleConfig.MappingVersionNotRollbackEligibleException.MappingVersionNotRollbackEligibleException(string! contractType, System.Collections.Generic.IReadOnlyList<string!>! violations) -> void
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.<Clone>$() -> Frontier.Platform.ModelRoleConfig.MappingVersionSummary!
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.ApprovedBy.get -> string!
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.ApprovedBy.init -> void
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.CanaryPercent.get -> int
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.CanaryPercent.init -> void
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.Chain.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.ModelRoleConfig.ChainEntry!>!
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.Chain.init -> void
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.ChangeReason.get -> string!
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.ChangeReason.init -> void
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.EffectiveFromUtc.get -> System.DateTime
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.EffectiveFromUtc.init -> void
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.Equals(Frontier.Platform.ModelRoleConfig.MappingVersionSummary? other) -> bool
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.IsCurrent.get -> bool
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.IsCurrent.init -> void
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.MappingVersion.get -> int
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.MappingVersion.init -> void
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.MappingVersionSummary() -> void
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.Ring.get -> Frontier.Platform.ModelRoleConfig.RolloutRing!
+Frontier.Platform.ModelRoleConfig.MappingVersionSummary.Ring.init -> void
 Frontier.Platform.ModelRoleConfig.ModelEntry
-Frontier.Platform.ModelRoleConfig.ModelEntry.<Clone>$() -> Frontier.Platform.ModelRoleConfig.ModelEntry!
-Frontier.Platform.ModelRoleConfig.ModelEntry.CacheReadCostPer1kGbp.get -> decimal
-Frontier.Platform.ModelRoleConfig.ModelEntry.CacheReadCostPer1kGbp.init -> void
+Frontier.Platform.ModelRoleConfig.ModelEntry.CacheReadCostPer1k.get -> decimal
+Frontier.Platform.ModelRoleConfig.ModelEntry.CacheReadCostPer1k.init -> void
 Frontier.Platform.ModelRoleConfig.ModelEntry.CachingStrategy.get -> string?
 Frontier.Platform.ModelRoleConfig.ModelEntry.CachingStrategy.init -> void
 Frontier.Platform.ModelRoleConfig.ModelEntry.ContextWindow.get -> int
 Frontier.Platform.ModelRoleConfig.ModelEntry.ContextWindow.init -> void
+Frontier.Platform.ModelRoleConfig.ModelEntry.Deployment.get -> string?
+Frontier.Platform.ModelRoleConfig.ModelEntry.Deployment.init -> void
+Frontier.Platform.ModelRoleConfig.ModelEntry.Endpoint.get -> System.Uri?
+Frontier.Platform.ModelRoleConfig.ModelEntry.Endpoint.init -> void
 Frontier.Platform.ModelRoleConfig.ModelEntry.Equals(Frontier.Platform.ModelRoleConfig.ModelEntry? other) -> bool
-Frontier.Platform.ModelRoleConfig.ModelEntry.InputCostPer1kGbp.get -> decimal
-Frontier.Platform.ModelRoleConfig.ModelEntry.InputCostPer1kGbp.init -> void
+Frontier.Platform.ModelRoleConfig.ModelEntry.InputCostPer1k.get -> decimal
+Frontier.Platform.ModelRoleConfig.ModelEntry.InputCostPer1k.init -> void
 Frontier.Platform.ModelRoleConfig.ModelEntry.MaxOutputTokens.get -> int
 Frontier.Platform.ModelRoleConfig.ModelEntry.MaxOutputTokens.init -> void
 Frontier.Platform.ModelRoleConfig.ModelEntry.ModelEntry() -> void
 Frontier.Platform.ModelRoleConfig.ModelEntry.ModelId.get -> string!
 Frontier.Platform.ModelRoleConfig.ModelEntry.ModelId.init -> void
-Frontier.Platform.ModelRoleConfig.ModelEntry.OutputCostPer1kGbp.get -> decimal
-Frontier.Platform.ModelRoleConfig.ModelEntry.OutputCostPer1kGbp.init -> void
-Frontier.Platform.ModelRoleConfig.ModelEntry.Provider.get -> string!
-Frontier.Platform.ModelRoleConfig.ModelEntry.Provider.init -> void
+Frontier.Platform.ModelRoleConfig.ModelEntry.OutputCostPer1k.get -> decimal
+Frontier.Platform.ModelRoleConfig.ModelEntry.OutputCostPer1k.init -> void
 Frontier.Platform.ModelRoleConfig.ModelRoleConfigServiceCollectionExtensions
+Frontier.Platform.ModelRoleConfig.ModelRolePin
+Frontier.Platform.ModelRoleConfig.ModelRolePin.<Clone>$() -> Frontier.Platform.ModelRoleConfig.ModelRolePin!
+Frontier.Platform.ModelRoleConfig.ModelRolePin.Equals(Frontier.Platform.ModelRoleConfig.ModelRolePin? other) -> bool
+Frontier.Platform.ModelRoleConfig.ModelRolePin.MappingVersion.get -> int
+Frontier.Platform.ModelRoleConfig.ModelRolePin.MappingVersion.init -> void
+Frontier.Platform.ModelRoleConfig.ModelRolePin.ModelRolePin() -> void
+Frontier.Platform.ModelRoleConfig.ModelRolePin.Ring.get -> Frontier.Platform.ModelRoleConfig.RolloutRing!
+Frontier.Platform.ModelRoleConfig.ModelRolePin.Ring.init -> void
+Frontier.Platform.ModelRoleConfig.ModelRolePin.RoleId.get -> string!
+Frontier.Platform.ModelRoleConfig.ModelRolePin.RoleId.init -> void
 Frontier.Platform.ModelRoleConfig.Phase1RoleCatalogue
+Frontier.Platform.ModelRoleConfig.ProposerOnlyWithdrawalException
+Frontier.Platform.ModelRoleConfig.ProposerOnlyWithdrawalException.ProposerOnlyWithdrawalException(string! contractType, System.Collections.Generic.IReadOnlyList<string!>! violations) -> void
 Frontier.Platform.ModelRoleConfig.ResolutionRequest
 Frontier.Platform.ModelRoleConfig.ResolutionRequest.<Clone>$() -> Frontier.Platform.ModelRoleConfig.ResolutionRequest!
 Frontier.Platform.ModelRoleConfig.ResolutionRequest.EngagementId.get -> string!
@@ -82,6 +265,8 @@ Frontier.Platform.ModelRoleConfig.ResolutionRequest.EngagementId.init -> void
 Frontier.Platform.ModelRoleConfig.ResolutionRequest.Equals(Frontier.Platform.ModelRoleConfig.ResolutionRequest? other) -> bool
 Frontier.Platform.ModelRoleConfig.ResolutionRequest.MappingVersion.get -> int?
 Frontier.Platform.ModelRoleConfig.ResolutionRequest.MappingVersion.init -> void
+Frontier.Platform.ModelRoleConfig.ResolutionRequest.Pin.get -> Frontier.Platform.ModelRoleConfig.ModelRolePin?
+Frontier.Platform.ModelRoleConfig.ResolutionRequest.Pin.init -> void
 Frontier.Platform.ModelRoleConfig.ResolutionRequest.ResolutionRequest() -> void
 Frontier.Platform.ModelRoleConfig.ResolutionRequest.RoleId.get -> string!
 Frontier.Platform.ModelRoleConfig.ResolutionRequest.RoleId.init -> void
@@ -89,7 +274,7 @@ Frontier.Platform.ModelRoleConfig.ResolvedModel
 Frontier.Platform.ModelRoleConfig.ResolvedModel.<Clone>$() -> Frontier.Platform.ModelRoleConfig.ResolvedModel!
 Frontier.Platform.ModelRoleConfig.ResolvedModel.ChainPosition.get -> int
 Frontier.Platform.ModelRoleConfig.ResolvedModel.ChainPosition.init -> void
-Frontier.Platform.ModelRoleConfig.ResolvedModel.Entry.get -> Frontier.Platform.ModelRoleConfig.ModelEntry!
+Frontier.Platform.ModelRoleConfig.ResolvedModel.Entry.get -> Frontier.Platform.ModelRoleConfig.ChainEntry!
 Frontier.Platform.ModelRoleConfig.ResolvedModel.Entry.init -> void
 Frontier.Platform.ModelRoleConfig.ResolvedModel.Equals(Frontier.Platform.ModelRoleConfig.ResolvedModel? other) -> bool
 Frontier.Platform.ModelRoleConfig.ResolvedModel.MappingVersion.get -> int
@@ -127,7 +312,7 @@ Frontier.Platform.ModelRoleConfig.RoleMapping.ApprovedBy.get -> string!
 Frontier.Platform.ModelRoleConfig.RoleMapping.ApprovedBy.init -> void
 Frontier.Platform.ModelRoleConfig.RoleMapping.CanaryPercent.get -> int
 Frontier.Platform.ModelRoleConfig.RoleMapping.CanaryPercent.init -> void
-Frontier.Platform.ModelRoleConfig.RoleMapping.Chain.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.ModelRoleConfig.ModelEntry!>!
+Frontier.Platform.ModelRoleConfig.RoleMapping.Chain.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.ModelRoleConfig.ChainEntry!>!
 Frontier.Platform.ModelRoleConfig.RoleMapping.Chain.init -> void
 Frontier.Platform.ModelRoleConfig.RoleMapping.ChangeReason.get -> string!
 Frontier.Platform.ModelRoleConfig.RoleMapping.ChangeReason.init -> void
@@ -147,18 +332,61 @@ Frontier.Platform.ModelRoleConfig.RoleMapping.RoleId.init -> void
 Frontier.Platform.ModelRoleConfig.RoleMapping.RoleMapping() -> void
 Frontier.Platform.ModelRoleConfig.RolloutRing
 Frontier.Platform.ModelRoleConfig.StakesLevel
+Frontier.Platform.ModelRoleConfig.UnknownMappingProposalException
+Frontier.Platform.ModelRoleConfig.UnknownMappingProposalException.UnknownMappingProposalException(string! contractType, System.Collections.Generic.IReadOnlyList<string!>! violations) -> void
+Frontier.Platform.ModelRoleConfig.UnknownMappingVersionException
+Frontier.Platform.ModelRoleConfig.UnknownMappingVersionException.UnknownMappingVersionException(string! contractType, System.Collections.Generic.IReadOnlyList<string!>! violations) -> void
+abstract Frontier.Platform.ModelRoleConfig.ChainEntry.<Clone>$() -> Frontier.Platform.ModelRoleConfig.ChainEntry!
+abstract Frontier.Platform.ModelRoleConfig.ChainEntry.TargetId.get -> string!
+const Frontier.Platform.ModelRoleConfig.AgentEntry.A2aProvider = "a2a" -> string!
+const Frontier.Platform.ModelRoleConfig.MappingGovernanceEventTypes.Approved = "model_role_mapping_approved" -> string!
+const Frontier.Platform.ModelRoleConfig.MappingGovernanceEventTypes.Promoted = "model_role_mapping_promoted" -> string!
+const Frontier.Platform.ModelRoleConfig.MappingGovernanceEventTypes.Proposed = "model_role_mapping_proposed" -> string!
+const Frontier.Platform.ModelRoleConfig.MappingGovernanceEventTypes.Rejected = "model_role_mapping_rejected" -> string!
+const Frontier.Platform.ModelRoleConfig.MappingGovernanceEventTypes.RolledBack = "model_role_mapping_rolled_back" -> string!
+const Frontier.Platform.ModelRoleConfig.MappingGovernanceEventTypes.Withdrawn = "model_role_mapping_withdrawn" -> string!
+const Frontier.Platform.ModelRoleConfig.MappingGovernanceOptions.SectionName = "ModelRoleGovernance" -> string!
+const Frontier.Platform.ModelRoleConfig.MappingProposalQuery.MaxPageSize = 200 -> int
+override Frontier.Platform.ModelRoleConfig.AgentEntry.<Clone>$() -> Frontier.Platform.ModelRoleConfig.AgentEntry!
+override Frontier.Platform.ModelRoleConfig.AgentEntry.Equals(object? obj) -> bool
+override Frontier.Platform.ModelRoleConfig.AgentEntry.GetHashCode() -> int
+override Frontier.Platform.ModelRoleConfig.AgentEntry.TargetId.get -> string!
+override Frontier.Platform.ModelRoleConfig.AgentEntry.ToString() -> string!
 override Frontier.Platform.ModelRoleConfig.CapabilityRequirements.Equals(object? obj) -> bool
 override Frontier.Platform.ModelRoleConfig.CapabilityRequirements.GetHashCode() -> int
 override Frontier.Platform.ModelRoleConfig.CapabilityRequirements.ToString() -> string!
+override Frontier.Platform.ModelRoleConfig.ChainEntry.Equals(object? obj) -> bool
+override Frontier.Platform.ModelRoleConfig.ChainEntry.GetHashCode() -> int
+override Frontier.Platform.ModelRoleConfig.ChainEntry.ToString() -> string!
 override Frontier.Platform.ModelRoleConfig.MappingChange.Equals(object? obj) -> bool
 override Frontier.Platform.ModelRoleConfig.MappingChange.GetHashCode() -> int
 override Frontier.Platform.ModelRoleConfig.MappingChange.ToString() -> string!
 override Frontier.Platform.ModelRoleConfig.MappingChangeProposal.Equals(object? obj) -> bool
 override Frontier.Platform.ModelRoleConfig.MappingChangeProposal.GetHashCode() -> int
 override Frontier.Platform.ModelRoleConfig.MappingChangeProposal.ToString() -> string!
+override Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision.Equals(object? obj) -> bool
+override Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision.GetHashCode() -> int
+override Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision.ToString() -> string!
+override Frontier.Platform.ModelRoleConfig.MappingProposalPage.Equals(object? obj) -> bool
+override Frontier.Platform.ModelRoleConfig.MappingProposalPage.GetHashCode() -> int
+override Frontier.Platform.ModelRoleConfig.MappingProposalPage.ToString() -> string!
+override Frontier.Platform.ModelRoleConfig.MappingProposalQuery.Equals(object? obj) -> bool
+override Frontier.Platform.ModelRoleConfig.MappingProposalQuery.GetHashCode() -> int
+override Frontier.Platform.ModelRoleConfig.MappingProposalQuery.ToString() -> string!
+override Frontier.Platform.ModelRoleConfig.MappingRollbackResult.Equals(object? obj) -> bool
+override Frontier.Platform.ModelRoleConfig.MappingRollbackResult.GetHashCode() -> int
+override Frontier.Platform.ModelRoleConfig.MappingRollbackResult.ToString() -> string!
+override Frontier.Platform.ModelRoleConfig.MappingVersionSummary.Equals(object? obj) -> bool
+override Frontier.Platform.ModelRoleConfig.MappingVersionSummary.GetHashCode() -> int
+override Frontier.Platform.ModelRoleConfig.MappingVersionSummary.ToString() -> string!
+override Frontier.Platform.ModelRoleConfig.ModelEntry.<Clone>$() -> Frontier.Platform.ModelRoleConfig.ModelEntry!
 override Frontier.Platform.ModelRoleConfig.ModelEntry.Equals(object? obj) -> bool
 override Frontier.Platform.ModelRoleConfig.ModelEntry.GetHashCode() -> int
+override Frontier.Platform.ModelRoleConfig.ModelEntry.TargetId.get -> string!
 override Frontier.Platform.ModelRoleConfig.ModelEntry.ToString() -> string!
+override Frontier.Platform.ModelRoleConfig.ModelRolePin.Equals(object? obj) -> bool
+override Frontier.Platform.ModelRoleConfig.ModelRolePin.GetHashCode() -> int
+override Frontier.Platform.ModelRoleConfig.ModelRolePin.ToString() -> string!
 override Frontier.Platform.ModelRoleConfig.ResolutionRequest.Equals(object? obj) -> bool
 override Frontier.Platform.ModelRoleConfig.ResolutionRequest.GetHashCode() -> int
 override Frontier.Platform.ModelRoleConfig.ResolutionRequest.ToString() -> string!
@@ -174,15 +402,33 @@ override Frontier.Platform.ModelRoleConfig.RoleDefinition.ToString() -> string!
 override Frontier.Platform.ModelRoleConfig.RoleMapping.Equals(object? obj) -> bool
 override Frontier.Platform.ModelRoleConfig.RoleMapping.GetHashCode() -> int
 override Frontier.Platform.ModelRoleConfig.RoleMapping.ToString() -> string!
+override sealed Frontier.Platform.ModelRoleConfig.AgentEntry.Equals(Frontier.Platform.ModelRoleConfig.ChainEntry? other) -> bool
+override sealed Frontier.Platform.ModelRoleConfig.ModelEntry.Equals(Frontier.Platform.ModelRoleConfig.ChainEntry? other) -> bool
+static Frontier.Platform.ModelRoleConfig.AgentEntry.operator !=(Frontier.Platform.ModelRoleConfig.AgentEntry? left, Frontier.Platform.ModelRoleConfig.AgentEntry? right) -> bool
+static Frontier.Platform.ModelRoleConfig.AgentEntry.operator ==(Frontier.Platform.ModelRoleConfig.AgentEntry? left, Frontier.Platform.ModelRoleConfig.AgentEntry? right) -> bool
 static Frontier.Platform.ModelRoleConfig.CapabilityRequirements.operator !=(Frontier.Platform.ModelRoleConfig.CapabilityRequirements? left, Frontier.Platform.ModelRoleConfig.CapabilityRequirements? right) -> bool
 static Frontier.Platform.ModelRoleConfig.CapabilityRequirements.operator ==(Frontier.Platform.ModelRoleConfig.CapabilityRequirements? left, Frontier.Platform.ModelRoleConfig.CapabilityRequirements? right) -> bool
+static Frontier.Platform.ModelRoleConfig.ChainEntry.operator !=(Frontier.Platform.ModelRoleConfig.ChainEntry? left, Frontier.Platform.ModelRoleConfig.ChainEntry? right) -> bool
+static Frontier.Platform.ModelRoleConfig.ChainEntry.operator ==(Frontier.Platform.ModelRoleConfig.ChainEntry? left, Frontier.Platform.ModelRoleConfig.ChainEntry? right) -> bool
 static Frontier.Platform.ModelRoleConfig.MappingChange.operator !=(Frontier.Platform.ModelRoleConfig.MappingChange? left, Frontier.Platform.ModelRoleConfig.MappingChange? right) -> bool
 static Frontier.Platform.ModelRoleConfig.MappingChange.operator ==(Frontier.Platform.ModelRoleConfig.MappingChange? left, Frontier.Platform.ModelRoleConfig.MappingChange? right) -> bool
 static Frontier.Platform.ModelRoleConfig.MappingChangeProposal.operator !=(Frontier.Platform.ModelRoleConfig.MappingChangeProposal? left, Frontier.Platform.ModelRoleConfig.MappingChangeProposal? right) -> bool
 static Frontier.Platform.ModelRoleConfig.MappingChangeProposal.operator ==(Frontier.Platform.ModelRoleConfig.MappingChangeProposal? left, Frontier.Platform.ModelRoleConfig.MappingChangeProposal? right) -> bool
+static Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision.operator !=(Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision? left, Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision? right) -> bool
+static Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision.operator ==(Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision? left, Frontier.Platform.ModelRoleConfig.MappingGovernanceDecision? right) -> bool
+static Frontier.Platform.ModelRoleConfig.MappingProposalPage.operator !=(Frontier.Platform.ModelRoleConfig.MappingProposalPage? left, Frontier.Platform.ModelRoleConfig.MappingProposalPage? right) -> bool
+static Frontier.Platform.ModelRoleConfig.MappingProposalPage.operator ==(Frontier.Platform.ModelRoleConfig.MappingProposalPage? left, Frontier.Platform.ModelRoleConfig.MappingProposalPage? right) -> bool
+static Frontier.Platform.ModelRoleConfig.MappingProposalQuery.operator !=(Frontier.Platform.ModelRoleConfig.MappingProposalQuery? left, Frontier.Platform.ModelRoleConfig.MappingProposalQuery? right) -> bool
+static Frontier.Platform.ModelRoleConfig.MappingProposalQuery.operator ==(Frontier.Platform.ModelRoleConfig.MappingProposalQuery? left, Frontier.Platform.ModelRoleConfig.MappingProposalQuery? right) -> bool
+static Frontier.Platform.ModelRoleConfig.MappingRollbackResult.operator !=(Frontier.Platform.ModelRoleConfig.MappingRollbackResult? left, Frontier.Platform.ModelRoleConfig.MappingRollbackResult? right) -> bool
+static Frontier.Platform.ModelRoleConfig.MappingRollbackResult.operator ==(Frontier.Platform.ModelRoleConfig.MappingRollbackResult? left, Frontier.Platform.ModelRoleConfig.MappingRollbackResult? right) -> bool
+static Frontier.Platform.ModelRoleConfig.MappingVersionSummary.operator !=(Frontier.Platform.ModelRoleConfig.MappingVersionSummary? left, Frontier.Platform.ModelRoleConfig.MappingVersionSummary? right) -> bool
+static Frontier.Platform.ModelRoleConfig.MappingVersionSummary.operator ==(Frontier.Platform.ModelRoleConfig.MappingVersionSummary? left, Frontier.Platform.ModelRoleConfig.MappingVersionSummary? right) -> bool
 static Frontier.Platform.ModelRoleConfig.ModelEntry.operator !=(Frontier.Platform.ModelRoleConfig.ModelEntry? left, Frontier.Platform.ModelRoleConfig.ModelEntry? right) -> bool
 static Frontier.Platform.ModelRoleConfig.ModelEntry.operator ==(Frontier.Platform.ModelRoleConfig.ModelEntry? left, Frontier.Platform.ModelRoleConfig.ModelEntry? right) -> bool
 static Frontier.Platform.ModelRoleConfig.ModelRoleConfigServiceCollectionExtensions.AddFrontierModelRoleConfig(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Microsoft.Extensions.Configuration.IConfiguration! configuration) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Frontier.Platform.ModelRoleConfig.ModelRolePin.operator !=(Frontier.Platform.ModelRoleConfig.ModelRolePin? left, Frontier.Platform.ModelRoleConfig.ModelRolePin? right) -> bool
+static Frontier.Platform.ModelRoleConfig.ModelRolePin.operator ==(Frontier.Platform.ModelRoleConfig.ModelRolePin? left, Frontier.Platform.ModelRoleConfig.ModelRolePin? right) -> bool
 static Frontier.Platform.ModelRoleConfig.ResolutionRequest.operator !=(Frontier.Platform.ModelRoleConfig.ResolutionRequest? left, Frontier.Platform.ModelRoleConfig.ResolutionRequest? right) -> bool
 static Frontier.Platform.ModelRoleConfig.ResolutionRequest.operator ==(Frontier.Platform.ModelRoleConfig.ResolutionRequest? left, Frontier.Platform.ModelRoleConfig.ResolutionRequest? right) -> bool
 static Frontier.Platform.ModelRoleConfig.ResolvedModel.operator !=(Frontier.Platform.ModelRoleConfig.ResolvedModel? left, Frontier.Platform.ModelRoleConfig.ResolvedModel? right) -> bool
@@ -193,6 +439,13 @@ static Frontier.Platform.ModelRoleConfig.RoleDefinition.operator !=(Frontier.Pla
 static Frontier.Platform.ModelRoleConfig.RoleDefinition.operator ==(Frontier.Platform.ModelRoleConfig.RoleDefinition? left, Frontier.Platform.ModelRoleConfig.RoleDefinition? right) -> bool
 static Frontier.Platform.ModelRoleConfig.RoleMapping.operator !=(Frontier.Platform.ModelRoleConfig.RoleMapping? left, Frontier.Platform.ModelRoleConfig.RoleMapping? right) -> bool
 static Frontier.Platform.ModelRoleConfig.RoleMapping.operator ==(Frontier.Platform.ModelRoleConfig.RoleMapping? left, Frontier.Platform.ModelRoleConfig.RoleMapping? right) -> bool
+static readonly Frontier.Platform.ModelRoleConfig.MappingProposalState.Approved -> Frontier.Platform.ModelRoleConfig.MappingProposalState!
+static readonly Frontier.Platform.ModelRoleConfig.MappingProposalState.PendingApproval -> Frontier.Platform.ModelRoleConfig.MappingProposalState!
+static readonly Frontier.Platform.ModelRoleConfig.MappingProposalState.Promoted -> Frontier.Platform.ModelRoleConfig.MappingProposalState!
+static readonly Frontier.Platform.ModelRoleConfig.MappingProposalState.Rejected -> Frontier.Platform.ModelRoleConfig.MappingProposalState!
+static readonly Frontier.Platform.ModelRoleConfig.MappingProposalState.RolledBack -> Frontier.Platform.ModelRoleConfig.MappingProposalState!
+static readonly Frontier.Platform.ModelRoleConfig.MappingProposalState.Shadow -> Frontier.Platform.ModelRoleConfig.MappingProposalState!
+static readonly Frontier.Platform.ModelRoleConfig.MappingProposalState.Withdrawn -> Frontier.Platform.ModelRoleConfig.MappingProposalState!
 static readonly Frontier.Platform.ModelRoleConfig.Phase1RoleCatalogue.Catalogue -> Frontier.Platform.ModelRoleConfig.RoleCatalogue!
 static readonly Frontier.Platform.ModelRoleConfig.Phase1RoleCatalogue.DeepReasoningMappingV1 -> Frontier.Platform.ModelRoleConfig.RoleMapping!
 static readonly Frontier.Platform.ModelRoleConfig.RolloutRing.Canary -> Frontier.Platform.ModelRoleConfig.RolloutRing!
@@ -201,3 +454,6 @@ static readonly Frontier.Platform.ModelRoleConfig.RolloutRing.Shadow -> Frontier
 static readonly Frontier.Platform.ModelRoleConfig.StakesLevel.Material -> Frontier.Platform.ModelRoleConfig.StakesLevel!
 static readonly Frontier.Platform.ModelRoleConfig.StakesLevel.Mechanical -> Frontier.Platform.ModelRoleConfig.StakesLevel!
 static readonly Frontier.Platform.ModelRoleConfig.StakesLevel.Standard -> Frontier.Platform.ModelRoleConfig.StakesLevel!
+virtual Frontier.Platform.ModelRoleConfig.ChainEntry.EqualityContract.get -> System.Type!
+virtual Frontier.Platform.ModelRoleConfig.ChainEntry.Equals(Frontier.Platform.ModelRoleConfig.ChainEntry? other) -> bool
+virtual Frontier.Platform.ModelRoleConfig.ChainEntry.PrintMembers(System.Text.StringBuilder! builder) -> bool
