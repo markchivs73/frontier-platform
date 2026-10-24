@@ -12,9 +12,13 @@ which were **not** ported — they are the record of the other repo's build.
 `Frontier.Platform.Abstractions` has no Frontier references **and no third-party packages** —
 only the base class library.
 
-Every other package sits above it, so anything added here is inherited by all nine and by every
+Every other package sits above it, so anything added here is inherited by all of them and by every
 consumer. The cost of a casual addition compounds; the constraint is what keeps it cheap to
 depend on.
+
+*Note, 2026-10-24:* this originally said "all nine" — the governance tier at extraction. The
+engine tier's three packages (ADR-PA3 onwards) make twelve; the decision is unchanged and covers
+them all. `README.md` lists the current set.
 
 Enforced by `PlatformAbstractions_HasNoFrontierOrThirdPartyDependencies`.
 
@@ -494,12 +498,17 @@ surface grows by one extension method and one options type, both tracked in `Pub
 
 ## Lockstep versioning
 
-All nine packages take their version from a single git tag via MinVer. A change to one library
-republishes all nine at the new version.
+Every package takes its version from a single git tag via MinVer. A change to one library
+republishes all of them at the new version.
 
 The alternative — nine tag prefixes, nine changelogs, nine version histories — buys precision
 nobody has asked for and costs real ceremony on every release. Accepted trade: one tag, one
 changelog, some packages republished with no changes in them.
+
+*Note, 2026-10-24:* this was decided over the nine governance packages at extraction, and the
+first paragraph originally said "all nine". The engine tier's arrival (ADR-PA3 onwards) brought
+the count to twelve, all versioned by the same tag; the trade above holds with more force, not
+less. `README.md` lists the current set.
 
 While the major version is `0`, breaking changes may ship in a minor. After 1.0, majors only,
 at deliberate boundaries.
