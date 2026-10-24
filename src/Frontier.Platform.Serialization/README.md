@@ -74,6 +74,9 @@ stored bytes have already changed meaning.
   UTF-16 code units, `JSON.stringify` string escapes, ECMAScript number form, no whitespace. ADR-E2
   requires it wherever untyped JSON is hashed, cached or signed. Hash the JCS form of the canonical
   profile's output, never the output alone, when a contract carries a `JsonElement`.
+- `JsonCanonicalizer.Hash` is that rule as one call: the upper-case hex SHA-256 of the JCS bytes,
+  in the same format as `CanonicalProfile.Hash`. The engine's node input and output hashes use it
+  (ADR-PA30, amended 2026-10-24); a capability fingerprinting untyped JSON should too.
 - `TypedPayload` and `PayloadRef` (namespace `Frontier.Platform.Workflow.Model`) are compiled here
   and forwarded from `Frontier.Platform.Workflow.Model`, so governance libraries can carry the
   envelope without depending on the engine.

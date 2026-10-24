@@ -23,6 +23,16 @@ public sealed class AgentTaskActivityPipelineTests
     }
 
     [Fact]
+    public void ComputeInputHash_SameUpstreamPayloadInTwoKeyOrders_IsIdentical()
+    {
+        var first = AgentTaskActivityPipeline.ComputeInputHash("""{"status":"open","ticket":{"id":"T-1","rev":2}}""");
+        var second = AgentTaskActivityPipeline.ComputeInputHash("""{"ticket":{"rev":2,"id":"T-1"},"status":"open"}""");
+
+        Assert.Equal(first, second);
+        Assert.Equal(JsonCanonicalizer.Hash("""{"status":"open","ticket":{"id":"T-1","rev":2}}"""u8), first);
+    }
+
+    [Fact]
     public async Task RunAsync_EntryNodeWithoutUpstreamPayload_ReturnsValidatedOutputFromEngagementBrief()
     {
         var scope = ScopeSectionFixture();

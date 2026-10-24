@@ -78,11 +78,22 @@ public sealed class McpToolInvocationPipelineTests
         Assert.Equal("T-1", ((JsonElement)seen!["ticket_id"]!).GetString());
         Assert.Equal("key-1", seen[McpToolInvocationPipeline.IdempotencyKeyArgument]);
         Assert.Equal("""{"updated":true}""", result.OutputPayload);
-        Assert.Equal(CanonicalProfile.Hash("""{"updated":true}"""), result.OutputHash);
+        Assert.Equal(JsonCanonicalizer.Hash("""{"updated":true}"""u8), result.OutputHash);
         Assert.False(result.Simulated);
         Assert.Equal("t-update", result.NodeId);
         Assert.Equal("com.example.crm/tickets/update_ticket", result.ToolRef);
         Assert.NotNull(result.HostBuild);
+    }
+
+    [Fact]
+    public async Task RunAsync_SameReplyInTwoKeyOrders_HashesIdentically_AndKeepsTheToolsOrder()
+    {
+        var first = await RunReturningAsync("""{"status":"resolved","ticket":{"id":"T-1","rev":2}}""");
+        var second = await RunReturningAsync("""{"ticket":{"rev":2,"id":"T-1"},"status":"resolved"}""");
+
+        Assert.Equal(first.OutputHash, second.OutputHash);
+        Assert.Equal("""{"status":"resolved","ticket":{"id":"T-1","rev":2}}""", first.OutputPayload);
+        Assert.Equal("""{"ticket":{"rev":2,"id":"T-1"},"status":"resolved"}""", second.OutputPayload);
     }
 
     [Fact]
@@ -103,6 +114,10 @@ public sealed class McpToolInvocationPipelineTests
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => pipeline.RunAsync(Input(), CancellationToken.None));
     }
+
+    private static Task<McpToolActivityResult> RunReturningAsync(string json) =>
+        new McpToolInvocationPipeline(new StubCatalog(new StubTool(_ => JsonDocument.Parse(json).RootElement.Clone())))
+            .RunAsync(Input(), CancellationToken.None);
 
     private static McpToolActivityInput Input() => new()
     {

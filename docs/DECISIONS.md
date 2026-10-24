@@ -1681,6 +1681,69 @@ envelope). `AddFrontierAudit` gains registrations, a hosted service and a topolo
 topology row means **a consumer must create `governance-audit-records` before upgrading**, or the
 boot check fails. Tracked as S13.103.
 
+### ADR-PA30 — amended 2026-10-24: node input and output hashes are taken over the JCS form
+
+Found by the consumer's S13.112 groundwork and fixed as its S13.113. ADR-E2 decision 2 requires the
+RFC 8785 (JCS) form wherever JSON whose shape is not CLR-declared takes part in a hash, and this ADR
+built the canonicaliser, but governance signing was its only caller. Three execution hashes took
+SHA-256 straight over serializer output: `OutputPayloadBuilder.Build` (the agent step's
+`output_hash`, which also becomes the artifact version's `content_hash` and the audit record's
+`output_hash`), `McpToolInvocationPipeline.RunAsync` (`CanonicalProfile.Hash(payload)`, which
+hashed the payload *as a JSON string literal*, quotes and escapes included), and
+`AgentTaskActivityPipeline.ComputeInputHash` (the audit `input_hash`, over raw UTF-8 of an input
+that is often an upstream MCP reply). `[JsonPropertyOrder]` fixes a typed contract's own members, so
+today's typed outputs were stable — but a `JsonElement` inside one (a `TypedPayload`'s `payload`
+or `facts`), an MCP tool's reply, and S13.114's untyped schema-ref outputs all keep their producer's
+key order, so two identical replies hashed differently.
+
+**The fix.** `JsonCanonicalizer.Hash(ReadOnlySpan<byte>)` returns the upper-case hex SHA-256 of
+the JCS bytes — the same format as `CanonicalProfile.Hash` — and all three sites call it. One public
+helper rather than three private copies, because ADR-E2 makes the rule normative for capabilities
+too and the smell this ADR's guard watches for is hashing code that serializes on its own.
+
+**The payload is not canonicalised; only the hash is.** `output_payload` and the artifact content
+stay the canonical profile's bytes (for MCP, the tool's own order). Changing them would change stored
+bytes, and whether stored payloads are canonicalised is an open question the consumer's S13.116
+decides. Hashing the JCS form of an unchanged payload is sound either way: anyone holding the payload
+can recompute the hash, because JCS is a pure function of it.
+
+**Compatibility: every newly computed input and output hash changes, and nothing stored changes.**
+JCS sorts members by code unit rather than by `[JsonPropertyOrder]`, writes non-ASCII raw where the
+profile's encoder escapes it, and rewrites numbers, so the new hash differs from the old one even for
+a typed contract. A hash-stable variant (JCS only when a payload carries untyped content) was
+rejected: it needs a type-graph walk to decide, gives one field two meanings, and is exactly the
+kind of conditional that drifts. What the change does and does not touch:
+
+- *Stored hashes are never recomputed.* No code in this repo or the consumer derives an output or
+  input hash from a stored payload and compares it with a stored hash (checked 2026-10-24); the only
+  hash-equality checks are the audit and governance chain verifiers, which recompute `record_hash`
+  from stored fields with `output_hash` as an opaque string, and the definition store, whose hash is
+  untouched. Every existing signed audit record therefore still verifies.
+- *Replay is unaffected.* All three hashes are computed in activities, whose results DTF history
+  records, so a replayed run reads the old hash rather than recomputing it (invariant 2).
+- *The cut-over is versioned by the build that computed it.* An in-flight run that crosses an
+  upgrade has steps hashed both ways. ADR-E15 decision 3 already stamps the host build on every step
+  (`StepCompletion.host_build`), an audit invocation joins its step by `correlation_id`, and the
+  platform version is resolvable from the build, so which algorithm produced a given hash is a
+  lookup: releases before the one carrying this amendment hashed serializer bytes, it and
+  later ones hash JCS bytes. No `hash_algorithm` field was added; that would be a schema change across
+  `StepCompletion` and both audit families to label something the pin set already answers.
+- *A hash comparison across the boundary is meaningless,* so identical content written before and
+  after the upgrade gets different `content_hash` values on its two artifact versions. Nothing
+  compares them today; anything that later wants content identity across versions must compare
+  hashes from one side of the boundary.
+
+The format and length of every hash are unchanged, so no validator, column or consumer parser
+moves. JCS reads numbers as IEEE-754 doubles (above), so an untyped number beyond double precision
+is hashed at double precision, and one beyond double range makes the hash throw — that is, the
+activity fails — rather than hash something false. Out of scope: the definition hash (typed, stored,
+pinned and used for idempotent publish, so changing it would invalidate every pin) and the context
+assembly hashes (they hash text, not JSON structure).
+
+Release: **minor, v0.39.0 proposed** — one additive public member in Serialization
+(`JsonCanonicalizer.Hash`); a behaviour change in Orchestration's computed hashes, flagged here as
+ADR-E15 decision 1 requires.
+
 ## ADR-PA31 — the execution audit chain is appended under a head-document guard, and a pre-fix fork says so
 
 frontier-workflow's S13.106. `AuditSigner.SignAsync` read the engagement's chain, took the last

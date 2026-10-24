@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
@@ -38,6 +39,16 @@ public static class JsonCanonicalizer
         Write(element, builder);
         return Encoding.UTF8.GetBytes(builder.ToString());
     }
+
+    /// <summary>
+    /// The upper-case hex SHA-256 of the JCS form of the JSON text in <paramref name="utf8Json"/> — the
+    /// hash ADR-E2 decision 2 requires wherever JSON whose shape is not CLR-declared is fingerprinted, so
+    /// two key orders of the same value hash identically. The format matches
+    /// <see cref="CanonicalProfile.Hash{T}"/>; the bytes hashed differ (ADR-PA30, amended 2026-10-24).
+    /// </summary>
+    /// <exception cref="JsonException">The input is not valid JSON.</exception>
+    public static string Hash(ReadOnlySpan<byte> utf8Json) =>
+        Convert.ToHexString(SHA256.HashData(Canonicalize(utf8Json)));
 
     /// <summary>Writes one value in canonical form.</summary>
     internal static void Write(JsonElement element, StringBuilder builder)

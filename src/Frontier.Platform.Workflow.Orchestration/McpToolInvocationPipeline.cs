@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using System.Text.Json;
 using Frontier.Platform.Serialization;
 using Microsoft.Extensions.AI;
@@ -56,7 +57,7 @@ internal sealed class McpToolInvocationPipeline : IMcpToolInvocationPipeline
             ArtifactKey = input.ArtifactKey,
             ToolRef = input.ToolRef,
             OutputPayload = payload,
-            OutputHash = CanonicalProfile.Hash(payload),
+            OutputHash = JsonCanonicalizer.Hash(Encoding.UTF8.GetBytes(payload)),
             Simulated = IsSimulatedAck(payload),
             HostBuild = HostBuildInfo.Version,
         };
@@ -102,7 +103,8 @@ internal sealed class McpToolInvocationPipeline : IMcpToolInvocationPipeline
     /// <summary>
     /// Serializes the tool's result to canonical JSON. A sandbox write-fence ack is recognised by
     /// shape rather than by type — <c>{"simulated":true,...}</c>, see <see cref="IsSimulatedAck"/> —
-    /// because the component that produces it is the consumer's, not the engine's.
+    /// because the component that produces it is the consumer's, not the engine's. The payload keeps
+    /// the tool's own key order; only its hash is taken over the RFC 8785 form (ADR-E2 decision 2).
     /// </summary>
     internal static string Canonicalize(object? result) => result switch
     {
