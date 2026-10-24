@@ -172,6 +172,7 @@ static Frontier.Platform.Serialization.DynamicTier.operator !=(Frontier.Platform
 static Frontier.Platform.Serialization.DynamicTier.operator ==(Frontier.Platform.Serialization.DynamicTier? left, Frontier.Platform.Serialization.DynamicTier? right) -> bool
 static Frontier.Platform.Serialization.JsonCanonicalizer.Canonicalize(System.ReadOnlySpan<byte> utf8Json) -> byte[]!
 static Frontier.Platform.Serialization.JsonCanonicalizer.Canonicalize(System.Text.Json.JsonElement element) -> byte[]!
+static Frontier.Platform.Serialization.JsonCanonicalizer.Hash(System.ReadOnlySpan<byte> utf8Json) -> string!
 static Frontier.Platform.Serialization.RealTimeFetch.operator !=(Frontier.Platform.Serialization.RealTimeFetch? left, Frontier.Platform.Serialization.RealTimeFetch? right) -> bool
 static Frontier.Platform.Serialization.RealTimeFetch.operator ==(Frontier.Platform.Serialization.RealTimeFetch? left, Frontier.Platform.Serialization.RealTimeFetch? right) -> bool
 static Frontier.Platform.Serialization.RealTimeTier.operator !=(Frontier.Platform.Serialization.RealTimeTier? left, Frontier.Platform.Serialization.RealTimeTier? right) -> bool

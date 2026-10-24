@@ -1,1 +1,0 @@
-static Frontier.Platform.Serialization.JsonCanonicalizer.Hash(System.ReadOnlySpan<byte> utf8Json) -> string!
