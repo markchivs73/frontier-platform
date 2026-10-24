@@ -133,6 +133,27 @@ public sealed class JsonCanonicalizerTests
     public void Canonicalize_InvalidJson_Throws() =>
         Assert.ThrowsAny<JsonException>(() => JsonCanonicalizer.Canonicalize("{\"a\":"u8));
 
+    [Fact]
+    public void Hash_IsTheUpperHexSha256OfTheJcsBytes_Pinned() =>
+        // The JCS text is {"a":1,"b":[true,"é"]}: members sorted, whitespace dropped, \u00e9 written raw.
+        Assert.Equal(
+            "6926743E6611E69D70D02DFEFEE1D1FC193EDF9D3252AC387436EDF1DB976B4D",
+            JsonCanonicalizer.Hash("{ \"b\": [true, \"\\u00e9\"], \"a\": 1.0 }"u8));
+
+    [Fact]
+    public void Hash_SameValueInTwoKeyOrders_IsIdentical() =>
+        Assert.Equal(
+            JsonCanonicalizer.Hash("""{"x":{"q":1,"p":[2,3]},"w":"v"}"""u8),
+            JsonCanonicalizer.Hash("""{"w":"v","x":{"p":[2,3],"q":1}}"""u8));
+
+    [Fact]
+    public void Hash_DifferentValues_Differ() =>
+        Assert.NotEqual(JsonCanonicalizer.Hash("""{"a":1}"""u8), JsonCanonicalizer.Hash("""{"a":2}"""u8));
+
+    [Fact]
+    public void Hash_InvalidJson_Throws() =>
+        Assert.ThrowsAny<JsonException>(() => JsonCanonicalizer.Hash("not json"u8));
+
     private static string Canonical(string json) =>
         Encoding.UTF8.GetString(JsonCanonicalizer.Canonicalize(Encoding.UTF8.GetBytes(json)));
 }

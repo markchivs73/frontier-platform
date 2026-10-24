@@ -38,7 +38,7 @@ public sealed record StepCompletion
     [JsonPropertyName("output_contract_type")]
     public required string OutputContractType { get; init; }
 
-    /// <summary>SHA256 hex hash of the output's canonical bytes; the payload itself is stored by reference.</summary>
+    /// <summary>SHA256 hex hash of the output's RFC 8785 (JCS) form (ADR-E2 decision 2); the payload itself is stored by reference.</summary>
     [JsonPropertyOrder(5)]
     [JsonPropertyName("output_hash")]
     public required string OutputHash { get; init; }

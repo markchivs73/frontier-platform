@@ -71,7 +71,7 @@ public sealed record McpToolActivityResult
     [JsonPropertyName("output_payload")]
     public required string OutputPayload { get; init; }
 
-    /// <summary>SHA-256 hex of <see cref="OutputPayload"/>'s canonical bytes.</summary>
+    /// <summary>SHA-256 hex of <see cref="OutputPayload"/>'s RFC 8785 (JCS) form, so the tool's key order does not move it (ADR-E2 decision 2).</summary>
     [JsonPropertyName("output_hash")]
     public required string OutputHash { get; init; }
 
