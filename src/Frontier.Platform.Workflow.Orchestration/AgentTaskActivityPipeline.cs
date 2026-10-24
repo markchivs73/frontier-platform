@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using System.Text;
 using Frontier.Platform.Abstractions;
 using Frontier.Platform.Audit;
@@ -264,9 +263,14 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
         InvokedAtUtc = DateTime.UtcNow,
     };
 
-    /// <summary>SHA256 hex hash of <paramref name="inputPayload"/>'s canonical UTF8 bytes, for <see cref="AuditTelemetryRecord.InputHash"/>.</summary>
+    /// <summary>
+    /// SHA256 hex hash of <paramref name="inputPayload"/>'s RFC 8785 (JCS) form, for
+    /// <see cref="AuditTelemetryRecord.InputHash"/>. The input is often an upstream step's payload —
+    /// an MCP tool's reply keeps the tool's key order — so JCS is what makes it order-independent
+    /// (ADR-E2 decision 2).
+    /// </summary>
     internal static string ComputeInputHash(string inputPayload) =>
-        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(inputPayload)));
+        JsonCanonicalizer.Hash(Encoding.UTF8.GetBytes(inputPayload));
 
     /// <summary>
     /// Reads cache-creation (cache-write) tokens from <paramref name="usage"/>'s

@@ -36,7 +36,7 @@ public sealed record ArtifactStateActivityRequest
     [JsonPropertyName("content")]
     public required string Content { get; init; }
 
-    /// <summary>SHA256 hex hash of <see cref="Content"/>'s canonical bytes.</summary>
+    /// <summary>SHA256 hex hash of <see cref="Content"/>'s RFC 8785 (JCS) form (ADR-E2 decision 2).</summary>
     [JsonPropertyOrder(5)]
     [JsonPropertyName("content_hash")]
     public required string ContentHash { get; init; }

@@ -30,7 +30,7 @@ public sealed record AgentTaskActivityResult
     [JsonPropertyName("output_payload")]
     public required string OutputPayload { get; init; }
 
-    /// <summary>SHA256 hex hash of <see cref="OutputPayload"/>'s canonical bytes.</summary>
+    /// <summary>SHA256 hex hash of <see cref="OutputPayload"/>'s RFC 8785 (JCS) form (ADR-E2 decision 2).</summary>
     [JsonPropertyOrder(4)]
     [JsonPropertyName("output_hash")]
     public required string OutputHash { get; init; }
