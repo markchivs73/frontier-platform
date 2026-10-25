@@ -2367,3 +2367,38 @@ Release: **minor — additive, with the four named source breaks above.** New pu
 refusals), a new optional `MappingChangeProposal.ConcurrencyToken`, a relaxed `MappingProposalQuery`,
 and the token parameter on the four decisions. `ContractViolationException` becomes unsealed. No
 stored bytes, container, partition key or schema version changes.
+
+## ADR-PA35 — a run completes when its last node does; its contractual data changes only through its nodes
+
+Decided 2026-10-25 (Mark), as the consumer's S13.105; the proposal is frontier-workflow
+`docs/state/proposals/S13.105-cascade-wait.md` (its option A, with option C dropped).
+
+After its last node every run waited up to five minutes for `ArtifactUpdated` — the S2.2 PoC
+placeholder for a cascade re-trigger (doc 03 §5) — and S13.99 (v0.31.1) shortened that to zero for
+sandbox runs only. Nothing in a deployment raises the event: no endpoint, no node type, only test
+suites. So every real run idled five minutes for nothing while holding its one-live-run claim (K9),
+and a second start was refused for those minutes; the consumer's first UI-started genealogy run spent
+300 of its 406 seconds there. The path the event drives is also ungoverned: it records neither the
+edited content nor who edited it, never sends regenerated sections back through a gate (K5), and
+drops a second update.
+
+**Decision.** `GraphOrchestratorSteps.CascadeWaitWindow` is zero for every run. Changes to a run's
+contractual data happen only through its nodes: a new run with new input, a gate rejection with its
+declared rollback, or a signal node (the consumer's S13.45). An edit outside the nodes is explicitly
+not a feature; if a workload ever needs one it reopens through a new decision, with this reasoning
+on record.
+
+**Replay (ADR-E15 floor).** The wait is shortened, not removed — exactly S13.99's mechanism. The SDK
+still records the timer, so an in-flight run whose history holds the five-minute timer replays against
+the same action shape: DTF checks the action type at that sequence number, never its fire time. An
+event already buffered before the wait is still consumed, so the dormant path keeps working for the
+test suites that raise it in advance; the consumer adds an architecture test that nothing outside its
+tests raises it. Proof standard: S13.99's — the timer-shape tests (`RunCascadeWalkAsync_*`,
+`CascadeWaitWindow_IsZeroForEveryRun`) plus this argument; a true history-replay test belongs with the
+consumer's S10.7 infrastructure.
+
+**Observable behaviour change, recorded per ADR-E15:** a run scheduled by older code but executing
+this code after its last node completes immediately instead of waiting. Removing the internal
+`ArtifactUpdateWaitWindow` and the duplicated sandbox prefix changes no public surface.
+
+Release: **minor, v0.40.0 proposed.**

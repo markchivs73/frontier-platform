@@ -357,7 +357,7 @@ public sealed class GraphOrchestratorStepsTests
     {
         var context = new FakeTaskOrchestrationContext();
 
-        var result = await GraphOrchestratorSteps.TryWaitForArtifactUpdateAsync(context, GraphOrchestratorSteps.ArtifactUpdateWaitWindow);
+        var result = await GraphOrchestratorSteps.TryWaitForArtifactUpdateAsync(context, GraphOrchestratorSteps.CascadeWaitWindow);
 
         Assert.Null(result);
     }
@@ -368,7 +368,7 @@ public sealed class GraphOrchestratorStepsTests
         var context = new FakeTaskOrchestrationContext();
         context.ExternalEvents[GraphOrchestratorSteps.ArtifactUpdatedEventName] = "scope";
 
-        var result = await GraphOrchestratorSteps.TryWaitForArtifactUpdateAsync(context, GraphOrchestratorSteps.ArtifactUpdateWaitWindow);
+        var result = await GraphOrchestratorSteps.TryWaitForArtifactUpdateAsync(context, GraphOrchestratorSteps.CascadeWaitWindow);
 
         Assert.Equal("scope", result);
     }
@@ -465,8 +465,12 @@ public sealed class GraphOrchestratorStepsTests
         Assert.Empty(state.CompletedSteps);
     }
 
+    /// <summary>
+    /// ADR-PA35 (was "keeps the five-minute wait" until 2026-10-25): a real run now schedules its one
+    /// timer for now as well — the same replay shape S13.99 gave sandbox runs.
+    /// </summary>
     [Fact]
-    public async Task RunCascadeWalkAsync_RealRun_KeepsTheFiveMinuteWait()
+    public async Task RunCascadeWalkAsync_RealRun_SchedulesItsOneTimerForNow()
     {
         var context = new FakeTaskOrchestrationContext();
         var input = OrchestrationFixtures.Input(OrchestrationFixtures.ThreeArtifactChain());
@@ -474,19 +478,32 @@ public sealed class GraphOrchestratorStepsTests
 
         await GraphOrchestratorSteps.RunCascadeWalkAsync(context, input, state, PolicyProvider, OrchestrationFixtures.WriteClassifier);
 
-        Assert.Equal([context.CurrentUtcDateTime.AddMinutes(5)], context.TimerFireAts);
+        Assert.Equal([context.CurrentUtcDateTime], context.TimerFireAts);
     }
 
-    [Theory]
-    [InlineData("SANDBOX-0123abcd", 0)]
-    [InlineData("eng-1", 5)]
-    [InlineData("sandbox-lowercase", 5)]
-    [InlineData("eng-SANDBOX-", 5)]
-    public void CascadeWaitWindow_IsZeroOnlyForASandboxEngagement(string engagementId, int expectedMinutes)
+    /// <summary>ADR-PA35: no run waits after its last node — sandbox or not.</summary>
+    [Fact]
+    public void CascadeWaitWindow_IsZeroForEveryRun()
     {
-        var input = OrchestrationFixtures.Input(OrchestrationFixtures.ThreeArtifactChain(), engagementId);
+        Assert.Equal(TimeSpan.Zero, GraphOrchestratorSteps.CascadeWaitWindow);
+    }
 
-        Assert.Equal(TimeSpan.FromMinutes(expectedMinutes), GraphOrchestratorSteps.CascadeWaitWindow(input));
+    /// <summary>
+    /// ADR-PA35: with no event buffered, a real (non-sandbox) run's cascade walk returns at once —
+    /// no cascade activity is scheduled (none is registered, so scheduling one would throw), and the
+    /// zero-length timer is still recorded so older histories replay against the same action shape.
+    /// </summary>
+    [Fact]
+    public async Task RunCascadeWalkAsync_NoEventBuffered_CompletesWithoutACascade()
+    {
+        var context = new FakeTaskOrchestrationContext();
+        var input = OrchestrationFixtures.Input(OrchestrationFixtures.ThreeArtifactChain(), "eng-1");
+        var state = new GraphExecutionState { StartedAtUtc = OrchestrationFixtures.StartedAtUtc };
+
+        await GraphOrchestratorSteps.RunCascadeWalkAsync(context, input, state, PolicyProvider, OrchestrationFixtures.WriteClassifier);
+
+        Assert.Equal(1, context.ExternalEventSubscriptions[GraphOrchestratorSteps.ArtifactUpdatedEventName]);
+        Assert.Empty(state.CompletedSteps);
     }
 
     [Fact]
