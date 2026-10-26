@@ -23,22 +23,17 @@ internal static class GraphOrchestratorSteps
     /// <summary>External event name a running execution listens for once its initial walk completes (S2.2 PoC; doc 03 §9 cascade re-trigger).</summary>
     internal const string ArtifactUpdatedEventName = "ArtifactUpdated";
 
-    /// <summary>How long the orchestration waits for <see cref="ArtifactUpdatedEventName"/> before completing without a cascade (S2.2 PoC placeholder).</summary>
-    internal static readonly TimeSpan ArtifactUpdateWaitWindow = TimeSpan.FromMinutes(5);
-
-    /// <summary>The engagement-id prefix minted only for sandbox test runs (S9.38a, doc 13 §5).</summary>
-    internal const string SandboxEngagementIdPrefix = "SANDBOX-";
-
     /// <summary>
-    /// The cascade wait window for this run (S13.99): zero for a sandbox test run — nothing raises
-    /// <see cref="ArtifactUpdatedEventName"/> on one — and <see cref="ArtifactUpdateWaitWindow"/>
-    /// otherwise. Read from the input, never config (ADR-2). The sandbox wait is shortened, not
-    /// removed: the SDK still records its timer, so a sandbox run whose history already holds the
-    /// 5-minute timer replays against the same action shape (ADR-E15); DTF checks the action type
-    /// at that sequence number, never its fire time.
+    /// How long a run waits for <see cref="ArtifactUpdatedEventName"/> after its last node before
+    /// completing: <b>zero, for every run</b> (ADR-PA35). It was five minutes (S2.2 PoC placeholder)
+    /// and zero for sandbox runs only (S13.99); nothing in a deployment raises the event, so every
+    /// real run idled for nothing while holding its one-live-run claim (K9). Changes to a run's
+    /// contractual data happen only through its nodes. The wait is shortened, not removed: the SDK
+    /// still records its timer, so a run whose history already holds the five-minute timer replays
+    /// against the same action shape (ADR-E15) — DTF checks the action type at that sequence
+    /// number, never its fire time. An event already buffered before the wait is still consumed.
     /// </summary>
-    internal static TimeSpan CascadeWaitWindow(GraphOrchestratorInput input) =>
-        input.EngagementId.StartsWith(SandboxEngagementIdPrefix, StringComparison.Ordinal) ? TimeSpan.Zero : ArtifactUpdateWaitWindow;
+    internal static readonly TimeSpan CascadeWaitWindow = TimeSpan.Zero;
 
     /// <summary>The Resilience profile (doc 10 §4) for an <see cref="AgentTaskNode"/> that specifies no <see cref="RetryPolicySpec"/>.</summary>
     internal const string LlmDefaultProfile = "llm-default";
@@ -385,7 +380,7 @@ internal static class GraphOrchestratorSteps
     /// <summary>Waits for <see cref="ArtifactUpdatedEventName"/>; on receipt, evaluates the cascade and re-walks the downstream sections it returns.</summary>
     internal static async Task RunCascadeWalkAsync(TaskOrchestrationContext context, GraphOrchestratorInput input, GraphExecutionState state, IResiliencePolicyProvider policyProvider, IMcpWriteClassifier mcpWriteClassifier)
     {
-        var changedArtifact = await TryWaitForArtifactUpdateAsync(context, CascadeWaitWindow(input));
+        var changedArtifact = await TryWaitForArtifactUpdateAsync(context, CascadeWaitWindow);
         if (changedArtifact is null)
         {
             return;
