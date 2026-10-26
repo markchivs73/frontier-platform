@@ -2402,3 +2402,35 @@ this code after its last node completes immediately instead of waiting. Removing
 `ArtifactUpdateWaitWindow` and the duplicated sandbox prefix changes no public surface.
 
 Release: **minor, v0.40.0 proposed.**
+
+## ADR-PA36 — governance and config data stay on Cosmos; the governance chain's one partition is a known limit
+
+Decided 2026-10-26 (Mark), as the consumer's S13.56; the assessment is frontier-workflow
+`docs/state/research/S13.56-persistence-fit.md` (its recommendation A). This is the short paired note
+that assessment called for.
+
+**Decision.** The governance and config class stays on Cosmos under this repo's conventions. The
+class covers role assignments, roles, security config, model-role config, engagement-type configs
+and the resource registry. Under the Phase 1 serverless model there is no per-container throughput
+floor, and the class is small and slow-changing. A second engine would be one more server per tenant
+deployment. It would not make the K6 write atomic either, since the governance chain stays a
+Cosmos container. Every store in the class already sits behind a consumer-owned port, so a future
+engine is a set of adapters. The consumer's reopen triggers are on record there.
+
+**The conventions cover it as they stand.** Replaces carry If-Match. A version and its `:current`
+pointer are one transactional batch with a create-only version, as `CosmosMappingProposalStore`
+already does. The consumer fixed its three stores that did not (frontier-workflow S13.56).
+
+**Known limit: `governance-audit-records` has one partition per scope.** Every governance record
+uses the single scope `deployment`, and the container's TTL is -1. So the whole history lands in
+one logical partition, which Cosmos caps at 20 GB. At about 2 KB a record (an estimate) that is
+about 10 million records, so it is not a Phase 1 risk. Hierarchical partition keys alone do not
+lift it: an append is one transactional batch with the chain head, and a batch needs a single
+logical partition. Possible levers, none chosen:
+- segment the chain by period, with each segment's head linking to the last record of the previous one;
+- expire hot records once the archival export to `governance-audit-records-archive` has confirmed them.
+
+Reopen when a deployment's governance partition passes 5 GB, or before a tenant is expected to write
+more than a million governance records.
+
+No code change. No release.
