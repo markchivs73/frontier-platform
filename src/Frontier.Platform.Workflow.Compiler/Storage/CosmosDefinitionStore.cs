@@ -178,7 +178,7 @@ public sealed class CosmosDefinitionStore : IDefinitionStore
                 $"{workflowId}:v{version}",
                 new PartitionKey(workflowId),
                 cancellationToken: ct);
-            return response.Resource;
+            return RecordedDefinitionHash.Fill(response.Resource);
         }
         catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
@@ -202,7 +202,7 @@ public sealed class CosmosDefinitionStore : IDefinitionStore
         while (query.HasMoreResults)
         {
             var page = await query.ReadNextAsync(ct);
-            versions.AddRange(page);
+            versions.AddRange(page.Select(RecordedDefinitionHash.Fill));
         }
 
         return versions.AsReadOnly();
@@ -220,7 +220,7 @@ public sealed class CosmosDefinitionStore : IDefinitionStore
         while (query.HasMoreResults)
         {
             var page = await query.ReadNextAsync(ct);
-            versions.AddRange(page);
+            versions.AddRange(page.Select(RecordedDefinitionHash.Fill));
         }
 
         return versions.AsReadOnly();

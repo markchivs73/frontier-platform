@@ -419,6 +419,29 @@ public sealed class DefinitionCompilerPhaseC_IntegrationTests : IAsyncLifetime, 
         ValidationReportRef = "ref",
     };
 
+    /// <summary>
+    /// S13.138: a version published before publish stamped the hash reads back with the recorded
+    /// hash on its definition, on every read path, and the stored document is not rewritten.
+    /// </summary>
+    [Fact]
+    public async Task VersionReads_FillAnEmptyInlineHashFromTheRecordedOne_WithoutRewritingIt()
+    {
+        ArgumentNullException.ThrowIfNull(_store);
+        ArgumentNullException.ThrowIfNull(_container);
+        var legacy = VersionDoc("wf-legacy-hash", 1, "published", WorkflowDefinitionFixture.MinimalDefinition() with { DefinitionHash = string.Empty });
+        await _store.PublishVersionAsync(legacy, CancellationToken.None);
+
+        var one = await _store.GetVersionAsync("wf-legacy-hash", 1, CancellationToken.None);
+        var all = await _store.GetAllVersionsAsync("wf-legacy-hash", CancellationToken.None);
+        var published = await _store.ListPublishedVersionsAsync(CancellationToken.None);
+
+        Assert.Equal("sha256:abc", one!.Definition.DefinitionHash);
+        Assert.Equal("sha256:abc", Assert.Single(all).Definition.DefinitionHash);
+        Assert.Equal("sha256:abc", published.Single(v => v.WorkflowId == "wf-legacy-hash").Definition.DefinitionHash);
+        var stored = await _container.ReadItemAsync<System.Text.Json.Nodes.JsonObject>("wf-legacy-hash:v1", new PartitionKey("wf-legacy-hash"));
+        Assert.Equal(string.Empty, stored.Resource["definition"]!["definition_hash"]!.GetValue<string>());
+    }
+
     [Fact]
     public async Task ListPublishedVersionsAsync_ReturnsOnlyPublishedAcrossWorkflows()
     {

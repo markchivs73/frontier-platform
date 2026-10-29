@@ -307,7 +307,9 @@ public sealed class DefinitionLifecycleService : IDefinitionLifecycleService
             State = "published",
             DefinitionVersion = nextVersion,
             DefinitionHash = definitionHash,
-            Definition = draft.Definition,
+            // The definition a run carries inline (ADR-2) names its own hash, so the audit can say
+            // which definition ran. Before this it kept the draft's empty field (S13.138).
+            Definition = draft.Definition with { DefinitionHash = definitionHash },
             ProposedBy = proposal.ProposerId,
             ApprovedBy = approverId,
             ProposedUtc = proposal.ProposedAtUtc,

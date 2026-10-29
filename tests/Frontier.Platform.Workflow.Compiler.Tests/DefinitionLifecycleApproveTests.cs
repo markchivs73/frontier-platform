@@ -113,6 +113,23 @@ public sealed class DefinitionLifecycleApproveTests
         _store.Verify(s => s.SetCurrentVersionAsync(WorkflowId, 2, It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>
+    /// S13.138: the published definition names its own hash. A run carries this definition inline,
+    /// and the audit reads its hash from it, so before the fix every UI-published run's audit
+    /// record had an empty definition hash.
+    /// </summary>
+    [Fact]
+    public async Task ApproveAsync_StampsTheHashOntoThePublishedDefinition()
+    {
+        ArrangeHappyPath(currentVersion: 1);
+
+        await _service.ApproveAsync(ProposalId, "user:approver", CancellationToken.None);
+
+        _store.Verify(s => s.PublishVersionAsync(
+            It.Is<DefinitionVersionDocument>(d => d.Definition.DefinitionHash == "sha256:new" && d.DefinitionHash == "sha256:new"),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     [Fact]
     public async Task ApproveAsync_FirstEverPublish_StartsAtVersionOne()
     {
