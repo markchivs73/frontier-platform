@@ -8,7 +8,7 @@ namespace Frontier.Platform.Workflow.Orchestration;
 /// Thin eternal router for dispatcher-mode workflows (doc 00 §4.4, ADR-E8; doc 16 §4).
 /// Pure orchestrator body: it receives <c>WorkItem</c> events, spawns a sub-orchestration per item
 /// (each running the full graph with normal §4.1–4.3 semantics), and calls <c>ContinueAsNew</c>
-/// every <see cref="ContinueAsNewThreshold"/> items to bound DTF history. The dispatcher itself
+/// every <see cref="RolloverThresholdFor"/> items to bound DTF history. The dispatcher itself
 /// produces no sections and no audit record beyond spawn telemetry; children close normally, with
 /// their own snapshots, audit consolidation and purge windows.
 /// <para>
@@ -32,12 +32,23 @@ public sealed class DispatcherOrchestrator : TaskOrchestrator<GraphOrchestratorI
     public const string WorkItemEventName = "WorkItem";
 
     /// <summary>
-    /// Bounds DTF history growth: the dispatcher calls <c>ContinueAsNew</c> after spawning this
-    /// many work items, resetting the instance to a fresh generation (doc 00 §4.4, ADR-E8).
-    /// Phase 1: tuned for emulator testing; adjust per ADR-A1 config at S10.1 (deployment).
+    /// The rollover threshold when the input names none: the dispatcher calls <c>ContinueAsNew</c>
+    /// after spawning this many work items, resetting the instance to a fresh generation to bound
+    /// DTF history (doc 00 §4.4, ADR-E8). Since S13.78 the deployment's value rides on
+    /// <see cref="GraphOrchestratorInput.DispatcherRolloverThreshold"/> (K7: governance numbers are
+    /// data); this default is what an input recorded before that field replays with, so in-flight
+    /// dispatchers keep exactly the behaviour they started with (ADR-E15).
     /// <c>internal</c> (S13.22) so tests reference the boundary rather than hard-coding it.
     /// </summary>
-    internal const int ContinueAsNewThreshold = 100;
+    internal const int DefaultContinueAsNewThreshold = 100;
+
+    /// <summary>
+    /// The threshold this generation rolls over at: the input's, or <see cref="DefaultContinueAsNewThreshold"/>
+    /// when it names none or a non-positive one. Read from the input, never from configuration, so the
+    /// body stays deterministic (hard invariant 2).
+    /// </summary>
+    internal static int RolloverThresholdFor(GraphOrchestratorInput input) =>
+        input.DispatcherRolloverThreshold is > 0 and var threshold ? threshold : DefaultContinueAsNewThreshold;
 
     /// <inheritdoc />
     public override async Task<GraphOrchestratorResult> RunAsync(TaskOrchestrationContext context, GraphOrchestratorInput input)
@@ -86,7 +97,7 @@ public sealed class DispatcherOrchestrator : TaskOrchestrator<GraphOrchestratorI
 
                 spawned++;
 
-                if (spawned >= ContinueAsNewThreshold)
+                if (spawned >= RolloverThresholdFor(input))
                 {
                     return await RollOverAsync(context, input);
                 }

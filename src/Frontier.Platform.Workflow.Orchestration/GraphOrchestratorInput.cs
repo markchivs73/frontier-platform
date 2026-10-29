@@ -82,4 +82,17 @@ public sealed record GraphOrchestratorInput
     [JsonPropertyOrder(7)]
     [JsonPropertyName("pin_model_roles")]
     public bool? PinModelRoles { get; init; }
+
+    /// <summary>
+    /// For a dispatcher: how many work items each generation spawns before <c>ContinueAsNew</c>
+    /// (S13.78). A deployment tuning value, resolved by the Host factory from configuration at start
+    /// and carried across every generation, so the orchestrator body reads no configuration (hard
+    /// invariant 2) and the number is data, not a literal (K7). It is not part of the definition,
+    /// so it never touches <c>definition_hash</c>. <b>Additive and optional</b> per the ADR-E15
+    /// floor: inputs recorded before this field, and one-shot runs, carry <see langword="null"/>,
+    /// which means the platform default of 100.
+    /// </summary>
+    [JsonPropertyOrder(8)]
+    [JsonPropertyName("dispatcher_rollover_threshold")]
+    public int? DispatcherRolloverThreshold { get; init; }
 }

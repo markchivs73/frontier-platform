@@ -78,6 +78,7 @@ internal static class DispatcherSteps
         DynamicContextEpoch = input.DynamicContextEpoch,
         DynamicContextHash = input.DynamicContextHash,
         PinModelRoles = input.PinModelRoles,
+        DispatcherRolloverThreshold = input.DispatcherRolloverThreshold,
     };
 
     /// <summary>Projects the dispatcher's pinned input into the S13.18 rollover request.</summary>

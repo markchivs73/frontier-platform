@@ -92,9 +92,9 @@ public sealed class DispatcherSpawnTests
         var harness = new DispatcherHarness();
         var run = harness.Start();
 
-        harness.RaiseWorkItems(DispatcherOrchestrator.ContinueAsNewThreshold);
+        harness.RaiseWorkItems(DispatcherOrchestrator.DefaultContinueAsNewThreshold);
 
-        Assert.Equal(DispatcherOrchestrator.ContinueAsNewThreshold, harness.ChildInputs.Count);
+        Assert.Equal(DispatcherOrchestrator.DefaultContinueAsNewThreshold, harness.ChildInputs.Count);
         Assert.Equal(0, harness.CompletedChildren);
         Assert.Single(harness.Context.ContinueAsNewCalls);
         await harness.WithTimeout(run);
@@ -111,7 +111,7 @@ public sealed class DispatcherSpawnTests
         var harness = new DispatcherHarness();
         harness.Start();
 
-        harness.RaiseWorkItems(DispatcherOrchestrator.ContinueAsNewThreshold);
+        harness.RaiseWorkItems(DispatcherOrchestrator.DefaultContinueAsNewThreshold);
 
         Assert.True(harness.Context.ContinueAsNewCalls[0].PreserveUnprocessedEvents);
     }
@@ -130,7 +130,7 @@ public sealed class DispatcherSpawnTests
         var harness = new DispatcherHarness(rollover: rolled);
         harness.Start();
 
-        harness.RaiseWorkItems(DispatcherOrchestrator.ContinueAsNewThreshold);
+        harness.RaiseWorkItems(DispatcherOrchestrator.DefaultContinueAsNewThreshold);
 
         var next = Assert.IsType<GraphOrchestratorInput>(harness.Context.ContinueAsNewCalls[0].Input);
         Assert.Equal(9, next.Definition.DefinitionVersion);
@@ -251,7 +251,7 @@ public sealed class DispatcherSpawnTests
 
         harness.RaiseRefreshSignal();
         harness.RaiseRefreshSignal();
-        harness.RaiseWorkItems(DispatcherOrchestrator.ContinueAsNewThreshold);
+        harness.RaiseWorkItems(DispatcherOrchestrator.DefaultContinueAsNewThreshold);
 
         Assert.Equal(2, harness.RefreshDeliveries);
         Assert.Single(harness.Context.ContinueAsNewCalls);
@@ -262,6 +262,72 @@ public sealed class DispatcherSpawnTests
     /// every spawned child held open until the test releases it. Modelled on
     /// <c>GraphRefreshSignalWalkTests.RefreshHarness</c>.
     /// </summary>
+    /// <summary>
+    /// S13.78 (K7): the rollover threshold is the input's, so a deployment tunes it as data. The
+    /// generation rolls over on exactly that spawn, not the default 100.
+    /// </summary>
+    [Fact]
+    public void ContinueAsNew_FiresAtTheInputsThreshold()
+    {
+        var harness = new DispatcherHarness();
+        harness.Start(DispatcherFixtures.Input() with { DispatcherRolloverThreshold = 3 });
+
+        harness.RaiseWorkItems(2);
+        Assert.Empty(harness.Context.ContinueAsNewCalls);
+
+        harness.RaiseWorkItems(1);
+        Assert.Equal(3, harness.ChildInputs.Count);
+        Assert.Single(harness.Context.ContinueAsNewCalls);
+    }
+
+    /// <summary>
+    /// S13.78: the threshold is carried across the generation boundary like RunId, so a tuned
+    /// dispatcher stays tuned for its whole life. Children are one-shot runs and never carry it.
+    /// </summary>
+    [Fact]
+    public void ContinueAsNew_CarriesTheThreshold_AndChildrenDoNotInheritIt()
+    {
+        var harness = new DispatcherHarness();
+        harness.Start(DispatcherFixtures.Input() with { DispatcherRolloverThreshold = 2 });
+
+        harness.RaiseWorkItems(2);
+
+        var next = Assert.IsType<GraphOrchestratorInput>(harness.Context.ContinueAsNewCalls[0].Input);
+        Assert.Equal(2, next.DispatcherRolloverThreshold);
+        Assert.All(harness.ChildInputs, child => Assert.Null(child.DispatcherRolloverThreshold));
+    }
+
+    /// <summary>
+    /// S13.78 / ADR-E15: an input recorded before the field existed (null) replays with the default,
+    /// exactly as it ran; a non-positive value, which would roll over on every spawn or never, is the
+    /// default too.
+    /// </summary>
+    [Theory]
+    [InlineData(null)]
+    [InlineData(0)]
+    [InlineData(-5)]
+    public void RolloverThreshold_IsTheDefault_WhenTheInputNamesNoneOrANonPositiveOne(int? threshold)
+    {
+        var input = DispatcherFixtures.Input() with { DispatcherRolloverThreshold = threshold };
+
+        Assert.Equal(DispatcherOrchestrator.DefaultContinueAsNewThreshold, DispatcherOrchestrator.RolloverThresholdFor(input));
+    }
+
+    /// <summary>
+    /// S13.78 / ADR-E15: the field is additive on the wire. Absent, it is omitted, so an input
+    /// written without it keeps its exact bytes; present, it is the last member.
+    /// </summary>
+    [Fact]
+    public void RolloverThreshold_IsOmittedWhenNull_AndLastWhenSet()
+    {
+        var without = System.Text.Encoding.UTF8.GetString(Frontier.Platform.Serialization.CanonicalProfile.SerializeCanonical(DispatcherFixtures.Input()));
+        var with = System.Text.Encoding.UTF8.GetString(Frontier.Platform.Serialization.CanonicalProfile.SerializeCanonical(DispatcherFixtures.Input() with { DispatcherRolloverThreshold = 250 }));
+
+        Assert.DoesNotContain("dispatcher_rollover_threshold", without, StringComparison.Ordinal);
+        Assert.EndsWith(",\"dispatcher_rollover_threshold\":250}", with, StringComparison.Ordinal);
+        Assert.Equal(without[..^1], with[..with.LastIndexOf(",\"dispatcher_rollover_threshold\"", StringComparison.Ordinal)]);
+    }
+
     internal sealed class DispatcherHarness
     {
         private readonly PendingExternalEvent workItems = new();
