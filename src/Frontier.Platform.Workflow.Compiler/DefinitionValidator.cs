@@ -65,7 +65,12 @@ public sealed class DefinitionValidator : IDefinitionCompiler
 
     public string ComputeDefinitionHash(WorkflowDefinition definition)
     {
-        var json = System.Text.Json.JsonSerializer.Serialize(definition, CanonicalProfile.Options);
+        ArgumentNullException.ThrowIfNull(definition);
+
+        // The hash covers the definition with its own definition_hash field blank, as the field's
+        // contract says, so a definition stamped with its hash at publish hashes back to the same
+        // value. Drafts carry an empty field, so every hash recorded before this is unchanged.
+        var json = System.Text.Json.JsonSerializer.Serialize(definition with { DefinitionHash = string.Empty }, CanonicalProfile.Options);
         var bytes = Encoding.UTF8.GetBytes(json);
 
         // CA1308 is suppressed rather than satisfied, and the distinction matters: this hash is

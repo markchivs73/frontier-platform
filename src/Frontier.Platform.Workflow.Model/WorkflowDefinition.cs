@@ -47,7 +47,7 @@ public sealed record WorkflowDefinition : IVersionedContract
     [JsonPropertyName("edges")]
     public required IReadOnlyList<WorkflowEdge> Edges { get; init; }
 
-    /// <summary>SHA256 hex hash of this definition's canonical bytes, excluding this field itself (doc 01).</summary>
+    /// <summary>SHA256 hex hash of this definition's canonical bytes, computed with this field blank (doc 01). Publish stamps it, so a run's audit can say which definition ran (S13.138).</summary>
     [JsonPropertyOrder(7)]
     [JsonPropertyName("definition_hash")]
     public required string DefinitionHash { get; init; }

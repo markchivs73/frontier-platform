@@ -198,6 +198,33 @@ public sealed class DefinitionValidatorTests
         Assert.NotEqual(hash1, hash2);
     }
 
+    /// <summary>
+    /// S13.138: the hash covers the definition with its own <c>definition_hash</c> blank, so a
+    /// definition stamped with its hash at publish hashes back to the same value. A draft's field
+    /// is empty, so the value is exactly the one recorded before the change: every stored hash
+    /// stays valid.
+    /// </summary>
+    [Fact]
+    public void ComputeDefinitionHash_IgnoresItsOwnField_AndIsUnchangedForADraft()
+    {
+        var draft = CreateMinimalDefinition("wf-1") with { DefinitionHash = string.Empty };
+        var beforeTheChange = "sha256:" + Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
+            System.Text.Encoding.UTF8.GetBytes(System.Text.Json.JsonSerializer.Serialize(draft, Frontier.Platform.Serialization.CanonicalProfile.Options))));
+
+        var hash = _validator.ComputeDefinitionHash(draft);
+        var stamped = draft with { DefinitionHash = hash };
+
+        Assert.Equal(beforeTheChange, hash, ignoreCase: true);
+        Assert.Equal(hash, _validator.ComputeDefinitionHash(stamped));
+        Assert.Equal(hash, _validator.ComputeDefinitionHash(draft with { DefinitionHash = "seed-placeholder-hash" }));
+    }
+
+    [Fact]
+    public void ComputeDefinitionHash_RefusesANullDefinition()
+    {
+        Assert.Throws<ArgumentNullException>(() => _validator.ComputeDefinitionHash(null!));
+    }
+
     [Fact]
     public void ComputeDefinitionHash_StartsWithSha256Prefix()
     {
