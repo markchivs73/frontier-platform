@@ -22,13 +22,45 @@ public sealed class DefinitionValidatorTests
     public void Constructor_NullRules_Throws() =>
         Assert.Throws<ArgumentNullException>(() => new DefinitionValidator(null!));
 
+    /// <summary>
+    /// S13.77: the stored schema version reaches the rule through ValidateAsync, the path the
+    /// Validate button and publish proposals take. Before, nothing joined the probed version to a
+    /// validation run, so schema.version-supported read null and never fired.
+    /// </summary>
+    [Theory]
+    [InlineData("1.0", ValidationSeverity.Info, ValidationOutcome.Pass)]
+    [InlineData("99.0", ValidationSeverity.Error, ValidationOutcome.Fail)]
+    public async Task ValidateAsync_StoredSchemaVersion_ReachesTheSchemaRule(string stored, ValidationSeverity severity, ValidationOutcome outcome)
+    {
+        var validator = new DefinitionValidator([new SchemaVersionSupportedRule()]);
+
+        var result = await validator.ValidateAsync(CreateMinimalDefinition("wf-1"), "rev-1", stored, CancellationToken.None);
+
+        var finding = Assert.Single(result.Findings);
+        Assert.Equal(("schema.version-supported", severity), (finding.RuleId, finding.Severity));
+        Assert.Contains($"schema {stored}", finding.Message, StringComparison.Ordinal);
+        Assert.Equal(outcome, result.Outcome);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("2.0")]
+    public async Task ValidateAsync_NoStoredVersionOrTheCurrentOne_SaysNothingAboutSchema(string? stored)
+    {
+        var validator = new DefinitionValidator([new SchemaVersionSupportedRule()]);
+
+        var result = await validator.ValidateAsync(CreateMinimalDefinition("wf-1"), "rev-1", stored, CancellationToken.None);
+
+        Assert.Empty(result.Findings);
+    }
+
     [Fact]
     public async Task ValidateAsync_NoRules_ReturnsPass()
     {
         var definition = CreateMinimalDefinition("wf-1");
         var draftRevision = "rev-1";
 
-        var result = await _validator.ValidateAsync(definition, draftRevision, CancellationToken.None);
+        var result = await _validator.ValidateAsync(definition, draftRevision, storedSchemaVersion: null, CancellationToken.None);
 
         Assert.NotNull(result);
         Assert.Equal("wf-1", result.WorkflowId);
@@ -44,7 +76,7 @@ public sealed class DefinitionValidatorTests
         var draftRevision = "rev-1";
 
         var ex = await Assert.ThrowsAsync<ArgumentNullException>(
-            () => _validator.ValidateAsync(null!, draftRevision, CancellationToken.None));
+            () => _validator.ValidateAsync(null!, draftRevision, storedSchemaVersion: null, CancellationToken.None));
 
         Assert.Equal("draft", ex.ParamName);
     }
@@ -56,7 +88,7 @@ public sealed class DefinitionValidatorTests
         var validator = new DefinitionValidator(new[] { rule });
         var definition = CreateMinimalDefinition("wf-1");
 
-        var result = await validator.ValidateAsync(definition, "rev-1", CancellationToken.None);
+        var result = await validator.ValidateAsync(definition, "rev-1", storedSchemaVersion: null, CancellationToken.None);
 
         Assert.Equal(ValidationOutcome.Fail, result.Outcome);
         Assert.Single(result.Findings);
@@ -70,7 +102,7 @@ public sealed class DefinitionValidatorTests
         var validator = new DefinitionValidator(new[] { rule });
         var definition = CreateMinimalDefinition("wf-1");
 
-        var result = await validator.ValidateAsync(definition, "rev-1", CancellationToken.None);
+        var result = await validator.ValidateAsync(definition, "rev-1", storedSchemaVersion: null, CancellationToken.None);
 
         Assert.Equal(ValidationOutcome.PassWithWarnings, result.Outcome);
         Assert.Single(result.Findings);
@@ -85,7 +117,7 @@ public sealed class DefinitionValidatorTests
         var validator = new DefinitionValidator(new[] { pureRule, resourcedRule });
         var definition = CreateMinimalDefinition("wf-1");
 
-        var result = await validator.ValidateAsync(definition, "rev-1", CancellationToken.None);
+        var result = await validator.ValidateAsync(definition, "rev-1", storedSchemaVersion: null, CancellationToken.None);
 
         Assert.Equal(2, result.Findings.Count); // Both pure and resourced rules
         Assert.Contains(result.Findings, f => f.RuleId == "pure-tier-error");

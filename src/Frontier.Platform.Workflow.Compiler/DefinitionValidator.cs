@@ -22,10 +22,11 @@ public sealed class DefinitionValidator : IDefinitionCompiler
     public async Task<ValidationReport> ValidateAsync(
         WorkflowDefinition draft,
         string draftRevision,
+        string? storedSchemaVersion,
         CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(draft);
-        var ctx = new DefinitionValidationContext(draft, draftRevision);
+        var ctx = new DefinitionValidationContext(draft, draftRevision, StoredSchemaVersion: storedSchemaVersion);
         var findings = new List<ValidationFinding>();
 
         foreach (var rule in _rules.Where(r => r.Tier == RuleTier.Pure || r.Tier == RuleTier.Resourced))

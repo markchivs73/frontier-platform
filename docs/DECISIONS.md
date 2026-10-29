@@ -1090,6 +1090,18 @@ artifact and sat outside the agreed surface, so it was reverted rather than abso
 and its plumbing are correct and tested; until that wiring lands, `schema.version-supported` cannot
 fire in a real validation. Tracked as S13.34.
 
+**Gap closed (S13.77, 2026-10-29).** The seam is `ValidateAsync`, whose consumer callers already hold
+the stored `DefinitionDraftDocument`. It takes the stored version as a **required, nullable**
+parameter: `ValidateAsync(draft, draftRevision, storedSchemaVersion, ct)`. *Why required, not a
+trailing optional:* an optional parameter cannot be omitted inside a Moq expression tree (CS0854),
+so it would have broken the same mock setups the reverted `ValidateStructural` overload did. An
+extra overload with a default body would have made loose mocks of the new overload return null at
+run time instead. A required parameter makes every caller say which case it is, and the compiler
+finds each one. `null` is right for an in-memory definition: `ChatDesignerService` passes it for the
+designer's proposal, which is a fresh definition, not the stored draft. A breaking change to
+`Workflow.Compiler`'s public surface, permitted in a minor while the major is 0.
+`ValidateAsync_StoredSchemaVersion_ReachesTheSchemaRule` proves the finding through the validation path.
+
 ## ADR-PA24 — ADR-CR1's refresh lands at quiescence, merges, and reports a real epoch
 
 S13.62 closed ADR-CR1's loop: the orchestrator now consumes a `DynamicContextRefreshRequired`
