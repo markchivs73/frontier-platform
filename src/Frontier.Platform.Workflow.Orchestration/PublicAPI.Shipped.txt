@@ -190,6 +190,8 @@ Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput
 Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.<Clone>$() -> Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput!
 Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.Definition.get -> Frontier.Platform.Workflow.Model.WorkflowDefinition!
 Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.Definition.init -> void
+Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.DispatcherRolloverThreshold.get -> int?
+Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.DispatcherRolloverThreshold.init -> void
 Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.DynamicContextEpoch.get -> int?
 Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.DynamicContextEpoch.init -> void
 Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.DynamicContextHash.get -> string?

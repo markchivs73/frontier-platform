@@ -79,7 +79,7 @@ Frontier.Platform.Workflow.Compiler.DefinitionValidationContext.StoredSchemaVers
 Frontier.Platform.Workflow.Compiler.DefinitionValidator
 Frontier.Platform.Workflow.Compiler.DefinitionValidator.ComputeDefinitionHash(Frontier.Platform.Workflow.Model.WorkflowDefinition! definition) -> string!
 Frontier.Platform.Workflow.Compiler.DefinitionValidator.DefinitionValidator(System.Collections.Generic.IEnumerable<Frontier.Platform.Workflow.Compiler.IDefinitionValidationRule!>! rules) -> void
-Frontier.Platform.Workflow.Compiler.DefinitionValidator.ValidateAsync(Frontier.Platform.Workflow.Model.WorkflowDefinition! draft, string! draftRevision, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.ValidationReport!>!
+Frontier.Platform.Workflow.Compiler.DefinitionValidator.ValidateAsync(Frontier.Platform.Workflow.Model.WorkflowDefinition! draft, string! draftRevision, string? storedSchemaVersion, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.ValidationReport!>!
 Frontier.Platform.Workflow.Compiler.DefinitionValidator.ValidateStructural(Frontier.Platform.Workflow.Model.WorkflowDefinition! draft) -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Workflow.Compiler.ValidationFinding!>!
 Frontier.Platform.Workflow.Compiler.DeleteDraftResult
 Frontier.Platform.Workflow.Compiler.DeleteDraftResult.DeleteDraftResult() -> void
@@ -173,7 +173,7 @@ Frontier.Platform.Workflow.Compiler.IContractTypeCatalog.Resolve(string! contrac
 Frontier.Platform.Workflow.Compiler.IContractTypeCatalog.Resolves(string! contractTypeName) -> bool
 Frontier.Platform.Workflow.Compiler.IDefinitionCompiler
 Frontier.Platform.Workflow.Compiler.IDefinitionCompiler.ComputeDefinitionHash(Frontier.Platform.Workflow.Model.WorkflowDefinition! definition) -> string!
-Frontier.Platform.Workflow.Compiler.IDefinitionCompiler.ValidateAsync(Frontier.Platform.Workflow.Model.WorkflowDefinition! draft, string! draftRevision, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.ValidationReport!>!
+Frontier.Platform.Workflow.Compiler.IDefinitionCompiler.ValidateAsync(Frontier.Platform.Workflow.Model.WorkflowDefinition! draft, string! draftRevision, string? storedSchemaVersion, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.ValidationReport!>!
 Frontier.Platform.Workflow.Compiler.IDefinitionCompiler.ValidateStructural(Frontier.Platform.Workflow.Model.WorkflowDefinition! draft) -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Workflow.Compiler.ValidationFinding!>!
 Frontier.Platform.Workflow.Compiler.IDefinitionLifecycleService
 Frontier.Platform.Workflow.Compiler.IDefinitionLifecycleService.ApplyAgentMergeAsync(string! workflowId, System.Collections.Generic.IReadOnlyList<string!>! approvedChangeIds, string! expectedRevision, string! userId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.MergeOutcome!>!
