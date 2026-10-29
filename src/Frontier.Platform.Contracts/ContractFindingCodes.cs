@@ -39,6 +39,24 @@ public static class ContractFindingCodes
     /// <summary>A rule has no <c>message</c>.</summary>
     public const string RuleMessageMissing = "contract.rule-message-missing";
 
+    /// <summary>A rule does not parse, or does not type-check against the schema's types.</summary>
+    public const string RuleInvalid = "contract.rule-invalid";
+
+    /// <summary>A rule uses something outside the CEL profile: <c>matches()</c> or a named time zone.</summary>
+    public const string RuleFunctionNotAllowed = "contract.rule-function-not-allowed";
+
+    /// <summary>A rule's result is not a boolean.</summary>
+    public const string RuleNotBoolean = "contract.rule-not-boolean";
+
+    /// <summary>The schema does not bound a rule's cost.</summary>
+    public const string RuleCostUnbounded = "contract.rule-cost-unbounded";
+
+    /// <summary>A rule's estimated cost is over <see cref="ContractsOptions.MaxRuleCost"/>.</summary>
+    public const string RuleCostExceeded = "contract.rule-cost-exceeded";
+
+    /// <summary>An <c>examples</c> entry fails a rule.</summary>
+    public const string ExampleFailsRule = "contract.example-fails-rule";
+
     /// <summary>This exact version is already registered; a registered contract never changes.</summary>
     public const string VersionExists = "contract.version-exists";
 

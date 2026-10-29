@@ -245,18 +245,27 @@ using var contractSchema = System.Text.Json.JsonDocument.Parse("""
     }
     """);
 var registration = contractProvider.GetRequiredService<IContractRegistrationCheck>().Check(
-    new ContractRegistrationRequest { ContractRef = "smoke/count/1.0", Schema = contractSchema.RootElement, Provenance = ContractProvenance.Authored }, []);
+    new ContractRegistrationRequest
+    {
+        ContractRef = "smoke/count/1.0",
+        Schema = contractSchema.RootElement,
+        Rules = [new ContractRule { Rule = "self.total < 10.0", Message = "Under ten." }],
+        Provenance = ContractProvenance.Authored,
+    }, []);
 if (!registration.IsAccepted || !contractSchema.RootElement.TryGetProperty("examples", out _))
 {
     throw new InvalidOperationException($"The smoke contract was refused: {string.Join("; ", registration.Findings.Select(f => f.Code))}");
 }
 
-using var contractPayload = System.Text.Json.JsonDocument.Parse("""{ "total": "one" }""");
-if (contractProvider.GetRequiredService<IContractValidator>().Validate(registration.Snapshot!, contractPayload.RootElement).IsValid)
+var contractValidator = contractProvider.GetRequiredService<IContractValidator>();
+using var wrongShape = System.Text.Json.JsonDocument.Parse("""{ "total": "one" }""");
+using var breaksRule = System.Text.Json.JsonDocument.Parse("""{ "total": 12 }""");
+if (contractValidator.Validate(registration.Snapshot!, wrongShape.RootElement).IsValid
+    || contractValidator.Validate(registration.Snapshot!, breaksRule.RootElement).IsValid)
 {
     throw new InvalidOperationException("A payload breaking its contract validated.");
 }
 
-Console.WriteLine($"  contracts       : registered {registration.Snapshot!.ContractRef} ({registration.Snapshot.Hash[..19]}…), refused a bad payload");
+Console.WriteLine($"  contracts       : registered {registration.Snapshot!.ContractRef} ({registration.Snapshot.Hash[..19]}…), refused a bad shape and a broken rule");
 Console.WriteLine();
 Console.WriteLine("PASS - all thirteen packages restored, loaded and registered.");

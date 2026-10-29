@@ -12,12 +12,12 @@ public sealed class ContractValidatorTests
 
     [Fact]
     public void Validate_AConformingPayload_IsValid() =>
-        Assert.True(new ContractValidator(Engine.Real(), Engine.Options()).Validate(Legible, Json.Parse("""{ "total": 2 }""")).IsValid);
+        Assert.True(new ContractValidator(Engine.Real(), Engine.Rules(), Engine.Options()).Validate(Legible, Json.Parse("""{ "total": 2 }""")).IsValid);
 
     [Fact]
     public void Validate_ReportsEachReason_WithoutQuotingThePayload()
     {
-        var validator = new ContractValidator(Engine.Real(), Engine.Options());
+        var validator = new ContractValidator(Engine.Real(), Engine.Rules(), Engine.Options());
 
         var result = validator.Validate(Legible, Json.Parse("""{ "total": "SECRET-1", "label": "SECRET-LONG-VALUE", "other": "SECRET-3" }"""));
 
@@ -33,7 +33,7 @@ public sealed class ContractValidatorTests
     [InlineData("""{ "type": "number", "maximum": 1 }""", "123456789")]
     public void Validate_MessagesQuoteTheContract_NeverThePayload(string schema, string payload)
     {
-        var result = new ContractValidator(Engine.Real(), Engine.Options()).Validate(Snapshot(schema), Json.Parse(payload));
+        var result = new ContractValidator(Engine.Real(), Engine.Rules(), Engine.Options()).Validate(Snapshot(schema), Json.Parse(payload));
 
         var violation = Assert.Single(result.Violations);
         Assert.DoesNotContain("SECRET", violation.Message, StringComparison.Ordinal);
@@ -44,7 +44,7 @@ public sealed class ContractValidatorTests
     public void Validate_APatternThatRunsPastItsTimeLimit_IsAPermanentViolation()
     {
         var engine = new CorvusSchemaEngine(Engine.Options(o => o.RegexMatchTimeoutMilliseconds = 1));
-        var validator = new ContractValidator(engine, Engine.Options());
+        var validator = new ContractValidator(engine, Engine.Rules(), Engine.Options());
         var payload = Json.Parse("\"" + new string('a', 5_000) + "!\"");
 
         var result = validator.Validate(Snapshot("""{ "type": "string", "pattern": "^(a|aa)*$" }"""), payload);
@@ -54,13 +54,33 @@ public sealed class ContractValidatorTests
     }
 
     [Fact]
+    public void Validate_RunsTheRules_OnceTheSchemaPasses()
+    {
+        var validator = new ContractValidator(Engine.Real(), Engine.Rules(), Engine.Options());
+        var contract = Snapshot(Json.LegibleSchema, new ContractRule { Rule = "self.total < 10.0", Message = "Under ten.", FieldPath = "/total" });
+
+        Assert.True(validator.Validate(contract, Json.Parse("""{ "total": 9 }""")).IsValid);
+        Assert.Equal([new ContractViolation("/total", "rule", "Under ten.")], validator.Validate(contract, Json.Parse("""{ "total": 11 }""")).Violations);
+        Assert.Equal(["type"], validator.Validate(contract, Json.Parse("""{ "total": "x" }""")).Violations.Select(v => v.Keyword));
+    }
+
+    [Fact]
+    public void Validate_APinnedContractWhoseRuleDoesNotCompile_IsAPermanentViolation()
+    {
+        var contract = Snapshot(Json.LegibleSchema, new ContractRule { Rule = "self.nope", Message = "m" });
+
+        var exception = Assert.Throws<ContractViolationException>(() => new ContractValidator(Engine.Real(), Engine.Rules(), Engine.Options()).Validate(contract, Json.Parse("""{ "total": 1 }""")));
+        Assert.Contains("a rule does not compile", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Validate_AssertsNoFormat_SinceFormatIsAnAnnotation() =>
-        Assert.True(new ContractValidator(Engine.Real(), Engine.Options()).Validate(Snapshot("""{ "type": "string", "format": "email" }"""), Json.Parse("\"not an email\"")).IsValid);
+        Assert.True(new ContractValidator(Engine.Real(), Engine.Rules(), Engine.Options()).Validate(Snapshot("""{ "type": "string", "format": "email" }"""), Json.Parse("\"not an email\"")).IsValid);
 
     [Fact]
     public void Validate_StopsAtMaxViolations()
     {
-        var validator = new ContractValidator(Engine.Real(), Engine.Options(o => o.MaxViolations = 1));
+        var validator = new ContractValidator(Engine.Real(), Engine.Rules(), Engine.Options(o => o.MaxViolations = 1));
 
         Assert.Single(validator.Validate(Legible, Json.Parse("""{ "total": "x", "other": 1 }""")).Violations);
     }
@@ -68,7 +88,7 @@ public sealed class ContractValidatorTests
     [Fact]
     public void Validate_Bytes_ParsesAndValidates()
     {
-        var validator = new ContractValidator(Engine.Real(), Engine.Options());
+        var validator = new ContractValidator(Engine.Real(), Engine.Rules(), Engine.Options());
 
         Assert.True(validator.Validate(Legible, Encoding.UTF8.GetBytes("""{ "total": 1 }""")).IsValid);
         Assert.False(validator.Validate(Legible, Encoding.UTF8.GetBytes("""{ "total": -1 }""")).IsValid);
@@ -79,7 +99,7 @@ public sealed class ContractValidatorTests
     [InlineData("[[[[1]]]]")]
     public void Validate_Bytes_ThatAreNotJsonOrTooDeep_AreAViolation(string payload)
     {
-        var validator = new ContractValidator(Engine.Real(), Engine.Options(o => o.MaxPayloadDepth = 3));
+        var validator = new ContractValidator(Engine.Real(), Engine.Rules(), Engine.Options(o => o.MaxPayloadDepth = 3));
 
         var violation = Assert.Single(validator.Validate(Snapshot("{}"), Encoding.UTF8.GetBytes(payload)).Violations);
         Assert.Equal(("", "json"), (violation.Location, violation.Keyword));
@@ -91,14 +111,14 @@ public sealed class ContractValidatorTests
     [InlineData("""{ "a": { "b": [1] } }""", true)]
     [InlineData("7", true)]
     public void Validate_Element_ChecksDepth(string payload, bool valid) =>
-        Assert.Equal(valid, new ContractValidator(Engine.Real(), Engine.Options(o => o.MaxPayloadDepth = 3)).Validate(Snapshot("{}"), Json.Parse(payload)).IsValid);
+        Assert.Equal(valid, new ContractValidator(Engine.Real(), Engine.Rules(), Engine.Options(o => o.MaxPayloadDepth = 3)).Validate(Snapshot("{}"), Json.Parse(payload)).IsValid);
 
     [Fact]
     public void Validate_ASnapshotWhoseContentNoLongerMatchesItsHash_IsRefused()
     {
         var tampered = Legible with { Schema = Json.Parse("""{ "type": "object" }""") };
 
-        var exception = Assert.Throws<ContractViolationException>(() => new ContractValidator(Engine.Real(), Engine.Options()).Validate(tampered, Json.Parse("{}")));
+        var exception = Assert.Throws<ContractViolationException>(() => new ContractValidator(Engine.Real(), Engine.Rules(), Engine.Options()).Validate(tampered, Json.Parse("{}")));
         Assert.Contains("hash does not match", exception.Message, StringComparison.Ordinal);
     }
 
@@ -106,7 +126,7 @@ public sealed class ContractValidatorTests
     public void Validate_CompilesEachContractOnce()
     {
         var engine = new CountingEngine(Engine.Real());
-        var validator = new ContractValidator(engine, Engine.Options());
+        var validator = new ContractValidator(engine, Engine.Rules(), Engine.Options());
 
         validator.Validate(Legible, Json.Parse("""{ "total": 1 }"""));
         validator.Validate(Legible, Json.Parse("""{ "total": 2 }"""));
@@ -118,7 +138,7 @@ public sealed class ContractValidatorTests
     [Fact]
     public void Validate_APinnedContractThatDoesNotCompile_IsAPermanentViolation()
     {
-        var validator = new ContractValidator(new CountingEngine(Engine.Real(), refuseWith: "bad keyword"), Engine.Options());
+        var validator = new ContractValidator(new CountingEngine(Engine.Real(), refuseWith: "bad keyword"), Engine.Rules(), Engine.Options());
 
         var exception = Assert.Throws<ContractViolationException>(() => validator.Validate(Legible, Json.Parse("{}")));
         Assert.Contains("bad keyword", exception.Message, StringComparison.Ordinal);
@@ -127,7 +147,7 @@ public sealed class ContractValidatorTests
     [Fact]
     public void Validate_TwoContractsWithTheSameId_AreKeptApart()
     {
-        var validator = new ContractValidator(Engine.Real(), Engine.Options());
+        var validator = new ContractValidator(Engine.Real(), Engine.Rules(), Engine.Options());
         var integers = Snapshot("""{ "$id": "urn:same", "type": "integer" }""");
         var strings = Snapshot("""{ "$id": "urn:same", "type": "string" }""");
 
@@ -139,15 +159,15 @@ public sealed class ContractValidatorTests
     [Fact]
     public void Validate_NullContract_Throws()
     {
-        var validator = new ContractValidator(Engine.Real(), Engine.Options());
+        var validator = new ContractValidator(Engine.Real(), Engine.Rules(), Engine.Options());
 
         Assert.Throws<ArgumentNullException>(() => validator.Validate(null!, Json.Parse("{}")));
         Assert.Throws<ArgumentNullException>(() => validator.Validate(null!, ReadOnlyMemory<byte>.Empty));
     }
 
-    internal static ContractSnapshot Snapshot(string schema)
+    internal static ContractSnapshot Snapshot(string schema, params ContractRule[] rules)
     {
         var element = Json.Parse(schema);
-        return new ContractSnapshot { ContractRef = "frontier/test/1.0", Schema = element, Rules = [], Hash = ContractHash.Compute(element, []) };
+        return new ContractSnapshot { ContractRef = "frontier/test/1.0", Schema = element, Rules = rules, Hash = ContractHash.Compute(element, rules) };
     }
 }

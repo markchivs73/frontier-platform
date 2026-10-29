@@ -8,6 +8,8 @@
   <ItemGroup>
     <!-- TD-18: JSON Schema 2020-12, behind ISchemaEngine; never on a public surface. -->
     <PackageReference Include="Corvus.Text.Json.Validator" />
+    <!-- TD-17: CEL rules, behind IRuleEngine; never on a public surface. -->
+    <PackageReference Include="Celly" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Options" />

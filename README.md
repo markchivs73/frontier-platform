@@ -34,7 +34,7 @@ is a test rather than a convention (ADR-PA5).
 | `Frontier.Platform.Abstractions` | The platform contract kernel: `SmartEnum<T>`, `IVersionedContract`, `ContractMigrator`, the permanent-failure exceptions, and the shared kernel contracts. Zero dependencies (ADR-PA1). |
 | `Frontier.Platform.Serialization` | The canonical JSON profile. Byte-stable output — definition hashing, cache hits and audit signing all depend on it. |
 | `Frontier.Platform.ContextAssembly` | Tiered context assembly (baseline → dynamic → real-time) with provider cache breakpoints at tier boundaries. |
-| `Frontier.Platform.Contracts` | Contracts as data (ADR-PA38): the registration check for a registry contract (2020-12 meta-schema, local references only, legibility lint, compatibility within a major) and the one validator the engine runs at node boundaries. JSON Schema through Corvus.Text.Json.Validator, behind an internal port. |
+| `Frontier.Platform.Contracts` | Contracts as data (ADR-PA38): the registration check for a registry contract (2020-12 meta-schema, local references only, legibility lint, compatibility within a major) and the one validator the engine runs at node boundaries. JSON Schema through Corvus.Text.Json.Validator and CEL rules through Celly, each behind an internal port. |
 | `Frontier.Platform.Audit` | Audit record contracts, hash chaining and verification, Cosmos-backed stores, and change-feed archival export. |
 | `Frontier.Platform.Hitl` | Human-in-the-loop approval store, queries and rollback. Solution-agnostic: callers drive it from their own orchestration activity shells. |
 | `Frontier.Platform.ModelRoleConfig` | Model role registry and resolution: capability requirements, fleet/canary mappings, mapping governance. |

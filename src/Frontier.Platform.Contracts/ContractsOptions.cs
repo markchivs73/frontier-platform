@@ -22,6 +22,20 @@ public sealed class ContractsOptions
     public int MaxViolations { get; set; } = 20;
 
     /// <summary>
+    /// The highest estimated cost a rule may have, checked when the contract is registered, in
+    /// Celly's units (cel-go's). The default is Kubernetes' per-expression limit.
+    /// </summary>
+    [Range(1, int.MaxValue)]
+    public int MaxRuleCost { get; set; } = 1_000_000;
+
+    /// <summary>
+    /// How many comprehension iterations one rule may take on one payload. Running out is a
+    /// permanent violation. A count, not a clock, so the same payload always gets the same answer.
+    /// </summary>
+    [Range(1, int.MaxValue)]
+    public int MaxRuleIterations { get; set; } = 100_000;
+
+    /// <summary>
     /// How long one schema <c>pattern</c> match may run, in milliseconds. A timeout is a permanent
     /// violation (ADR-E27 D3). It is the one wall-clock limit, and it only ever refuses a payload.
     /// </summary>

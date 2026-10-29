@@ -72,6 +72,10 @@ Frontier.Platform.Contracts.ContractsOptions
 Frontier.Platform.Contracts.ContractsOptions.ContractsOptions() -> void
 Frontier.Platform.Contracts.ContractsOptions.MaxPayloadDepth.get -> int
 Frontier.Platform.Contracts.ContractsOptions.MaxPayloadDepth.set -> void
+Frontier.Platform.Contracts.ContractsOptions.MaxRuleCost.get -> int
+Frontier.Platform.Contracts.ContractsOptions.MaxRuleCost.set -> void
+Frontier.Platform.Contracts.ContractsOptions.MaxRuleIterations.get -> int
+Frontier.Platform.Contracts.ContractsOptions.MaxRuleIterations.set -> void
 Frontier.Platform.Contracts.ContractsOptions.MaxViolations.get -> int
 Frontier.Platform.Contracts.ContractsOptions.MaxViolations.set -> void
 Frontier.Platform.Contracts.ContractsOptions.RegexMatchTimeoutMilliseconds.get -> int
@@ -85,6 +89,7 @@ Frontier.Platform.Contracts.IContractValidator.Validate(Frontier.Platform.Abstra
 const Frontier.Platform.Contracts.ContractFindingCodes.ContentModelUnstated = "contract.content-model-unstated" -> string!
 const Frontier.Platform.Contracts.ContractFindingCodes.DescriptionMissing = "contract.description-missing" -> string!
 const Frontier.Platform.Contracts.ContractFindingCodes.DialectUnsupported = "contract.dialect-unsupported" -> string!
+const Frontier.Platform.Contracts.ContractFindingCodes.ExampleFailsRule = "contract.example-fails-rule" -> string!
 const Frontier.Platform.Contracts.ContractFindingCodes.ExampleInvalid = "contract.example-invalid" -> string!
 const Frontier.Platform.Contracts.ContractFindingCodes.ExamplesMissing = "contract.examples-missing" -> string!
 const Frontier.Platform.Contracts.ContractFindingCodes.MinorChangesRules = "contract.minor-changes-rules" -> string!
@@ -92,7 +97,12 @@ const Frontier.Platform.Contracts.ContractFindingCodes.MinorChangesSchema = "con
 const Frontier.Platform.Contracts.ContractFindingCodes.PropertyDescriptionMissing = "contract.property-description-missing" -> string!
 const Frontier.Platform.Contracts.ContractFindingCodes.RefMalformed = "contract.ref-malformed" -> string!
 const Frontier.Platform.Contracts.ContractFindingCodes.RefNotLocal = "contract.ref-not-local" -> string!
+const Frontier.Platform.Contracts.ContractFindingCodes.RuleCostExceeded = "contract.rule-cost-exceeded" -> string!
+const Frontier.Platform.Contracts.ContractFindingCodes.RuleCostUnbounded = "contract.rule-cost-unbounded" -> string!
+const Frontier.Platform.Contracts.ContractFindingCodes.RuleFunctionNotAllowed = "contract.rule-function-not-allowed" -> string!
+const Frontier.Platform.Contracts.ContractFindingCodes.RuleInvalid = "contract.rule-invalid" -> string!
 const Frontier.Platform.Contracts.ContractFindingCodes.RuleMessageMissing = "contract.rule-message-missing" -> string!
+const Frontier.Platform.Contracts.ContractFindingCodes.RuleNotBoolean = "contract.rule-not-boolean" -> string!
 const Frontier.Platform.Contracts.ContractFindingCodes.SchemaInvalid = "contract.schema-invalid" -> string!
 const Frontier.Platform.Contracts.ContractFindingCodes.SchemaNotObject = "contract.schema-not-object" -> string!
 const Frontier.Platform.Contracts.ContractFindingCodes.VersionExists = "contract.version-exists" -> string!

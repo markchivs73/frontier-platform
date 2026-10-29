@@ -16,6 +16,8 @@ internal static class Engine
     }
 
     internal static CorvusSchemaEngine Real() => new(Options());
+
+    internal static CellyRuleEngine Rules(Action<ContractsOptions>? configure = null) => new(Options(configure));
 }
 
 /// <summary>Counts compilations and can be told to refuse every schema.</summary>
