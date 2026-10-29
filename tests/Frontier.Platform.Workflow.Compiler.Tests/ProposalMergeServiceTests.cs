@@ -439,6 +439,7 @@ public sealed class ProposalMergeServiceTests
         public Task<ValidationReport> ValidateAsync(
             WorkflowDefinition draft,
             string draftRevision,
+            string? storedSchemaVersion,
             CancellationToken ct)
         {
             return Task.FromResult(new ValidationReport(

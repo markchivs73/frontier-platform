@@ -170,12 +170,19 @@ public sealed class ChatDesignerServiceTests
         private sealed class RepairCompiler : IDefinitionCompiler
         {
             public IReadOnlyList<ValidationFinding> AsyncFindings { get; init; } = [];
-            public Task<ValidationReport> ValidateAsync(WorkflowDefinition d, string rev, CancellationToken ct) =>
-                Task.FromResult(new ValidationReport("wf", rev, DateTime.UtcNow,
+            /// <summary>Every stored schema version the service passed, in call order (S13.77).</summary>
+            public List<string?> StoredSchemaVersions { get; } = [];
+            public Task<ValidationReport> ValidateAsync(WorkflowDefinition d, string rev, string? storedSchemaVersion, CancellationToken ct) =>
+                Record(storedSchemaVersion) ?? Task.FromResult(new ValidationReport("wf", rev, DateTime.UtcNow,
                     AsyncFindings.Any(f => f.Severity == ValidationSeverity.Error) ? ValidationOutcome.Fail : ValidationOutcome.Pass,
                     AsyncFindings, new Dictionary<string, string>()));
             public IReadOnlyList<ValidationFinding> ValidateStructural(WorkflowDefinition d) => [];
             public string ComputeDefinitionHash(WorkflowDefinition d) => "hash";
+            private Task<ValidationReport>? Record(string? storedSchemaVersion)
+            {
+                StoredSchemaVersions.Add(storedSchemaVersion);
+                return null;
+            }
         }
 
         private static (ChatDesignerService Service, Mock<IChatClient> Client, InMemoryDefinitionStore Store)
@@ -225,12 +232,15 @@ public sealed class ChatDesignerServiceTests
         [Fact]
         public async Task CleanProposal_NoRepair_SingleCall()
         {
-            var (service, client, store) = Build(new RepairCompiler { AsyncFindings = [] }, Proposal("only"));
+            var compiler = new RepairCompiler { AsyncFindings = [] };
+            var (service, client, store) = Build(compiler, Proposal("only"));
 
             var result = await RunTurnAsync(service, store);
 
             VerifyCalls(client, Times.Once());
             Assert.Equal("only", result.ProposalReasoningJson);
+            // S13.77: the proposal is a fresh definition, never the stored draft, so no stored schema version rides with it.
+            Assert.Equal([null], compiler.StoredSchemaVersions);
         }
 
         [Fact]

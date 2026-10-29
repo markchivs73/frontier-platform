@@ -432,7 +432,9 @@ internal sealed class ChatDesignerService : IChatDesignerService
         if (string.IsNullOrEmpty(result.ProposalDefinitionJson)) return [];
         var proposed = JsonSerializer.Deserialize<WorkflowDefinition>(result.ProposalDefinitionJson, CanonicalProfile.Options);
         if (proposed is null) return [];
-        var report = await _compiler.ValidateAsync(proposed, draft.DraftRevision, ct);
+        // The proposal is a fresh definition, not the stored draft, so it carries no stored schema
+        // version: passing the draft's would pin an old-schema finding on a brand-new proposal.
+        var report = await _compiler.ValidateAsync(proposed, draft.DraftRevision, storedSchemaVersion: null, ct);
         return report.Findings.Where(f => f.Severity == ValidationSeverity.Error).ToList();
     }
 
