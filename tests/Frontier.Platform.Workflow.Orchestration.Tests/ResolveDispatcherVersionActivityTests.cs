@@ -118,7 +118,7 @@ public sealed class ResolveDispatcherVersionActivityTests
         var harness = new DispatcherSpawnTests.DispatcherHarness();
         harness.Start();
 
-        harness.RaiseWorkItems(DispatcherOrchestrator.ContinueAsNewThreshold);
+        harness.RaiseWorkItems(DispatcherOrchestrator.DefaultContinueAsNewThreshold);
 
         var request = Assert.Single(harness.ResolveRequests);
         Assert.Equal("E2E::Acme::HQ", request.EngagementId);
@@ -146,7 +146,7 @@ public sealed class ResolveDispatcherVersionActivityTests
         var harness = new DispatcherSpawnTests.DispatcherHarness(rollover: rolled);
         harness.Start();
 
-        harness.RaiseWorkItems(DispatcherOrchestrator.ContinueAsNewThreshold);
+        harness.RaiseWorkItems(DispatcherOrchestrator.DefaultContinueAsNewThreshold);
 
         var next = Assert.IsType<GraphOrchestratorInput>(harness.Context.ContinueAsNewCalls[0].Input);
         Assert.Equal(12, next.Definition.DefinitionVersion);
@@ -159,7 +159,7 @@ public sealed class ResolveDispatcherVersionActivityTests
         var harness = new DispatcherSpawnTests.DispatcherHarness(rollover: null);
         harness.Start();
 
-        harness.RaiseWorkItems(DispatcherOrchestrator.ContinueAsNewThreshold);
+        harness.RaiseWorkItems(DispatcherOrchestrator.DefaultContinueAsNewThreshold);
 
         var next = Assert.IsType<GraphOrchestratorInput>(harness.Context.ContinueAsNewCalls[0].Input);
         Assert.Equal(1, next.Definition.DefinitionVersion);

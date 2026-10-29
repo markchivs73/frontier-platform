@@ -2446,3 +2446,28 @@ Reopen when a deployment's governance partition passes 5 GB, or before a tenant 
 more than a million governance records.
 
 No code change. No release.
+
+## ADR-PA37 — the dispatcher's rollover threshold is input data
+
+`DispatcherOrchestrator` called `ContinueAsNew` after a literal 100 spawns. That number bounds DTF
+history and costs a generation change each time: too low and an eternal router churns generations,
+too high and replay cost grows. It is a governance number, and K7 says governance numbers are data
+(consumer S13.78).
+
+**It rides on the input, not in configuration.** `GraphOrchestratorInput.DispatcherRolloverThreshold`
+(order 8, `dispatcher_rollover_threshold`) is resolved by the consumer's Host factory from deployment
+configuration when the dispatcher starts. It is carried across every generation by
+`BuildNextGenerationInput`, like `RunId`. The orchestrator body reads no configuration (hard
+invariant 2). Children are one-shot runs and never carry it.
+
+**It is not part of the definition.** It is a deployment-shaped concern, so putting it in the
+pinned definition would have made it part of `definition_hash` and of every publish review, for a
+value no workflow author should own.
+
+**Additive and optional** (ADR-E15 floor). Absent, it is omitted from the wire, so an input recorded
+before it keeps its bytes and replays with `DefaultContinueAsNewThreshold` (100), which is what it
+ran with. A non-positive value also falls back to the default rather than rolling over on every
+spawn. Pinned by `ContinueAsNew_FiresAtTheInputsThreshold`,
+`ContinueAsNew_CarriesTheThreshold_AndChildrenDoNotInheritIt`,
+`RolloverThreshold_IsTheDefault_WhenTheInputNamesNoneOrANonPositiveOne` and
+`RolloverThreshold_IsOmittedWhenNull_AndLastWhenSet`.
