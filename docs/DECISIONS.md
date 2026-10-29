@@ -1265,7 +1265,8 @@ contract: `object` deserializes as a `JsonElement`, so every consumer re-inspect
 and ADR-E1 tonnage has nowhere to live. This is K4 erosion in the one place it matters most — the
 only path carrying **external** input across the DTF history boundary, where the bytes are
 evidential and replayed for the life of an eternal instance. The contract now implements
-`IVersionedContract`, validates (cascading the envelope's own violations), and has a golden file.
+`IVersionedContract`, validates (cascading the envelope's own violations), and has a golden file; for rules, by `CellyRuleEngineTests`, `CelSchemaTypesTests`, `CelPayloadTests`,
+`RuleCostHintsTests` and `RuleProfileTests`, all against the real engine.
 Adding `schema_version` at property order 0 renumbers the rest, which canonical-serialization
 normally forbids outright; it is safe **because of** the defect above — nothing has ever raised a
 `WorkItem`, so no stored or replayed bytes exist. It is a break in theory only, and only until the
@@ -2493,8 +2494,7 @@ rule.
 behind `ISchemaEngine`, configured with file and HTTP resolution off, `format` as an annotation and
 a regex timeout from options. Corvus caches compiled schemas process-wide by URI, so each one is
 compiled under `urn:frontier:contract:{hash}` with the cache refreshed; two contracts declaring the
-same `$id` stay apart. No Corvus type is on the public surface. CEL (Celly, TD-17) arrives the same
-way in slice 1b.
+same `$id` stay apart. No Corvus or Celly type is on the public surface.
 
 **Corvus's analyzers are removed for every consumer.** `Corvus.Text.Json` ships analyzers (CTJ001)
 that flag ordinary `System.Text.Json` code, and `ExcludeAssets` does not stop them arriving
@@ -2532,6 +2532,30 @@ payload's own property names. At most `MaxViolations` (default 20) are reported,
 failures by evaluation path. A `pattern` that exceeds `RegexMatchTimeoutMilliseconds` (default 1,000)
 refuses the payload; it is the one wall-clock limit, and validation runs inside an activity whose
 result is recorded, so replay never re-runs it.
+
+**CEL rules, decided here (slice 1b):** Celly 1.2.0 (TD-17) behind the internal `IRuleEngine`, with
+the standard library and no extension libraries.
+- **`self` is typed from the schema** (Mark, 2026-10-29). `CelSchemaTypes` maps an object with
+  `properties` to a struct named `contract.S{n}`, an object without to `map(string, T)`, an array to
+  `list(T)`, and anything it cannot type exactly (unions, `oneOf`, a type list, an anchor `$ref`) to
+  `dyn`. The checker therefore refuses a rule naming an undeclared field. Absent fields follow the
+  Kubernetes JSON semantics: `has()` is false and selecting one is an error.
+- **Every JSON number is a `double`** (Mark, 2026-10-29), the CEL spec's JSON mapping. A rule that
+  mixes in an integer literal (`self.total + 1`) fails the type check at registration.
+- **The static ceiling sees sizes.** `RuleCostHints` answers Celly's estimator with `maxItems`,
+  `maxLength` and `maxProperties`, maps each loop variable to the element schema of the range it
+  iterates by reading the syntax tree, and bounds the list a `map()` or `filter()` builds by its
+  range. An unbounded estimate is refused, as is one over `MaxRuleCost` (default 1,000,000,
+  Kubernetes' per-expression limit). Authors bound what their rules iterate.
+- **The profile** refuses `matches()` and any timestamp accessor given a time zone. Map ordering
+  needs no check: every map a rule sees is built in ordinal key order.
+- **At run time** each rule has `MaxRuleIterations` (default 100,000), a count. False, an error and
+  an exhausted budget are each a violation carrying the rule's own message at its `field_path`; an
+  evaluation error's text is dropped, since it can quote the payload. Rules run only once the
+  schema passes, so a rule never sees a value of the wrong shape.
+- **Registration runs every schema-valid example through every rule.** An example a rule rejects
+  refuses an authored contract and warns on a discovered one. A rule that does not compile refuses
+  any contract.
 
 Pinned by `ContractRegistrationCheckTests`, `ContractCompatibilityTests`, `ContractLintTests`,
 `SchemaReferencesTests`, `ContractValidatorTests` (against the real engine, including a real regex

@@ -9,7 +9,7 @@ public static class ContractsServiceCollectionExtensions
     /// <summary>
     /// Binds and validates <see cref="ContractsOptions"/> from the <c>Contracts</c> section, and
     /// registers <see cref="IContractValidator"/> and <see cref="IContractRegistrationCheck"/> over
-    /// the JSON Schema engine.
+    /// the JSON Schema and CEL engines.
     /// </summary>
     public static IServiceCollection AddFrontierContracts(this IServiceCollection services, IConfiguration configuration)
     {
@@ -22,6 +22,7 @@ public static class ContractsServiceCollectionExtensions
 
         return services
             .AddSingleton<ISchemaEngine, CorvusSchemaEngine>()
+            .AddSingleton<IRuleEngine, CellyRuleEngine>()
             .AddSingleton<IContractValidator, ContractValidator>()
             .AddSingleton<IContractRegistrationCheck, ContractRegistrationCheck>();
     }

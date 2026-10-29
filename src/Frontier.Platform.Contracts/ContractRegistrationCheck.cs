@@ -8,7 +8,7 @@ namespace Frontier.Platform.Contracts;
 /// The registration check (ADR-E27 D4, D5, D10). A schema that leaves its own document is never
 /// compiled, so a refused reference cannot make the engine fetch anything.
 /// </summary>
-internal sealed class ContractRegistrationCheck(ISchemaEngine engine) : IContractRegistrationCheck
+internal sealed class ContractRegistrationCheck(ISchemaEngine engine, IRuleEngine ruleEngine) : IContractRegistrationCheck
 {
     /// <summary>The most meta-schema findings reported for one schema.</summary>
     internal const int MaxMetaSchemaFindings = 10;
@@ -52,7 +52,11 @@ internal sealed class ContractRegistrationCheck(ISchemaEngine engine) : IContrac
             : [.. references, .. lint, .. CompiledFindings(schema, rules, provenance)];
     }
 
-    /// <summary>Checks the schema against the 2020-12 meta-schema, compiles it, and runs every example through it.</summary>
+    /// <summary>
+    /// Checks the schema against the 2020-12 meta-schema, compiles it and its rules, and runs every
+    /// example through both. An example must satisfy the schema and every rule (Mark, 2026-10-29), so
+    /// a rule that cannot hold for the contract's own examples is caught here, not at run time.
+    /// </summary>
     internal IEnumerable<ContractFinding> CompiledFindings(JsonElement schema, IReadOnlyList<ContractRule> rules, ContractProvenance provenance)
     {
         var malformed = engine.MetaSchemaViolations(schema, MaxMetaSchemaFindings);
@@ -68,11 +72,16 @@ internal sealed class ContractRegistrationCheck(ISchemaEngine engine) : IContrac
                 "The schema does not compile: " + SchemaViolations.Bound(error))];
         }
 
-        return ExampleFindings(schema, compiled, provenance.LintRefuses ? ContractFindingSeverity.Error : ContractFindingSeverity.Warning);
+        var compiledRules = ruleEngine.Compile(schema, rules);
+        var severity = provenance.LintRefuses ? ContractFindingSeverity.Error : ContractFindingSeverity.Warning;
+        return [.. compiledRules.Findings, .. ExampleFindings(schema, compiled, compiledRules.Rules, severity)];
     }
 
-    /// <summary>A finding for each example the compiled schema refuses, naming its first violation.</summary>
-    internal static IEnumerable<ContractFinding> ExampleFindings(JsonElement schema, ICompiledSchema compiled, ContractFindingSeverity severity)
+    /// <summary>
+    /// A finding for each example the compiled schema refuses, naming its first violation, and for
+    /// each rule a schema-valid example fails. Rules are skipped when they did not compile.
+    /// </summary>
+    internal static IEnumerable<ContractFinding> ExampleFindings(JsonElement schema, ICompiledSchema compiled, ICompiledRules? rules, ContractFindingSeverity severity)
     {
         if (!schema.TryGetProperty("examples", out var examples) || examples.ValueKind != JsonValueKind.Array)
         {
@@ -80,10 +89,21 @@ internal sealed class ContractRegistrationCheck(ISchemaEngine engine) : IContrac
         }
 
         return examples.EnumerateArray()
-            .Select((example, index) => (Index: index, Violations: compiled.Validate(example.GetRawText(), 1)))
-            .Where(item => item.Violations.Count > 0)
-            .Select(item => new ContractFinding(ContractFindingCodes.ExampleInvalid, severity, $"/schema/examples/{item.Index}",
-                $"This example does not satisfy the contract: at '{item.Violations[0].Location}', {item.Violations[0].Message}"))
+            .SelectMany((example, index) => ExampleFindings(example, $"/schema/examples/{index}", compiled, rules, severity))
+            .ToList();
+    }
+
+    private static List<ContractFinding> ExampleFindings(JsonElement example, string location, ICompiledSchema compiled, ICompiledRules? rules, ContractFindingSeverity severity)
+    {
+        var violations = compiled.Validate(example.GetRawText(), 1);
+        if (violations.Count > 0)
+        {
+            return [new ContractFinding(ContractFindingCodes.ExampleInvalid, severity, location,
+                $"This example does not satisfy the contract: at '{violations[0].Location}', {violations[0].Message}")];
+        }
+
+        return (rules?.Evaluate(example, int.MaxValue) ?? [])
+            .Select(failed => new ContractFinding(ContractFindingCodes.ExampleFailsRule, severity, location, $"This example fails a rule: {failed.Message}"))
             .ToList();
     }
 
