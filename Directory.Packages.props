@@ -87,4 +87,12 @@
     <PackageVersion Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.9" />
   </ItemGroup>
 
+  <!-- Contracts as data (ADR-E27, ADR-PA38): JSON Schema 2020-12 validation (TD-18) and CEL
+       rules (TD-17). Both are pinned exactly and sit behind internal ports in
+       Frontier.Platform.Contracts; no type from either appears on a public surface. -->
+  <ItemGroup>
+    <PackageVersion Include="Corvus.Text.Json.Validator" Version="5.7.9" />
+    <PackageVersion Include="Celly" Version="1.2.0" />
+  </ItemGroup>
+
 </Project>

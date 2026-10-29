@@ -21,6 +21,7 @@
     <PackageReference Include="Frontier.Platform.Abstractions" Version="*-*" />
     <PackageReference Include="Frontier.Platform.Audit" Version="*-*" />
     <PackageReference Include="Frontier.Platform.ContextAssembly" Version="*-*" />
+    <PackageReference Include="Frontier.Platform.Contracts" Version="*-*" />
     <PackageReference Include="Frontier.Platform.Guardrails" Version="*-*" />
     <PackageReference Include="Frontier.Platform.Hitl" Version="*-*" />
     <PackageReference Include="Frontier.Platform.ModelRoleConfig" Version="*-*" />

@@ -1,0 +1,11 @@
+<Project>
+
+  <!--
+    Deliberately does NOT import the repository root Directory.Build.targets, for the same reason
+    Directory.Build.props here does not import its props: the smoke consumer must build the way a
+    real consumer does. In particular the root file imports Frontier.Platform.Contracts' analyzer
+    removal for projects in this repo; a consumer gets it only from the package's buildTransitive
+    folder, and this sample is what proves that folder works.
+  -->
+
+</Project>

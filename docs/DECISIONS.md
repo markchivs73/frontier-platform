@@ -2471,3 +2471,69 @@ spawn. Pinned by `ContinueAsNew_FiresAtTheInputsThreshold`,
 `ContinueAsNew_CarriesTheThreshold_AndChildrenDoNotInheritIt`,
 `RolloverThreshold_IsTheDefault_WhenTheInputNamesNoneOrANonPositiveOne` and
 `RolloverThreshold_IsOmittedWhenNull_AndLastWhenSet`.
+
+## ADR-PA38 — contracts as data get their own library, and the checks they pass are fixed here
+
+The consumer's ADR-E27 (S13.116) makes a contract a registry record: a JSON Schema 2020-12 document
+plus CEL rules, hashed as JCS and immutable once registered. This ADR records where that lives in
+the platform and the details ADR-E27 left to the build (consumer S13.117, slice 1a; Mark,
+2026-10-29).
+
+**A thirteenth package, `Frontier.Platform.Contracts`, in the governance tier.** It owns the
+contract hash (`ContractHash`), the registration check (`IContractRegistrationCheck`) and the one
+validator (`IContractValidator`). The engine's Orchestration and Compiler will reference it, as they
+reference Hitl and Resilience. It references only Abstractions and Serialization among platform
+libraries. The snapshot it produces, `ContractSnapshot` with `ContractRule`, lives in Abstractions,
+so a consumer's POCO-only assembly can carry one. Neither placement inside Orchestration nor inside
+Serialization was taken: the first would give the interpreter two third-party engines and leave
+validation without a single owner; the second would break Serialization's references-only-Abstractions
+rule.
+
+**The engines sit behind internal ports.** JSON Schema is Corvus.Text.Json.Validator 5.7.9 (TD-18)
+behind `ISchemaEngine`, configured with file and HTTP resolution off, `format` as an annotation and
+a regex timeout from options. Corvus caches compiled schemas process-wide by URI, so each one is
+compiled under `urn:frontier:contract:{hash}` with the cache refreshed; two contracts declaring the
+same `$id` stay apart. No Corvus type is on the public surface. CEL (Celly, TD-17) arrives the same
+way in slice 1b.
+
+**Corvus's analyzers are removed for every consumer.** `Corvus.Text.Json` ships analyzers (CTJ001)
+that flag ordinary `System.Text.Json` code, and `ExcludeAssets` does not stop them arriving
+transitively. The package carries a `buildTransitive` target that removes them after analyzers
+resolve; the repo's `Directory.Build.targets` imports the same file for its own projects. The smoke
+consumer, now isolated from the repo's `.targets` as it already was from its `.props`, fails with
+CTJ001 when the target is removed and passes with it.
+
+**Registration, decided here:**
+- **References stay inside the contract.** Any `$ref` or `$dynamicRef` not starting with `#` is
+  refused, whatever the provenance, and such a schema is never compiled. Cross-contract references
+  are not supported in v1; a shared shape is copied under `$defs`.
+- **The schema is validated against the 2020-12 meta-schema** before it is compiled. Corvus compiles
+  a malformed keyword (`"minimum": "zero"`) without complaint and ignores it, which would make the
+  constraint silently absent.
+- **The content model must be stated** (Mark, 2026-10-29). Every object schema must say
+  `additionalProperties` or `unevaluatedProperties`; `false` is the default to aim for, `true` opts
+  out. Nothing rewrites what the author registered. Branches of `allOf`, `anyOf`, `oneOf`, `if`,
+  `then` and `else` are exempt, since the composing schema states the model.
+- **Legibility (ADR-E27 D10)** refuses an authored or generated contract and warns on a discovered
+  one. Every example must satisfy the schema; from slice 1b every rule must also pass every example.
+- **Compatibility is strict and sound** (Mark, 2026-10-29). Within a major, against every earlier
+  minor, a new minor may change only annotations (`title`, `description`, `examples`, `$comment`,
+  `deprecated`, `readOnly`, `writeOnly`, `default`, and `format` and the `content*` keywords, which
+  are never asserted), remove rules, or reword a rule's message or field path. Anything else is a
+  new major. With closed content models this is what FULL_TRANSITIVE means; it refuses some changes
+  a deeper checker could prove safe, and never accepts an unsafe one.
+
+**Validation, decided here:** the snapshot's hash is recomputed from its content on every call, and
+a mismatch is a `ContractViolationException` (permanent), as is a pinned contract that fails to
+compile. Payload nesting is bounded at parse (`MaxPayloadDepth`, default 64). A violation carries the
+payload location, the failing keyword and the engine's message: Corvus's messages quote the schema,
+never the instance, and locations are capped at 200 characters, since a location can contain a
+payload's own property names. At most `MaxViolations` (default 20) are reported, keeping the deepest
+failures by evaluation path. A `pattern` that exceeds `RegexMatchTimeoutMilliseconds` (default 1,000)
+refuses the payload; it is the one wall-clock limit, and validation runs inside an activity whose
+result is recorded, so replay never re-runs it.
+
+Pinned by `ContractRegistrationCheckTests`, `ContractCompatibilityTests`, `ContractLintTests`,
+`SchemaReferencesTests`, `ContractValidatorTests` (against the real engine, including a real regex
+timeout and two contracts with one `$id`), `ContractHashTests` and the `contract_snapshot.json`
+golden file.

@@ -26,6 +26,7 @@ internal static class GovernedAssemblies
         PlatformAbstractionsName,
         "Frontier.Platform.Audit",
         "Frontier.Platform.ContextAssembly",
+        "Frontier.Platform.Contracts",
         "Frontier.Platform.Guardrails",
         "Frontier.Platform.Hitl",
         "Frontier.Platform.ModelRoleConfig",

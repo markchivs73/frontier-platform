@@ -1,6 +1,7 @@
 using Frontier.Platform.Abstractions;
 using Frontier.Platform.Audit;
 using Frontier.Platform.ContextAssembly;
+using Frontier.Platform.Contracts;
 using Frontier.Platform.Guardrails;
 using Frontier.Platform.Hitl;
 using Frontier.Platform.ModelRoleConfig;
@@ -226,5 +227,36 @@ using var designerProvider = engineServices.BuildServiceProvider();
 var designer = designerProvider.GetRequiredService<IChatDesignerService>();
 
 Console.WriteLine($"  design agent    : {designer.GetType().Name} resolves with a supplied entry contract");
+
+// 11. Contracts as data (ADR-PA38). A contract registers and validates through the package, which
+//     proves the JSON Schema engine ships with it and runs offline. The TryGetProperty call with a
+//     string literal is the other half: Corvus.Text.Json's analyzers would flag it (CTJ001) and,
+//     with warnings as errors, fail this build. The package's buildTransitive target removes them,
+//     and this sample, which does not import the repository's build files, is where that shows.
+var contractServices = new ServiceCollection().AddFrontierContracts(configuration);
+using var contractProvider = contractServices.BuildServiceProvider();
+using var contractSchema = System.Text.Json.JsonDocument.Parse("""
+    {
+      "description": "A smoke-test contract.",
+      "type": "object",
+      "properties": { "total": { "description": "A count.", "type": "integer" } },
+      "additionalProperties": false,
+      "examples": [ { "total": 1 } ]
+    }
+    """);
+var registration = contractProvider.GetRequiredService<IContractRegistrationCheck>().Check(
+    new ContractRegistrationRequest { ContractRef = "smoke/count/1.0", Schema = contractSchema.RootElement, Provenance = ContractProvenance.Authored }, []);
+if (!registration.IsAccepted || !contractSchema.RootElement.TryGetProperty("examples", out _))
+{
+    throw new InvalidOperationException($"The smoke contract was refused: {string.Join("; ", registration.Findings.Select(f => f.Code))}");
+}
+
+using var contractPayload = System.Text.Json.JsonDocument.Parse("""{ "total": "one" }""");
+if (contractProvider.GetRequiredService<IContractValidator>().Validate(registration.Snapshot!, contractPayload.RootElement).IsValid)
+{
+    throw new InvalidOperationException("A payload breaking its contract validated.");
+}
+
+Console.WriteLine($"  contracts       : registered {registration.Snapshot!.ContractRef} ({registration.Snapshot.Hash[..19]}…), refused a bad payload");
 Console.WriteLine();
-Console.WriteLine("PASS - all twelve packages restored, loaded and registered.");
+Console.WriteLine("PASS - all thirteen packages restored, loaded and registered.");

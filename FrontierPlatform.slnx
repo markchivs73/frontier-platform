@@ -3,6 +3,7 @@
     <Project Path="src/Frontier.Platform.Abstractions/Frontier.Platform.Abstractions.csproj" />
     <Project Path="src/Frontier.Platform.Audit/Frontier.Platform.Audit.csproj" />
     <Project Path="src/Frontier.Platform.ContextAssembly/Frontier.Platform.ContextAssembly.csproj" />
+    <Project Path="src/Frontier.Platform.Contracts/Frontier.Platform.Contracts.csproj" />
     <Project Path="src/Frontier.Platform.Guardrails/Frontier.Platform.Guardrails.csproj" />
     <Project Path="src/Frontier.Platform.Hitl/Frontier.Platform.Hitl.csproj" />
     <Project Path="src/Frontier.Platform.ModelRoleConfig/Frontier.Platform.ModelRoleConfig.csproj" />
@@ -18,6 +19,7 @@
     <Project Path="tests/Frontier.Platform.ArchitectureTests/Frontier.Platform.ArchitectureTests.csproj" />
     <Project Path="tests/Frontier.Platform.Audit.Tests/Frontier.Platform.Audit.Tests.csproj" />
     <Project Path="tests/Frontier.Platform.ContextAssembly.Tests/Frontier.Platform.ContextAssembly.Tests.csproj" />
+    <Project Path="tests/Frontier.Platform.Contracts.Tests/Frontier.Platform.Contracts.Tests.csproj" />
     <Project Path="tests/Frontier.Platform.Guardrails.Tests/Frontier.Platform.Guardrails.Tests.csproj" />
     <Project Path="tests/Frontier.Platform.Hitl.Tests/Frontier.Platform.Hitl.Tests.csproj" />
     <Project Path="tests/Frontier.Platform.ModelRoleConfig.Tests/Frontier.Platform.ModelRoleConfig.Tests.csproj" />

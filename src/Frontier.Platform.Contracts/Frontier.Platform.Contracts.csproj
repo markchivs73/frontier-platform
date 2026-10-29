@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <Description>Contracts as data (ADR-E27): the registration check for a registry contract (legibility lint, compatibility, schema compilation) and the one validator the engine runs at node boundaries, over JSON Schema 2020-12 and CEL rules.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- TD-18: JSON Schema 2020-12, behind ISchemaEngine; never on a public surface. -->
+    <PackageReference Include="Corvus.Text.Json.Validator" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" />
+  </ItemGroup>
+
+  <!-- Corvus.Text.Json's analyzers (CTJ001, prefer UTF-8 literals) fire on System.Text.Json code,
+       and ExcludeAssets does not stop them arriving transitively. This target removes them; it is
+       packed as buildTransitive so every consumer of this package gets the same build. The repo's
+       Directory.Build.targets imports it for the projects here that reference this one. -->
+  <ItemGroup>
+    <None Include="buildTransitive/Frontier.Platform.Contracts.targets" Pack="true" PackagePath="buildTransitive/" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- ContractSnapshot, ContractRule, SmartEnum -->
+    <ProjectReference Include="..\Frontier.Platform.Abstractions\Frontier.Platform.Abstractions.csproj" />
+    <!-- JsonCanonicalizer: the contract hash is over the JCS form (ADR-E27 D4) -->
+    <ProjectReference Include="..\Frontier.Platform.Serialization\Frontier.Platform.Serialization.csproj" />
+  </ItemGroup>
+
+</Project>
