@@ -28,4 +28,9 @@
     <Content Remove="**/* [0-9]*/**/*.json" />
   </ItemGroup>
 
+  <!-- The target Frontier.Platform.Contracts packs as buildTransitive for consumers (removes
+       Corvus.Text.Json's analyzers). A project here reaches Corvus through a ProjectReference,
+       which applies no package build files, so it is imported for every project in the repo. -->
+  <Import Project="$(MSBuildThisFileDirectory)src/Frontier.Platform.Contracts/buildTransitive/Frontier.Platform.Contracts.targets" />
+
 </Project>

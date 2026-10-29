@@ -46,7 +46,7 @@ found along the way that a future reader would otherwise have to rediscover.
 ## Releasing
 
 Versions come from git tags via MinVer. Tagging `vX.Y.Z` on `main` publishes `X.Y.Z` for **all
-twelve packages** — they version in lockstep, so a change to one republishes all of them (see
+thirteen packages** — they version in lockstep, so a change to one republishes all of them (see
 `docs/DECISIONS.md`).
 
 A release is a pull request, then a tag on its merge commit — never a tag on whatever `main`

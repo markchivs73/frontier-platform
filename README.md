@@ -3,7 +3,7 @@
 Reusable platform libraries for the Frontier workflow orchestration platform, published as
 NuGet packages to GitHub Packages.
 
-These twelve libraries are a **severable sub-graph**: no platform assembly references any
+These thirteen libraries are a **severable sub-graph**: no platform assembly references any
 `Frontier.Reason.*` assembly, at either the assembly-reference or the type-dependency level.
 That guarantee is what allowed them to be extracted from the `frontier-workflow` repository
 into this one, and it is enforced here by architecture tests rather than left to convention
@@ -11,8 +11,8 @@ into this one, and it is enforced here by architecture tests rather than left to
 
 ## Two tiers, and the dependency runs one way
 
-- **Governance tier** — Abstractions, Serialization, Audit, ContextAssembly, Guardrails, Hitl,
-  ModelRoleConfig, Observability, Resilience. Flat: each references only Abstractions and
+- **Governance tier** — Abstractions, Serialization, Audit, ContextAssembly, Contracts, Guardrails,
+  Hitl, ModelRoleConfig, Observability, Resilience. Flat: each references only Abstractions and
   Serialization among platform libraries, so each stays independently consumable and taking one
   never drags in a sibling.
 - **Engine tier** — Workflow.Model, Workflow.Orchestration, Workflow.Compiler. May depend on
@@ -34,6 +34,7 @@ is a test rather than a convention (ADR-PA5).
 | `Frontier.Platform.Abstractions` | The platform contract kernel: `SmartEnum<T>`, `IVersionedContract`, `ContractMigrator`, the permanent-failure exceptions, and the shared kernel contracts. Zero dependencies (ADR-PA1). |
 | `Frontier.Platform.Serialization` | The canonical JSON profile. Byte-stable output — definition hashing, cache hits and audit signing all depend on it. |
 | `Frontier.Platform.ContextAssembly` | Tiered context assembly (baseline → dynamic → real-time) with provider cache breakpoints at tier boundaries. |
+| `Frontier.Platform.Contracts` | Contracts as data (ADR-PA38): the registration check for a registry contract (2020-12 meta-schema, local references only, legibility lint, compatibility within a major) and the one validator the engine runs at node boundaries. JSON Schema through Corvus.Text.Json.Validator, behind an internal port. |
 | `Frontier.Platform.Audit` | Audit record contracts, hash chaining and verification, Cosmos-backed stores, and change-feed archival export. |
 | `Frontier.Platform.Hitl` | Human-in-the-loop approval store, queries and rollback. Solution-agnostic: callers drive it from their own orchestration activity shells. |
 | `Frontier.Platform.ModelRoleConfig` | Model role registry and resolution: capability requirements, fleet/canary mappings, mapping governance. |
@@ -85,8 +86,8 @@ Versions are derived from git tags by [MinVer](https://github.com/adamralph/minv
 `v1.2.3` on `main` publishes `1.2.3`. Untagged builds get a height-suffixed prerelease off the
 last tag.
 
-All twelve packages version in **lockstep** from a single tag — a change to one library
-republishes all twelve at the new version. That is a deliberate trade: one tag and one set of
+All thirteen packages version in **lockstep** from a single tag — a change to one library
+republishes all thirteen at the new version. That is a deliberate trade: one tag and one set of
 release notes instead of twelve of each. See `docs/DECISIONS.md`.
 
 A release is a `release: Ship vX.Y.Z` pull request that moves every package's

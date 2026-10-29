@@ -1,0 +1,11 @@
+<Project>
+  <!-- Frontier.Platform.Contracts depends on Corvus.Text.Json, whose analyzers (CTJ001: prefer
+       UTF-8 string literals) would otherwise run on every project that consumes it, and fail any
+       build that treats warnings as errors. Nothing here uses Corvus's own JSON types, so the
+       analyzers have nothing to check; remove them once analyzers are resolved. -->
+  <Target Name="FrontierRemoveCorvusAnalyzers" AfterTargets="ResolveLockFileAnalyzers" Condition="'@(Analyzer)' != ''">
+    <ItemGroup>
+      <Analyzer Remove="@(Analyzer->WithMetadataValue('Filename', 'Corvus.Text.Json.Analyzers'))" />
+    </ItemGroup>
+  </Target>
+</Project>

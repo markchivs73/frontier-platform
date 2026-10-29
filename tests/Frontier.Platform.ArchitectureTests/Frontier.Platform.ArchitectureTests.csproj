@@ -21,6 +21,7 @@
     <ProjectReference Include="..\..\src\Frontier.Platform.Abstractions\Frontier.Platform.Abstractions.csproj" />
     <ProjectReference Include="..\..\src\Frontier.Platform.Audit\Frontier.Platform.Audit.csproj" />
     <ProjectReference Include="..\..\src\Frontier.Platform.ContextAssembly\Frontier.Platform.ContextAssembly.csproj" />
+    <ProjectReference Include="..\..\src\Frontier.Platform.Contracts\Frontier.Platform.Contracts.csproj" />
     <ProjectReference Include="..\..\src\Frontier.Platform.Guardrails\Frontier.Platform.Guardrails.csproj" />
     <ProjectReference Include="..\..\src\Frontier.Platform.Hitl\Frontier.Platform.Hitl.csproj" />
     <ProjectReference Include="..\..\src\Frontier.Platform.ModelRoleConfig\Frontier.Platform.ModelRoleConfig.csproj" />

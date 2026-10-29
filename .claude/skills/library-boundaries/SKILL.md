@@ -50,6 +50,7 @@ If you find yourself wanting a reference to a consuming assembly, you want a por
 | Smart-enum base, contract versioning/migration, permanent-failure exceptions, shared kernel vocabulary | Abstractions |
 | Three-tier context, cache breakpoints, refresh signals | ContextAssembly |
 | Audit consolidation, signing, hash chains, retention, governance queries | Audit |
+| Registry contracts: hashing, registration lint and compatibility, payload validation (schema and CEL) | Contracts |
 | Gates, approval routing, rollback mechanics | Hitl |
 | Budgets, rate limits, cost alerts, kill switch | Guardrails |
 | Role catalogue, role→model mapping, mapping governance | ModelRoleConfig |

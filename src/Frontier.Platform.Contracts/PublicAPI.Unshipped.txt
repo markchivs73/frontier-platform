@@ -1,0 +1,139 @@
+Frontier.Platform.Contracts.ContractFinding
+Frontier.Platform.Contracts.ContractFinding.<Clone>$() -> Frontier.Platform.Contracts.ContractFinding!
+Frontier.Platform.Contracts.ContractFinding.Code.get -> string!
+Frontier.Platform.Contracts.ContractFinding.Code.init -> void
+Frontier.Platform.Contracts.ContractFinding.ContractFinding(string! Code, Frontier.Platform.Contracts.ContractFindingSeverity! Severity, string! Location, string! Message) -> void
+Frontier.Platform.Contracts.ContractFinding.Deconstruct(out string! Code, out Frontier.Platform.Contracts.ContractFindingSeverity! Severity, out string! Location, out string! Message) -> void
+Frontier.Platform.Contracts.ContractFinding.Equals(Frontier.Platform.Contracts.ContractFinding? other) -> bool
+Frontier.Platform.Contracts.ContractFinding.Location.get -> string!
+Frontier.Platform.Contracts.ContractFinding.Location.init -> void
+Frontier.Platform.Contracts.ContractFinding.Message.get -> string!
+Frontier.Platform.Contracts.ContractFinding.Message.init -> void
+Frontier.Platform.Contracts.ContractFinding.Severity.get -> Frontier.Platform.Contracts.ContractFindingSeverity!
+Frontier.Platform.Contracts.ContractFinding.Severity.init -> void
+Frontier.Platform.Contracts.ContractFindingCodes
+Frontier.Platform.Contracts.ContractFindingSeverity
+Frontier.Platform.Contracts.ContractHash
+Frontier.Platform.Contracts.ContractProvenance
+Frontier.Platform.Contracts.ContractProvenance.LintRefuses.get -> bool
+Frontier.Platform.Contracts.ContractRef
+Frontier.Platform.Contracts.ContractRef.<Clone>$() -> Frontier.Platform.Contracts.ContractRef!
+Frontier.Platform.Contracts.ContractRef.ContractRef(string! Id, int Major, int Minor) -> void
+Frontier.Platform.Contracts.ContractRef.Deconstruct(out string! Id, out int Major, out int Minor) -> void
+Frontier.Platform.Contracts.ContractRef.Equals(Frontier.Platform.Contracts.ContractRef? other) -> bool
+Frontier.Platform.Contracts.ContractRef.Id.get -> string!
+Frontier.Platform.Contracts.ContractRef.Id.init -> void
+Frontier.Platform.Contracts.ContractRef.Major.get -> int
+Frontier.Platform.Contracts.ContractRef.Major.init -> void
+Frontier.Platform.Contracts.ContractRef.Minor.get -> int
+Frontier.Platform.Contracts.ContractRef.Minor.init -> void
+Frontier.Platform.Contracts.ContractRegistrationRequest
+Frontier.Platform.Contracts.ContractRegistrationRequest.<Clone>$() -> Frontier.Platform.Contracts.ContractRegistrationRequest!
+Frontier.Platform.Contracts.ContractRegistrationRequest.ContractRef.get -> string!
+Frontier.Platform.Contracts.ContractRegistrationRequest.ContractRef.init -> void
+Frontier.Platform.Contracts.ContractRegistrationRequest.ContractRegistrationRequest() -> void
+Frontier.Platform.Contracts.ContractRegistrationRequest.Equals(Frontier.Platform.Contracts.ContractRegistrationRequest? other) -> bool
+Frontier.Platform.Contracts.ContractRegistrationRequest.Provenance.get -> Frontier.Platform.Contracts.ContractProvenance!
+Frontier.Platform.Contracts.ContractRegistrationRequest.Provenance.init -> void
+Frontier.Platform.Contracts.ContractRegistrationRequest.Rules.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Abstractions.ContractRule!>!
+Frontier.Platform.Contracts.ContractRegistrationRequest.Rules.init -> void
+Frontier.Platform.Contracts.ContractRegistrationRequest.Schema.get -> System.Text.Json.JsonElement
+Frontier.Platform.Contracts.ContractRegistrationRequest.Schema.init -> void
+Frontier.Platform.Contracts.ContractRegistrationResult
+Frontier.Platform.Contracts.ContractRegistrationResult.<Clone>$() -> Frontier.Platform.Contracts.ContractRegistrationResult!
+Frontier.Platform.Contracts.ContractRegistrationResult.ContractRegistrationResult(Frontier.Platform.Abstractions.ContractSnapshot? Snapshot, System.Collections.Generic.IReadOnlyList<Frontier.Platform.Contracts.ContractFinding!>! Findings) -> void
+Frontier.Platform.Contracts.ContractRegistrationResult.Deconstruct(out Frontier.Platform.Abstractions.ContractSnapshot? Snapshot, out System.Collections.Generic.IReadOnlyList<Frontier.Platform.Contracts.ContractFinding!>! Findings) -> void
+Frontier.Platform.Contracts.ContractRegistrationResult.Equals(Frontier.Platform.Contracts.ContractRegistrationResult? other) -> bool
+Frontier.Platform.Contracts.ContractRegistrationResult.Findings.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Contracts.ContractFinding!>!
+Frontier.Platform.Contracts.ContractRegistrationResult.Findings.init -> void
+Frontier.Platform.Contracts.ContractRegistrationResult.IsAccepted.get -> bool
+Frontier.Platform.Contracts.ContractRegistrationResult.Snapshot.get -> Frontier.Platform.Abstractions.ContractSnapshot?
+Frontier.Platform.Contracts.ContractRegistrationResult.Snapshot.init -> void
+Frontier.Platform.Contracts.ContractValidationResult
+Frontier.Platform.Contracts.ContractValidationResult.<Clone>$() -> Frontier.Platform.Contracts.ContractValidationResult!
+Frontier.Platform.Contracts.ContractValidationResult.ContractValidationResult(System.Collections.Generic.IReadOnlyList<Frontier.Platform.Contracts.ContractViolation!>! Violations) -> void
+Frontier.Platform.Contracts.ContractValidationResult.Deconstruct(out System.Collections.Generic.IReadOnlyList<Frontier.Platform.Contracts.ContractViolation!>! Violations) -> void
+Frontier.Platform.Contracts.ContractValidationResult.Equals(Frontier.Platform.Contracts.ContractValidationResult? other) -> bool
+Frontier.Platform.Contracts.ContractValidationResult.IsValid.get -> bool
+Frontier.Platform.Contracts.ContractValidationResult.Violations.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Contracts.ContractViolation!>!
+Frontier.Platform.Contracts.ContractValidationResult.Violations.init -> void
+Frontier.Platform.Contracts.ContractViolation
+Frontier.Platform.Contracts.ContractViolation.<Clone>$() -> Frontier.Platform.Contracts.ContractViolation!
+Frontier.Platform.Contracts.ContractViolation.ContractViolation(string! Location, string! Keyword, string! Message) -> void
+Frontier.Platform.Contracts.ContractViolation.Deconstruct(out string! Location, out string! Keyword, out string! Message) -> void
+Frontier.Platform.Contracts.ContractViolation.Equals(Frontier.Platform.Contracts.ContractViolation? other) -> bool
+Frontier.Platform.Contracts.ContractViolation.Keyword.get -> string!
+Frontier.Platform.Contracts.ContractViolation.Keyword.init -> void
+Frontier.Platform.Contracts.ContractViolation.Location.get -> string!
+Frontier.Platform.Contracts.ContractViolation.Location.init -> void
+Frontier.Platform.Contracts.ContractViolation.Message.get -> string!
+Frontier.Platform.Contracts.ContractViolation.Message.init -> void
+Frontier.Platform.Contracts.ContractsOptions
+Frontier.Platform.Contracts.ContractsOptions.ContractsOptions() -> void
+Frontier.Platform.Contracts.ContractsOptions.MaxPayloadDepth.get -> int
+Frontier.Platform.Contracts.ContractsOptions.MaxPayloadDepth.set -> void
+Frontier.Platform.Contracts.ContractsOptions.MaxViolations.get -> int
+Frontier.Platform.Contracts.ContractsOptions.MaxViolations.set -> void
+Frontier.Platform.Contracts.ContractsOptions.RegexMatchTimeoutMilliseconds.get -> int
+Frontier.Platform.Contracts.ContractsOptions.RegexMatchTimeoutMilliseconds.set -> void
+Frontier.Platform.Contracts.ContractsServiceCollectionExtensions
+Frontier.Platform.Contracts.IContractRegistrationCheck
+Frontier.Platform.Contracts.IContractRegistrationCheck.Check(Frontier.Platform.Contracts.ContractRegistrationRequest! request, System.Collections.Generic.IReadOnlyList<Frontier.Platform.Abstractions.ContractSnapshot!>! registered) -> Frontier.Platform.Contracts.ContractRegistrationResult!
+Frontier.Platform.Contracts.IContractValidator
+Frontier.Platform.Contracts.IContractValidator.Validate(Frontier.Platform.Abstractions.ContractSnapshot! contract, System.ReadOnlyMemory<byte> utf8Payload) -> Frontier.Platform.Contracts.ContractValidationResult!
+Frontier.Platform.Contracts.IContractValidator.Validate(Frontier.Platform.Abstractions.ContractSnapshot! contract, System.Text.Json.JsonElement payload) -> Frontier.Platform.Contracts.ContractValidationResult!
+const Frontier.Platform.Contracts.ContractFindingCodes.ContentModelUnstated = "contract.content-model-unstated" -> string!
+const Frontier.Platform.Contracts.ContractFindingCodes.DescriptionMissing = "contract.description-missing" -> string!
+const Frontier.Platform.Contracts.ContractFindingCodes.DialectUnsupported = "contract.dialect-unsupported" -> string!
+const Frontier.Platform.Contracts.ContractFindingCodes.ExampleInvalid = "contract.example-invalid" -> string!
+const Frontier.Platform.Contracts.ContractFindingCodes.ExamplesMissing = "contract.examples-missing" -> string!
+const Frontier.Platform.Contracts.ContractFindingCodes.MinorChangesRules = "contract.minor-changes-rules" -> string!
+const Frontier.Platform.Contracts.ContractFindingCodes.MinorChangesSchema = "contract.minor-changes-schema" -> string!
+const Frontier.Platform.Contracts.ContractFindingCodes.PropertyDescriptionMissing = "contract.property-description-missing" -> string!
+const Frontier.Platform.Contracts.ContractFindingCodes.RefMalformed = "contract.ref-malformed" -> string!
+const Frontier.Platform.Contracts.ContractFindingCodes.RefNotLocal = "contract.ref-not-local" -> string!
+const Frontier.Platform.Contracts.ContractFindingCodes.RuleMessageMissing = "contract.rule-message-missing" -> string!
+const Frontier.Platform.Contracts.ContractFindingCodes.SchemaInvalid = "contract.schema-invalid" -> string!
+const Frontier.Platform.Contracts.ContractFindingCodes.SchemaNotObject = "contract.schema-not-object" -> string!
+const Frontier.Platform.Contracts.ContractFindingCodes.VersionExists = "contract.version-exists" -> string!
+const Frontier.Platform.Contracts.ContractFindingCodes.VersionNotNewer = "contract.version-not-newer" -> string!
+const Frontier.Platform.Contracts.ContractsOptions.SectionName = "Contracts" -> string!
+override Frontier.Platform.Contracts.ContractFinding.Equals(object? obj) -> bool
+override Frontier.Platform.Contracts.ContractFinding.GetHashCode() -> int
+override Frontier.Platform.Contracts.ContractFinding.ToString() -> string!
+override Frontier.Platform.Contracts.ContractRef.Equals(object? obj) -> bool
+override Frontier.Platform.Contracts.ContractRef.GetHashCode() -> int
+override Frontier.Platform.Contracts.ContractRef.ToString() -> string!
+override Frontier.Platform.Contracts.ContractRegistrationRequest.Equals(object? obj) -> bool
+override Frontier.Platform.Contracts.ContractRegistrationRequest.GetHashCode() -> int
+override Frontier.Platform.Contracts.ContractRegistrationRequest.ToString() -> string!
+override Frontier.Platform.Contracts.ContractRegistrationResult.Equals(object? obj) -> bool
+override Frontier.Platform.Contracts.ContractRegistrationResult.GetHashCode() -> int
+override Frontier.Platform.Contracts.ContractRegistrationResult.ToString() -> string!
+override Frontier.Platform.Contracts.ContractValidationResult.Equals(object? obj) -> bool
+override Frontier.Platform.Contracts.ContractValidationResult.GetHashCode() -> int
+override Frontier.Platform.Contracts.ContractValidationResult.ToString() -> string!
+override Frontier.Platform.Contracts.ContractViolation.Equals(object? obj) -> bool
+override Frontier.Platform.Contracts.ContractViolation.GetHashCode() -> int
+override Frontier.Platform.Contracts.ContractViolation.ToString() -> string!
+static Frontier.Platform.Contracts.ContractFinding.operator !=(Frontier.Platform.Contracts.ContractFinding? left, Frontier.Platform.Contracts.ContractFinding? right) -> bool
+static Frontier.Platform.Contracts.ContractFinding.operator ==(Frontier.Platform.Contracts.ContractFinding? left, Frontier.Platform.Contracts.ContractFinding? right) -> bool
+static Frontier.Platform.Contracts.ContractHash.Compute(System.Text.Json.JsonElement schema, System.Collections.Generic.IReadOnlyList<Frontier.Platform.Abstractions.ContractRule!>! rules) -> string!
+static Frontier.Platform.Contracts.ContractRef.TryParse(string? value, out Frontier.Platform.Contracts.ContractRef? contractRef) -> bool
+static Frontier.Platform.Contracts.ContractRef.operator !=(Frontier.Platform.Contracts.ContractRef? left, Frontier.Platform.Contracts.ContractRef? right) -> bool
+static Frontier.Platform.Contracts.ContractRef.operator ==(Frontier.Platform.Contracts.ContractRef? left, Frontier.Platform.Contracts.ContractRef? right) -> bool
+static Frontier.Platform.Contracts.ContractRegistrationRequest.operator !=(Frontier.Platform.Contracts.ContractRegistrationRequest? left, Frontier.Platform.Contracts.ContractRegistrationRequest? right) -> bool
+static Frontier.Platform.Contracts.ContractRegistrationRequest.operator ==(Frontier.Platform.Contracts.ContractRegistrationRequest? left, Frontier.Platform.Contracts.ContractRegistrationRequest? right) -> bool
+static Frontier.Platform.Contracts.ContractRegistrationResult.operator !=(Frontier.Platform.Contracts.ContractRegistrationResult? left, Frontier.Platform.Contracts.ContractRegistrationResult? right) -> bool
+static Frontier.Platform.Contracts.ContractRegistrationResult.operator ==(Frontier.Platform.Contracts.ContractRegistrationResult? left, Frontier.Platform.Contracts.ContractRegistrationResult? right) -> bool
+static Frontier.Platform.Contracts.ContractValidationResult.Valid.get -> Frontier.Platform.Contracts.ContractValidationResult!
+static Frontier.Platform.Contracts.ContractValidationResult.operator !=(Frontier.Platform.Contracts.ContractValidationResult? left, Frontier.Platform.Contracts.ContractValidationResult? right) -> bool
+static Frontier.Platform.Contracts.ContractValidationResult.operator ==(Frontier.Platform.Contracts.ContractValidationResult? left, Frontier.Platform.Contracts.ContractValidationResult? right) -> bool
+static Frontier.Platform.Contracts.ContractViolation.operator !=(Frontier.Platform.Contracts.ContractViolation? left, Frontier.Platform.Contracts.ContractViolation? right) -> bool
+static Frontier.Platform.Contracts.ContractViolation.operator ==(Frontier.Platform.Contracts.ContractViolation? left, Frontier.Platform.Contracts.ContractViolation? right) -> bool
+static Frontier.Platform.Contracts.ContractsServiceCollectionExtensions.AddFrontierContracts(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Microsoft.Extensions.Configuration.IConfiguration! configuration) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static readonly Frontier.Platform.Contracts.ContractFindingSeverity.Error -> Frontier.Platform.Contracts.ContractFindingSeverity!
+static readonly Frontier.Platform.Contracts.ContractFindingSeverity.Warning -> Frontier.Platform.Contracts.ContractFindingSeverity!
+static readonly Frontier.Platform.Contracts.ContractProvenance.Authored -> Frontier.Platform.Contracts.ContractProvenance!
+static readonly Frontier.Platform.Contracts.ContractProvenance.Discovered -> Frontier.Platform.Contracts.ContractProvenance!
+static readonly Frontier.Platform.Contracts.ContractProvenance.Generated -> Frontier.Platform.Contracts.ContractProvenance!

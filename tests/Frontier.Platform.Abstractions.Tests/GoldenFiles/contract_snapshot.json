@@ -1,0 +1,1 @@
+{"schema_version":"1.0","contract_ref":"frontier/evidence-summary/1.0","schema":{"type":"object","description":"A summary.","additionalProperties":false},"rules":[{"rule":"size(self) \u003E 0","message":"It must not be empty.","field_path":"/items"},{"rule":"true","message":"Always."}],"hash":"sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"}
