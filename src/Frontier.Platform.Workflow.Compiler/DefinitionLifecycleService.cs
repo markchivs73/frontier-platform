@@ -14,18 +14,22 @@ public sealed class DefinitionLifecycleService : IDefinitionLifecycleService
 {
     private readonly IDefinitionStore _store;
     private readonly IDefinitionCompiler _compiler;
+    private readonly IDefinitionContractEmbedder _contracts;
     private readonly PublishGovernanceConfig _publishGovernance;
 
     public DefinitionLifecycleService(
         IDefinitionStore store,
         IDefinitionCompiler compiler,
+        IDefinitionContractEmbedder contracts,
         PublishGovernanceConfig? publishGovernance = null)
     {
         ArgumentNullException.ThrowIfNull(store);
         ArgumentNullException.ThrowIfNull(compiler);
+        ArgumentNullException.ThrowIfNull(contracts);
 
         _store = store;
         _compiler = compiler;
+        _contracts = contracts;
         _publishGovernance = publishGovernance ?? new PublishGovernanceConfig();
     }
 
@@ -279,6 +283,10 @@ public sealed class DefinitionLifecycleService : IDefinitionLifecycleService
         if (report == null)
             throw new InvalidOperationException($"Validation report not found for revision {proposal.DraftRevision}");
 
+        // Pin the contracts before anything changes state, so a contract that cannot be pinned
+        // leaves the proposal in review rather than approved with no version (ADR-E27 D15).
+        var definition = await _contracts.EmbedAsync(draft.Definition, ct);
+
         // Check resourceVersions for drift (Phase 1: log drift, don't block)
         // Full implementation with registry version checks deferred to Phase B hardening
 
@@ -297,7 +305,7 @@ public sealed class DefinitionLifecycleService : IDefinitionLifecycleService
         int nextVersion = NextVersionNumber(pointer, existingVersions);
 
         // Create published version
-        var definitionHash = _compiler.ComputeDefinitionHash(draft.Definition);
+        var definitionHash = _compiler.ComputeDefinitionHash(definition);
         var now = DateTime.UtcNow;
 
         var versionDoc = new DefinitionVersionDocument
@@ -309,7 +317,7 @@ public sealed class DefinitionLifecycleService : IDefinitionLifecycleService
             DefinitionHash = definitionHash,
             // The definition a run carries inline (ADR-2) names its own hash, so the audit can say
             // which definition ran. Before this it kept the draft's empty field (S13.138).
-            Definition = draft.Definition with { DefinitionHash = definitionHash },
+            Definition = definition with { DefinitionHash = definitionHash },
             ProposedBy = proposal.ProposerId,
             ApprovedBy = approverId,
             ProposedUtc = proposal.ProposedAtUtc,

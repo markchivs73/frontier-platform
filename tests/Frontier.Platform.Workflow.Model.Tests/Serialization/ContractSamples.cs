@@ -335,6 +335,78 @@ internal static class ContractSamples
         Payload = TypedPayloadInline(),
     };
 
+    /// <summary>
+    /// ADR-E27 (contracts as data): a definition that names registry contracts. Pins the wire shape
+    /// of the embedded <c>contracts</c>, the MCP node's contract refs, and an edge projection with both
+    /// kinds of source. Every older definition golden is untouched, which is the compatibility claim.
+    /// </summary>
+    public static WorkflowDefinition WorkflowDefinitionWithContracts() => new()
+    {
+        WorkflowId = "wf-contracts",
+        DefinitionVersion = 2,
+        EngagementType = "support-triage",
+        Name = "Triage with registry contracts",
+        Nodes =
+        [
+            new McpToolNode
+            {
+                NodeId = "get-ticket",
+                ToolRef = "com.example.crm/tickets/get_ticket",
+                TimeoutSeconds = 30,
+                IdempotencyKeySpec = "engagementId",
+                InputContractType = "com.example.crm/get-ticket-input/1.0",
+                OutputContractType = "com.example.crm/ticket/1.0",
+            },
+            new AgentTaskNode
+            {
+                NodeId = "triage",
+                Role = "analyst",
+                InstructionsRef = "instructions/triage.md",
+                InputContractType = "acme/triage-request/1.0",
+                OutputContractType = "acme/triage-result/1.0",
+                ContextRequest = ContextRequest(),
+            },
+        ],
+        Edges =
+        [
+            new WorkflowEdge
+            {
+                FromNodeId = "get-ticket",
+                ToNodeId = "triage",
+                Kind = EdgeKind.Data,
+                ContractType = "com.example.crm/ticket/1.0",
+                Projection =
+                [
+                    new ProjectionField { Target = "ticket_id", From = "/id" },
+                    new ProjectionField { Target = "channel", Literal = Json("\"email\"") },
+                ],
+            },
+        ],
+        DefinitionHash = "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        Mode = ExecutionMode.OneShot,
+        Contracts =
+        [
+            new ContractSnapshot
+            {
+                ContractRef = "com.example.crm/ticket/1.0",
+                Schema = Json("""{"type":"object","description":"A ticket.","properties":{"id":{"type":"string","description":"The ticket id."}},"additionalProperties":false}"""),
+                Rules = [new ContractRule { Rule = "size(self.id) > 0", Message = "A ticket has an id.", FieldPath = "/id" }],
+                Hash = "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            },
+        ],
+    };
+
+    /// <summary>ADR-E27 D13: what a decided gate emits.</summary>
+    public static GateDecision GateDecision() => new()
+    {
+        GateId = "approve-quote",
+        Decision = DecisionKind.Reject,
+        ApproverId = "user:4f1c2a",
+        DecidedAtUtc = new DateTime(2026, 10, 30, 9, 15, 0, 123, DateTimeKind.Utc),
+        Notes = "Discount exceeds the rate card.",
+        RollbackToNodeId = "price-quote",
+    };
+
     /// <summary>Parses <paramref name="json"/> to a detached <see cref="JsonElement"/>.</summary>
     private static JsonElement Json(string json)
     {

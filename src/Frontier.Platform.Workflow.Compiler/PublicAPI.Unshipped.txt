@@ -1,0 +1,24 @@
+*REMOVED*Frontier.Platform.Workflow.Compiler.TestRunService.TestRunService(Frontier.Platform.Workflow.Compiler.Storage.IDefinitionStore! store, Frontier.Platform.Workflow.Compiler.IDefinitionCompiler! compiler, Frontier.Platform.Workflow.Compiler.ITestRunExecutor! executor, Frontier.Platform.Workflow.Compiler.ITestRunTelemetryReader! telemetry, Frontier.Platform.Workflow.Compiler.ITestRunArtifactReader! sections) -> void
+*REMOVED*Frontier.Platform.Workflow.Compiler.DefinitionLifecycleService.DefinitionLifecycleService(Frontier.Platform.Workflow.Compiler.Storage.IDefinitionStore! store, Frontier.Platform.Workflow.Compiler.IDefinitionCompiler! compiler, Frontier.Platform.Workflow.Compiler.PublishGovernanceConfig? publishGovernance = null) -> void
+Frontier.Platform.Workflow.Compiler.DefinitionContractRefs
+Frontier.Platform.Workflow.Compiler.DefinitionLifecycleService.DefinitionLifecycleService(Frontier.Platform.Workflow.Compiler.Storage.IDefinitionStore! store, Frontier.Platform.Workflow.Compiler.IDefinitionCompiler! compiler, Frontier.Platform.Workflow.Compiler.IDefinitionContractEmbedder! contracts, Frontier.Platform.Workflow.Compiler.PublishGovernanceConfig? publishGovernance = null) -> void
+Frontier.Platform.Workflow.Compiler.IContractSnapshotCatalog
+Frontier.Platform.Workflow.Compiler.IContractSnapshotCatalog.FindAsync(string! contractRef, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.RegisteredContract?>!
+Frontier.Platform.Workflow.Compiler.IDefinitionContractEmbedder
+Frontier.Platform.Workflow.Compiler.IDefinitionContractEmbedder.EmbedAsync(Frontier.Platform.Workflow.Model.WorkflowDefinition! definition, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Model.WorkflowDefinition!>!
+Frontier.Platform.Workflow.Compiler.RegisteredContract
+Frontier.Platform.Workflow.Compiler.RegisteredContract.<Clone>$() -> Frontier.Platform.Workflow.Compiler.RegisteredContract!
+Frontier.Platform.Workflow.Compiler.RegisteredContract.Deconstruct(out Frontier.Platform.Abstractions.ContractSnapshot! Snapshot, out bool IsRetired) -> void
+Frontier.Platform.Workflow.Compiler.RegisteredContract.Equals(Frontier.Platform.Workflow.Compiler.RegisteredContract? other) -> bool
+Frontier.Platform.Workflow.Compiler.RegisteredContract.IsRetired.get -> bool
+Frontier.Platform.Workflow.Compiler.RegisteredContract.IsRetired.init -> void
+Frontier.Platform.Workflow.Compiler.RegisteredContract.RegisteredContract(Frontier.Platform.Abstractions.ContractSnapshot! Snapshot, bool IsRetired) -> void
+Frontier.Platform.Workflow.Compiler.RegisteredContract.Snapshot.get -> Frontier.Platform.Abstractions.ContractSnapshot!
+Frontier.Platform.Workflow.Compiler.RegisteredContract.Snapshot.init -> void
+Frontier.Platform.Workflow.Compiler.TestRunService.TestRunService(Frontier.Platform.Workflow.Compiler.Storage.IDefinitionStore! store, Frontier.Platform.Workflow.Compiler.IDefinitionCompiler! compiler, Frontier.Platform.Workflow.Compiler.ITestRunExecutor! executor, Frontier.Platform.Workflow.Compiler.ITestRunTelemetryReader! telemetry, Frontier.Platform.Workflow.Compiler.ITestRunArtifactReader! sections, Frontier.Platform.Workflow.Compiler.IDefinitionContractEmbedder! contracts) -> void
+override Frontier.Platform.Workflow.Compiler.RegisteredContract.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Compiler.RegisteredContract.GetHashCode() -> int
+override Frontier.Platform.Workflow.Compiler.RegisteredContract.ToString() -> string!
+static Frontier.Platform.Workflow.Compiler.DefinitionContractRefs.Collect(Frontier.Platform.Workflow.Model.WorkflowDefinition! definition) -> System.Collections.Generic.IReadOnlyList<string!>!
+static Frontier.Platform.Workflow.Compiler.RegisteredContract.operator !=(Frontier.Platform.Workflow.Compiler.RegisteredContract? left, Frontier.Platform.Workflow.Compiler.RegisteredContract? right) -> bool
+static Frontier.Platform.Workflow.Compiler.RegisteredContract.operator ==(Frontier.Platform.Workflow.Compiler.RegisteredContract? left, Frontier.Platform.Workflow.Compiler.RegisteredContract? right) -> bool

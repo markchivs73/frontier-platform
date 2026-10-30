@@ -43,7 +43,8 @@ is a statement about a particular deployment.
 | `IRetryProfileCatalog` | Which named retry profiles are configured |
 | `IDesignerToolCatalog` | Which tools the design agent may offer |
 | `IExecutableNodeTypeCatalog` | Which node types this runtime will actually run |
-| `IContractTypeCatalog` | Which data contracts this deployment declares |
+| `IContractTypeCatalog` | Which CLR data contracts this deployment declares |
+| `IContractSnapshotCatalog` | Which registry contracts exist, and whether each is retired (ADR-E27) |
 | `ICascadeGraphChecker` | Cascade-graph checks at publish |
 | `ITestRunExecutor` and friends | How a test run is executed and read back |
 | `IEntryContractCatalog` | What the entry node is handed, and from which dynamic field |
@@ -70,12 +71,25 @@ field the runtime then reads; if they ever name different things, every workflow
 designs will validate and then fail live. Derive both from one constant rather than stating it
 twice.
 
+## Publish pins the contracts
+
+Publish and test runs both call `IDefinitionContractEmbedder`, which embeds every registry
+contract the definition names into `WorkflowDefinition.Contracts` (ADR-E27 D15). An engine-owned
+contract, such as `frontier/gate-decision/1.0`, comes from the engine; everything else comes from
+`IContractSnapshotCatalog`. A ref that is not registered, is retired, or comes back under a
+different ref stops the publish before the proposal is approved. A definition that names only CLR
+contracts embeds nothing.
+
 ## A note on the definition hash
 
-`ComputeDefinitionHash` produces lower-case hex and suppresses CA1308 to do it. That is
-deliberate: the hash is stored on every published definition, pinned by running executions and
-used as a cache key. Changing its case would silently invalidate every stored hash and every
-pin. Do not "fix" the analyzer warning.
+The hash is SHA-256 over the RFC 8785 (JCS) form of the definition's canonical-profile bytes,
+with its own `definition_hash` field blank. The profile fixes the typed shell's order, and JCS
+fixes the order of what the profile cannot: the embedded contract schemas. Nothing recomputes a
+stored hash, so versions published before the switch keep the hash they were recorded with.
+
+`ComputeDefinitionHash` produces lower-case hex. The hash is stored on every published
+definition, pinned by running executions and used as a cache key. Changing its case would
+silently invalidate every stored hash and every pin.
 
 ## Versioning
 

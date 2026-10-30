@@ -1,3 +1,5 @@
+using Frontier.Platform.Abstractions;
+
 namespace Frontier.Platform.Workflow.Model;
 
 /// <summary>
@@ -58,6 +60,112 @@ internal static class WorkflowDefinitionValidator
                 yield return "Control-edge graph contains a cycle.";
                 yield break;
             }
+        }
+    }
+
+    /// <summary>
+    /// A projection sits only on a data edge, names each target once, and gives every field exactly
+    /// one source: a well-formed JSON Pointer or a non-null literal (ADR-E27 D14). Whether the
+    /// projected shape fits the consumer is the compiler's <c>data.projection-compatible</c>.
+    /// </summary>
+    internal static IEnumerable<string> ValidateProjections(IReadOnlyList<WorkflowEdge> edges)
+    {
+        foreach (var edge in edges.Where(e => e.Projection is not null))
+        {
+            var label = $"Edge '{edge.FromNodeId}' -> '{edge.ToNodeId}'";
+            if (edge.Kind != EdgeKind.Data)
+            {
+                yield return $"{label} is a control edge; only a data edge may declare a projection.";
+            }
+
+            foreach (var violation in ProjectionFieldViolations(edge.Projection!))
+            {
+                yield return $"{label}: {violation}";
+            }
+        }
+    }
+
+    /// <summary>The violations in one projection's fields.</summary>
+    internal static IEnumerable<string> ProjectionFieldViolations(IReadOnlyList<ProjectionField> fields)
+    {
+        var targets = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var field in fields)
+        {
+            if (string.IsNullOrWhiteSpace(field.Target) || !targets.Add(field.Target))
+            {
+                yield return $"projection target '{field.Target}' is blank or repeated.";
+            }
+
+            if (SourceViolation(field) is { } violation)
+            {
+                yield return $"projection target '{field.Target}' {violation}";
+            }
+        }
+    }
+
+    /// <summary>Why a projection field's source is wrong, or null when it has exactly one good source.</summary>
+    internal static string? SourceViolation(ProjectionField field) => (field.From, field.Literal) switch
+    {
+        (null, null) => "needs a source: set from or literal.",
+        ({ }, { }) => "sets both from and literal; set one.",
+        ({ } pointer, null) when !IsJsonPointer(pointer) => $"has from '{pointer}', which is not an RFC 6901 JSON Pointer.",
+        (null, { ValueKind: System.Text.Json.JsonValueKind.Null }) => "has a null literal; omit the field instead.",
+        _ => null,
+    };
+
+    /// <summary>Whether <paramref name="pointer"/> is RFC 6901: empty, or <c>/</c>-separated tokens where <c>~</c> is always <c>~0</c> or <c>~1</c>.</summary>
+    internal static bool IsJsonPointer(string pointer)
+    {
+        if (pointer.Length > 0 && pointer[0] != '/')
+        {
+            return false;
+        }
+
+        for (var i = 0; i < pointer.Length; i++)
+        {
+            if (pointer[i] == '~' && (i + 1 == pointer.Length || pointer[i + 1] is not ('0' or '1')))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Embedded contracts are each well-formed and sorted by ref with no repeats (ADR-E27 D15), so the
+    /// definition hash does not depend on the order publish found them in.
+    /// </summary>
+    internal static IEnumerable<string> ValidateEmbeddedContracts(IReadOnlyList<ContractSnapshot>? contracts)
+    {
+        string? previous = null;
+        foreach (var contract in contracts ?? [])
+        {
+            foreach (var violation in SnapshotViolations(contract))
+            {
+                yield return $"Embedded contract '{contract.ContractRef}': {violation}";
+            }
+
+            if (previous is not null && string.CompareOrdinal(previous, contract.ContractRef) >= 0)
+            {
+                yield return $"Embedded contracts must be sorted by ref with no repeats; '{contract.ContractRef}' follows '{previous}'.";
+            }
+
+            previous = contract.ContractRef;
+        }
+    }
+
+    /// <summary>The violations <see cref="ContractSnapshot.Validate"/> reports for <paramref name="contract"/>.</summary>
+    internal static IReadOnlyList<string> SnapshotViolations(ContractSnapshot contract)
+    {
+        try
+        {
+            contract.Validate();
+            return [];
+        }
+        catch (ContractViolationException ex)
+        {
+            return ex.Violations;
         }
     }
 

@@ -57,6 +57,16 @@ public sealed record WorkflowDefinition : IVersionedContract
     [JsonPropertyName("mode")]
     public required ExecutionMode Mode { get; init; }
 
+    /// <summary>
+    /// Every registry contract this definition's nodes and edges name, embedded at publish and sorted
+    /// by ref (ADR-E27 D15). A run validates against these, never against the registry, so a later
+    /// version cannot reach an in-flight run. Omitted on drafts and on definitions published before
+    /// contracts were data.
+    /// </summary>
+    [JsonPropertyOrder(9)]
+    [JsonPropertyName("contracts")]
+    public IReadOnlyList<ContractSnapshot>? Contracts { get; init; }
+
     /// <inheritdoc />
     public void Validate()
     {
@@ -65,6 +75,8 @@ public sealed record WorkflowDefinition : IVersionedContract
         violations.AddRange(WorkflowDefinitionValidator.ValidateUniqueNodeIds(Nodes));
         violations.AddRange(WorkflowDefinitionValidator.ValidateEdgesResolve(Nodes, Edges));
         violations.AddRange(WorkflowDefinitionValidator.ValidateAcyclic(Nodes, Edges));
+        violations.AddRange(WorkflowDefinitionValidator.ValidateProjections(Edges));
+        violations.AddRange(WorkflowDefinitionValidator.ValidateEmbeddedContracts(Contracts));
 
         if (violations.Count > 0)
         {

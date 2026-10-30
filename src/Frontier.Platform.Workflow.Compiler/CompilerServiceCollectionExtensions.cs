@@ -117,12 +117,16 @@ public static class CompilerServiceCollectionExtensions
             return new CosmosDefinitionStore(container);
         });
 
+        // ADR-E27 D15: publish and test runs pin every contract a definition names. The registry
+        // side (IContractSnapshotCatalog) is consumer-owned and registered by the composition root.
+        services.AddScoped<IDefinitionContractEmbedder>(sp => new DefinitionContractEmbedder(sp.GetRequiredService<IContractSnapshotCatalog>()));
+
         services.AddScoped<IDefinitionLifecycleService>(sp =>
         {
             var store = sp.GetRequiredService<IDefinitionStore>();
             var compiler = sp.GetRequiredService<IDefinitionCompiler>();
             var governance = sp.GetService<PublishGovernanceConfig>() ?? new PublishGovernanceConfig();
-            return new DefinitionLifecycleService(store, compiler, governance);
+            return new DefinitionLifecycleService(store, compiler, sp.GetRequiredService<IDefinitionContractEmbedder>(), governance);
         });
 
         // Phase D/S8.3: Register sandbox test-run service. S9.38a: runs the draft on the real
@@ -135,7 +139,7 @@ public static class CompilerServiceCollectionExtensions
             var executor = sp.GetRequiredService<ITestRunExecutor>();
             var telemetry = sp.GetRequiredService<ITestRunTelemetryReader>();
             var sections = sp.GetRequiredService<ITestRunArtifactReader>();
-            return new TestRunService(store, compiler, executor, telemetry, sections);
+            return new TestRunService(store, compiler, executor, telemetry, sections, sp.GetRequiredService<IDefinitionContractEmbedder>());
         });
 
         // Phase D: Register retirement monitor (evidence-based candidate detection)

@@ -69,18 +69,14 @@ public sealed class DefinitionValidator : IDefinitionCompiler
 
         // The hash covers the definition with its own definition_hash field blank, as the field's
         // contract says, so a definition stamped with its hash at publish hashes back to the same
-        // value. Drafts carry an empty field, so every hash recorded before this is unchanged.
-        var json = System.Text.Json.JsonSerializer.Serialize(definition with { DefinitionHash = string.Empty }, CanonicalProfile.Options);
-        var bytes = Encoding.UTF8.GetBytes(json);
+        // value. The canonical profile writes the typed shell; RFC 8785 then fixes the byte order of
+        // what it cannot, the embedded contract schemas (ADR-E27 D15). Nothing recomputes a stored
+        // hash, so versions published before this keep the hash they were recorded with.
+        var json = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(definition with { DefinitionHash = string.Empty }, CanonicalProfile.Options);
+        var bytes = JsonCanonicalizer.Canonicalize(json);
 
-        // CA1308 is suppressed rather than satisfied, and the distinction matters: this hash is
-        // wire-visible. It is stored on every published definition, pinned by running executions
-        // and used as a cache key, so switching to upper-case hex would silently invalidate every
-        // stored hash and every pin. The rule's concern is locale-sensitive normalisation of user
-        // text; this is hex from a digest, where the case carries no meaning beyond the format
-        // already committed to.
-#pragma warning disable CA1308 // Normalize strings to uppercase
-        return "sha256:" + Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
-#pragma warning restore CA1308
+        // Lower-case hex is wire-visible: the hash is stored on every published definition, pinned
+        // by running executions and used as a cache key, so its case never changes.
+        return "sha256:" + Convert.ToHexStringLower(SHA256.HashData(bytes));
     }
 }
