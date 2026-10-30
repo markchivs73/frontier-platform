@@ -64,6 +64,10 @@ engine read a file or fetch a URL. Compatibility is strict on purpose: with clos
 FULL_TRANSITIVE means each minor accepts exactly what the others accept, so any structural change
 is a new major.
 
+A generated contract starts from `CanonicalOutputSchema.For(type)` in
+`Frontier.Platform.Workflow.Orchestration`, which gives each canonical-profile type its wire
+schema. Its README lists what a generator adds before the export passes this check.
+
 ### Reading a registered contract back
 
 `ContractLegibility` reads a registered `ContractSnapshot` for a person or an agent: its

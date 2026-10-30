@@ -82,6 +82,37 @@ each child, and each child pins at its own start.
 Activity names are identity, not labels. They are matched against recorded history on replay, so
 renaming one is a breaking change to in-flight executions and no worker-side alias can soften it.
 
+## Generating a contract from a .NET type
+
+`CanonicalOutputSchema.For(type)` is the export to start from when a .NET contract is generated
+and then registered (ADR-E27 D9). The raw `JsonSchemaExporter` cannot see the canonical profile's
+converters, so it gives every converter-owned property the accept-anything schema `true`.
+`CanonicalOutputSchema` gives each one its wire schema instead, with or without a `[Description]`
+on the property (ADR-PA41):
+
+| CLR type | Wire schema |
+|---|---|
+| `decimal` | a string with exactly the `[DecimalPrecision]` scale (4 when none is declared), with a `pattern` |
+| `DateTime`, `DateTime?` | a string, described as ISO-8601 UTC with milliseconds |
+| `EngagementId` | a string |
+| a smart enum | a string `enum` of its snake_case names |
+
+A `[Description]` on such a property comes first in the description, followed by the wire form's
+own description. A plain .NET enum exports as an integer, which is what the profile writes.
+
+The export is not registrable by itself: registration refuses it as a generated contract. The
+generator adds three things:
+
+1. a contract-level `description`;
+2. `"additionalProperties": false` on every object schema;
+3. at least one example under `examples`. Use the contract's canonical bytes
+   (`CanonicalProfile.SerializeCanonical`), so the check holds the schema to what the profile
+   writes.
+
+It also needs a `[Description]` on every property the wire form does not describe already: anything
+other than a decimal or a date. `CanonicalOutputSchemaRegistrationTests` pins all of this and runs
+the result through `IContractRegistrationCheck` as a generated contract.
+
 ## Versioning
 
 Published in lockstep with the rest of the platform under one `FrontierPlatformVersion`. Every
