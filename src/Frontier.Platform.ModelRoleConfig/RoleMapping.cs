@@ -36,6 +36,17 @@ public sealed record RoleMapping
     public string? EvaluationEvidenceRef { get; init; }
 
     /// <summary>
+    /// The hash of the role's input contract when this mapping was proposed (ADR-PA40, D16): stamped
+    /// by the governance service from the role's current definition, never taken from a caller, and
+    /// copied onto the version an approval mints. Null for a role with no input contract, and on
+    /// every mapping stored before v0.45.0.
+    /// </summary>
+    public string? InputContractHash { get; init; }
+
+    /// <summary>The hash of the role's output contract when this mapping was proposed; stamped as <see cref="InputContractHash"/> is.</summary>
+    public string? OutputContractHash { get; init; }
+
+    /// <summary>
     /// The version of the most recent fleet-ring predecessor (doc 08 §5): non-null when
     /// <see cref="Ring"/> is <see cref="RolloutRing.Canary"/> or <see cref="RolloutRing.Shadow"/>,
     /// so <see cref="ModelResolver"/> can fall back to the fleet version for engagements not

@@ -2833,6 +2833,24 @@ bytes. Each refusal has its own type deriving from `MappingGovernanceRefusalExce
 | `RoleBackingChangeException` | A proposal changes an existing role's backing | 409 |
 | `UnknownRoleDefinitionException` | The role has no current definition | 404 |
 
+Details settled while building it (consumer S13.117; to confirm):
+- **Approve and promote both check again.** Each re-reads the role's current definition and runs
+  the propose checks again, so a proposal raised before v0.45.0 is still checked against the role's
+  backing. Promote mints a fleet version, which is a new eligibility decision, so stale evidence is
+  refused there as well as at approve.
+- **Staleness applies only to a proposal that carries evidence.** A model-backed proposal without
+  evidence has nothing to go stale.
+- **A malformed ref is refused whatever the backing,** as `EvaluationEvidenceRequiredException`.
+  The S13.137 resolver then never meets a stored ref it cannot parse.
+- **The hashes are named `input_contract_hash` and `output_contract_hash`** on the version and the
+  proposal, matching the definition's names.
+- **No new port.** The hashes come from the stored definition through the library's own definition
+  store, so mapping governance needs nothing new in composition.
+- **D3's signal is public as `EvaluationEvidence.IsEligibilityReopened(role, mapping)`.** It is true
+  when an agent-backed role's current hashes are not the ones its mapping was proposed against.
+  `EvaluationEvidence.IsWellFormed` exposes the grammar the same way, so the consumer restates
+  neither.
+
 **A contract change leaves the live mapping serving** (Mark, 2026-10-30). When a definition change
 moves an agent-backed role's contract hash, the mapping evaluated against the old hash keeps serving,
 the consumer's D3 screen flags the role as needing new evidence, and the next mapping proposal must

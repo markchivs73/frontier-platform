@@ -84,53 +84,63 @@ internal sealed record MappingProposalDocument
     [JsonPropertyName("evaluation_evidence_ref")]
     public string? EvaluationEvidenceRef { get; init; }
 
-    /// <summary>The role's fleet version when this was proposed (the S6.6 verdict).</summary>
+    /// <summary>The role's input contract hash, stamped at propose from its current definition (ADR-PA40); omitted when null, so older documents keep their bytes.</summary>
     [JsonPropertyOrder(12)]
+    [JsonPropertyName("input_contract_hash")]
+    public string? InputContractHash { get; init; }
+
+    /// <summary>The role's output contract hash, stamped at propose from its current definition (ADR-PA40); omitted when null.</summary>
+    [JsonPropertyOrder(13)]
+    [JsonPropertyName("output_contract_hash")]
+    public string? OutputContractHash { get; init; }
+
+    /// <summary>The role's fleet version when this was proposed (the S6.6 verdict).</summary>
+    [JsonPropertyOrder(14)]
     [JsonPropertyName("predecessor_fleet_version")]
     public int? PredecessorFleetVersion { get; init; }
 
     /// <summary>The mapping version allocated on approval.</summary>
-    [JsonPropertyOrder(13)]
+    [JsonPropertyOrder(15)]
     [JsonPropertyName("mapping_version")]
     public int? MappingVersion { get; init; }
 
     /// <summary>Who approved it, stamped by the service.</summary>
-    [JsonPropertyOrder(14)]
+    [JsonPropertyOrder(16)]
     [JsonPropertyName("approved_by")]
     public string? ApprovedBy { get; init; }
 
     /// <summary>When the approved mapping became effective.</summary>
-    [JsonPropertyOrder(15)]
+    [JsonPropertyOrder(17)]
     [JsonPropertyName("effective_from_utc")]
     public DateTime? EffectiveFromUtc { get; init; }
 
     /// <summary>The fleet version allocated on promotion.</summary>
-    [JsonPropertyOrder(16)]
+    [JsonPropertyOrder(18)]
     [JsonPropertyName("promoted_version")]
     public int? PromotedVersion { get; init; }
 
     /// <summary>Who last decided on the proposal.</summary>
-    [JsonPropertyOrder(17)]
+    [JsonPropertyOrder(19)]
     [JsonPropertyName("decided_by")]
     public string? DecidedBy { get; init; }
 
     /// <summary>When that decision was taken.</summary>
-    [JsonPropertyOrder(18)]
+    [JsonPropertyOrder(20)]
     [JsonPropertyName("decided_at_utc")]
     public DateTime? DecidedAtUtc { get; init; }
 
     /// <summary>Why that decision was taken.</summary>
-    [JsonPropertyOrder(19)]
+    [JsonPropertyOrder(21)]
     [JsonPropertyName("decision_reason")]
     public string? DecisionReason { get; init; }
 
     /// <summary>The version a rollback returned the role to.</summary>
-    [JsonPropertyOrder(20)]
+    [JsonPropertyOrder(22)]
     [JsonPropertyName("rolled_back_to_version")]
     public int? RolledBackToVersion { get; init; }
 
     /// <summary>Cosmos time-to-live in seconds; <c>-1</c> disables expiry (doc 08 §6 "TTL -1").</summary>
-    [JsonPropertyOrder(21)]
+    [JsonPropertyOrder(23)]
     [JsonPropertyName("ttl")]
     public int Ttl { get; init; } = -1;
 
@@ -140,7 +150,7 @@ internal sealed record MappingProposalDocument
     /// <see cref="FromDomain"/>, so it is absent from written bytes (the canonical profile omits
     /// nulls) and the stored document shape is unchanged.
     /// </summary>
-    [JsonPropertyOrder(22)]
+    [JsonPropertyOrder(24)]
     [JsonPropertyName("_etag")]
     public string? ETag { get; init; }
 
@@ -162,6 +172,8 @@ internal sealed record MappingProposalDocument
             CanaryPercent = mapping.CanaryPercent,
             Chain = [.. mapping.Chain.Select(ChainEntryDocument.FromDomain)],
             EvaluationEvidenceRef = mapping.EvaluationEvidenceRef,
+            InputContractHash = mapping.InputContractHash,
+            OutputContractHash = mapping.OutputContractHash,
             PredecessorFleetVersion = proposal.PredecessorFleetVersion,
             MappingVersion = proposal.MappingVersion,
             ApprovedBy = proposal.ApprovedBy,
@@ -206,6 +218,8 @@ internal sealed record MappingProposalDocument
         ApprovedBy = string.Empty,
         EffectiveFromUtc = ProposedAtUtc,
         EvaluationEvidenceRef = EvaluationEvidenceRef,
+        InputContractHash = InputContractHash,
+        OutputContractHash = OutputContractHash,
         PredecessorFleetVersion = PredecessorFleetVersion,
     });
 }

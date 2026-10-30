@@ -90,7 +90,8 @@ registration answers "always closed"; wire a real implementation when you want f
   shadow or canary. A chain is all models or all agents, never mixed (ADR-PA27), and from v0.45.0
   its kind must match the role's backing. A mapping for an agent-backed role needs an
   `eval-run:{manual|kit}:{id}` evidence ref for the role's current contract hashes, and approval
-  is refused once those hashes have moved (ADR-PA40).
+  is refused once those hashes have moved (ADR-PA40). From v0.45.0 a mapping also carries the
+  optional `InputContractHash` and `OutputContractHash` it was proposed against.
 - `ChainEntry` — the abstract chain entry: a provider and the ISO 4217 currency of its costs
   (ADR-PA21). `TargetId` is what the circuit breaker and audit key on.
 - `ModelEntry` — a model: model id, per-1k-token input/output/cache-read cost at scale 4, context
@@ -154,6 +155,24 @@ caller maps a status code by catching a type rather than by matching message tex
 | `MappingProposalAlreadyPendingException` | The role already holds a proposal awaiting a decision | 409 |
 | `MappingVersionNotRollbackEligibleException` | The target version is a shadow that never served | 409 |
 | `MappingConcurrencyConflictException` | The expected concurrency token is stale | 409 |
+| `UnknownRoleDefinitionException` | The role has no current definition (from v0.45.0) | 404 |
+| `ChainBackingMismatchException` | The chain's kind is not the role's backing (from v0.45.0) | 400 |
+| `EvaluationEvidenceRequiredException` | An agent-backed role's proposal has no evidence ref, or any proposal has a malformed one (from v0.45.0) | 400 `evaluation_evidence_required` |
+| `EvaluationEvidenceStaleException` | The role's contract hashes moved since the proposal stamped them (from v0.45.0) | 409 `evaluation_evidence_stale` |
+
+**A mapping is held to its role's definition (from v0.45.0, ADR-PA40, the consumer's ADR-E27 D16).**
+`ProposeAsync` reads the role's current definition: the role must be defined, the chain's kind
+(models or agents) must be its backing, and an agent-backed role's proposal must carry
+`EvaluationEvidenceRef` of the form `eval-run:manual:{id}` or `eval-run:kit:{id}`. A model-backed
+role's evidence is optional, but a ref that is supplied must have that form. The proposal stamps the
+role's current contract hashes onto `InputContractHash` and `OutputContractHash`, replacing whatever
+the caller sent, and approval copies the ref and the hashes onto the version it mints. `ApproveAsync`
+and `PromoteAsync` read the definition again and run the same checks, and when the proposal carries
+evidence they refuse it once the role's hashes have moved, because a new contract version re-opens
+eligibility. Nothing switches automatically: the live mapping keeps serving.
+`EvaluationEvidence.IsEligibilityReopened(role, mapping)` is the signal an admin screen shows for
+that case, and `EvaluationEvidence.IsWellFormed(ref)` lets an API check the grammar before calling.
+The library needs no new port for this, because the hashes come from the stored definition.
 
 **Deciding safely against a stale view (ADR-PA34).** Every proposal you read carries a
 `ConcurrencyToken`. Pass it back as `expectedConcurrencyToken` and a decision taken on a view

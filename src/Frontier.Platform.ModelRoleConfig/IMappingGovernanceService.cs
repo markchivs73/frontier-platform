@@ -22,6 +22,9 @@ public interface IMappingGovernanceService
     /// <param name="cancellationToken">Cancels the operation.</param>
     /// <exception cref="InvalidMappingChangeException">The change is not proposable — no reason, an ill-shaped chain, or an unresolvable target (K7) (400).</exception>
     /// <exception cref="MappingProposalAlreadyPendingException">The role already holds a proposal awaiting a decision (409).</exception>
+    /// <exception cref="UnknownRoleDefinitionException">The role has no current definition (ADR-PA40) (404).</exception>
+    /// <exception cref="ChainBackingMismatchException">The chain's kind is not the role's backing (ADR-PA40) (400).</exception>
+    /// <exception cref="EvaluationEvidenceRequiredException">An agent-backed role's mapping names no evaluation evidence, or a supplied ref is not <c>eval-run:{manual|kit}:{id}</c> (ADR-E27 D16) (400).</exception>
     Task<MappingChangeProposal> ProposeAsync(MappingChange change, string proposedBy, CancellationToken cancellationToken);
 
     /// <summary>
@@ -38,6 +41,10 @@ public interface IMappingGovernanceService
     /// <exception cref="IllegalMappingTransitionException">The proposal is not in a state an approval may move (409).</exception>
     /// <exception cref="DistinctApproverRequiredException">The approver is the proposer (403).</exception>
     /// <exception cref="MappingConcurrencyConflictException">The supplied token is stale (409).</exception>
+    /// <exception cref="UnknownRoleDefinitionException">The role has no current definition (ADR-PA40) (404).</exception>
+    /// <exception cref="ChainBackingMismatchException">The chain's kind is not the role's backing (ADR-PA40) (400).</exception>
+    /// <exception cref="EvaluationEvidenceRequiredException">An agent-backed role's mapping names no evaluation evidence, or a supplied ref is not <c>eval-run:{manual|kit}:{id}</c> (ADR-E27 D16) (400).</exception>
+    /// <exception cref="EvaluationEvidenceStaleException">The role's contract hashes have moved since the proposal stamped them (ADR-E27 D16) (409).</exception>
     /// <exception cref="MappingGovernanceException">The allocation kept losing to concurrent approvals.</exception>
     Task<MappingChangeProposal> ApproveAsync(
         string roleId, string proposalId, string approverId, string reason, string? expectedConcurrencyToken, CancellationToken cancellationToken);
@@ -79,6 +86,10 @@ public interface IMappingGovernanceService
     /// </param>
     /// <exception cref="IllegalMappingTransitionException">The proposal is not approved (409).</exception>
     /// <exception cref="MappingConcurrencyConflictException">The supplied token is stale (409).</exception>
+    /// <exception cref="UnknownRoleDefinitionException">The role has no current definition (ADR-PA40) (404).</exception>
+    /// <exception cref="ChainBackingMismatchException">The chain's kind is not the role's backing (ADR-PA40) (400).</exception>
+    /// <exception cref="EvaluationEvidenceRequiredException">An agent-backed role's mapping names no evaluation evidence, or a supplied ref is not <c>eval-run:{manual|kit}:{id}</c> (ADR-E27 D16) (400).</exception>
+    /// <exception cref="EvaluationEvidenceStaleException">The role's contract hashes have moved since the proposal stamped them (ADR-E27 D16) (409).</exception>
     Task<MappingChangeProposal> PromoteAsync(
         string roleId, string proposalId, string actor, string reason, string? expectedConcurrencyToken, CancellationToken cancellationToken);
 

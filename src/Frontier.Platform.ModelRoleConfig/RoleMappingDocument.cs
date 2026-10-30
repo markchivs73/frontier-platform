@@ -60,17 +60,27 @@ internal sealed record RoleMappingDocument
     [JsonPropertyName("evaluation_evidence_ref")]
     public string? EvaluationEvidenceRef { get; init; }
 
+    /// <summary>The role's input contract hash this mapping was proposed against (ADR-PA40); omitted when null, so older documents keep their bytes.</summary>
+    [JsonPropertyOrder(10)]
+    [JsonPropertyName("input_contract_hash")]
+    public string? InputContractHash { get; init; }
+
+    /// <summary>The role's output contract hash this mapping was proposed against (ADR-PA40); omitted when null.</summary>
+    [JsonPropertyOrder(11)]
+    [JsonPropertyName("output_contract_hash")]
+    public string? OutputContractHash { get; init; }
+
     /// <summary>
     /// The version of the most recent fleet-ring predecessor (doc 08 §5): non-null for
     /// canary/shadow rings, null for fleet (omitted from the wire document when null per
     /// the canonical profile's omit-null rule).
     /// </summary>
-    [JsonPropertyOrder(10)]
+    [JsonPropertyOrder(12)]
     [JsonPropertyName("predecessor_fleet_version")]
     public int? PredecessorFleetVersion { get; init; }
 
     /// <summary>Cosmos time-to-live in seconds; <c>-1</c> disables expiry (doc 08 §6 "TTL -1").</summary>
-    [JsonPropertyOrder(11)]
+    [JsonPropertyOrder(13)]
     [JsonPropertyName("ttl")]
     public int Ttl { get; init; } = -1;
 
@@ -86,6 +96,8 @@ internal sealed record RoleMappingDocument
         ApprovedBy = ApprovedBy,
         EffectiveFromUtc = EffectiveFromUtc,
         EvaluationEvidenceRef = EvaluationEvidenceRef,
+        InputContractHash = InputContractHash,
+        OutputContractHash = OutputContractHash,
         PredecessorFleetVersion = PredecessorFleetVersion,
     });
 
@@ -102,6 +114,8 @@ internal sealed record RoleMappingDocument
         ApprovedBy = mapping.ApprovedBy,
         EffectiveFromUtc = mapping.EffectiveFromUtc,
         EvaluationEvidenceRef = mapping.EvaluationEvidenceRef,
+        InputContractHash = mapping.InputContractHash,
+        OutputContractHash = mapping.OutputContractHash,
         PredecessorFleetVersion = mapping.PredecessorFleetVersion,
     };
 }

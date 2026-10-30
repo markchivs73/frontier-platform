@@ -8,9 +8,16 @@ namespace Frontier.Platform.ModelRoleConfig;
 /// it is attempted and compensated if it does not land; every state move is guarded by the proposal's
 /// ETag; and every mapping version is allocated by a create-only write on <c>{roleId}:v{n}</c>, so
 /// concurrent approvals serialise rather than collide.
+/// <para>
+/// From v0.45.0 a mapping is held to its role's current definition (ADR-PA40, ADR-E27 D16): the role
+/// must be defined, the chain's kind must be its backing, an agent-backed role's mapping needs
+/// evaluation evidence, and the proposal stamps the role's contract hashes. Approve and promote check
+/// all of it again, and refuse evidence whose hashes the role has since moved past.
+/// </para>
 /// </summary>
 internal sealed class MappingGovernanceService(
     IMappingProposalStore store,
+    IRoleDefinitionStore definitions,
     IRoleMappingWriter writer,
     IMappingDecisionRecorder recorder,
     TimeProvider timeProvider,
@@ -23,10 +30,11 @@ internal sealed class MappingGovernanceService(
         ArgumentNullException.ThrowIfNull(change);
         MappingProposalRules.EnsureAttributed(proposedBy, change.Reason);
         MappingProposalRules.ValidateChange(change);
+        var role = await EnsureEligibleAsync(change.RoleId, change.ProposedMapping, cancellationToken);
         await EnsureNoUndecidedProposalAsync(change.RoleId, cancellationToken);
 
         var now = timeProvider.GetUtcNow().UtcDateTime;
-        var proposal = BuildProposal(change, proposedBy, now, await FindFleetVersionAsync(change.RoleId, cancellationToken));
+        var proposal = BuildProposal(change, proposedBy, now, await FindFleetVersionAsync(change.RoleId, cancellationToken), role);
         proposal.Validate();
 
         var decision = Decision(MappingGovernanceEventTypes.Proposed, proposal, proposedBy, change.Reason, now);
@@ -122,6 +130,18 @@ internal sealed class MappingGovernanceService(
     }
 
     /// <summary>
+    /// Reads the role's current definition and refuses <paramref name="mapping"/> unless it suits it
+    /// (ADR-PA40): the role is defined, the chain's kind is its backing, and the evidence is what the
+    /// backing requires. Refusals happen before the audit record, so a refused decision writes nothing.
+    /// </summary>
+    internal async Task<RoleDefinition> EnsureEligibleAsync(string roleId, RoleMapping mapping, CancellationToken cancellationToken)
+    {
+        var role = MappingEligibilityRules.EnsureDefined(await definitions.FindCurrentDefinitionAsync(roleId, cancellationToken), roleId);
+        MappingEligibilityRules.EnsureEligible(role, mapping);
+        return role;
+    }
+
+    /// <summary>
     /// The rollback target must exist and must never be a shadow version: a shadow mapping was never
     /// served and making it current would put an unserved chain in front of every new execution — and
     /// would trip <see cref="RoleCatalogueCheck"/> at the next boot.
@@ -183,6 +203,8 @@ internal sealed class MappingGovernanceService(
         {
             var stored = await LoadForTransitionAsync(roleId, proposalId, target, expectedToken, cancellationToken);
             MappingProposalRules.EnsureDistinctApprover(stored.Proposal, actor);
+            var role = await EnsureEligibleAsync(roleId, stored.Proposal.Change.ProposedMapping, cancellationToken);
+            MappingEligibilityRules.EnsureNotStale(role, stored.Proposal.Change.ProposedMapping);
 
             if (await TryAllocateOnceAsync(stored, actor, reason, target, cancellationToken) is { } updated)
             {
@@ -356,8 +378,11 @@ internal sealed class MappingGovernanceService(
         return mapping is null ? null : mapping.Ring == RolloutRing.Fleet ? mapping.MappingVersion : mapping.PredecessorFleetVersion;
     }
 
-    /// <summary>The pending proposal, with the caller's ring, version, approver and effective-at replaced by the service's.</summary>
-    internal static MappingChangeProposal BuildProposal(MappingChange change, string proposedBy, DateTime now, int? fleetVersion) => new()
+    /// <summary>
+    /// The pending proposal, with the caller's ring, version, approver, effective-at and contract
+    /// hashes replaced by the service's; the hashes are <paramref name="role"/>'s current ones (D16).
+    /// </summary>
+    internal static MappingChangeProposal BuildProposal(MappingChange change, string proposedBy, DateTime now, int? fleetVersion, RoleDefinition role) => new()
     {
         ProposalId = Guid.NewGuid().ToString("N"),
         RoleId = change.RoleId,
@@ -367,7 +392,7 @@ internal sealed class MappingGovernanceService(
         PredecessorFleetVersion = fleetVersion,
         Change = change with
         {
-            ProposedMapping = change.ProposedMapping with
+            ProposedMapping = MappingEligibilityRules.Stamp(change.ProposedMapping, role) with
             {
                 MappingVersion = 0,
                 Ring = RolloutRing.Canary,

@@ -92,6 +92,7 @@ public sealed class CosmosMappingProposalStoreIntegrationTests : IAsyncLifetime,
         var role = UniqueRole();
         var service = Service();
         var change = ChangeFor(role);
+        await RoleDefinitionSeed.DefineModelRoleAsync(Container, role);
 
         var first = await service.ProposeAsync(change, Proposer, CancellationToken.None);
         await Assert.ThrowsAnyAsync<Frontier.Platform.Abstractions.ContractViolationException>(() =>
@@ -118,9 +119,37 @@ public sealed class CosmosMappingProposalStoreIntegrationTests : IAsyncLifetime,
         Assert.Equal(promoted.PromotedVersion, await store.FindCurrentVersionAsync(role, CancellationToken.None));
     }
 
+    [Fact]
+    public async Task AgentRoleProposeThenApprove_StoresTheEvidenceAndHashesOnTheVersion()
+    {
+        // ADR-PA40 (D16) against real documents: the stamped hashes survive the proposal's stored
+        // shape and the allocation batch onto the version, and a moved contract refuses approval.
+        var role = EvaluationEvidenceSamples.AgentRole with { RoleId = $"it-agent-{Guid.NewGuid():N}" };
+        await RoleDefinitionSeed.DefineAsync(Container, role);
+        var change = EvaluationEvidenceSamples.AgentChange() with
+        {
+            RoleId = role.RoleId,
+            ProposedMapping = EvaluationEvidenceSamples.AgentMapping() with { RoleId = role.RoleId },
+        };
+        var service = Service();
+
+        var proposal = await service.ProposeAsync(change, Proposer, CancellationToken.None);
+        var approved = await service.ApproveAsync(role.RoleId, proposal.ProposalId, Approver, "evidence reviewed", null, CancellationToken.None);
+
+        var version = await store.FindMappingVersionAsync(role.RoleId, approved.MappingVersion!.Value, CancellationToken.None);
+        Assert.Equal(EvaluationEvidenceSamples.ManualRef, version!.EvaluationEvidenceRef);
+        Assert.Equal(role.InputContractHash, version.InputContractHash);
+        Assert.Equal(role.OutputContractHash, version.OutputContractHash);
+
+        var next = await service.ProposeAsync(change, Proposer, CancellationToken.None);
+        await RoleDefinitionSeed.DefineAsync(Container, EvaluationEvidenceSamples.AgentRoleWithNewOutput with { RoleId = role.RoleId });
+        await Assert.ThrowsAsync<EvaluationEvidenceStaleException>(() =>
+            service.ApproveAsync(role.RoleId, next.ProposalId, Approver, "evidence reviewed", null, CancellationToken.None));
+    }
+
     /// <summary>The governance service over the real store.</summary>
     private MappingGovernanceService Service() =>
-        new(store, new NoOpWriter(), new FakeMappingDecisionRecorder(), TimeProvider.System,
+        new(store, new CosmosRoleDefinitionStore(client, Options.Create(new CosmosOptions { Database = DatabaseId })), new NoOpWriter(), new FakeMappingDecisionRecorder(), TimeProvider.System,
             Options.Create(new MappingGovernanceOptions { DecisionMaxAttempts = 50, DecisionBaseDelayMs = 5, DecisionMaxDelayMs = 200 }));
 
     /// <summary>A well-formed change targeting <paramref name="role"/>.</summary>
@@ -136,6 +165,7 @@ public sealed class CosmosMappingProposalStoreIntegrationTests : IAsyncLifetime,
         var ids = new List<string>();
         for (var index = 0; index < count; index++)
         {
+            await RoleDefinitionSeed.DefineModelRoleAsync(Container, role);
             var proposal = Pending($"p-{index}") with { RoleId = role, PredecessorFleetVersion = null, Change = ChangeFor(role) };
             await store.CreateProposalAsync(proposal, CancellationToken.None);
             ids.Add(proposal.ProposalId);
@@ -143,6 +173,8 @@ public sealed class CosmosMappingProposalStoreIntegrationTests : IAsyncLifetime,
 
         return ids;
     }
+
+    private Container Container => client.GetContainer(DatabaseId, CosmosRoleRegistry.ContainerName);
 
     private static string UniqueRole() => $"it-role-{Guid.NewGuid():N}";
 
