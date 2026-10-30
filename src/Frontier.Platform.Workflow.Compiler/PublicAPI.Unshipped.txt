@@ -27,6 +27,12 @@ Frontier.Platform.Workflow.Compiler.RegisteredContract.Snapshot.get -> Frontier.
 Frontier.Platform.Workflow.Compiler.RegisteredContract.Snapshot.init -> void
 Frontier.Platform.Workflow.Compiler.Rules.DataNoEdgeFromGateRule
 Frontier.Platform.Workflow.Compiler.Rules.DataNoEdgeFromGateRule.DataNoEdgeFromGateRule() -> void
+Frontier.Platform.Workflow.Compiler.Rules.DataProjectionCompatibleRule
+Frontier.Platform.Workflow.Compiler.Rules.DataProjectionCompatibleRule.DataProjectionCompatibleRule(Frontier.Platform.Workflow.Compiler.IContractSnapshotCatalog! contracts, Frontier.Platform.Contracts.IContractValidator! validator) -> void
+Frontier.Platform.Workflow.Compiler.Rules.DataProjectionCompatibleRule.DefaultSeverity.get -> Frontier.Platform.Workflow.Compiler.ValidationSeverity
+Frontier.Platform.Workflow.Compiler.Rules.DataProjectionCompatibleRule.EvaluateAsync(Frontier.Platform.Workflow.Compiler.DefinitionValidationContext! ctx, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Frontier.Platform.Workflow.Compiler.ValidationFinding!>!>!
+Frontier.Platform.Workflow.Compiler.Rules.DataProjectionCompatibleRule.RuleId.get -> string!
+Frontier.Platform.Workflow.Compiler.Rules.DataProjectionCompatibleRule.Tier.get -> Frontier.Platform.Workflow.Compiler.RuleTier
 Frontier.Platform.Workflow.Compiler.Rules.DataSchemaRefResolvesRule
 Frontier.Platform.Workflow.Compiler.Rules.DataSchemaRefResolvesRule.DataSchemaRefResolvesRule(Frontier.Platform.Workflow.Compiler.IContractSnapshotCatalog! contracts) -> void
 Frontier.Platform.Workflow.Compiler.Rules.DataSchemaRefResolvesRule.DefaultSeverity.get -> Frontier.Platform.Workflow.Compiler.ValidationSeverity

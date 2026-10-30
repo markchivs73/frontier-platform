@@ -2705,3 +2705,17 @@ agent never sees. The registry fills them (consumer slices 3 and 4).
 - `mcp.tool-resolves` also holds an `mcp_tool` node's contract refs to exactly the ones registered
   for its tool, which is how the node-field binding (Mark, 2026-10-30) stays truthful.
 
+**Slice 2c, `data.projection-compatible`** (ADR-E27 D5, D14; resourced). Both ends of a projected
+edge must be registry contracts (a gate's end is `frontier/gate-decision/1.0`), since a CLR type has
+no schema to project from. Each target must be a declared property of the consumer's input. A
+pointer's value must have exactly that property's shape once annotations are removed: the strict
+reading of D5, consistent with registration's compatibility check (Mark, 2026-10-29), with no
+structural subtyping. A literal must satisfy the property's schema, checked by the one validator.
+Every property the consumer requires must be projected, from a literal or from a value that every
+valid output has (each step of the pointer a required property; an array index never counts).
+`data.schema-ref-match` stops checking the consumer end of a projected edge, whose contract type
+names the producer's output. The shape questions live in `Frontier.Platform.Contracts` as
+`ContractShapes`, which inlines local references so two contracts laying out `$defs` differently
+still compare by what they accept; a reference it cannot inline (recursive, non-local, or with
+sibling constraints) makes the field uncheckable, which is reported as a misfit.
+

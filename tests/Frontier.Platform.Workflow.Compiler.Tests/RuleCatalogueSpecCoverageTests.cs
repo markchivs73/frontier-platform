@@ -68,6 +68,7 @@ public sealed class RuleCatalogueSpecCoverageTests
         "data.no-edge-from-gate",
         "model-role.contracts-match",
         "mcp.server-not-drifted",
+        "data.projection-compatible",
     ];
 
     [Fact]
@@ -93,9 +94,10 @@ public sealed class RuleCatalogueSpecCoverageTests
         // +1 Pure at S13.34: schema.version-supported reads the context's probed stored version
         // and nothing else, so it runs in-circuit with the rest of the pure tier.
         // S13.117 (ADR-E27): +1 Pure (data.no-edge-from-gate reads the definition alone) and +3
-        // Resourced (schema-ref-resolves, contracts-match and server-not-drifted read the registry).
+        // +4 Resourced (schema-ref-resolves, contracts-match, server-not-drifted and
+        // projection-compatible read the registry).
         Assert.Equal(19, CurrentlyRegisteredRules.Count(r => r.Tier == RuleTier.Pure));
-        Assert.Equal(16, CurrentlyRegisteredRules.Count(r => r.Tier == RuleTier.Resourced));
+        Assert.Equal(17, CurrentlyRegisteredRules.Count(r => r.Tier == RuleTier.Resourced));
         Assert.Equal(0, CurrentlyRegisteredRules.Count(r => r.Tier == RuleTier.Runtime));
     }
 
@@ -149,6 +151,7 @@ public sealed class RuleCatalogueSpecCoverageTests
         services.AddSingleton<IRetryProfileCatalog>(new EmptyProfileCatalog());
         services.AddSingleton<ICascadeGraphChecker>(new EmptyCascadeChecker());
         services.AddSingleton(Moq.Mock.Of<IContractSnapshotCatalog>()); // ADR-E27: data.schema-ref-resolves and publish pinning
+        Frontier.Platform.Contracts.ContractsServiceCollectionExtensions.AddFrontierContracts(services, new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build()); // data.projection-compatible checks literals
 
         using var provider = services.BuildServiceProvider();
         using var scope = provider.CreateScope();

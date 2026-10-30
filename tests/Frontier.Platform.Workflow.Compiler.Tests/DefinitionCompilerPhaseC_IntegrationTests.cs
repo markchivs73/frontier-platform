@@ -102,6 +102,7 @@ public sealed class DefinitionCompilerPhaseC_IntegrationTests : IAsyncLifetime, 
         services.AddSingleton<IRetryProfileCatalog>(new EmptyRetryProfileCatalog());
         services.AddSingleton<ICascadeGraphChecker>(new EmptyCascadeGraphChecker());
         services.AddSingleton(Moq.Mock.Of<IContractSnapshotCatalog>()); // ADR-E27: data.schema-ref-resolves and publish pinning
+        Frontier.Platform.Contracts.ContractsServiceCollectionExtensions.AddFrontierContracts(services, new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build()); // data.projection-compatible checks literals
         _services = services.BuildServiceProvider();
 
         _store = _services?.GetRequiredService<IDefinitionStore>() ?? throw new InvalidOperationException("Store not initialized");
