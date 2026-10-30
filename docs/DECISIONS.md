@@ -2719,3 +2719,158 @@ names the producer's output. The shape questions live in `Frontier.Platform.Cont
 still compare by what they accept; a reference it cannot inline (recursive, non-local, or with
 sibling constraints) makes the field uncheckable, which is reported as a misfit.
 
+## ADR-PA40 — a role is a governed definition, and an agent-backed role's mapping needs evidence for its contracts
+
+The consumer's ADR-E27 D12 lifts the frozen four-role catalogue (C-3): roles become data, created
+and changed by a proposal a second principal approves. D16 makes a provider eligible for an
+agent-backed role only with eval evidence for that exact contract hash. Until now the catalogue was
+the code constant `Phase1RoleCatalogue`, `RoleDefinition` had no backing or contracts, and nothing
+read `EvaluationEvidenceRef`. This ADR records how the platform carries D12 and D16 (consumer
+S13.117, slice 4; Mark, 2026-10-30). It ships in v0.45.0.
+
+**Definitions live in ModelRoleConfig, beside the mappings** (Mark, 2026-10-30). A role definition
+is stored in `model-role-config` under the role's `/role_id` partition, and is governed by a
+definition-proposal service that mirrors `MappingGovernanceService` (ADR-PA32, ADR-PA34). The
+consumer's resource registry was rejected as the home: its ADR-CD9 lifecycle is admin-gated with no
+second approver, and a port reading it would make this library's resolver and boot check depend on
+consumer data. Co-location also keeps one role's definition, mappings and proposals in one logical
+partition, the scope of a Cosmos transactional batch
+([Microsoft Learn](https://learn.microsoft.com/en-us/azure/cosmos-db/transactional-batch)).
+
+**The record's fields.** `RoleDefinition` keeps `role_id`, `description`, `stakes` and
+`requirements`, and gains:
+- `backing`, a `RoleBacking` smart enum, `model` or `agent`;
+- `input_contract_ref` and `output_contract_ref`, ADR-E2 schema refs (`{namespace}/{name}/{major}.{minor}`);
+- `input_contract_hash` and `output_contract_hash`, stamped by approval, never taken from a caller;
+- `definition_version`, `approved_by` and `effective_from_utc`, stamped by approval.
+
+An agent-backed role must declare both refs. A model-backed role may declare either, both or none
+(ADR-E27 Q1). `requirements` describe a model, so they are required for a model-backed role and
+optional for an agent-backed one. A role carries **no** `instructions_ref`; doc 20's proposed shape
+showed one, and inheritance from a role was never specified. `description` stays because the
+designer's catalogue matches node intent against it, and `stakes` because it drives governance
+posture.
+
+**Backing is declared and immutable.** A definition proposal that changes an existing role's
+backing is refused; moving between model and agent means a new role. A declared backing is what
+makes "an agent-backed role must declare contracts" checkable when a definition is proposed, and
+immutability removes the case of a live chain whose kind no longer matches its role. A mapping
+proposal whose chain kind (`ChainShape`, ADR-PA27) differs from the role's backing is refused, which
+needs the role to have a current definition first.
+
+**A role id** is lowercase kebab-case (`^[a-z0-9]+(-[a-z0-9]+)*$`), at most 64 characters, and so
+never contains `:`, the separator in every `model-role-config` document id. It is checked at
+propose.
+
+**Documents and versions.** In the role's partition, beside ADR-PA32's `{roleId}:v{n}`,
+`{roleId}:current` and `{roleId}:proposal:{id}`:
+- `{roleId}:definition:v{n}`, `doc_type` `role_definition`, append-only;
+- `{roleId}:definition:current`, `doc_type` `role_definition_current`, the pointer;
+- `{roleId}:definition-proposal:{id}`, `doc_type` `role_definition_proposal`, the one mutable kind.
+
+None of these ids starts with `{roleId}:v`, and no definition document carries `mapping_version`,
+so the mapping-version queries, which select on that prefix and that property, are unaffected; a
+test pins it. `definition_version` is allocated as a mapping version is: `max + 1`, created
+create-only inside the transactional batch that replaces the proposal under its ETag and upserts the
+pointer, with ADR-PA32's re-read and retry on 409. A new role's first approved definition is v1.
+
+**Proposals mirror mappings, minus the rings.** `RoleDefinitionProposal` is an `IVersionedContract`
+and reuses `MappingProposalState`, but enters only `pending_approval`, `approved`, `rejected` and
+`withdrawn`. The rules are the mapping rules: one undecided proposal per role; a reason on every
+decision; a distinct approver for approve and reject, compared case-insensitively; withdrawal by the
+proposer only; an ETag concurrency token refused by name when stale, never retried (ADR-PA34).
+Each decision goes through the existing `IMappingDecisionRecorder` before it happens, with a
+compensating record if the write then fails (ADR-PA30's order), under four new event types:
+`model_role_definition_proposed`, `_approved`, `_rejected` and `_withdrawn`. Their
+`FromVersion` and `ToVersion` are definition versions. The subject stays the role, so the consumer's
+governance screen filters them with the mapping events. The two-person rule is the standard
+separation-of-duties control (NIST SP 800-53 Rev. 5, AC-5;
+[NIST](https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final)).
+
+**No promote and no rollback for definitions** (Mark, 2026-10-30). Rings describe traffic, and a
+definition serves none: it changes only what publish-time rules and the designer see. Pinned runs
+embed their contracts (ADR-PA39), so the emergency lever rollback exists for (ADR-M3) does not
+apply, and an unapproved pointer move would skip the second principal D12 requires. To revert,
+propose the old definition again.
+
+**Contract refs are resolved through the one contract port, moved down a tier.** Propose refuses a
+ref that is not registered or is retired, and approval resolves both refs again and stamps their
+hashes; a ref retired between propose and approve is refused there. That is a genuine need for
+ModelRoleConfig to resolve a ref: a hash the service stamps must come from the registry, not from
+the caller, by ADR-PA32's rule for every stamped field. ModelRoleConfig is governance-tier and may
+not reference the Compiler, where `IContractSnapshotCatalog` lives. So `IContractSnapshotCatalog`
+and `RegisteredContract` move to `Frontier.Platform.Abstractions`, beside the `ContractSnapshot`
+they return, with their names and members unchanged, in the `Frontier.Platform.Abstractions`
+namespace. The Compiler keeps consuming the same port, and the consumer keeps one Host adapter over
+its registry, registered once. Rejected:
+- a second port, `IRoleContractCatalog`, in ModelRoleConfig, and a third for the designer: three
+  ports over one store that could drift;
+- a type forward from the Compiler, which would keep the Compiler's namespace inside the kernel;
+- resolving only in the compiler tier (`model-role.contracts-match`), which checks a node against
+  its role but cannot stamp a hash onto a governed record.
+
+The move is a source break of one `using` for an implementer, and is marked as such in the PR that
+makes it. It adds nothing third-party to Abstractions (ADR-PA1). A designer or other platform need
+for a registry contract by ref should take this same port.
+
+**Evidence on mapping proposals** (D16, Q4). `evaluation_evidence_ref` takes the form
+`eval-run:{manual|kit}:{id}` and is checked by prefix and a non-blank id; no eval store exists until
+the consumer's S13.137, which turns `manual` into a refusal in code. It is **required for an
+agent-backed role** and recorded when supplied for a model-backed one. A mapping proposal stamps the
+role's current input and output contract hashes onto itself; approval copies the ref and the hashes
+onto the version it mints (ADR-E27's settled note). Approval is refused when the role's current
+hashes are no longer the ones stamped, because a new contract version re-opens eligibility. The new
+members on `RoleMapping` and the proposal document are optional, so every stored document keeps its
+bytes. Each refusal has its own type deriving from `MappingGovernanceRefusalException` (ADR-PA34):
+
+| Refusal | Means | Consumer maps to |
+|---|---|---|
+| `EvaluationEvidenceRequiredException` | An agent-backed role's proposal has no ref, or a malformed one | 400 `evaluation_evidence_required` |
+| `EvaluationEvidenceStaleException` | The role's contract hashes moved since the proposal stamped them | 409 `evaluation_evidence_stale` |
+| `ChainBackingMismatchException` | The chain's kind is not the role's backing | 400 |
+| `InvalidRoleDefinitionException` | A bad role id, an agent-backed role without both refs, a malformed ref, missing requirements on a model role | 400 |
+| `UnknownRoleContractException` | A ref that is not registered, or is retired | 400 |
+| `RoleBackingChangeException` | A proposal changes an existing role's backing | 409 |
+| `UnknownRoleDefinitionException` | The role has no current definition | 404 |
+
+**A contract change leaves the live mapping serving** (Mark, 2026-10-30). When a definition change
+moves an agent-backed role's contract hash, the mapping evaluated against the old hash keeps serving,
+the consumer's D3 screen flags the role as needing new evidence, and the next mapping proposal must
+bring evidence for the new hash. Nothing switches automatically (ADR-M2), and in-flight runs are
+unaffected because they embed their contracts. Refusing the stale mapping at run time would fail
+live runs on a governance edit.
+
+**`instructions_ref` becomes optional on the node** (Mark, 2026-10-30). `AgentTaskNode.InstructionsRef`
+becomes `string?`, omitted when null; stored definitions serialize to the bytes they had, so their
+hashes hold. This is a public API break in Model, Compiler and Orchestration. `AgentRoleDescriptor`
+gains `Backing`; `agent.instructions-resolve` exempts a node on an agent-backed role and still
+refuses a missing ref on a model-backed one, and the design agent is told so. At run time a missing
+ref with a model target is a permanent contract violation; an agent target runs without
+instructions, as the A2A path already does.
+
+**Migration: the four roles, as they are** (Mark, 2026-10-30). `deep-reasoning`, `fast`,
+`structured-extraction` and `embeddings` migrate as **model-backed** v1 definitions with
+no contracts, field for field from `Phase1RoleCatalogue`. The consumer's seed writes them,
+attributed to a migration principal, as it writes the governed mapping pointers. The platform never
+writes governed data at boot, and there is no fallback to the constant when none is stored:
+`RoleCatalogueCheck` fails the boot when a referenced role has no current definition, which is the
+only way a missing migration surfaces. `CosmosRoleRegistry.GetCatalogueAsync` reads the current
+definitions with a query across role partitions. The container is small, and a cross-partition
+query on one physical partition costs about what an in-partition one does
+([Microsoft Learn](https://learn.microsoft.com/en-us/azure/cosmos-db/how-to-query-container)), so
+it is not cached in this release. `Phase1RoleCatalogue` stays as the migration source, marked
+`[Obsolete]` as no longer the catalogue. A local stack whose `fast` or `structured-extraction`
+mapping serves an agent chain is rolled back to the v1 model chain by hand; the consumer creates
+proper agent-backed roles for those agents with their contracts (its slice 6).
+
+**Left to the consumer:** the doc 20 routes, frozen as written (`GET /api/model-roles/definitions`,
+`GET` and `POST /api/model-roles/definition-proposals`, and `POST
+/api/model-roles/{roleId}/definition-proposals/{proposalId}/approve`, `/reject` and `/withdraw`);
+the four event types in its governance catalogue; the Host adapter over its registry; and
+withholding an agent-backed role with no active mapping from the designer, so `model-role.roles-exist`
+catches it at publish.
+
+Pinned, as the stack lands, by the role-definition golden files and governance tests, the
+mapping-history isolation test, the evidence and staleness tests, the instructions-optional compiler
+and pipeline tests, and the replay test of a run recorded with an `instructions_ref`.
+
