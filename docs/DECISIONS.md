@@ -2553,6 +2553,15 @@ the standard library and no extension libraries.
   an exhausted budget are each a violation carrying the rule's own message at its `field_path`; an
   evaluation error's text is dropped, since it can quote the payload. Rules run only once the
   schema passes, so a rule never sees a value of the wrong shape.
+- **Conformance evidence is upstream's, checked at each pin** (Mark, 2026-10-30; amends the
+  consumer's TD-17, which had the cel-spec suite running in this repo's CI). The suite exists only in
+  the cel-spec and Celly repositories, and no third-party repository code is copied into this one: the
+  only Celly code here is the NuGet package, used under its Apache-2.0 licence. The evidence for the
+  pin is Celly's own CI for the commit its 1.2.0 package was built from (`fb0b964`; build-test green
+  on Linux, Windows and macOS, 2,456 of 2,456 cel-spec cases, an empty known-failures list). Our own
+  tests run the real package over everything a contract rule can reach. The release routine re-checks
+  the evidence whenever the pin moves. TD-17's trigger to vendor Celly's source if it goes six months
+  without a release we need is unchanged; that would be a decision of its own.
 - **Registration runs every schema-valid example through every rule.** An example a rule rejects
   refuses an authored contract and warns on a discovered one. A rule that does not compile refuses
   any contract.
