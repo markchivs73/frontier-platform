@@ -1,13 +1,17 @@
 using System.Diagnostics.CodeAnalysis;
 
-using Frontier.Platform.Abstractions;
-
-namespace Frontier.Platform.Workflow.Compiler;
+namespace Frontier.Platform.Abstractions;
 
 /// <summary>
-/// The registry's contracts, as the compiler reads them (ADR-E27 D4, D15). Consumer-owned: the
-/// composition root implements it over the resource registry. Publish embeds what it returns, and
-/// <c>data.schema-ref-resolves</c> checks every ref a definition names against it.
+/// The registry's contracts, as the platform reads them (ADR-E27 D4, D15). Consumer-owned: the
+/// composition root implements it over the resource registry, once. The compiler embeds what it
+/// returns at publish and checks every ref a definition names against it; ModelRoleConfig resolves
+/// a role definition's contract refs through it and stamps their hashes at approval.
+/// <para>
+/// Kernel vocabulary since v0.45.0 (ADR-PA40): it moved here from
+/// <c>Frontier.Platform.Workflow.Compiler</c>, names and members unchanged, so that a library below
+/// the compiler can resolve a ref through the same port rather than a second one over the same store.
+/// </para>
 /// </summary>
 public interface IContractSnapshotCatalog
 {

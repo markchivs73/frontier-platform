@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using Frontier.Platform.Abstractions;
 using Frontier.Platform.Workflow.Compiler.Rules;
 using Frontier.Platform.Workflow.Compiler.Schema;
 using Frontier.Platform.Workflow.Compiler.Storage;

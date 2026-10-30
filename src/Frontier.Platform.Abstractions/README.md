@@ -67,6 +67,15 @@ There is no `AddFrontier…()` call: this package is types only, with nothing to
 `HitlDecision`, `ResolvedModelSummary`. These live here because more than one platform library
 needs them; a type used by only one library belongs in that library.
 
+**The contract port**
+
+`ContractSnapshot` and `ContractRule` — a registry contract as it is pinned — and, since v0.45.0,
+the consumer-owned port that finds one, `IContractSnapshotCatalog`, with its `RegisteredContract`
+result (ADR-PA40). The workflow compiler reads it at publish and ModelRoleConfig resolves a role
+definition's contract refs through it, so it lives below both. It moved from
+`Frontier.Platform.Workflow.Compiler` with its names and members unchanged; an implementer changes
+one `using`. Register one adapter over your registry for every library that needs it.
+
 ## Key invariants
 
 - **Nothing gets added here casually.** A type earns a place in the kernel by being needed by

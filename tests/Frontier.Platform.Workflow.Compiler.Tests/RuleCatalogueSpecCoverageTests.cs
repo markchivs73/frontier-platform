@@ -1,3 +1,4 @@
+using Frontier.Platform.Abstractions;
 using Frontier.Platform.Workflow.Compiler.Rules;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;

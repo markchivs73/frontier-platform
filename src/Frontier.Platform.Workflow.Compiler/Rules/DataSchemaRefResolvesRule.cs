@@ -1,3 +1,4 @@
+using Frontier.Platform.Abstractions;
 using Frontier.Platform.Workflow.Model;
 
 namespace Frontier.Platform.Workflow.Compiler.Rules;

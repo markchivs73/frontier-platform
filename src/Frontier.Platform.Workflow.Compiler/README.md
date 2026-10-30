@@ -44,7 +44,7 @@ is a statement about a particular deployment.
 | `IDesignerToolCatalog` | Which tools the design agent may offer |
 | `IExecutableNodeTypeCatalog` | Which node types this runtime will actually run |
 | `IContractTypeCatalog` | Which CLR data contracts this deployment declares |
-| `IContractSnapshotCatalog` | Which registry contracts exist, and whether each is retired (ADR-E27) |
+| `IContractSnapshotCatalog` | Which registry contracts exist, and whether each is retired (ADR-E27). In `Frontier.Platform.Abstractions` since v0.45.0 (ADR-PA40) |
 | `ICascadeGraphChecker` | Cascade-graph checks at publish |
 | `ITestRunExecutor` and friends | How a test run is executed and read back |
 | `IEntryContractCatalog` | What the entry node is handed, and from which dynamic field |
