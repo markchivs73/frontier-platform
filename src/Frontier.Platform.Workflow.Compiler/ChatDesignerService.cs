@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Frontier.Platform.Abstractions;
 using Frontier.Platform.Serialization;
 using Frontier.Platform.Workflow.Compiler.Schema;
 using Frontier.Platform.Workflow.Compiler.Storage;
@@ -30,6 +31,7 @@ internal sealed class ChatDesignerService : IChatDesignerService
     private readonly IInstructionCatalog _instructionCatalog;
     private readonly IContextComponentCatalog _componentCatalog;
     private readonly IEntryContractCatalog _entryContractCatalog;
+    private readonly IContractSnapshotCatalog _contractCatalog;
 
     public ChatDesignerService(
         IDefinitionStore store,
@@ -44,7 +46,8 @@ internal sealed class ChatDesignerService : IChatDesignerService
         IDesignerModelProvider modelProvider,
         IInstructionCatalog instructionCatalog,
         IContextComponentCatalog componentCatalog,
-        IEntryContractCatalog entryContractCatalog)
+        IEntryContractCatalog entryContractCatalog,
+        IContractSnapshotCatalog contractCatalog)
     {
         ArgumentNullException.ThrowIfNull(store);
         ArgumentNullException.ThrowIfNull(mergeService);
@@ -59,6 +62,7 @@ internal sealed class ChatDesignerService : IChatDesignerService
         ArgumentNullException.ThrowIfNull(instructionCatalog);
         ArgumentNullException.ThrowIfNull(componentCatalog);
         ArgumentNullException.ThrowIfNull(entryContractCatalog);
+        ArgumentNullException.ThrowIfNull(contractCatalog);
         _store = store;
         _mergeService = mergeService;
         _chatClient = chatClient;
@@ -72,6 +76,7 @@ internal sealed class ChatDesignerService : IChatDesignerService
         _instructionCatalog = instructionCatalog;
         _componentCatalog = componentCatalog;
         _entryContractCatalog = entryContractCatalog;
+        _contractCatalog = contractCatalog;
     }
 
     public async Task<DesignTurnDocument> SubmitDesignTurnAsync(
@@ -521,9 +526,10 @@ internal sealed class ChatDesignerService : IChatDesignerService
 
     /// <summary>
     /// Assembles the agent's system prompt from the design-language schema, the available approver
-    /// roles, the available MCP tools (ADR-CD7), the available agent roles (S9.27), the engagement
-    /// type, and the current draft (doc 14 §3), and instructs the model to return a single
-    /// structured <see cref="AgentProposal"/> JSON object.
+    /// roles, the available MCP tools (ADR-CD7), the available agent roles (S9.27), the registry's
+    /// contracts with their annotations (ADR-PA41), the engagement type, and the current draft
+    /// (doc 14 §3), and instructs the model to return a single structured <see cref="AgentProposal"/>
+    /// JSON object.
     /// </summary>
     internal async Task<string> BuildSystemPromptAsync(DefinitionDraftDocument draft, CancellationToken ct)
     {
@@ -534,7 +540,10 @@ internal sealed class ChatDesignerService : IChatDesignerService
         var toolsJson = JsonSerializer.Serialize(tools, CanonicalProfile.Options);
         var agentRoles = await _agentRoleCatalog.GetAgentRolesAsync(ct);
         var agentRolesJson = JsonSerializer.Serialize(agentRoles, CanonicalProfile.Options);
-        var contracts = string.Join(", ", _schemaProvider.GetSchema().Contracts);
+        var registryContracts = DesignerContractAnnotations.Ordered(await _contractCatalog.ListAsync(ct));
+        var contracts = string.Join(", ", _schemaProvider.GetSchema().Contracts.Concat(registryContracts.Select(c => c.ContractRef)));
+        var annotations = DesignerContractAnnotations.Render(registryContracts);
+        var anyJsonTools = DesignerContractAnnotations.AnyJsonTools(tools);
         var instructions = string.Join(", ", await _instructionCatalog.ListRefsAsync(ct));
         var baselineComponents = string.Join(", ", await _componentCatalog.GetBaselineComponentNamesAsync(ct));
         var dynamicFields = string.Join(", ", await _componentCatalog.GetDynamicFieldNamesAsync(ct));
@@ -566,6 +575,12 @@ internal sealed class ChatDesignerService : IChatDesignerService
             and `output_contract_type` and a `data` edge's `contract_type`:
             {{contracts}}
 
+            Registry contracts — what each registry ref above (`{namespace}/{name}/{major}.{minor}`)
+            means: its description, its properties' descriptions, its examples and its rules, the
+            same annotations the designer's contract panel shows. Pick the contract whose meaning
+            fits the step, not the one whose name sounds closest:
+            {{annotations}}
+
             Available instructions — the ONLY valid values for an agent_task's `instructions_ref`
             (omit it on a role whose `backing` is `agent`):
             {{instructions}}
@@ -589,6 +604,10 @@ internal sealed class ChatDesignerService : IChatDesignerService
               two steps whose contracts differ, insert an intermediate `agent_task` that consumes the
               upstream contract and produces the downstream one — never point mismatched contracts at
               each other.
+            - An `agent_task` whose `role` is an agent role declaring an `input_contract_ref` or
+              `output_contract_ref` MUST set its `input_contract_type` and `output_contract_type` to
+              exactly those refs (`model-role.contracts-match`). A role that declares neither leaves
+              the node free to name its own.
             - An `agent_task` on a role whose `backing` is `model` MUST set `instructions_ref` to one of
               the Available instructions above (they are file-backed; a ref not in that list fails the
               agent live at runtime). An `agent_task` on a role whose `backing` is `agent` may omit
@@ -637,7 +656,13 @@ internal sealed class ChatDesignerService : IChatDesignerService
                 (from the catalogue), `timeout_seconds`, and `idempotency_key_spec` (required for
                 writes — `mcp.write-idempotency`); its single inbound `data` edge's payload maps
                 top-level wire fields onto the tool's arguments, and its result feeds downstream
-                `data` edges and `decision` predicates like any step output.
+                `data` edges and `decision` predicates like any step output. The designer copies
+                the tool's `input_contract_ref`, `output_contract_ref` and `writes` from its registry
+                record onto the node's `input_contract_type`, `output_contract_type` and `writes`
+                after you propose it, so you need not author them; whatever you write there is
+                replaced. A tool whose `writes` is true changes its connector's state. A tool with
+                no `output_contract_ref` returns any JSON: no contract checks its result. Tools that
+                return any JSON: {{anyJsonTools}}
               • Independent steps are expressed as ordinary `agent_task` nodes with control edges
                 fanning out from their shared predecessor and converging on a shared successor — NOT
                 with a `parallel` node. The runtime executes such branches CONCURRENTLY (ADR-5:

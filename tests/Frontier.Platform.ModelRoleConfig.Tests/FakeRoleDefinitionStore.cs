@@ -191,6 +191,10 @@ internal sealed class FakeContractCatalog : IContractSnapshotCatalog
     /// <summary>The hash this catalogue reports for <paramref name="contractRef"/>.</summary>
     internal static string HashOf(string contractRef) => "sha256:" + Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(contractRef)));
 
+    /// <inheritdoc />
+    public Task<IReadOnlyList<ContractSnapshot>> ListAsync(CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyList<ContractSnapshot>>([.. contracts.Values.Where(c => !c.IsRetired).Select(c => c.Snapshot)]);
+
     public Task<RegisteredContract?> FindAsync(string contractRef, CancellationToken cancellationToken)
     {
         Lookups.Add(contractRef);
