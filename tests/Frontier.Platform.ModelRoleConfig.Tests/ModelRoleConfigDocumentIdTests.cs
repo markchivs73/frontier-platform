@@ -18,4 +18,16 @@ public sealed class ModelRoleConfigDocumentIdTests
 
         Assert.Equal("deep-reasoning:current", id);
     }
+
+    [Fact]
+    public void ForDefinitionVersion_FormatsUnderTheDefinitionInfix()
+    {
+        Assert.Equal("deep-reasoning:definition:v3", ModelRoleConfigDocumentId.ForDefinitionVersion("deep-reasoning", 3));
+    }
+
+    [Fact]
+    public void ForDefinitionCurrent_FormatsUnderTheDefinitionInfix()
+    {
+        Assert.Equal("deep-reasoning:definition:current", ModelRoleConfigDocumentId.ForDefinitionCurrent("deep-reasoning"));
+    }
 }

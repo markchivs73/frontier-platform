@@ -5,10 +5,9 @@ using Microsoft.Extensions.Options;
 namespace Frontier.Platform.ModelRoleConfig;
 
 /// <summary>
-/// <see cref="IRoleRegistry"/> over the frozen Phase 1 catalogue
-/// (<see cref="Phase1RoleCatalogue"/>, C-3) and the <c>model-role-config</c> container
-/// (doc 08 §6): point-reads the <c>current</c> pointer then its referenced mapping
-/// version, or a specific historical version directly.
+/// <see cref="IRoleRegistry"/> over the <c>model-role-config</c> container (doc 08 §6): the
+/// catalogue is every role's current stored definition (ADR-PA40), and a mapping is a point-read of
+/// the <c>current</c> pointer then its referenced version, or a specific historical version directly.
 /// </summary>
 [ExcludeFromCodeCoverage(Justification = "Cosmos SDK adapter (doc 08 §6); exercised by integration tests against the Cosmos emulator, not the unit-coverage gate.")]
 internal sealed class CosmosRoleRegistry(CosmosClient client, IOptions<CosmosOptions> options) : IRoleRegistry, IRoleMappingWriter
@@ -17,8 +16,27 @@ internal sealed class CosmosRoleRegistry(CosmosClient client, IOptions<CosmosOpt
     internal const string ContainerName = "model-role-config";
 
     /// <inheritdoc />
-    public Task<RoleCatalogue> GetCatalogueAsync(CancellationToken cancellationToken) =>
-        Task.FromResult(Phase1RoleCatalogue.Catalogue);
+    public async Task<RoleCatalogue> GetCatalogueAsync(CancellationToken cancellationToken)
+    {
+        // Two queries across role partitions, uncached (ADR-PA40): the pointers, then the versions
+        // they name. No fallback to Phase1RoleCatalogue — an unseeded store is an empty catalogue,
+        // and RoleCatalogueCheck fails the boot for any role a published definition references.
+        var container = client.GetContainer(options.Value.Database, ContainerName);
+        var pointers = await QueryAsync<RoleDefinitionCurrentDocument>(
+            container,
+            new QueryDefinition("SELECT * FROM c WHERE c.doc_type = @docType").WithParameter("@docType", RoleDefinitionCurrentDocument.CurrentDocType),
+            cancellationToken);
+        var versions = pointers.Count == 0
+            ? []
+            : await QueryAsync<RoleDefinitionDocument>(
+                container,
+                new QueryDefinition("SELECT * FROM c WHERE c.doc_type = @docType AND ARRAY_CONTAINS(@ids, c.id)")
+                    .WithParameter("@docType", RoleDefinitionDocument.DefinitionDocType)
+                    .WithParameter("@ids", pointers.Select(pointer => pointer.CurrentRef).ToArray()),
+                cancellationToken);
+
+        return StoredRoleCatalogue.Assemble(pointers, versions);
+    }
 
     /// <inheritdoc />
     public async Task<RoleMapping> GetActiveMappingAsync(string roleId, CancellationToken cancellationToken)
@@ -56,5 +74,17 @@ internal sealed class CosmosRoleRegistry(CosmosClient client, IOptions<CosmosOpt
             MappingVersion = toVersion,
         };
         await container.UpsertItemAsync(pointer, new PartitionKey(roleId), cancellationToken: ct);
+    }
+
+    private static async Task<List<T>> QueryAsync<T>(Container container, QueryDefinition query, CancellationToken cancellationToken)
+    {
+        var results = new List<T>();
+        using var iterator = container.GetItemQueryIterator<T>(query);
+        while (iterator.HasMoreResults)
+        {
+            results.AddRange(await iterator.ReadNextAsync(cancellationToken));
+        }
+
+        return results;
     }
 }

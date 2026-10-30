@@ -46,8 +46,11 @@ governance audit writer. **There is no default registration on purpose:** a no-o
 turn an unwired consumer into a silent audit gap, so an unregistered recorder fails at
 composition rather than at the first decision.
 
-This library owns the invariant — every referenced role must have an active fleet or canary
-mapping — and refuses to boot if one is orphaned. It cannot own the discovery, because a package
+This library owns the invariant — every referenced role must have a current stored definition
+and an active fleet or canary mapping — and refuses to boot if one is missing or orphaned. It never
+writes governed data at boot, so your deployment seeds the first definitions (from v0.45.0, the four
+`Phase1RoleCatalogue` roles as model-backed v1 definitions); an unseeded store fails this check
+rather than falling back to the constant. It cannot own the discovery, because a package
 does not know where its consumer keeps published definitions (ADR-PA2). Supply the adapter, or
 the `RoleCatalogueCheck` has nothing to check.
 
@@ -196,6 +199,15 @@ each decision replaces it under an ETag guard, while the version it produces is 
 model, so every document written before ADR-PA27 reads unchanged, and a mixed or incomplete chain
 is refused when read. Rollback repoints `{roleId}:current` at an existing version through `IRoleMappingWriter`
 — it never rewrites a version document, so the history of what was live and when stays intact.
+
+From v0.45.0 the same partition holds the role's definition (ADR-PA40): append-only versions
+`{roleId}:definition:v{n}` (`doc_type` `role_definition`) and a pointer
+`{roleId}:definition:current` (`doc_type` `role_definition_current`). Neither id starts with
+`{roleId}:v` and neither carries `mapping_version`, so mapping history is unaffected. The catalogue
+is the pointers joined to the versions they name, read across role partitions, uncached and ordered
+by role id. A role id is lowercase kebab-case of at most 64 characters, so it never contains `:`.
+A stored definition is checked when read: a model-backed role needs requirements, an agent-backed
+role both contract refs.
 
 ## Key invariants
 

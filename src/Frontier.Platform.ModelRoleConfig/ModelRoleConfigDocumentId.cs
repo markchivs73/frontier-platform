@@ -3,7 +3,8 @@ namespace Frontier.Platform.ModelRoleConfig;
 /// <summary>
 /// Deterministic Cosmos document <c>id</c> formatting for the <c>model-role-config</c>
 /// container (doc 08 §6): <c>{roleId}:v{mappingVersion}</c> for append-only mapping
-/// versions, <c>{roleId}:current</c> for the mutable pointer. Pure and side-effect free
+/// versions, <c>{roleId}:current</c> for the mutable pointer, and the role-definition ids of
+/// ADR-PA40 under a <c>:definition</c> infix that can never match <c>{roleId}:v</c>. Pure and side-effect free
 /// so <see cref="CosmosRoleRegistry"/> can be unit-tested without the Cosmos SDK.
 /// </summary>
 internal static class ModelRoleConfigDocumentId
@@ -30,4 +31,12 @@ internal static class ModelRoleConfigDocumentId
     /// </summary>
     internal static string ForProposal(string roleId, string proposalId) =>
         $"{roleId}:proposal:{proposalId}";
+
+    /// <summary>Builds the role-definition version document id (ADR-PA40): <c>{roleId}:definition:v{definitionVersion}</c>.</summary>
+    internal static string ForDefinitionVersion(string roleId, int definitionVersion) =>
+        $"{roleId}:definition:v{definitionVersion}";
+
+    /// <summary>Builds the role-definition pointer document id (ADR-PA40): <c>{roleId}:definition:current</c>.</summary>
+    internal static string ForDefinitionCurrent(string roleId) =>
+        $"{roleId}:definition:current";
 }

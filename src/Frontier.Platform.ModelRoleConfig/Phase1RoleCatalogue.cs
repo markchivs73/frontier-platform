@@ -1,12 +1,11 @@
 namespace Frontier.Platform.ModelRoleConfig;
 
 /// <summary>
-/// The frozen Phase 1 role catalogue (doc 08 §4 "starting set — deliberately small";
-/// C-3: frozen as-is for Stage 4, no new roles). <see cref="Catalogue"/> backs
-/// <see cref="IRoleRegistry.GetCatalogueAsync"/> directly — the catalogue is config in
-/// the sense that it's the only thing an <c>AgentTaskNode.Role</c> may reference, but its
-/// Phase 1 membership is a frozen code constant, not a Cosmos document (only role→model
-/// <em>mappings</em> are versioned config, doc 08 §6).
+/// The Phase 1 role set (doc 08 §4 "starting set — deliberately small"; C-3). Since v0.45.0
+/// <see cref="Catalogue"/> is <b>not</b> the catalogue: <see cref="IRoleRegistry.GetCatalogueAsync"/>
+/// reads stored definitions (ADR-PA40). It is kept as the migration source — the consumer's seed
+/// writes these four roles as model-backed v1 definitions and must equal them field for field.
+/// <see cref="DeepReasoningMappingV1"/> remains the source the seeded v1 mapping must match.
 ///
 /// <see cref="CapabilityRequirements"/> values below are PoC-grade placeholders — doc 08
 /// does not specify numeric profiles for Phase 1, and they are refined empirically (doc
@@ -15,7 +14,8 @@ namespace Frontier.Platform.ModelRoleConfig;
 /// </summary>
 public static class Phase1RoleCatalogue
 {
-    /// <summary>The four Phase 1 roles (doc 08 §4 table).</summary>
+    /// <summary>The four Phase 1 roles (doc 08 §4 table), model-backed and unversioned: the migration source, not the catalogue.</summary>
+    [Obsolete("Deprecated in v0.45.0: no longer the role catalogue (ADR-PA40); IRoleRegistry.GetCatalogueAsync reads stored definitions. Kept only as the source the v1 definition migration must equal.")]
     public static readonly RoleCatalogue Catalogue = new()
     {
         Roles =
@@ -25,6 +25,7 @@ public static class Phase1RoleCatalogue
                 RoleId = "deep-reasoning",
                 Description = "Scope/Approach/Pricing Act agents, chat designer: highest-capability chain for commercially material output.",
                 Stakes = StakesLevel.Material,
+                Backing = RoleBacking.Model,
                 Requirements = new CapabilityRequirements
                 {
                     MinContextWindow = 200_000,
@@ -38,6 +39,7 @@ public static class Phase1RoleCatalogue
                 RoleId = "fast",
                 Description = "Check agents, cascade-impact summaries, routing: latency-sensitive and cheap, validators run often.",
                 Stakes = StakesLevel.Standard,
+                Backing = RoleBacking.Model,
                 Requirements = new CapabilityRequirements
                 {
                     MinContextWindow = 32_000,
@@ -51,6 +53,7 @@ public static class Phase1RoleCatalogue
                 RoleId = "structured-extraction",
                 Description = "Sense agents, MCP-result normalisation: strict structured output reliability.",
                 Stakes = StakesLevel.Standard,
+                Backing = RoleBacking.Model,
                 Requirements = new CapabilityRequirements
                 {
                     MinContextWindow = 32_000,
@@ -64,6 +67,7 @@ public static class Phase1RoleCatalogue
                 RoleId = "embeddings",
                 Description = "Know-layer retrieval (Phase 1 minimal).",
                 Stakes = StakesLevel.Mechanical,
+                Backing = RoleBacking.Model,
                 Requirements = new CapabilityRequirements
                 {
                     MinContextWindow = 8_000,

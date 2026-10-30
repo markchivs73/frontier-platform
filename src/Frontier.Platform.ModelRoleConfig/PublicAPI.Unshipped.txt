@@ -1,0 +1,21 @@
+*REMOVED*Frontier.Platform.ModelRoleConfig.RoleDefinition.Requirements.get -> Frontier.Platform.ModelRoleConfig.CapabilityRequirements!
+Frontier.Platform.ModelRoleConfig.RoleBacking
+Frontier.Platform.ModelRoleConfig.RoleDefinition.ApprovedBy.get -> string?
+Frontier.Platform.ModelRoleConfig.RoleDefinition.ApprovedBy.init -> void
+Frontier.Platform.ModelRoleConfig.RoleDefinition.Backing.get -> Frontier.Platform.ModelRoleConfig.RoleBacking!
+Frontier.Platform.ModelRoleConfig.RoleDefinition.Backing.init -> void
+Frontier.Platform.ModelRoleConfig.RoleDefinition.DefinitionVersion.get -> int?
+Frontier.Platform.ModelRoleConfig.RoleDefinition.DefinitionVersion.init -> void
+Frontier.Platform.ModelRoleConfig.RoleDefinition.EffectiveFromUtc.get -> System.DateTime?
+Frontier.Platform.ModelRoleConfig.RoleDefinition.EffectiveFromUtc.init -> void
+Frontier.Platform.ModelRoleConfig.RoleDefinition.InputContractHash.get -> string?
+Frontier.Platform.ModelRoleConfig.RoleDefinition.InputContractHash.init -> void
+Frontier.Platform.ModelRoleConfig.RoleDefinition.InputContractRef.get -> string?
+Frontier.Platform.ModelRoleConfig.RoleDefinition.InputContractRef.init -> void
+Frontier.Platform.ModelRoleConfig.RoleDefinition.OutputContractHash.get -> string?
+Frontier.Platform.ModelRoleConfig.RoleDefinition.OutputContractHash.init -> void
+Frontier.Platform.ModelRoleConfig.RoleDefinition.OutputContractRef.get -> string?
+Frontier.Platform.ModelRoleConfig.RoleDefinition.OutputContractRef.init -> void
+Frontier.Platform.ModelRoleConfig.RoleDefinition.Requirements.get -> Frontier.Platform.ModelRoleConfig.CapabilityRequirements?
+static readonly Frontier.Platform.ModelRoleConfig.RoleBacking.Agent -> Frontier.Platform.ModelRoleConfig.RoleBacking!
+static readonly Frontier.Platform.ModelRoleConfig.RoleBacking.Model -> Frontier.Platform.ModelRoleConfig.RoleBacking!
