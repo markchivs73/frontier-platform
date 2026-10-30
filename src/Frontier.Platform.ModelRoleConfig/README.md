@@ -62,14 +62,23 @@ registration answers "always closed"; wire a real implementation when you want f
 - `RoleDefinition` — what a role is for, what is commercially at stake if its output is wrong
   (`StakesLevel`: material / standard / mechanical), and the `CapabilityRequirements` any model in
   its chain must satisfy (minimum context window, tool use, structured output, latency budget).
-- `RoleCatalogue` / `Phase1RoleCatalogue` — the declared set of roles.
+- `RoleCatalogue` — the set of roles. **From v0.45.0 the catalogue is data, not code**
+  (ADR-PA40): each role is a stored, versioned definition that a second principal approves, as a
+  mapping change is. A definition declares the role's backing (`model` or `agent`, fixed for the
+  life of the role) and, for an agent-backed role, its input and output contract refs, whose hashes
+  approval stamps. `Phase1RoleCatalogue` is kept only as the source the four original roles are
+  migrated from; nothing falls back to it, and the boot check fails when a referenced role has no
+  current definition.
 
 **The mapping**
 
 - `RoleMapping` — a versioned role → model release: the ordered `Chain` (index 0 primary, the rest
   fallbacks), its `RolloutRing`, canary percentage, change reason, approver, effective-from
   timestamp, an optional evidence ref, and the fleet version it can fall back to while it is still
-  shadow or canary. A chain is all models or all agents, never mixed (ADR-PA27).
+  shadow or canary. A chain is all models or all agents, never mixed (ADR-PA27), and from v0.45.0
+  its kind must match the role's backing. A mapping for an agent-backed role needs an
+  `eval-run:{manual|kit}:{id}` evidence ref for the role's current contract hashes, and approval
+  is refused once those hashes have moved (ADR-PA40).
 - `ChainEntry` — the abstract chain entry: a provider and the ISO 4217 currency of its costs
   (ADR-PA21). `TargetId` is what the circuit breaker and audit key on.
 - `ModelEntry` — a model: model id, per-1k-token input/output/cache-read cost at scale 4, context
