@@ -125,13 +125,20 @@ internal static class MappingProposalRules
     }
 
     /// <summary>Throws unless <paramref name="from"/> may move to <paramref name="to"/>.</summary>
-    internal static void EnsureTransition(MappingChangeProposal proposal, MappingProposalState to)
+    internal static void EnsureTransition(MappingChangeProposal proposal, MappingProposalState to) =>
+        EnsureTransition(nameof(MappingChangeProposal), proposal.ProposalId, proposal.State, to);
+
+    /// <summary>
+    /// Throws unless a proposal of <paramref name="contractType"/> may move from <paramref name="from"/>
+    /// to <paramref name="to"/>. Shared by mapping and role-definition proposals (ADR-PA40).
+    /// </summary>
+    internal static void EnsureTransition(string contractType, string proposalId, MappingProposalState from, MappingProposalState to)
     {
-        if (!proposal.State.CanTransitionTo(to))
+        if (!from.CanTransitionTo(to))
         {
             throw new IllegalMappingTransitionException(
-                nameof(MappingChangeProposal),
-                [$"proposal '{proposal.ProposalId}' is '{proposal.State.Name}' and cannot move to '{to.Name}' (doc 08 §7)."]);
+                contractType,
+                [$"proposal '{proposalId}' is '{from.Name}' and cannot move to '{to.Name}' (doc 08 §7)."]);
         }
     }
 
@@ -141,13 +148,17 @@ internal static class MappingProposalRules
     /// approval (Mark's call, 2026-09-16) — a rejection is a recorded decision on someone else's
     /// change, and a proposer who wants their own idea dead withdraws it.
     /// </summary>
-    internal static void EnsureDistinctApprover(MappingChangeProposal proposal, string approverId)
+    internal static void EnsureDistinctApprover(MappingChangeProposal proposal, string approverId) =>
+        EnsureDistinctApprover(nameof(MappingChangeProposal), proposal.ProposalId, proposal.ProposedBy, approverId);
+
+    /// <summary>The distinct-approver rule for any proposal kind, compared case-insensitively (ADR-PA40).</summary>
+    internal static void EnsureDistinctApprover(string contractType, string proposalId, string proposedBy, string approverId)
     {
-        if (string.Equals(proposal.ProposedBy, approverId, StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(proposedBy, approverId, StringComparison.OrdinalIgnoreCase))
         {
             throw new DistinctApproverRequiredException(
-                nameof(MappingChangeProposal),
-                [$"proposal '{proposal.ProposalId}' was proposed by '{proposal.ProposedBy}', who cannot also decide it (requireDistinctApprover); withdraw it instead."]);
+                contractType,
+                [$"proposal '{proposalId}' was proposed by '{proposedBy}', who cannot also decide it (requireDistinctApprover); withdraw it instead."]);
         }
     }
 
@@ -156,14 +167,36 @@ internal static class MappingProposalRules
     /// (Mark's call, 2026-09-16). Another principal ends a proposal by <b>rejecting</b> it, which is a
     /// recorded decision on someone else's change rather than a silent retraction.
     /// </summary>
-    internal static void EnsureProposerOnly(MappingChangeProposal proposal, string actor)
+    internal static void EnsureProposerOnly(MappingChangeProposal proposal, string actor) =>
+        EnsureProposerOnly(nameof(MappingChangeProposal), proposal.ProposalId, proposal.ProposedBy, actor);
+
+    /// <summary>The proposer-only withdrawal rule for any proposal kind (ADR-PA40).</summary>
+    internal static void EnsureProposerOnly(string contractType, string proposalId, string proposedBy, string actor)
     {
-        if (!string.Equals(proposal.ProposedBy, actor, StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(proposedBy, actor, StringComparison.OrdinalIgnoreCase))
         {
             throw new ProposerOnlyWithdrawalException(
-                nameof(MappingChangeProposal),
-                [$"proposal '{proposal.ProposalId}' was proposed by '{proposal.ProposedBy}', and only they may withdraw it; another principal must reject it instead."]);
+                contractType,
+                [$"proposal '{proposalId}' was proposed by '{proposedBy}', and only they may withdraw it; another principal must reject it instead."]);
         }
+    }
+
+    /// <summary>
+    /// Refuses a decision taken on a stale view (ADR-PA34) for any proposal kind: the caller named a
+    /// token the stored proposal no longer carries. An omitted token opts out.
+    /// </summary>
+    internal static void EnsureExpectedToken(
+        string contractType, string proposalId, MappingProposalState state, string? decidedBy, string storedETag, string? expectedToken)
+    {
+        if (expectedToken is null || string.Equals(storedETag, expectedToken, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var decided = decidedBy is { } actor ? $", decided by '{actor}'" : string.Empty;
+        throw new MappingConcurrencyConflictException(
+            contractType,
+            [$"proposal '{proposalId}' changed while it was being decided: it is now '{state.Name}'{decided}. Re-read it before deciding again."]);
     }
 
     /// <summary>Throws a permanent violation listing <paramref name="violations"/>, if there are any.</summary>

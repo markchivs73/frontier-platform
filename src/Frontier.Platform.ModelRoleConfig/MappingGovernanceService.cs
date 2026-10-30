@@ -325,19 +325,9 @@ internal sealed class MappingGovernanceService(
     /// entirely, for a caller with no prior view to be stale.
     /// </para>
     /// </summary>
-    internal static void EnsureExpectedToken(StoredMappingProposal stored, string? expectedToken)
-    {
-        if (expectedToken is null || string.Equals(stored.ETag, expectedToken, StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        var decided = stored.Proposal.DecidedBy is { } actor ? $", decided by '{actor}'" : string.Empty;
-        throw new MappingConcurrencyConflictException(
-            nameof(IMappingGovernanceService),
-            [$"proposal '{stored.Proposal.ProposalId}' changed while it was being decided: it is now "
-             + $"'{stored.Proposal.State.Name}'{decided}. Re-read it before deciding again."]);
-    }
+    internal static void EnsureExpectedToken(StoredMappingProposal stored, string? expectedToken) =>
+        MappingProposalRules.EnsureExpectedToken(
+            nameof(IMappingGovernanceService), stored.Proposal.ProposalId, stored.Proposal.State, stored.Proposal.DecidedBy, stored.ETag, expectedToken);
 
     /// <summary>Appends the record, then performs the change — compensating the record if the change fails (ADR-PA30's ordering).</summary>
     internal async Task RecordThenAsync(MappingGovernanceDecision decision, Func<Task> change, CancellationToken cancellationToken)

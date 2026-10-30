@@ -39,4 +39,11 @@ internal static class ModelRoleConfigDocumentId
     /// <summary>Builds the role-definition pointer document id (ADR-PA40): <c>{roleId}:definition:current</c>.</summary>
     internal static string ForDefinitionCurrent(string roleId) =>
         $"{roleId}:definition:current";
+
+    /// <summary>
+    /// Builds the role-definition proposal document id (ADR-PA40): <c>{roleId}:definition-proposal:{proposalId}</c>.
+    /// The <c>:definition-proposal:</c> infix matches neither <c>{roleId}:v</c> nor <c>{roleId}:proposal:</c>.
+    /// </summary>
+    internal static string ForDefinitionProposal(string roleId, string proposalId) =>
+        $"{roleId}:definition-proposal:{proposalId}";
 }

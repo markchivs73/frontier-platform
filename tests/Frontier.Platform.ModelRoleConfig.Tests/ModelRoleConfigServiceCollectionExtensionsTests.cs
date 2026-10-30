@@ -1,3 +1,4 @@
+using Frontier.Platform.Abstractions;
 using Frontier.Platform.Serialization;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
@@ -38,7 +39,9 @@ public sealed class ModelRoleConfigServiceCollectionExtensionsTests
         // IMappingDecisionRecorder is deliberately left unregistered by the library (ADR-PA32): a
         // no-op default would be a silent audit gap, so the consumer must supply one.
         services.AddSingleton<IMappingDecisionRecorder>(new NoOpDecisionRecorder());
-        using var provider = services.BuildServiceProvider();
+        // IContractSnapshotCatalog is consumer-owned too (ADR-PA40): role definitions resolve refs through it.
+        services.AddSingleton<IContractSnapshotCatalog>(new FakeContractCatalog());
+        using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
 
         Assert.NotNull(provider.GetRequiredService<CosmosClient>());
         Assert.IsType<CosmosRoleRegistry>(provider.GetRequiredService<IRoleRegistry>());
@@ -48,10 +51,36 @@ public sealed class ModelRoleConfigServiceCollectionExtensionsTests
         Assert.IsType<ModelResolver>(provider.GetRequiredService<IModelResolver>());
         Assert.IsType<MappingPinner>(provider.GetRequiredService<IMappingPinner>());
         Assert.IsType<MappingGovernanceService>(provider.GetRequiredService<IMappingGovernanceService>());
+        Assert.IsType<CosmosRoleDefinitionStore>(provider.GetRequiredService<IRoleDefinitionStore>());
+        using (var scope = provider.CreateScope())
+        {
+            Assert.IsType<RoleDefinitionGovernanceService>(scope.ServiceProvider.GetRequiredService<IRoleDefinitionGovernanceService>());
+        }
 
         var startupChecks = provider.GetServices<IStartupCheck>().ToList();
         Assert.Contains(startupChecks, check => check is CosmosTopologyCheck);
         Assert.Contains(startupChecks, check => check is RoleCatalogueCheck);
+    }
+
+    [Fact]
+    public void AddFrontierModelRoleConfig_WithoutAContractCatalog_FailsToComposeTheDefinitionService()
+    {
+        // No silent default (ADR-PA40): an unwired contract port must fail at composition, not
+        // approve a definition with no hashes.
+        var services = new ServiceCollection();
+        services.AddFrontierModelRoleConfig(BuildConfiguration(new Dictionary<string, string?>
+        {
+            ["Cosmos:Endpoint"] = "https://localhost:8081",
+            ["Cosmos:Database"] = "frontier-workflow",
+            ["Cosmos:Key"] = EmulatorKey,
+        }));
+        services.AddSingleton<IMappingDecisionRecorder>(new NoOpDecisionRecorder());
+        using var provider = services.BuildServiceProvider();
+        using var scope = provider.CreateScope();
+
+        var failure = Assert.Throws<InvalidOperationException>(() => scope.ServiceProvider.GetRequiredService<IRoleDefinitionGovernanceService>());
+
+        Assert.Contains(nameof(IContractSnapshotCatalog), failure.Message, StringComparison.Ordinal);
     }
 
     [Theory]

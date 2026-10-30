@@ -251,7 +251,14 @@ internal static class MappingProposalQueryBuilder
     /// the state filter silently returned nothing and the ordering was arbitrary.
     /// </para>
     /// </summary>
-    internal static QueryDefinition Build(MappingProposalQuery query)
+    internal static QueryDefinition Build(MappingProposalQuery query) =>
+        Build(query, MappingProposalDocument.ProposalDocType);
+
+    /// <summary>
+    /// The same query over proposals of <paramref name="docType"/>: role-definition proposals filter
+    /// and page exactly as mapping proposals do (ADR-PA40, doc 20 §Role definitions).
+    /// </summary>
+    internal static QueryDefinition Build(MappingProposalQuery query, string docType)
     {
         var states = query.States ?? [];
         var clauses = "c.doc_type = @docType";
@@ -261,7 +268,7 @@ internal static class MappingProposalQueryBuilder
         }
 
         var definition = new QueryDefinition($"SELECT * FROM c WHERE {clauses} ORDER BY c.proposed_at_utc DESC")
-            .WithParameter("@docType", MappingProposalDocument.ProposalDocType);
+            .WithParameter("@docType", docType);
 
         return states.Count == 0
             ? definition
