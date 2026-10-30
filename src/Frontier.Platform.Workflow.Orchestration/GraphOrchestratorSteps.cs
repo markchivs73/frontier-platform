@@ -4,6 +4,7 @@ using Frontier.Platform.ContextAssembly;
 using Frontier.Platform.Hitl;
 using Frontier.Platform.ModelRoleConfig;
 using Frontier.Platform.Resilience;
+using Frontier.Platform.Serialization;
 using Microsoft.DurableTask;
 using Frontier.Platform.Workflow.Model;
 
@@ -272,11 +273,21 @@ internal static class GraphOrchestratorSteps
         await WriteSnapshotAsync(context, input, state, ExecutionStatus.Running, node.NodeId, policyProvider);
     }
 
-    /// <summary>Resolves any node's single upstream Data-edge payload by node id (the S13.7c generalisation of <see cref="ResolveUpstreamPayload"/>; one inbound Data edge per node, ADR-5 D3).</summary>
+    /// <summary>
+    /// Resolves any node's single upstream Data-edge payload by node id (the S13.7c generalisation of
+    /// <see cref="ResolveUpstreamPayload"/>; one inbound Data edge per node, ADR-5 D3). An edge that
+    /// declares a projection hands the node the projected input instead (ADR-E27 D14).
+    /// </summary>
     internal static string? ResolveUpstreamPayloadForNode(WorkflowDefinition definition, string nodeId, GraphExecutionState state)
     {
         var predecessor = definition.Edges.FirstOrDefault(edge => edge.Kind == EdgeKind.Data && edge.ToNodeId == nodeId);
-        return predecessor is null ? null : state.NodeOutputPayloads[predecessor.FromNodeId];
+        if (predecessor is null)
+        {
+            return null;
+        }
+
+        var payload = state.NodeOutputPayloads[predecessor.FromNodeId];
+        return predecessor.Projection is { } projection ? EdgeProjector.Apply(payload, projection) : payload;
     }
 
     /// <summary>
@@ -532,11 +543,8 @@ internal static class GraphOrchestratorSteps
     /// <see cref="GraphExecutionState.NodeOutputPayloads"/>, or <see langword="null"/> if
     /// <paramref name="node"/> has no Data-edge predecessor (e.g. <c>gen-scope</c>, S4.1).
     /// </summary>
-    internal static string? ResolveUpstreamPayload(WorkflowDefinition definition, AgentTaskNode node, GraphExecutionState state)
-    {
-        var predecessor = definition.Edges.FirstOrDefault(edge => edge.Kind == EdgeKind.Data && edge.ToNodeId == node.NodeId);
-        return predecessor is null ? null : state.NodeOutputPayloads[predecessor.FromNodeId];
-    }
+    internal static string? ResolveUpstreamPayload(WorkflowDefinition definition, AgentTaskNode node, GraphExecutionState state) =>
+        ResolveUpstreamPayloadForNode(definition, node.NodeId, state);
 
     /// <summary>Builds the <see cref="StepCompletion"/> record for a finished <see cref="AgentTaskNode"/> invocation.</summary>
     internal static StepCompletion BuildStepCompletion(TaskOrchestrationContext context, AgentTaskNode node, string correlationId, AgentTaskActivityResult result) => new()
@@ -735,6 +743,7 @@ internal static class GraphOrchestratorSteps
 
             var decision = await DecideAsync(context, gate, approvalRequest);
             state.Decisions.Add(decision);
+            state.NodeOutputPayloads[gate.NodeId] = GateOutput(decision);
 
             if (decision.Kind == DecisionKind.Approve)
             {
@@ -752,6 +761,14 @@ internal static class GraphOrchestratorSteps
             }
         }
     }
+
+    /// <summary>
+    /// The gate's node output (ADR-E27 D13): its latest decision as <c>frontier/gate-decision/1.0</c>,
+    /// so a data edge from the gate carries who decided what. Built from the decision event, so it is
+    /// replay-safe.
+    /// </summary>
+    internal static string GateOutput(HitlDecision decision) =>
+        System.Text.Encoding.UTF8.GetString(CanonicalProfile.SerializeCanonical(GateDecision.From(decision)));
 
     /// <summary>
     /// Calls <see cref="WorkflowActivityNames.RequestApprovalActivity"/> to open

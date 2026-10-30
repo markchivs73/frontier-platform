@@ -642,6 +642,7 @@ public sealed class GraphOrchestratorStepsTests
         Assert.Equal(DecisionKind.Approve, Assert.Single(state.Decisions).Kind);
         Assert.Equal(ArtifactStatus.Approved, state.ArtifactStatuses["scope"]);
         Assert.Single(escalated);
+        Assert.Equal(GraphOrchestratorSteps.GateOutput(Decision(DecisionKind.Approve)), state.NodeOutputPayloads["gate-business-1"]); // ADR-E27 D13
     }
 
     [Fact]
