@@ -58,6 +58,23 @@ public sealed class S137dRegistryRuleTests
             Assert.Contains("exact schema id and major version", finding.Message, StringComparison.Ordinal);
         }
 
+        /// <summary>ADR-E27 D14: a projected edge carries the producer's contract; the consumer end is data.projection-compatible's.</summary>
+        [Fact]
+        public async Task ProjectedEdge_ChecksOnlyTheProducerEnd()
+        {
+            var definition = Definition(
+                edgeRef: "crm/ticket/1.0",
+                producerOut: "crm/ticket/1.2",
+                consumerIn: "acme/triage/1.0");
+            var projected = definition with
+            {
+                Edges = [definition.Edges[0] with { Projection = [new ProjectionField { Target = "ticket_id", From = "/id" }] }],
+            };
+
+            Assert.Single(await Evaluate(definition));
+            Assert.Empty(await Evaluate(projected));
+        }
+
         [Fact]
         public async Task IdMismatch_ReturnsFindingPerEndpoint()
         {

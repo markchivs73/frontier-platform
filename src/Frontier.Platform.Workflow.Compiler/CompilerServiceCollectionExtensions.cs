@@ -67,6 +67,7 @@ public static class CompilerServiceCollectionExtensions
         services.AddScoped<IDefinitionValidationRule, ModelRoleContractsMatchRule>();
         services.AddScoped<IDefinitionValidationRule, McpServerNotDriftedRule>();
         services.AddScoped<IDefinitionValidationRule, DataSchemaRefResolvesRule>();
+        services.AddScoped<IDefinitionValidationRule, DataProjectionCompatibleRule>();
 
         // S9.30: remaining resourced-tier catalogue rows (doc 13 §4.2). Compiler-owned catalogs
         // (reflection contract registry, retention default) register here; consumer-owned

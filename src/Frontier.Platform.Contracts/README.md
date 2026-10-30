@@ -96,6 +96,13 @@ Rules are CEL (Celly 1.2.0, behind an internal port), evaluated with the payload
 
 A failed validation is a permanent contract violation. The caller raises it; nothing retries it.
 
+## Shape questions for projections
+
+`ContractShapes` answers what the compiler's `data.projection-compatible` needs to ask of the
+contracts at either end of an edge projection: the schema of the value at an instance pointer
+(local references inlined), whether that value is always present, whether two schemas accept the
+same values (annotations aside), and which properties an object requires.
+
 ## Consumers get one extra build file
 
 `Corvus.Text.Json`, which the JSON Schema engine depends on, ships Roslyn analyzers that flag

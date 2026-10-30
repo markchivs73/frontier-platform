@@ -25,6 +25,9 @@
     <ProjectReference Include="..\Frontier.Platform.Hitl\Frontier.Platform.Hitl.csproj" />
     <ProjectReference Include="..\Frontier.Platform.ModelRoleConfig\Frontier.Platform.ModelRoleConfig.csproj" />
     <ProjectReference Include="..\Frontier.Platform.Resilience\Frontier.Platform.Resilience.csproj" />
+    <!-- ADR-E27 D14: data.projection-compatible compares the projected shape with the contracts at
+         either end, through the same library that registers and validates them. -->
+    <ProjectReference Include="..\Frontier.Platform.Contracts\Frontier.Platform.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

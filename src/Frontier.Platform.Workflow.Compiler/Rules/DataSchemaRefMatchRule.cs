@@ -56,7 +56,9 @@ public sealed partial class DataSchemaRefMatchRule : PureTierRule
             }
         }
 
-        if (nodesById.GetValueOrDefault(edge.ToNodeId) is AgentTaskNode consumer && IsSchemaRef(consumer.InputContractType))
+        // ADR-E27 D14: a projected edge carries the producer's contract; the consumer's input is
+        // checked against the projected shape by data.projection-compatible instead.
+        if (edge.Projection is null && nodesById.GetValueOrDefault(edge.ToNodeId) is AgentTaskNode consumer && IsSchemaRef(consumer.InputContractType))
         {
             foreach (var finding in MatchFindings(consumer.InputContractType, edgeRef, consumer.NodeId, "input_contract_type", edgeLabel))
             {
