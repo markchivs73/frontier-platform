@@ -63,6 +63,11 @@ public sealed class RuleCatalogueSpecCoverageTests
         // rule errors about the keys the silent drop nulled. The doc 13 §4.2 row lands in the
         // consumer repo (read-only from here), so this entry fails until that amendment merges.
         "schema.version-supported",
+        // ADR-E27 (contracts as data), doc 13 §4.2's proposed ids, built at S13.117 slice 2.
+        "data.schema-ref-resolves",
+        "data.no-edge-from-gate",
+        "model-role.contracts-match",
+        "mcp.server-not-drifted",
     ];
 
     [Fact]
@@ -87,8 +92,10 @@ public sealed class RuleCatalogueSpecCoverageTests
         // member, and nothing executes that tier, so it could never have produced a finding.
         // +1 Pure at S13.34: schema.version-supported reads the context's probed stored version
         // and nothing else, so it runs in-circuit with the rest of the pure tier.
-        Assert.Equal(18, CurrentlyRegisteredRules.Count(r => r.Tier == RuleTier.Pure));
-        Assert.Equal(13, CurrentlyRegisteredRules.Count(r => r.Tier == RuleTier.Resourced));
+        // S13.117 (ADR-E27): +1 Pure (data.no-edge-from-gate reads the definition alone) and +3
+        // Resourced (schema-ref-resolves, contracts-match and server-not-drifted read the registry).
+        Assert.Equal(19, CurrentlyRegisteredRules.Count(r => r.Tier == RuleTier.Pure));
+        Assert.Equal(16, CurrentlyRegisteredRules.Count(r => r.Tier == RuleTier.Resourced));
         Assert.Equal(0, CurrentlyRegisteredRules.Count(r => r.Tier == RuleTier.Runtime));
     }
 
@@ -141,6 +148,7 @@ public sealed class RuleCatalogueSpecCoverageTests
         services.AddSingleton<IInstructionCatalog>(new EmptyInstructionCatalog());
         services.AddSingleton<IRetryProfileCatalog>(new EmptyProfileCatalog());
         services.AddSingleton<ICascadeGraphChecker>(new EmptyCascadeChecker());
+        services.AddSingleton(Moq.Mock.Of<IContractSnapshotCatalog>()); // ADR-E27: data.schema-ref-resolves and publish pinning
 
         using var provider = services.BuildServiceProvider();
         using var scope = provider.CreateScope();

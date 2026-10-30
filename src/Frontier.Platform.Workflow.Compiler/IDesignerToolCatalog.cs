@@ -27,6 +27,26 @@ public sealed record DesignerToolDescriptor
     /// <summary>What the tool does — the agent matches designer intent against this.</summary>
     [JsonPropertyName("description")]
     public required string Description { get; init; }
+
+    /// <summary>
+    /// The ref of the registry contract discovered for the tool's arguments (ADR-E27 D9). An
+    /// <c>McpToolNode</c> calling this tool names exactly this ref (<c>mcp.tool-resolves</c>);
+    /// <see langword="null"/> when the registry holds none.
+    /// </summary>
+    [JsonPropertyName("input_contract_ref")]
+    public string? InputContractRef { get; init; }
+
+    /// <summary>The ref of the registry contract discovered for the tool's result (ADR-E27 D9); <see langword="null"/> when the registry holds none.</summary>
+    [JsonPropertyName("output_contract_ref")]
+    public string? OutputContractRef { get; init; }
+
+    /// <summary>
+    /// Whether the revalidation sweep found the server's live <c>tools/list</c> drifted from its
+    /// pinned snapshot (ADR-E27 D9). A new publish may not use it until it is re-registered
+    /// (<c>mcp.server-not-drifted</c>). Governance only, so the design agent is never shown it.
+    /// </summary>
+    [JsonIgnore]
+    public bool ServerDrifted { get; init; }
 }
 
 /// <summary>

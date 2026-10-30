@@ -2689,3 +2689,19 @@ in the orchestrator body (it is pure). It builds an object with exactly the proj
 declared order. A pointer that finds nothing leaves its target out rather than failing: the
 consumer's input contract then decides whether the field was optional.
 
+**Slice 2c, the compiler rules** (ADR-E27 D9, D12, D13, D15). The consumer supplies the data they
+need through the catalog ports it already implements, so no new port is added:
+`AgentRoleDescriptor` gains optional `input_contract_ref` and `output_contract_ref`, and
+`DesignerToolDescriptor` gains optional contract refs and a `ServerDrifted` flag, which the design
+agent never sees. The registry fills them (consumer slices 3 and 4).
+- `data.schema-ref-resolves` (resourced): every schema ref a node or edge names is registered and
+  not retired, or is engine-owned. It catches at validation what publish's pinning would refuse.
+- `data.no-edge-from-gate` (pure): D13 has shipped, so the rule keeps its id and now requires a data
+  edge from a gate to carry `frontier/gate-decision/1.0`.
+- `model-role.contracts-match` (resourced): a node bound to a role that declares contracts names the
+  same id and major (ADR-E2 D3); a role that declares none leaves the node free.
+- `mcp.server-not-drifted` (resourced): no node, and no agent's tool list, calls a tool on a server
+  the sweep flagged as drifted.
+- `mcp.tool-resolves` also holds an `mcp_tool` node's contract refs to exactly the ones registered
+  for its tool, which is how the node-field binding (Mark, 2026-10-30) stays truthful.
+

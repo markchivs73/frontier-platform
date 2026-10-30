@@ -31,6 +31,7 @@ public sealed class McpToolResolvesRule : IDefinitionValidationRule
 
         var tools = await _toolCatalog.GetToolsAsync(ct);
         var knownRefs = tools.Select(t => t.ToolRef).ToHashSet(StringComparer.Ordinal);
+        var byRef = tools.GroupBy(t => t.ToolRef, StringComparer.Ordinal).ToDictionary(g => g.Key, g => g.First(), StringComparer.Ordinal);
 
         var agentFindings = ctx.Definition.Nodes
             .OfType<AgentTaskNode>()
@@ -45,8 +46,35 @@ public sealed class McpToolResolvesRule : IDefinitionValidationRule
             .Where(node => !knownRefs.Contains(node.ToolRef))
             .Select(node => UnresolvedToolFinding(node.NodeId, node.ToolRef));
 
-        return agentFindings.Concat(toolNodeFindings).ToList();
+        // ADR-E27 D9: an mcp_tool node names exactly the contracts the registry discovered for its tool.
+        var contractFindings = ctx.Definition.Nodes
+            .OfType<McpToolNode>()
+            .Where(node => byRef.ContainsKey(node.ToolRef))
+            .SelectMany(node => ContractFindings(node, byRef[node.ToolRef]));
+
+        return agentFindings.Concat(toolNodeFindings).Concat(contractFindings).ToList();
     }
+
+    /// <summary>Where <paramref name="node"/>'s contract refs differ from the ones registered for its tool.</summary>
+    internal IEnumerable<ValidationFinding> ContractFindings(McpToolNode node, DesignerToolDescriptor tool)
+    {
+        if (!string.Equals(node.InputContractType, tool.InputContractRef, StringComparison.Ordinal))
+        {
+            yield return ContractFinding(node, "input_contract_type", node.InputContractType, tool.InputContractRef);
+        }
+
+        if (!string.Equals(node.OutputContractType, tool.OutputContractRef, StringComparison.Ordinal))
+        {
+            yield return ContractFinding(node, "output_contract_type", node.OutputContractType, tool.OutputContractRef);
+        }
+    }
+
+    private ValidationFinding ContractFinding(McpToolNode node, string field, string? named, string? registered) => new(
+        RuleId: RuleId,
+        Severity: DefaultSeverity,
+        Message: $"{field} is '{named ?? "(none)"}', but the registry holds '{registered ?? "(none)"}' for tool '{node.ToolRef}'. Name the tool's registered contract.",
+        NodeId: node.NodeId,
+        FieldPath: field);
 
     private ValidationFinding UnresolvedToolFinding(string nodeId, string toolRef) => new(
         RuleId: RuleId,

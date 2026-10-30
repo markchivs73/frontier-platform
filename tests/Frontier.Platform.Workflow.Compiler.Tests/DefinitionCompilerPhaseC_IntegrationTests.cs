@@ -101,6 +101,7 @@ public sealed class DefinitionCompilerPhaseC_IntegrationTests : IAsyncLifetime, 
         services.AddSingleton<IInstructionCatalog>(new PermissiveInstructionCatalog());
         services.AddSingleton<IRetryProfileCatalog>(new EmptyRetryProfileCatalog());
         services.AddSingleton<ICascadeGraphChecker>(new EmptyCascadeGraphChecker());
+        services.AddSingleton(Moq.Mock.Of<IContractSnapshotCatalog>()); // ADR-E27: data.schema-ref-resolves and publish pinning
         _services = services.BuildServiceProvider();
 
         _store = _services?.GetRequiredService<IDefinitionStore>() ?? throw new InvalidOperationException("Store not initialized");

@@ -20,6 +20,18 @@ public sealed record AgentRoleDescriptor
     /// <summary>What the role is for — the agent matches node intent against this.</summary>
     [JsonPropertyName("description")]
     public required string Description { get; init; }
+
+    /// <summary>
+    /// The registry contract ref a node bound to this role must take as input, when the role is
+    /// contract-bearing (ADR-E27 D12; <c>model-role.contracts-match</c>). Agent-backed roles declare
+    /// one; a model-backed role may. <see langword="null"/> leaves the node free to name its own.
+    /// </summary>
+    [JsonPropertyName("input_contract_ref")]
+    public string? InputContractRef { get; init; }
+
+    /// <summary>The registry contract ref a node bound to this role must produce, when the role is contract-bearing (ADR-E27 D12).</summary>
+    [JsonPropertyName("output_contract_ref")]
+    public string? OutputContractRef { get; init; }
 }
 
 /// <summary>
