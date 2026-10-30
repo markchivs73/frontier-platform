@@ -19,3 +19,76 @@ Frontier.Platform.ModelRoleConfig.RoleDefinition.OutputContractRef.init -> void
 Frontier.Platform.ModelRoleConfig.RoleDefinition.Requirements.get -> Frontier.Platform.ModelRoleConfig.CapabilityRequirements?
 static readonly Frontier.Platform.ModelRoleConfig.RoleBacking.Agent -> Frontier.Platform.ModelRoleConfig.RoleBacking!
 static readonly Frontier.Platform.ModelRoleConfig.RoleBacking.Model -> Frontier.Platform.ModelRoleConfig.RoleBacking!
+Frontier.Platform.ModelRoleConfig.IRoleDefinitionGovernanceService
+Frontier.Platform.ModelRoleConfig.IRoleDefinitionGovernanceService.ApproveAsync(string! roleId, string! proposalId, string! approverId, string! reason, string? expectedConcurrencyToken, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal!>!
+Frontier.Platform.ModelRoleConfig.IRoleDefinitionGovernanceService.GetProposalAsync(string! roleId, string! proposalId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal?>!
+Frontier.Platform.ModelRoleConfig.IRoleDefinitionGovernanceService.ListProposalsAsync(Frontier.Platform.ModelRoleConfig.MappingProposalQuery! query, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.RoleDefinitionProposalPage!>!
+Frontier.Platform.ModelRoleConfig.IRoleDefinitionGovernanceService.ProposeAsync(Frontier.Platform.ModelRoleConfig.RoleDefinition! definition, string! proposedBy, string! reason, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal!>!
+Frontier.Platform.ModelRoleConfig.IRoleDefinitionGovernanceService.RejectAsync(string! roleId, string! proposalId, string! approverId, string! reason, string? expectedConcurrencyToken, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal!>!
+Frontier.Platform.ModelRoleConfig.IRoleDefinitionGovernanceService.WithdrawAsync(string! roleId, string! proposalId, string! actor, string! reason, string? expectedConcurrencyToken, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal!>!
+Frontier.Platform.ModelRoleConfig.InvalidRoleDefinitionException
+Frontier.Platform.ModelRoleConfig.InvalidRoleDefinitionException.InvalidRoleDefinitionException(string! contractType, System.Collections.Generic.IReadOnlyList<string!>! violations) -> void
+Frontier.Platform.ModelRoleConfig.RoleBackingChangeException
+Frontier.Platform.ModelRoleConfig.RoleBackingChangeException.RoleBackingChangeException(string! contractType, System.Collections.Generic.IReadOnlyList<string!>! violations) -> void
+Frontier.Platform.ModelRoleConfig.RoleDefinitionGovernanceEventTypes
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.<Clone>$() -> Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal!
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.ApprovedBy.get -> string?
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.ApprovedBy.init -> void
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.ConcurrencyToken.get -> string?
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.ConcurrencyToken.init -> void
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.DecidedAtUtc.get -> System.DateTime?
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.DecidedAtUtc.init -> void
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.DecidedBy.get -> string?
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.DecidedBy.init -> void
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.DecisionReason.get -> string?
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.DecisionReason.init -> void
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.DefinitionVersion.get -> int?
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.DefinitionVersion.init -> void
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.EffectiveFromUtc.get -> System.DateTime?
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.EffectiveFromUtc.init -> void
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.Equals(Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal? other) -> bool
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.PredecessorDefinitionVersion.get -> int?
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.PredecessorDefinitionVersion.init -> void
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.ProposalId.get -> string!
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.ProposalId.init -> void
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.ProposedAtUtc.get -> System.DateTime
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.ProposedAtUtc.init -> void
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.ProposedBy.get -> string!
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.ProposedBy.init -> void
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.ProposedDefinition.get -> Frontier.Platform.ModelRoleConfig.RoleDefinition!
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.ProposedDefinition.init -> void
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.Reason.get -> string!
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.Reason.init -> void
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.RoleDefinitionProposal() -> void
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.RoleId.get -> string!
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.RoleId.init -> void
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.SchemaVersion.get -> string!
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.SchemaVersion.init -> void
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.State.get -> Frontier.Platform.ModelRoleConfig.MappingProposalState!
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.State.init -> void
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.Validate() -> void
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposalPage
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposalPage.<Clone>$() -> Frontier.Platform.ModelRoleConfig.RoleDefinitionProposalPage!
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposalPage.ContinuationToken.get -> string?
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposalPage.ContinuationToken.init -> void
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposalPage.Equals(Frontier.Platform.ModelRoleConfig.RoleDefinitionProposalPage? other) -> bool
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposalPage.Proposals.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal!>!
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposalPage.Proposals.init -> void
+Frontier.Platform.ModelRoleConfig.RoleDefinitionProposalPage.RoleDefinitionProposalPage() -> void
+Frontier.Platform.ModelRoleConfig.UnknownRoleContractException
+Frontier.Platform.ModelRoleConfig.UnknownRoleContractException.UnknownRoleContractException(string! contractType, System.Collections.Generic.IReadOnlyList<string!>! violations) -> void
+const Frontier.Platform.ModelRoleConfig.RoleDefinitionGovernanceEventTypes.Approved = "model_role_definition_approved" -> string!
+const Frontier.Platform.ModelRoleConfig.RoleDefinitionGovernanceEventTypes.Proposed = "model_role_definition_proposed" -> string!
+const Frontier.Platform.ModelRoleConfig.RoleDefinitionGovernanceEventTypes.Rejected = "model_role_definition_rejected" -> string!
+const Frontier.Platform.ModelRoleConfig.RoleDefinitionGovernanceEventTypes.Withdrawn = "model_role_definition_withdrawn" -> string!
+override Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.Equals(object? obj) -> bool
+override Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.GetHashCode() -> int
+override Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.ToString() -> string!
+override Frontier.Platform.ModelRoleConfig.RoleDefinitionProposalPage.Equals(object? obj) -> bool
+override Frontier.Platform.ModelRoleConfig.RoleDefinitionProposalPage.GetHashCode() -> int
+override Frontier.Platform.ModelRoleConfig.RoleDefinitionProposalPage.ToString() -> string!
+static Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.operator !=(Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal? left, Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal? right) -> bool
+static Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.operator ==(Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal? left, Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal? right) -> bool
+static Frontier.Platform.ModelRoleConfig.RoleDefinitionProposalPage.operator !=(Frontier.Platform.ModelRoleConfig.RoleDefinitionProposalPage? left, Frontier.Platform.ModelRoleConfig.RoleDefinitionProposalPage? right) -> bool
+static Frontier.Platform.ModelRoleConfig.RoleDefinitionProposalPage.operator ==(Frontier.Platform.ModelRoleConfig.RoleDefinitionProposalPage? left, Frontier.Platform.ModelRoleConfig.RoleDefinitionProposalPage? right) -> bool

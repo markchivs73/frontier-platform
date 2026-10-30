@@ -38,7 +38,7 @@ public interface IMappingDecisionRecorder
 /// </summary>
 public sealed record MappingGovernanceDecision
 {
-    /// <summary>What happened, as one of <see cref="MappingGovernanceEventTypes"/>.</summary>
+    /// <summary>What happened, as one of <see cref="MappingGovernanceEventTypes"/> or <see cref="RoleDefinitionGovernanceEventTypes"/>.</summary>
     public required string EventType { get; init; }
 
     /// <summary>The role the decision concerns — the audit subject.</summary>
@@ -56,10 +56,16 @@ public sealed record MappingGovernanceDecision
     /// <summary>When the decision was taken.</summary>
     public required DateTime OccurredAtUtc { get; init; }
 
-    /// <summary>The mapping version live before the decision, when one was.</summary>
+    /// <summary>
+    /// The version live before the decision, when one was: a mapping version, or for a
+    /// <see cref="RoleDefinitionGovernanceEventTypes"/> event a definition version (ADR-PA40).
+    /// </summary>
     public int? FromVersion { get; init; }
 
-    /// <summary>The mapping version live after it, when the decision moves the pointer.</summary>
+    /// <summary>
+    /// The version live after it, when the decision moves the pointer: a mapping version, or for a
+    /// <see cref="RoleDefinitionGovernanceEventTypes"/> event a definition version (ADR-PA40).
+    /// </summary>
     public int? ToVersion { get; init; }
 
     /// <summary>The ring the decision puts that version in, when it changes one.</summary>
@@ -92,4 +98,24 @@ public static class MappingGovernanceEventTypes
 
     /// <summary>A role's current pointer was rolled back to an earlier version.</summary>
     public const string RolledBack = "model_role_mapping_rolled_back";
+}
+
+/// <summary>
+/// The role-definition event vocabulary this library emits through <see cref="IMappingDecisionRecorder"/>
+/// (ADR-PA40, S4-8). The subject stays the role, so a consumer's governance screen lists these with
+/// the mapping events. There is no promote and no rollback event: definitions have neither.
+/// </summary>
+public static class RoleDefinitionGovernanceEventTypes
+{
+    /// <summary>A new role, or a change to one, was proposed.</summary>
+    public const string Proposed = "model_role_definition_proposed";
+
+    /// <summary>A definition proposal was approved, its version allocated and the role's definition pointer moved.</summary>
+    public const string Approved = "model_role_definition_approved";
+
+    /// <summary>A definition proposal was refused by a principal other than its proposer.</summary>
+    public const string Rejected = "model_role_definition_rejected";
+
+    /// <summary>A definition proposal was retracted by its proposer.</summary>
+    public const string Withdrawn = "model_role_definition_withdrawn";
 }

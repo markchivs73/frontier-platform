@@ -29,15 +29,24 @@ Only the composition root should call this. It binds and validates the `ModelRol
 1000 — how often a decision re-reads and re-allocates when another approval got there first) and the
 `Cosmos` section
 (`Cosmos:Endpoint`, `Cosmos:Key`, `Cosmos:Database`), registers a `CosmosClient` wired to the
-shared `CanonicalProfile`, the role registry, the resolver, the mapping pinner, the governance service, and two boot
-invariants: `CosmosTopologyCheck` and `RoleCatalogueCheck`.
+shared `CanonicalProfile`, the role registry, the resolver, the mapping pinner, the mapping and
+role-definition governance services, and two boot invariants: `CosmosTopologyCheck` and
+`RoleCatalogueCheck`. The role-definition governance service is **scoped**, so it can take a scoped
+contract catalogue; resolve it from a scope.
 
-### The consumer supplies one port
+### The consumer supplies three ports
 
 | Port | The question it answers |
 |---|---|
 | `IReferencedRolesSource` | Which role ids do this deployment's *published workflow definitions* reference? |
 | `IMappingDecisionRecorder` | Where does a governance decision get recorded before it is made? |
+| `IContractSnapshotCatalog` (in `Frontier.Platform.Abstractions`) | Which registry contracts exist, and is this one retired? From v0.45.0 |
+
+`IContractSnapshotCatalog` is the same port the workflow compiler reads at publish; it moved to
+`Frontier.Platform.Abstractions` in v0.45.0 (ADR-PA40) so this library can resolve a role
+definition's contract refs through it. Register one adapter over your registry and both libraries
+use it. Like the recorder it has no default: without it, resolving
+`IRoleDefinitionGovernanceService` fails at composition.
 
 `IMappingDecisionRecorder` is how every propose/approve/reject/withdraw/promote/rollback reaches
 your signed governance audit chain. This library is governance-tier and may not reference
@@ -103,6 +112,7 @@ registration answers "always closed"; wire a real implementation when you want f
 | `IMappingPinner` | Pins the version each role is **served** at execution start, one `ModelRolePin` per role (ADR-PA29) |
 | `IMappingGovernanceService` | Propose → approve (canary) → promote (fleet), with reject/withdraw, plus instant rollback |
 | `IMappingVersionHistory` | A role's append-only version history, each row marked with whether it is current |
+| `IRoleDefinitionGovernanceService` | Propose → approve a role definition, with reject/withdraw; no promote, no rollback (ADR-PA40) |
 
 `ResolvedModel` carries the audit fields as well as the model: which role, under which mapping
 version, and **which chain position was served**. A sustained non-zero chain position is an alarm
@@ -182,6 +192,33 @@ occupied — and the rest per the table above):
 The older `ProposeChangeAsync`, `ApproveAsync(proposalId, approverId, …)` and `RollbackAsync` overloads
 are `[Obsolete]` — they carry no actor or reason, which a governance record requires.
 
+**Role definitions are governed the same way (ADR-PA40).** `IRoleDefinitionGovernanceService.ProposeAsync`
+stores a `RoleDefinitionProposal` for a new role or a change to one; `ApproveAsync` resolves its
+contract refs through `IContractSnapshotCatalog` again, stamps their hashes, allocates the next
+definition version (`{roleId}:definition:v{n}`, create-only, in one batch with the proposal replace
+and the pointer move) and makes it current; `RejectAsync` and `WithdrawAsync` close it. The rules are
+the mapping rules — one undecided definition proposal per role (a separate slot from the role's
+mapping proposal), a reason on every decision, a distinct approver for approve and reject, withdrawal
+by the proposer only, and the concurrency token refused when stale. Every decision goes through
+`IMappingDecisionRecorder` first, as one of the `RoleDefinitionGovernanceEventTypes`
+(`model_role_definition_proposed`, `_approved`, `_rejected`, `_withdrawn`), with the definition
+versions as `FromVersion` and `ToVersion`. There is no promote and no rollback: to revert, propose
+the old definition again. Its refusals reuse the mapping types above, plus:
+
+| Refusal | Means | Map to |
+|---|---|---|
+| `InvalidRoleDefinitionException` | A bad role id, a blank description, a model role without requirements, an agent role without both refs, or a ref that is not `{namespace}/{name}/{major}.{minor}` | 400 |
+| `UnknownRoleContractException` | A ref that is not registered or is retired, at propose or at approve | 400 |
+| `RoleBackingChangeException` | The proposal changes an existing role's backing | 409 |
+
+`ListProposalsAsync` takes the same `MappingProposalQuery` as the mapping list and returns a
+`RoleDefinitionProposalPage`.
+
+`RoleDefinitionProposal` is a canonical contract all the way down: its nested `RoleDefinition` and
+`CapabilityRequirements` carry snake_case names and a pinned order (`role_id`, `description`,
+`stakes`, `requirements`, `backing`, the contract refs and hashes, then the approval stamps), so a
+consumer serializing it with `CanonicalProfile` writes the same bytes every time.
+
 **Pinning (ADR-PA29).** `ModelRolePin` records a role's served mapping version and its ring:
 canary assignment and the shadow/canary → fleet fallback are decided once, when the pin is taken.
 A `ResolutionRequest` carrying `Pin` reads exactly that version and walks its fallback chain; it
@@ -207,7 +244,9 @@ From v0.45.0 the same partition holds the role's definition (ADR-PA40): append-o
 is the pointers joined to the versions they name, read across role partitions, uncached and ordered
 by role id. A role id is lowercase kebab-case of at most 64 characters, so it never contains `:`.
 A stored definition is checked when read: a model-backed role needs requirements, an agent-backed
-role both contract refs.
+role both contract refs. Definition proposals are `{roleId}:definition-proposal:{proposalId}`
+(`doc_type` `role_definition_proposal`), the one mutable definition document, replaced under an
+ETag guard by each decision.
 
 ## Key invariants
 

@@ -103,3 +103,31 @@ public sealed class MappingProposalAlreadyPendingException(string contractType, 
 [SuppressMessage("Design", "CA1032:Implement standard exception constructors", Justification = "See InvalidMappingChangeException; refusals are constructed only by the governance service with their violation list (ADR-PA34).")]
 public sealed class MappingConcurrencyConflictException(string contractType, IReadOnlyList<string> violations)
     : MappingGovernanceRefusalException(contractType, violations);
+
+/// <summary>
+/// The proposed role definition is not well-formed (ADR-PA40): a role id that is not lowercase
+/// kebab-case of at most 64 characters, a blank description, a model-backed role without
+/// requirements, an agent-backed role without both contract refs, or a ref that is not an ADR-E2
+/// schema ref. The consumer maps it to <b>400</b>.
+/// </summary>
+[SuppressMessage("Design", "CA1032:Implement standard exception constructors", Justification = "See InvalidMappingChangeException; refusals are constructed only by the governance service with their violation list (ADR-PA34).")]
+public sealed class InvalidRoleDefinitionException(string contractType, IReadOnlyList<string> violations)
+    : MappingGovernanceRefusalException(contractType, violations);
+
+/// <summary>
+/// A role definition names a contract ref that is not registered, is retired, or resolves to a
+/// snapshot filed under another ref (ADR-PA40). Checked at propose and again at approve, where the
+/// hashes are stamped. The consumer maps it to <b>400</b>.
+/// </summary>
+[SuppressMessage("Design", "CA1032:Implement standard exception constructors", Justification = "See InvalidMappingChangeException; refusals are constructed only by the governance service with their violation list (ADR-PA34).")]
+public sealed class UnknownRoleContractException(string contractType, IReadOnlyList<string> violations)
+    : MappingGovernanceRefusalException(contractType, violations);
+
+/// <summary>
+/// A role definition proposal changes an existing role's backing (ADR-PA40): backing is declared
+/// once and immutable, so moving between model and agent means a new role. The consumer maps it to
+/// <b>409</b> — the request conflicts with the role as it stands.
+/// </summary>
+[SuppressMessage("Design", "CA1032:Implement standard exception constructors", Justification = "See InvalidMappingChangeException; refusals are constructed only by the governance service with their violation list (ADR-PA34).")]
+public sealed class RoleBackingChangeException(string contractType, IReadOnlyList<string> violations)
+    : MappingGovernanceRefusalException(contractType, violations);

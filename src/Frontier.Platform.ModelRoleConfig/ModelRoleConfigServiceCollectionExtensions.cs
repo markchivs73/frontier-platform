@@ -1,3 +1,4 @@
+using Frontier.Platform.Abstractions;
 using Frontier.Platform.Serialization;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
@@ -17,9 +18,14 @@ public static class ModelRoleConfigServiceCollectionExtensions
     /// Binds and validates <see cref="CosmosOptions"/> (doc 12 §4 "options with teeth"),
     /// and registers the <see cref="CosmosClient"/>, <see cref="IRoleRegistry"/>,
     /// <see cref="IModelResolver"/>, <see cref="IMappingPinner"/>, <see cref="IMappingGovernanceService"/>,
-    /// <see cref="IMappingVersionHistory"/>, and the
+    /// <see cref="IMappingVersionHistory"/>, <see cref="IRoleDefinitionGovernanceService"/>, and the
     /// <see cref="CosmosTopologyCheck"/> and <see cref="RoleCatalogueCheck"/> boot
     /// invariants (doc 12 §6).
+    /// <para>
+    /// Three ports are the consumer's to register, with no default: <see cref="IReferencedRolesSource"/>,
+    /// <see cref="IMappingDecisionRecorder"/> and, from v0.45.0, <see cref="IContractSnapshotCatalog"/>,
+    /// through which role definitions resolve their contract refs (ADR-PA40).
+    /// </para>
     /// </summary>
     public static IServiceCollection AddFrontierModelRoleConfig(this IServiceCollection services, IConfiguration configuration)
     {
@@ -50,6 +56,11 @@ public static class ModelRoleConfigServiceCollectionExtensions
             .AddSingleton<IMappingProposalStore, CosmosMappingProposalStore>()
             .AddSingleton<IMappingVersionHistory, MappingVersionHistory>()
             .AddSingleton<IMappingGovernanceService, MappingGovernanceService>()
+            .AddSingleton<IRoleDefinitionStore, CosmosRoleDefinitionStore>()
+            // Scoped, with its resolver: IContractSnapshotCatalog is consumer-owned with no default
+            // (ADR-PA40), so composition fails without it, and a scoped adapter is never captured.
+            .AddScoped(sp => new RoleContractResolver(sp.GetRequiredService<IContractSnapshotCatalog>()))
+            .AddScoped<IRoleDefinitionGovernanceService, RoleDefinitionGovernanceService>()
             .AddSingleton<IStartupCheck, CosmosTopologyCheck>()
             .AddSingleton<IStartupCheck, RoleCatalogueCheck>();
 
