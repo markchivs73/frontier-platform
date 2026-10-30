@@ -1,0 +1,2 @@
+*REMOVED*Frontier.Platform.Workflow.Model.AgentTaskNode.InstructionsRef.get -> string!
+Frontier.Platform.Workflow.Model.AgentTaskNode.InstructionsRef.get -> string?

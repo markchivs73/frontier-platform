@@ -773,9 +773,27 @@ public sealed class ChatDesignerServiceTests
 
             Assert.Contains("Available instructions", prompt, StringComparison.Ordinal);
             Assert.Contains("instructions/fetch-ticket.md", prompt, StringComparison.Ordinal); // a ref from the catalogue
-            Assert.Contains("`instructions_ref` MUST be one of the Available instructions", prompt, StringComparison.Ordinal);
+            Assert.Contains("`backing` is `model` MUST set `instructions_ref` to one of the Available instructions", Flatten(prompt), StringComparison.Ordinal);
             Assert.Contains("instructions/transform.md", prompt, StringComparison.Ordinal); // converter guidance
         }
+
+        /// <summary>ADR-PA40: a role's backing reaches the agent, and with it the rule that an agent-backed role's node may omit instructions_ref.</summary>
+        [Fact]
+        public async Task BuildSystemPrompt_SaysAnAgentBackedRoleMayOmitInstructionsRef()
+        {
+            var service = CreateService(new InMemoryDefinitionStore(), BuildMergeService(out _));
+
+            var prompt = Flatten(await service.BuildSystemPromptAsync(CreateMinimalDraft("wf-x"), CancellationToken.None));
+
+            Assert.Contains("\"role_id\":\"deep-reasoning\"", prompt, StringComparison.Ordinal);
+            Assert.Contains("\"backing\":\"model\"", prompt, StringComparison.Ordinal);
+            Assert.Contains("(omit it on a role whose `backing` is `agent`)", prompt, StringComparison.Ordinal);
+            Assert.Contains("whose `backing` is `agent` may omit `instructions_ref`", prompt, StringComparison.Ordinal);
+            Assert.Contains("omit the field rather than leaving it blank", prompt, StringComparison.Ordinal);
+        }
+
+        /// <summary>The prompt with every run of whitespace as one space, so an assertion does not depend on where a line wraps.</summary>
+        private static string Flatten(string prompt) => System.Text.RegularExpressions.Regex.Replace(prompt, @"\s+", " ");
 
         [Fact]
         public async Task BuildSystemPrompt_IncludesEntryContractConvention()

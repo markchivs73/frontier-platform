@@ -544,14 +544,16 @@ internal sealed class ChatDesignerService : IChatDesignerService
             (each is "{reverse-dns-server}/{tool}", ADR-CD9; copy the value verbatim):
             {{toolsJson}}
 
-            Available agent roles — use ONLY these role_id values for agent_task.role:
+            Available agent roles — use ONLY these role_id values for agent_task.role. Each role's
+            `backing` says what serves it: `model` (a model chain) or `agent` (a registered agent):
             {{agentRolesJson}}
 
             Available contracts — the ONLY valid values for an agent_task's `input_contract_type`
             and `output_contract_type` and a `data` edge's `contract_type`:
             {{contracts}}
 
-            Available instructions — the ONLY valid values for an agent_task's `instructions_ref`:
+            Available instructions — the ONLY valid values for an agent_task's `instructions_ref`
+            (omit it on a role whose `backing` is `agent`):
             {{instructions}}
 
             Available baseline context components — the values an agent_task's
@@ -573,11 +575,13 @@ internal sealed class ChatDesignerService : IChatDesignerService
               two steps whose contracts differ, insert an intermediate `agent_task` that consumes the
               upstream contract and produces the downstream one — never point mismatched contracts at
               each other.
-            - Every `agent_task`'s `instructions_ref` MUST be one of the Available instructions above
-              (they are file-backed; a ref not in that list fails the agent live at runtime). Do NOT
-              derive a ref from the node's role or name. Match each step to the closest-matching
-              instruction; for an intermediate mapping/converter `agent_task` (one inserted only to
-              reshape one contract into another), use `instructions/transform.md`.
+            - An `agent_task` on a role whose `backing` is `model` MUST set `instructions_ref` to one of
+              the Available instructions above (they are file-backed; a ref not in that list fails the
+              agent live at runtime). An `agent_task` on a role whose `backing` is `agent` may omit
+              `instructions_ref`, because the agent brings its own instructions; omit the field rather
+              than leaving it blank. Do NOT derive a ref from the node's role or name. Match each step
+              to the closest-matching instruction; for an intermediate mapping/converter `agent_task`
+              (one inserted only to reshape one contract into another), use `instructions/transform.md`.
             - The workflow's single entry `agent_task` (the one with no incoming `control` edge) is
               handed {{entry.Description}} at runtime, not an upstream `data` payload — so it MUST set
               `input_contract_type` to `{{entry.ContractTypeName}}` and include

@@ -21,10 +21,15 @@ public sealed record AgentTaskNode : WorkflowNode
     [JsonPropertyName("role")]
     public required string Role { get; init; }
 
-    /// <summary>Reference to this agent's instructions (doc 14).</summary>
+    /// <summary>
+    /// Reference to this agent's instructions (doc 14). Optional since ADR-PA40: a node on an
+    /// agent-backed role may omit it, because the agent brings its own; a node on a model-backed role
+    /// must name one (<c>agent.instructions-resolve</c>). Omitted from the wire when null, so a
+    /// definition stored before the change keeps its bytes and its hash.
+    /// </summary>
     [JsonPropertyOrder(4)]
     [JsonPropertyName("instructions_ref")]
-    public required string InstructionsRef { get; init; }
+    public string? InstructionsRef { get; init; }
 
     /// <summary>The wire type name of the contract this node's input must satisfy.</summary>
     [JsonPropertyOrder(5)]

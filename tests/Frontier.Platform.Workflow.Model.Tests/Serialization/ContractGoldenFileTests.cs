@@ -46,6 +46,11 @@ public sealed class ContractGoldenFileTests
     public void WorkflowDefinitionWithContracts_SerializesStablyAndRoundTrips() =>
         ContractRoundTripAssertions.AssertStableAndRoundTrips(ContractSamples.WorkflowDefinitionWithContracts(), "workflow_definition_contracts.json");
 
+    /// <summary>ADR-PA40: an agent-backed node with no instructions_ref omits the field. New golden; every older definition golden is unchanged.</summary>
+    [Fact]
+    public void WorkflowDefinitionAgentBacked_SerializesStablyAndRoundTrips() =>
+        ContractRoundTripAssertions.AssertStableAndRoundTrips(ContractSamples.WorkflowDefinitionAgentBacked(), "workflow_definition_agent_backed.json");
+
     /// <summary>ADR-E27 D15: a step's contract hashes. New golden; every older snapshot golden is unchanged.</summary>
     [Fact]
     public void ExecutionSnapshotWithContractHashes_SerializesStablyAndRoundTrips() =>
