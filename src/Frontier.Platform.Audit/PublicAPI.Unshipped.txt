@@ -1,8 +1,0 @@
-Frontier.Platform.Audit.AgentInvocation.InputContractHash.get -> string?
-Frontier.Platform.Audit.AgentInvocation.InputContractHash.init -> void
-Frontier.Platform.Audit.AgentInvocation.OutputContractHash.get -> string?
-Frontier.Platform.Audit.AgentInvocation.OutputContractHash.init -> void
-Frontier.Platform.Audit.AuditTelemetryRecord.InputContractHash.get -> string?
-Frontier.Platform.Audit.AuditTelemetryRecord.InputContractHash.init -> void
-Frontier.Platform.Audit.AuditTelemetryRecord.OutputContractHash.get -> string?
-Frontier.Platform.Audit.AuditTelemetryRecord.OutputContractHash.init -> void

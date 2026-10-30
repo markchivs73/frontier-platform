@@ -13,6 +13,8 @@ Frontier.Platform.Audit.AgentInvocation.CacheWriteTokens.init -> void
 Frontier.Platform.Audit.AgentInvocation.CorrelationId.get -> string!
 Frontier.Platform.Audit.AgentInvocation.CorrelationId.init -> void
 Frontier.Platform.Audit.AgentInvocation.Equals(Frontier.Platform.Audit.AgentInvocation? other) -> bool
+Frontier.Platform.Audit.AgentInvocation.InputContractHash.get -> string?
+Frontier.Platform.Audit.AgentInvocation.InputContractHash.init -> void
 Frontier.Platform.Audit.AgentInvocation.InputContractType.get -> string!
 Frontier.Platform.Audit.AgentInvocation.InputContractType.init -> void
 Frontier.Platform.Audit.AgentInvocation.InputHash.get -> string!
@@ -25,6 +27,8 @@ Frontier.Platform.Audit.AgentInvocation.LatencyMs.get -> long
 Frontier.Platform.Audit.AgentInvocation.LatencyMs.init -> void
 Frontier.Platform.Audit.AgentInvocation.NodeId.get -> string!
 Frontier.Platform.Audit.AgentInvocation.NodeId.init -> void
+Frontier.Platform.Audit.AgentInvocation.OutputContractHash.get -> string?
+Frontier.Platform.Audit.AgentInvocation.OutputContractHash.init -> void
 Frontier.Platform.Audit.AgentInvocation.OutputContractType.get -> string!
 Frontier.Platform.Audit.AgentInvocation.OutputContractType.init -> void
 Frontier.Platform.Audit.AgentInvocation.OutputHash.get -> string!
@@ -164,6 +168,8 @@ Frontier.Platform.Audit.AuditTelemetryRecord.DynamicCacheChanged.init -> void
 Frontier.Platform.Audit.AuditTelemetryRecord.Equals(Frontier.Platform.Audit.AuditTelemetryRecord? other) -> bool
 Frontier.Platform.Audit.AuditTelemetryRecord.ExecutionId.get -> string!
 Frontier.Platform.Audit.AuditTelemetryRecord.ExecutionId.init -> void
+Frontier.Platform.Audit.AuditTelemetryRecord.InputContractHash.get -> string?
+Frontier.Platform.Audit.AuditTelemetryRecord.InputContractHash.init -> void
 Frontier.Platform.Audit.AuditTelemetryRecord.InputContractType.get -> string!
 Frontier.Platform.Audit.AuditTelemetryRecord.InputContractType.init -> void
 Frontier.Platform.Audit.AuditTelemetryRecord.InputHash.get -> string!
@@ -176,6 +182,8 @@ Frontier.Platform.Audit.AuditTelemetryRecord.LatencyMs.get -> long
 Frontier.Platform.Audit.AuditTelemetryRecord.LatencyMs.init -> void
 Frontier.Platform.Audit.AuditTelemetryRecord.NodeId.get -> string!
 Frontier.Platform.Audit.AuditTelemetryRecord.NodeId.init -> void
+Frontier.Platform.Audit.AuditTelemetryRecord.OutputContractHash.get -> string?
+Frontier.Platform.Audit.AuditTelemetryRecord.OutputContractHash.init -> void
 Frontier.Platform.Audit.AuditTelemetryRecord.OutputContractType.get -> string!
 Frontier.Platform.Audit.AuditTelemetryRecord.OutputContractType.init -> void
 Frontier.Platform.Audit.AuditTelemetryRecord.OutputHash.get -> string!
