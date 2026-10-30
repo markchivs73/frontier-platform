@@ -52,6 +52,12 @@ thirteen packages** — they version in lockstep, so a change to one republishes
 A release is a pull request, then a tag on its merge commit — never a tag on whatever `main`
 happens to be:
 
+0. If the release moves the pin of an engine package that carries conformance evidence, check the
+   evidence for the new version first, and record it in ADR-PA38 in the same PR as the bump:
+   **Celly** — its CI for the commit the new package was built from is green, and its cel-spec
+   conformance count and known-failures list have not regressed; **Corvus.Text.Json.Validator** —
+   Bowtie's 2020-12 report for the new version still shows no failures or errors. No third-party
+   repository code is copied in to do this (ADR-PA38).
 1. On a branch from `main`, run `python3 tools/ship-public-api.py`. It moves every package's
    `PublicAPI.Unshipped.txt` entries into `PublicAPI.Shipped.txt`, applies each `*REMOVED*`
    marker by deleting the shipped line it names, and leaves the Unshipped files holding only
