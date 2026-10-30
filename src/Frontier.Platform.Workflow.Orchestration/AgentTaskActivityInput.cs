@@ -26,10 +26,15 @@ public sealed record AgentTaskActivityInput
     [JsonPropertyName("role")]
     public required string Role { get; init; }
 
-    /// <summary>Reference to this agent's instructions (doc 14 placeholder — S4.1's <c>instructions/*.md</c> files).</summary>
+    /// <summary>
+    /// Reference to this agent's instructions (doc 14 placeholder — S4.1's <c>instructions/*.md</c> files),
+    /// or <see langword="null"/> when the node is on an agent-backed role and names none (ADR-PA40): the
+    /// remote agent brings its own instructions, so nothing is resolved. Omitted from the wire when null,
+    /// so every input recorded before this change, which always carried a ref, keeps its bytes.
+    /// </summary>
     [JsonPropertyOrder(3)]
     [JsonPropertyName("instructions_ref")]
-    public required string InstructionsRef { get; init; }
+    public string? InstructionsRef { get; init; }
 
     /// <summary>The wire type name of the contract this node's input must satisfy.</summary>
     [JsonPropertyOrder(4)]

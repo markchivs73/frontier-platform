@@ -339,6 +339,55 @@ public sealed class AgentTaskActivityPipelineTests
         Assert.Same(resolved.Entry, invoker.ReceivedRequest!.Target);
     }
 
+    /// <summary>ADR-PA40: an agent target with no ref invokes with no instructions and never asks the resolver.</summary>
+    [Fact]
+    public async Task InvokeAgentAsync_AgentTargetWithNoInstructionsRef_InvokesWithNoInstructionsAndNeverResolves()
+    {
+        var resolver = new FakeInstructionsResolver("instructions");
+        var d = Dependencies(ScopeSectionFixture()) with { InstructionsResolver = resolver };
+        var input = BuildInput(nameof(BriefArtifact), nameof(SummaryArtifact), upstreamPayload: null) with { InstructionsRef = null };
+        var resolved = ResolvedModelFixture() with { Provider = AgentEntry.A2aProvider, ModelId = EchoAgent.ResourceName, Entry = EchoAgent };
+
+        await Pipeline(d).InvokeAgentAsync(input, resolved, Package("{}"), "{}", CancellationToken.None);
+
+        Assert.False(resolver.WasCalled);
+        Assert.Equal(string.Empty, d.Invoker.ReceivedRequest!.Instructions);
+    }
+
+    /// <summary>A ref a node does name is still resolved on an agent target (the A2A path then ignores it, S13.123(d)).</summary>
+    [Fact]
+    public async Task InvokeAgentAsync_AgentTargetWithAnInstructionsRef_StillResolvesIt()
+    {
+        var resolver = new FakeInstructionsResolver("instructions");
+        var d = Dependencies(ScopeSectionFixture()) with { InstructionsResolver = resolver };
+        var input = BuildInput(nameof(BriefArtifact), nameof(SummaryArtifact), upstreamPayload: null);
+        var resolved = ResolvedModelFixture() with { Provider = AgentEntry.A2aProvider, ModelId = EchoAgent.ResourceName, Entry = EchoAgent };
+
+        await Pipeline(d).InvokeAgentAsync(input, resolved, Package("{}"), "{}", CancellationToken.None);
+
+        Assert.Equal("gen-scope.md", resolver.ReceivedInstructionsRef);
+        Assert.Equal("instructions", d.Invoker.ReceivedRequest!.Instructions);
+    }
+
+    /// <summary>A model target with no ref fails permanently as a contract violation (invariant 7), before admission or invocation.</summary>
+    [Fact]
+    public async Task InvokeAgentAsync_ModelTargetWithNoInstructionsRef_FailsAsAContractViolation()
+    {
+        var resolver = new FakeInstructionsResolver("instructions");
+        var d = Dependencies(ScopeSectionFixture()) with { InstructionsResolver = resolver };
+        var input = BuildInput(nameof(BriefArtifact), nameof(SummaryArtifact), upstreamPayload: null) with { InstructionsRef = null };
+
+        var exception = await Assert.ThrowsAsync<ContractViolationException>(
+            () => Pipeline(d).InvokeAgentAsync(input, ResolvedModelFixture(), Package("{}"), "{}", CancellationToken.None));
+
+        Assert.Equal(nameof(AgentTaskActivityInput), exception.ContractType);
+        Assert.Contains("gen-scope", Assert.Single(exception.Violations), StringComparison.Ordinal);
+        Assert.Equal("contract_violation", GraphOrchestratorSteps.ClassifyFailure(exception));
+        Assert.False(resolver.WasCalled);
+        Assert.Null(d.AdmissionControllerDouble.ReceivedEstimate);
+        Assert.Null(d.Invoker.ReceivedRequest);
+    }
+
     private static readonly AgentEntry EchoAgent = new()
     {
         Provider = AgentEntry.A2aProvider,

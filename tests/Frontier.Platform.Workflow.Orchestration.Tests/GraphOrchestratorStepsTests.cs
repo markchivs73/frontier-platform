@@ -101,9 +101,9 @@ public sealed class GraphOrchestratorStepsTests
         Assert.Contains("branch-1", exception.Message, StringComparison.Ordinal);
     }
 
-    /// <summary>ADR-PA40: a node may omit its ref; until the activity input carries it optional, it travels blank.</summary>
+    /// <summary>ADR-PA40: a node may omit its ref, and the activity input carries the absence as null, never as a blank ref.</summary>
     [Fact]
-    public void BuildActivityInput_GivesANodeWithNoInstructionsRefABlankRef()
+    public void BuildActivityInput_CarriesANodeWithNoInstructionsRefAsNull()
     {
         var definition = OrchestrationFixtures.ThreeArtifactChain();
         var node = (AgentTaskNode)definition.Nodes[0] with { InstructionsRef = null };
@@ -111,7 +111,7 @@ public sealed class GraphOrchestratorStepsTests
 
         var activityInput = GraphOrchestratorSteps.BuildActivityInput(OrchestrationFixtures.Input(definition), node, "correlation-1", "eng-1::wf-chain", state);
 
-        Assert.Equal(string.Empty, activityInput.InstructionsRef);
+        Assert.Null(activityInput.InstructionsRef);
     }
 
     [Fact]

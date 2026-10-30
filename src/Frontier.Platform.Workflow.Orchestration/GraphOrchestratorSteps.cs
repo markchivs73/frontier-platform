@@ -507,9 +507,7 @@ internal static class GraphOrchestratorSteps
         NodeId = node.NodeId,
         ArtifactKey = node.ArtifactKey,
         Role = node.Role,
-        // ADR-PA40: a node may now omit its ref; the activity input carries it optional from the next
-        // orchestration change, which skips the resolver for an agent target.
-        InstructionsRef = node.InstructionsRef ?? string.Empty,
+        InstructionsRef = node.InstructionsRef,
         InputContractType = node.InputContractType,
         OutputContractType = node.OutputContractType,
         // S9.28: a published definition runs across many engagements (ADR-2), so the chat

@@ -6,8 +6,12 @@ internal sealed class FakeInstructionsResolver(string instructions) : IInstructi
     /// <summary>The most recent <c>instructionsRef</c> passed to <see cref="ResolveAsync"/>.</summary>
     internal string? ReceivedInstructionsRef { get; private set; }
 
+    /// <summary>Whether <see cref="ResolveAsync"/> was called at all.</summary>
+    internal bool WasCalled { get; private set; }
+
     public Task<string> ResolveAsync(string instructionsRef, CancellationToken ct)
     {
+        WasCalled = true;
         ReceivedInstructionsRef = instructionsRef;
         return Task.FromResult(instructions);
     }
