@@ -1,3 +1,4 @@
+using Frontier.Platform.Abstractions;
 using Moq;
 
 namespace Frontier.Platform.Workflow.Compiler.Tests;
