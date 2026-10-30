@@ -41,6 +41,16 @@ public sealed class ContractGoldenFileTests
     public void WorkflowDefinitionDecisionBranches_SerializesStablyAndRoundTrips() =>
         ContractRoundTripAssertions.AssertStableAndRoundTrips(ContractSamples.WorkflowDefinitionDecisionBranches(), "workflow_definition_decision_branches.json");
 
+    /// <summary>ADR-E27: embedded contracts, MCP contract refs and an edge projection. New golden; every older definition golden is unchanged.</summary>
+    [Fact]
+    public void WorkflowDefinitionWithContracts_SerializesStablyAndRoundTrips() =>
+        ContractRoundTripAssertions.AssertStableAndRoundTrips(ContractSamples.WorkflowDefinitionWithContracts(), "workflow_definition_contracts.json");
+
+    /// <summary>ADR-E27 D13: the gate-decision contract a decided gate emits.</summary>
+    [Fact]
+    public void GateDecision_SerializesStablyAndRoundTrips() =>
+        ContractRoundTripAssertions.AssertStableAndRoundTrips(ContractSamples.GateDecision(), "gate_decision.json");
+
     [Fact]
     public void ExecutionSnapshotSkipped_SerializesStablyAndRoundTrips() =>
         ContractRoundTripAssertions.AssertStableAndRoundTrips(ContractSamples.ExecutionSnapshotSkipped(), "execution_snapshot_skipped.json");

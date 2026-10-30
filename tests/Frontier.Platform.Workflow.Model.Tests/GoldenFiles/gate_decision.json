@@ -1,0 +1,1 @@
+{"schema_version":"1.0","gate_id":"approve-quote","decision":"reject","approver_id":"user:4f1c2a","decided_at_utc":"2026-10-30T09:15:00.123Z","notes":"Discount exceeds the rate card.","rollback_to_node_id":"price-quote"}

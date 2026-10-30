@@ -8,7 +8,7 @@ namespace Frontier.Platform.Workflow.Compiler.Tests;
 /// <summary>S9.24: argument-guard branches on <see cref="DefinitionLifecycleService"/>'s lifecycle methods — none had a missing-argument test.</summary>
 public sealed class DefinitionLifecycleGuardTests
 {
-    private readonly DefinitionLifecycleService _service = new(new Mock<IDefinitionStore>().Object, new Mock<IDefinitionCompiler>().Object);
+    private readonly DefinitionLifecycleService _service = new(new Mock<IDefinitionStore>().Object, new Mock<IDefinitionCompiler>().Object, NoRegistryContracts.Embedder);
 
     // CreateDraftAsync had no guard-clause test at all (S9.24 branch-coverage gap: lines 37-38).
     [Theory]

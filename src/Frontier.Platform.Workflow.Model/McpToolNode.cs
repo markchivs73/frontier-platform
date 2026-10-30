@@ -30,4 +30,22 @@ public sealed record McpToolNode : WorkflowNode
     [JsonPropertyOrder(5)]
     [JsonPropertyName("idempotency_key_spec")]
     public required string IdempotencyKeySpec { get; init; }
+
+    /// <summary>
+    /// The ADR-E2 ref of the registry contract the tool's arguments must satisfy, copied from the
+    /// tool's registry record (ADR-E27 D9). The engine validates the call's input against it before
+    /// the tool is invoked. Omitted on definitions published before contracts were data, which run
+    /// unvalidated as they did.
+    /// </summary>
+    [JsonPropertyOrder(6)]
+    [JsonPropertyName("input_contract_type")]
+    public string? InputContractType { get; init; }
+
+    /// <summary>
+    /// The ADR-E2 ref of the registry contract the tool's result must satisfy, copied from the tool's
+    /// registry record (ADR-E27 D9). The engine validates the result against it before it is recorded.
+    /// </summary>
+    [JsonPropertyOrder(7)]
+    [JsonPropertyName("output_contract_type")]
+    public string? OutputContractType { get; init; }
 }

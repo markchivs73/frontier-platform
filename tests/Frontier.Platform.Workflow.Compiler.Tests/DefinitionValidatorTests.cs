@@ -205,19 +205,41 @@ public sealed class DefinitionValidatorTests
     /// stays valid.
     /// </summary>
     [Fact]
-    public void ComputeDefinitionHash_IgnoresItsOwnField_AndIsUnchangedForADraft()
+    public void ComputeDefinitionHash_IsJcsOverTheProfileBytes_AndIgnoresItsOwnField()
     {
+        // ADR-E27 D15 moved the formula from the profile bytes to their RFC 8785 form.
         var draft = CreateMinimalDefinition("wf-1") with { DefinitionHash = string.Empty };
-        var beforeTheChange = "sha256:" + Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
-            System.Text.Encoding.UTF8.GetBytes(System.Text.Json.JsonSerializer.Serialize(draft, Frontier.Platform.Serialization.CanonicalProfile.Options))));
+        var expected = "sha256:" + Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(
+            Frontier.Platform.Serialization.JsonCanonicalizer.Canonicalize(
+                System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(draft, Frontier.Platform.Serialization.CanonicalProfile.Options))));
 
         var hash = _validator.ComputeDefinitionHash(draft);
         var stamped = draft with { DefinitionHash = hash };
 
-        Assert.Equal(beforeTheChange, hash, ignoreCase: true);
+        Assert.Equal(expected, hash);
         Assert.Equal(hash, _validator.ComputeDefinitionHash(stamped));
         Assert.Equal(hash, _validator.ComputeDefinitionHash(draft with { DefinitionHash = "seed-placeholder-hash" }));
     }
+
+    [Fact]
+    public void ComputeDefinitionHash_DoesNotDependOnTheKeyOrderOfAnEmbeddedSchema()
+    {
+        var definition = CreateMinimalDefinition("wf-1");
+
+        var one = _validator.ComputeDefinitionHash(definition with { Contracts = [Snapshot("""{"type":"object","description":"d"}""")] });
+        var other = _validator.ComputeDefinitionHash(definition with { Contracts = [Snapshot("""{"description":"d","type":"object"}""")] });
+
+        Assert.Equal(one, other);
+        Assert.NotEqual(_validator.ComputeDefinitionHash(definition), one);
+    }
+
+    private static Frontier.Platform.Abstractions.ContractSnapshot Snapshot(string schema) => new()
+    {
+        ContractRef = "acme/thing/1.0",
+        Schema = System.Text.Json.JsonDocument.Parse(schema).RootElement.Clone(),
+        Rules = [],
+        Hash = "sha256:test",
+    };
 
     [Fact]
     public void ComputeDefinitionHash_RefusesANullDefinition()

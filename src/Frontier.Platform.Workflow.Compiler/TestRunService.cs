@@ -29,24 +29,28 @@ public sealed class TestRunService : ITestRunService
     private readonly ITestRunExecutor _executor;
     private readonly ITestRunTelemetryReader _telemetry;
     private readonly ITestRunArtifactReader _sections;
+    private readonly IDefinitionContractEmbedder _contracts;
 
     public TestRunService(
         IDefinitionStore store,
         IDefinitionCompiler compiler,
         ITestRunExecutor executor,
         ITestRunTelemetryReader telemetry,
-        ITestRunArtifactReader sections)
+        ITestRunArtifactReader sections,
+        IDefinitionContractEmbedder contracts)
     {
         ArgumentNullException.ThrowIfNull(store);
         ArgumentNullException.ThrowIfNull(compiler);
         ArgumentNullException.ThrowIfNull(executor);
         ArgumentNullException.ThrowIfNull(telemetry);
         ArgumentNullException.ThrowIfNull(sections);
+        ArgumentNullException.ThrowIfNull(contracts);
         _store = store;
         _compiler = compiler;
         _executor = executor;
         _telemetry = telemetry;
         _sections = sections;
+        _contracts = contracts;
     }
 
     /// <inheritdoc />
@@ -64,10 +68,12 @@ public sealed class TestRunService : ITestRunService
         if (findings.Any(f => f.Severity == ValidationSeverity.Error))
             return await PersistBlockedRunAsync(workflowId, draft.DraftRevision, request.GateMode, now, findings, ct);
 
+        // A test run validates against the same pinned contracts a published run would (ADR-E27 D15).
+        var definition = await _contracts.EmbedAsync(draft.Definition, ct);
         var engagementId = $"SANDBOX-{Guid.NewGuid():N}";
         // Doc 13 §5's sampleInputs had been accepted here and discarded (consumer S13.61's second
         // finding). It is the run's dynamic context, so it goes to the executor to be written first.
-        var testRunId = await _executor.StartAsync(engagementId, draft.Definition, TestRunInput.ToDynamicContextJson(request.SampleInputs), ct);
+        var testRunId = await _executor.StartAsync(engagementId, definition, TestRunInput.ToDynamicContextJson(request.SampleInputs), ct);
 
         var runningOutcome = new TestRunOutcome(
             Success: false, NodeSteps: [], ErrorMessage: null,

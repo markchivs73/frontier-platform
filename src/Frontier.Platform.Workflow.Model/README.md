@@ -49,7 +49,17 @@ exactly that.
   `McpToolNode`, `ParallelNode`, `LoopNode`, `CascadeCheckNode`, `ContextInjectionNode`),
   discriminated on `NodeType`.
 - `WorkflowEdge` and `EdgeKind` — control edges drive scheduling, data edges carry typed
-  payloads between nodes.
+  payloads between nodes. A data edge may declare a projection (`ProjectionField`): each field
+  of the consumer's input is a JSON Pointer into the producer's output or a literal, with no
+  logic. The consumer receives exactly the projected fields.
+- **Contracts as data (consumer ADR-E27, ADR-PA39).** A node or edge names a contract by its
+  CLR type name or by a registry ref (`{namespace}/{name}/{major}.{minor}`); `McpToolNode`
+  carries optional input and output refs like an agent node. At publish, the definition embeds
+  every registry contract it names in `Contracts`, sorted by ref, so a run never fetches one.
+  All three additions are optional, so every older definition keeps its bytes.
+- `GateDecision` — what a decided `HumanGateNode` emits, the engine-owned contract
+  `frontier/gate-decision/1.0`. `EngineContracts` holds its registry snapshot, whose schema is
+  checked by the same registration check and validator as any registry contract.
 - `ConditionalPredicate` with `ComparisonOp`/`LogicalOp` — the branch conditions a decision
   node evaluates.
 - `RetryPolicySpec` — retry behaviour as **data**, not code, so a policy change is a

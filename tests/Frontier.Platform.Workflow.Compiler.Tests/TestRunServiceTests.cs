@@ -32,7 +32,7 @@ public sealed class TestRunServiceTests
     public TestRunServiceTests()
     {
         _telemetry.Setup(t => t.GetCostMetricsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(ZeroCostMetrics);
-        _service = new TestRunService(_store.Object, _compiler.Object, _executor.Object, _telemetry.Object, _sections.Object);
+        _service = new TestRunService(_store.Object, _compiler.Object, _executor.Object, _telemetry.Object, _sections.Object, NoRegistryContracts.Embedder);
     }
 
     private static DefinitionDraftDocument Draft(string workflowId = "wf-test") => new()
@@ -134,6 +134,32 @@ public sealed class TestRunServiceTests
         Assert.StartsWith("SANDBOX-", startedOn, StringComparison.Ordinal);
         Assert.Equal(startedOn, persisted()!.EngagementId);
         Assert.Equal("0199f0c2e4a17b3c9d5e6f708192a3b4", persisted()!.TestRunId);
+    }
+
+    /// <summary>ADR-E27 D15: a test run executes the draft with its contracts pinned, as a published run would.</summary>
+    [Fact]
+    public async Task StartAsync_RunsTheDraftWithItsContractsEmbedded()
+    {
+        _store.Setup(s => s.GetDraftAsync("wf-test", It.IsAny<CancellationToken>())).ReturnsAsync(Draft());
+        _compiler.Setup(c => c.ValidateStructural(It.IsAny<WorkflowDefinition>())).Returns([]);
+        IReadOnlyList<Frontier.Platform.Abstractions.ContractSnapshot> pinned = [EngineContracts.GateDecision];
+        var embedder = new Mock<IDefinitionContractEmbedder>();
+        embedder.Setup(e => e.EmbedAsync(It.IsAny<WorkflowDefinition>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((WorkflowDefinition d, CancellationToken _) => d with { Contracts = pinned });
+        _executor.Setup(e => e.StartAsync(It.IsAny<string>(), It.IsAny<WorkflowDefinition>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("0199f0c2e4a17b3c9d5e6f708192a3b4");
+        SetupPersistCapture(out _);
+        var service = new TestRunService(_store.Object, _compiler.Object, _executor.Object, _telemetry.Object, _sections.Object, embedder.Object);
+
+        await service.StartAsync("wf-test", new TestRunRequest { SampleInputs = new { }, GateMode = TestRunGateMode.AutoApprove }, CancellationToken.None);
+
+        _executor.Verify(e => e.StartAsync(It.IsAny<string>(), It.Is<WorkflowDefinition>(d => d.Contracts == pinned), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public void Constructor_RefusesANullEmbedder()
+    {
+        Assert.Throws<ArgumentNullException>(() => new TestRunService(_store.Object, _compiler.Object, _executor.Object, _telemetry.Object, _sections.Object, null!));
     }
 
     [Fact]

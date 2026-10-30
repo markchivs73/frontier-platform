@@ -35,4 +35,14 @@ public sealed record WorkflowEdge
     [JsonPropertyOrder(4)]
     [JsonPropertyName("condition")]
     public string? Condition { get; init; }
+
+    /// <summary>
+    /// For <see cref="EdgeKind.Data"/> edges whose producer's output and consumer's input differ, how
+    /// to build the consumer's input from the producer's output (ADR-E27 D14): one entry per input
+    /// field, each a JSON Pointer into the output or a literal. The consumer receives exactly these
+    /// fields. Omitted when the output is passed through as it is.
+    /// </summary>
+    [JsonPropertyOrder(5)]
+    [JsonPropertyName("projection")]
+    public IReadOnlyList<ProjectionField>? Projection { get; init; }
 }

@@ -20,7 +20,7 @@ public sealed class DefinitionLifecycleApproveTests
     private readonly DefinitionLifecycleService _service;
 
     public DefinitionLifecycleApproveTests() =>
-        _service = new DefinitionLifecycleService(_store.Object, _compiler.Object);
+        _service = new DefinitionLifecycleService(_store.Object, _compiler.Object, NoRegistryContracts.Embedder);
 
     private static PublishProposalDocument Proposal(ProposalState? state = null) => new()
     {
@@ -128,6 +128,47 @@ public sealed class DefinitionLifecycleApproveTests
         _store.Verify(s => s.PublishVersionAsync(
             It.Is<DefinitionVersionDocument>(d => d.Definition.DefinitionHash == "sha256:new" && d.DefinitionHash == "sha256:new"),
             It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>ADR-E27 D15: publish embeds the contracts first, and hashes and stores the definition that carries them.</summary>
+    [Fact]
+    public async Task ApproveAsync_HashesAndStoresTheDefinitionWithItsContractsEmbedded()
+    {
+        ArrangeHappyPath(currentVersion: 1);
+        var embedder = new Mock<IDefinitionContractEmbedder>();
+        IReadOnlyList<Frontier.Platform.Abstractions.ContractSnapshot> pinned = [Frontier.Platform.Workflow.Model.EngineContracts.GateDecision];
+        embedder.Setup(e => e.EmbedAsync(It.IsAny<WorkflowDefinition>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((WorkflowDefinition d, CancellationToken _) => d with { Contracts = pinned });
+        var service = new DefinitionLifecycleService(_store.Object, _compiler.Object, embedder.Object);
+
+        await service.ApproveAsync(ProposalId, "user:approver", CancellationToken.None);
+
+        _compiler.Verify(c => c.ComputeDefinitionHash(It.Is<WorkflowDefinition>(d => d.Contracts == pinned)), Times.Once);
+        _store.Verify(s => s.PublishVersionAsync(
+            It.Is<DefinitionVersionDocument>(d => d.Definition.Contracts == pinned && d.Definition.DefinitionHash == "sha256:new"),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>ADR-E27 D15: a contract that cannot be pinned stops the publish before the proposal is approved.</summary>
+    [Fact]
+    public async Task ApproveAsync_AContractThatCannotBePinned_LeavesTheProposalUnapproved()
+    {
+        ArrangeHappyPath(currentVersion: 1);
+        var embedder = new Mock<IDefinitionContractEmbedder>();
+        embedder.Setup(e => e.EmbedAsync(It.IsAny<WorkflowDefinition>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("not registered"));
+        var service = new DefinitionLifecycleService(_store.Object, _compiler.Object, embedder.Object);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.ApproveAsync(ProposalId, "user:approver", CancellationToken.None));
+
+        _store.Verify(s => s.ApproveProposalAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _store.Verify(s => s.PublishVersionAsync(It.IsAny<DefinitionVersionDocument>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public void Constructor_RefusesANullEmbedder()
+    {
+        Assert.Throws<ArgumentNullException>(() => new DefinitionLifecycleService(_store.Object, _compiler.Object, null!));
     }
 
     [Fact]

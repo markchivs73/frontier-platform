@@ -6,6 +6,8 @@
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
@@ -20,6 +22,9 @@
     <!-- The model declares canonical wire shape; the profile that writes those bytes lives in
          Serialization, so the byte-stability tests need it even though the library does not. -->
     <ProjectReference Include="..\..\src\Frontier.Platform.Serialization\Frontier.Platform.Serialization.csproj" />
+    <!-- The engine-owned contracts' schemas are checked by the same registration check and
+         validator a registry contract goes through (ADR-E27 D13), which live in Contracts. -->
+    <ProjectReference Include="..\..\src\Frontier.Platform.Contracts\Frontier.Platform.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>

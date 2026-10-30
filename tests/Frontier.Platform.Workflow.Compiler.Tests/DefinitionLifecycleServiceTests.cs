@@ -15,7 +15,7 @@ public sealed class DefinitionLifecycleServiceTests
     {
         _mockStore = new Mock<IDefinitionStore>();
         _mockCompiler = new Mock<IDefinitionCompiler>();
-        _service = new DefinitionLifecycleService(_mockStore.Object, _mockCompiler.Object);
+        _service = new DefinitionLifecycleService(_mockStore.Object, _mockCompiler.Object, NoRegistryContracts.Embedder);
     }
 
     [Fact]
@@ -341,6 +341,7 @@ public sealed class DefinitionLifecycleServiceTests
         var strictService = new DefinitionLifecycleService(
             _mockStore.Object,
             _mockCompiler.Object,
+            NoRegistryContracts.Embedder,
             new PublishGovernanceConfig { RequireDistinctApprover = true });
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(

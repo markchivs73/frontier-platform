@@ -111,10 +111,10 @@ public sealed class CanonicalOutputSchemaTests
     /// The refused set is pinned by name, not merely skipped. The sweep above now excludes whatever
     /// the generator refuses, so without this a future contract could be quietly refused — and
     /// therefore quietly unswept — instead of being schematised. Refusal has to stay a deliberate,
-    /// visible decision about two named types.
+    /// visible decision about named types. ADR-PA39 adds the definition, which carries free-form JSON.
     /// </summary>
     [Fact]
-    public void IsRefused_IsExactlyTypedPayloadAndTheContractsCarryingIt()
+    public void IsRefused_IsExactlyTypedPayloadTheContractsCarryingItAndTheDefinition()
     {
         var refused = ModelContractCandidates()
             .Where(t => t.IsClass && !t.IsAbstract && typeof(IVersionedContract).IsAssignableFrom(t) && CanonicalOutputSchema.IsRefused(t))
@@ -122,7 +122,16 @@ public sealed class CanonicalOutputSchemaTests
             .Order(StringComparer.Ordinal)
             .ToList();
 
-        Assert.Equal(["TypedPayload", "WorkItem"], refused);
+        Assert.Equal(["TypedPayload", "WorkItem", "WorkflowDefinition"], refused);
+    }
+
+    [Fact]
+    public void For_WorkflowDefinition_ThrowsNotSupportedNamingWhy()
+    {
+        var exception = Assert.Throws<NotSupportedException>(CanonicalOutputSchema.For<WorkflowDefinition>);
+
+        Assert.Contains("free-form JSON", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("ADR-PA39", exception.Message, StringComparison.Ordinal);
     }
 
     [Fact]

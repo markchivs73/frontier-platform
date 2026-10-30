@@ -50,12 +50,9 @@ public static class CanonicalOutputSchema
     {
         ArgumentNullException.ThrowIfNull(outputType);
 
-        if (IsRefused(outputType))
+        if (RefusalReason(outputType) is { } reason)
         {
-            throw new NotSupportedException(
-                $"{outputType.Name} is not an agent output contract yet: its free-form TypedPayload content is " +
-                "schematised from its schema_ref under the ADR-AG1 schema-validated variant (ADR-E2 deferral (c), " +
-                "arrives with E4/E13). Declare the concrete output contract instead.");
+            throw new NotSupportedException(reason);
         }
 
         return Cache.GetOrAdd(outputType, static type => ChatResponseFormat.ForJsonSchema(
@@ -79,8 +76,29 @@ public static class CanonicalOutputSchema
     /// which fails loudly on a boolean schema rather than quietly excusing it.
     /// </para>
     /// </summary>
-    internal static bool IsRefused(Type type) =>
-        type == typeof(TypedPayload) || Array.Exists(type.GetProperties(), p => p.PropertyType == typeof(TypedPayload));
+    internal static bool IsRefused(Type type) => RefusalReason(type) is not null;
+
+    /// <summary>
+    /// Why <paramref name="type"/> is refused, or null when it is schematised. Besides the
+    /// <see cref="TypedPayload"/> case above, a <see cref="WorkflowDefinition"/> is refused: it
+    /// carries free-form JSON (embedded contract schemas and projection literals, ADR-PA39) that has
+    /// no honest CLR-derived schema, and it is never an agent's output; the design agent edits a
+    /// definition through tool calls.
+    /// </summary>
+    internal static string? RefusalReason(Type type)
+    {
+        if (type == typeof(TypedPayload) || Array.Exists(type.GetProperties(), p => p.PropertyType == typeof(TypedPayload)))
+        {
+            return $"{type.Name} is not an agent output contract yet: its free-form TypedPayload content is " +
+                "schematised from its schema_ref under the ADR-AG1 schema-validated variant (ADR-E2 deferral (c), " +
+                "arrives with E4/E13). Declare the concrete output contract instead.";
+        }
+
+        return type == typeof(WorkflowDefinition)
+            ? "WorkflowDefinition is not an agent output contract: it carries free-form JSON (embedded contract schemas, " +
+                "projection literals) with no honest CLR-derived schema (ADR-PA39). Declare the concrete output contract instead."
+            : null;
+    }
 
     /// <summary>
     /// Rewrites converter-opaque boolean schema nodes into their canonical wire-form

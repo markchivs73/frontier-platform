@@ -2570,3 +2570,69 @@ Pinned by `ContractRegistrationCheckTests`, `ContractCompatibilityTests`, `Contr
 `SchemaReferencesTests`, `ContractValidatorTests` (against the real engine, including a real regex
 timeout and two contracts with one `$id`), `ContractHashTests` and the `contract_snapshot.json`
 golden file.
+
+## ADR-PA39 — a definition pins its contracts, and a gate's decision is a contract
+
+The consumer's ADR-E27 D13 to D15 put contracts inside the definition, give a gate a typed output
+and let a data edge project one shape onto another. This ADR records how the platform carries them
+(consumer S13.117, slice 2a; Mark, 2026-10-30). Slices 2b (the engine) and 2c (the compiler rules)
+extend it.
+
+**The definition embeds what it names.** `WorkflowDefinition.Contracts` holds a `ContractSnapshot`
+for every registry ref a node or data edge names: an agent node's input and output, an MCP node's
+input and output, and a data edge's contract type. A ref is told from a CLR contract name the way
+`data.schema-ref-match` already tells them apart, by its `/`. CLR names are never embedded, and a
+definition that names no ref leaves the field out. The set is sorted by ref with no repeats, and
+`Validate()` refuses one that is not, so the hash cannot depend on the order publish found them in.
+
+**Publish and test runs both embed, through `IDefinitionContractEmbedder`.** An engine-owned ref
+comes from `EngineContracts`, so a run never depends on the registry holding the engine's own
+contracts. Every other ref comes from the consumer-owned `IContractSnapshotCatalog`. A ref that is
+not registered, is retired, or comes back filed under a different ref stops the publish, and the
+embedding runs before the proposal is approved, so a failure leaves it in review. A test run embeds
+too, so it validates against what a published run would.
+
+**An MCP node names its contracts on the node** (Mark, 2026-10-30). `McpToolNode` gains optional
+`input_contract_type` and `output_contract_type`, the names an agent node uses, copied from the
+tool's registry record when the node is designed. The validator then reads every node the same way,
+and the binding shows on the canvas. Rejected: indexing the embedded set by tool ref, which hides
+the binding from the author and gives the validator a second lookup path for one node type.
+
+**The definition hash moves to JCS** (ADR-E27 D15). It is SHA-256 over the RFC 8785 form of the
+canonical-profile bytes, with `definition_hash` blank. The profile still writes the typed shell, as
+the hashing rule requires; JCS fixes the order of what the profile cannot, the embedded schemas.
+Nothing recomputes a stored hash (publish is the only caller), so versions published before this
+keep the hash they were recorded with. The test that pinned the old formula now pins the new one.
+
+**A projection is data.** `WorkflowEdge.Projection` is a list of `ProjectionField`: a top-level
+`target` field of the consumer's input and exactly one source, an RFC 6901 `from` pointer into the
+producer's output (`""` is the whole output) or a non-null `literal`. The consumer receives exactly
+the projected fields. Only a data edge may carry one, and each target appears once. A list rather
+than a map keeps the declared order on the wire. Whether the projected shape fits the consumer is
+the compiler's `data.projection-compatible` (slice 2c).
+
+**`frontier/gate-decision/1.0` is a CLR engine type, `GateDecision`**: `gate_id`, `decision`
+(`approve`, `reject`, `escalate`), `approver_id`, `decided_at_utc`, and optional `notes` and
+`rollback_to_node_id`. The names follow `HitlDecision`, which it is built from. Its registry schema
+is written out in `EngineContracts` with a description on every property and an example, and tests
+hold it to the CLR type: the schema passes the registration check as an authored contract, every
+decision the engine writes validates against it, and its pinned hash equals `ContractHash`'s.
+
+**A definition is refused as an agent output contract.** `CanonicalOutputSchema`, which turns a
+CLR output contract into a provider response format, now refuses `WorkflowDefinition` as it refuses
+`TypedPayload`: embedded schemas and projection literals are free-form JSON with no honest CLR
+schema, and no agent outputs a definition (the design agent edits one through tool calls). The
+refused set stays pinned by name.
+
+**Everything new is optional**, so every older definition serialises to the bytes it had and its
+golden files are unchanged; no schema version moves. The one break is to two constructors:
+`DefinitionLifecycleService` and `TestRunService` take the embedder, and a consumer must register an
+`IContractSnapshotCatalog`.
+
+*Found on the way:* the design agent's schema describes a list of objects with a coarse token
+(`DecisionNode.Branches` already does), so projections reach the designer with no field detail.
+Designer grounding is the consumer's slice 5.
+
+Pinned by `DefinitionContractsTests`, `DefinitionContractChecksTests`, `EngineContractsTests`,
+`GateDecisionTests`, the approve-path and test-run tests, `DefinitionValidatorTests`, and the
+`workflow_definition_contracts.json` and `gate_decision.json` golden files.
