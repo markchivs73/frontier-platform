@@ -2679,3 +2679,13 @@ ack is not the tool's reply, so it is never held to the output contract, and its
 output contract hash. The MCP step's `StepCompletion` now names the node's output contract ref
 instead of an empty string. A node with no refs runs unvalidated, as it did.
 
+**Slice 2b, a gate's output and an edge's projection at run time** (ADR-E27 D13, D14). When a gate
+is decided, the orchestrator writes the decision, as `frontier/gate-decision/1.0`, to the gate's node
+output, so a data edge from a gate no longer throws. A rejection that loops back overwrites it with
+the next decision. The bytes come from the recorded decision event, so the write is replay-safe, and a
+run started before this replays unchanged because no edge could consume a gate's output then. An
+edge's projection is applied when the next node's input is resolved, for agent and MCP nodes alike,
+in the orchestrator body (it is pure). It builds an object with exactly the projected fields in
+declared order. A pointer that finds nothing leaves its target out rather than failing: the
+consumer's input contract then decides whether the field was optional.
+
