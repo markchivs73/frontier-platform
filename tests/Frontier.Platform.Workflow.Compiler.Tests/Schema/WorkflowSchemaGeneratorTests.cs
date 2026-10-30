@@ -77,6 +77,7 @@ public sealed class WorkflowSchemaGeneratorTests
         AssertField(agent, "artifact_key", "string", required: false);
         AssertField(agent, "retry", "object:RetryPolicySpec", required: false);
         AssertField(agent, "role", "string", required: true);
+        AssertField(agent, "instructions_ref", "string", required: false); // ADR-PA40: an agent-backed role's node omits it
         AssertField(agent, "context_request", "object:ContextRequest", required: true);
     }
 

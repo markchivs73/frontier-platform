@@ -57,6 +57,9 @@ exactly that.
   carries optional input and output refs like an agent node. At publish, the definition embeds
   every registry contract it names in `Contracts`, sorted by ref, so a run never fetches one.
   All three additions are optional, so every older definition keeps its bytes.
+- **`AgentTaskNode.InstructionsRef` is optional (ADR-PA40, v0.45.0).** A node on an agent-backed
+  role may omit it, because the agent brings its own instructions. Null is left off the wire, so a
+  definition stored with a ref keeps its bytes and its hash. Reading it is now a nullable read.
 - `GateDecision` — what a decided `HumanGateNode` emits, the engine-owned contract
   `frontier/gate-decision/1.0`. `EngineContracts` holds its registry snapshot, whose schema is
   checked by the same registration check and validator as any registry contract.

@@ -396,6 +396,20 @@ internal static class ContractSamples
         ],
     };
 
+    /// <summary>
+    /// ADR-PA40: an agent node on an agent-backed role names no <c>instructions_ref</c>, and the field
+    /// is left off the wire. Every older definition golden, each of which names one, is unchanged.
+    /// </summary>
+    public static WorkflowDefinition WorkflowDefinitionAgentBacked() => WorkflowDefinitionWithContracts() with
+    {
+        WorkflowId = "wf-agent-backed",
+        Nodes =
+        [
+            WorkflowDefinitionWithContracts().Nodes[0],
+            (AgentTaskNode)WorkflowDefinitionWithContracts().Nodes[1] with { Role = "ticket-triage", InstructionsRef = null },
+        ],
+    };
+
     /// <summary>ADR-E27 D15: a step validated against registry contracts names their hashes.</summary>
     public static ExecutionSnapshot ExecutionSnapshotWithContractHashes()
     {

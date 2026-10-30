@@ -37,7 +37,7 @@ is a statement about a particular deployment.
 
 | Port | The question it answers |
 |---|---|
-| `IAgentRoleCatalog` / `IApproverRoleCatalog` | Which agent and approver roles exist here |
+| `IAgentRoleCatalog` / `IApproverRoleCatalog` | Which agent and approver roles exist here. Since v0.45.0 an agent role also says its `Backing` (ADR-PA40): a node on an agent-backed role may omit `instructions_ref`, and `agent.instructions-resolve` reads this catalogue to know which |
 | `IInstructionCatalog` | Which agent instructions exist, and does this ref resolve |
 | `IContextComponentCatalog` | Which baseline components and dynamic fields exist |
 | `IRetryProfileCatalog` | Which named retry profiles are configured |

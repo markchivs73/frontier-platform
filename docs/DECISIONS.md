@@ -2850,6 +2850,17 @@ Details settled while building it (consumer S13.117; to confirm):
   when an agent-backed role's current hashes are not the ones its mapping was proposed against.
   `EvaluationEvidence.IsWellFormed` exposes the grammar the same way, so the consumer restates
   neither.
+- **The compiler reuses `RoleBacking`.** `AgentRoleDescriptor.Backing` is the ModelRoleConfig smart
+  enum (the Compiler already references that library), serialized as `backing`. It defaults to
+  `model`, so a catalogue that does not say gets the stricter reading.
+- **`agent.instructions-resolve` reads the agent-role catalogue.** It takes `IAgentRoleCatalog`
+  alongside `IInstructionCatalog`, a constructor change. A role the catalogue does not know is read
+  as model-backed, so its node must name a ref (`model-role.roles-exist` reports the unknown role).
+- **A ref a node does name is still resolved, whatever the backing,** and a blank ref is refused on
+  any role: absent is null, never `""`.
+- **Until the orchestration change lands, a node with no ref reaches the activity with a blank
+  one.** `AgentTaskActivityInput.InstructionsRef` stays a required string for that one PR; both
+  ship in v0.45.0.
 
 **A contract change leaves the live mapping serving** (Mark, 2026-10-30). When a definition change
 moves an agent-backed role's contract hash, the mapping evaluated against the old hash keeps serving,

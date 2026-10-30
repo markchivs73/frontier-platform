@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
+using Frontier.Platform.ModelRoleConfig;
 
 namespace Frontier.Platform.Workflow.Compiler;
 
@@ -32,6 +33,15 @@ public sealed record AgentRoleDescriptor
     /// <summary>The registry contract ref a node bound to this role must produce, when the role is contract-bearing (ADR-E27 D12).</summary>
     [JsonPropertyName("output_contract_ref")]
     public string? OutputContractRef { get; init; }
+
+    /// <summary>
+    /// What serves the role (ADR-PA40): a model chain or an agent chain. A node on an agent-backed role
+    /// may omit <c>instructions_ref</c>, because the agent brings its own; a node on a model-backed role
+    /// must name one (<c>agent.instructions-resolve</c>). Defaults to <see cref="RoleBacking.Model"/>,
+    /// the stricter reading, for a catalogue that does not say.
+    /// </summary>
+    [JsonPropertyName("backing")]
+    public RoleBacking Backing { get; init; } = RoleBacking.Model;
 }
 
 /// <summary>

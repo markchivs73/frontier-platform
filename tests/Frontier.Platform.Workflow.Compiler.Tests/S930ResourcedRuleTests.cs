@@ -1,4 +1,5 @@
 #pragma warning disable CA1034, CA1515
+using Frontier.Platform.ModelRoleConfig;
 using Frontier.Platform.Workflow.Model;
 using Frontier.Platform.Workflow.Compiler.Rules;
 using Xunit;
@@ -194,34 +195,103 @@ public sealed class S930ResourcedRuleTests
 
     public sealed class AgentInstructionsResolveRuleTests
     {
+        private static AgentInstructionsResolveRule Rule(params string[] refs) =>
+            new(new FakeInstructions(refs), new FakeRoles(("deep-reasoning", RoleBacking.Model), ("ticket-triage", RoleBacking.Agent)));
+
+        private static async Task<IReadOnlyList<ValidationFinding>> EvaluateAsync(AgentInstructionsResolveRule rule, AgentTaskNode node) =>
+            await rule.EvaluateAsync(new DefinitionValidationContext(S930Fixtures.Build([node])), CancellationToken.None);
+
         [Fact]
         public async Task RefResolves_ReturnsEmpty()
         {
-            var rule = new AgentInstructionsResolveRule(new FakeInstructions("instructions/gen-scope.md"));
-
-            Assert.Empty(await rule.EvaluateAsync(
-                new DefinitionValidationContext(S930Fixtures.Build([S930Fixtures.Agent("a")])), CancellationToken.None));
+            Assert.Empty(await EvaluateAsync(Rule("instructions/gen-scope.md"), S930Fixtures.Agent("a")));
         }
 
         [Fact]
         public async Task RefUnresolved_ReturnsFinding()
         {
-            var rule = new AgentInstructionsResolveRule(new FakeInstructions());
-            var definition = S930Fixtures.Build([S930Fixtures.Agent("a", instructionsRef: "instructions/ghost.md")]);
+            var finding = Assert.Single(await EvaluateAsync(Rule(), S930Fixtures.Agent("a", instructionsRef: "instructions/ghost.md")));
 
-            var finding = Assert.Single(await rule.EvaluateAsync(new DefinitionValidationContext(definition), CancellationToken.None));
             Assert.Equal("agent.instructions-resolve", finding.RuleId);
+            Assert.Equal(ValidationSeverity.Error, finding.Severity);
             Assert.Equal("instructions_ref", finding.FieldPath);
+            Assert.Contains("'instructions/ghost.md' does not resolve", finding.Message, StringComparison.Ordinal);
+        }
+
+        /// <summary>ADR-PA40: the agent brings its own instructions, so its node may omit the ref.</summary>
+        [Fact]
+        public async Task AgentBackedRole_WithNoRef_ReturnsEmpty()
+        {
+            var node = S930Fixtures.Agent("a", role: "ticket-triage") with { InstructionsRef = null };
+
+            Assert.Empty(await EvaluateAsync(Rule(), node));
         }
 
         [Fact]
-        public void NullCatalog_Throws() =>
-            Assert.Throws<ArgumentNullException>(() => new AgentInstructionsResolveRule(null!));
+        public async Task AgentBackedRole_WithAnUnresolvedRef_StillReturnsFinding()
+        {
+            var node = S930Fixtures.Agent("a", role: "ticket-triage", instructionsRef: "instructions/ghost.md");
+
+            Assert.Single(await EvaluateAsync(Rule(), node));
+        }
+
+        [Fact]
+        public async Task ModelBackedRole_WithNoRef_IsAnError()
+        {
+            var node = S930Fixtures.Agent("a") with { InstructionsRef = null };
+
+            var finding = Assert.Single(await EvaluateAsync(Rule("instructions/gen-scope.md"), node));
+            Assert.Equal(ValidationSeverity.Error, finding.Severity);
+            Assert.Equal("a", finding.NodeId);
+            Assert.Equal("instructions_ref", finding.FieldPath);
+            Assert.Contains("role 'deep-reasoning' is not agent-backed", finding.Message, StringComparison.Ordinal);
+        }
+
+        /// <summary>An unknown role is <c>model-role.roles-exist</c>'s; here it gets the stricter, model-backed reading.</summary>
+        [Fact]
+        public async Task UnknownRole_WithNoRef_IsAnError()
+        {
+            var node = S930Fixtures.Agent("a", role: "ghost-role") with { InstructionsRef = null };
+
+            Assert.Single(await EvaluateAsync(Rule(), node));
+        }
+
+        [Theory]
+        [InlineData("deep-reasoning", "")]
+        [InlineData("ticket-triage", "")]
+        [InlineData("ticket-triage", "   ")]
+        public async Task BlankRef_IsAnErrorOnAnyRole(string role, string blank)
+        {
+            var finding = Assert.Single(await EvaluateAsync(Rule(blank), S930Fixtures.Agent("a", role: role, instructionsRef: blank)));
+
+            Assert.Contains("instructions_ref is blank", finding.Message, StringComparison.Ordinal);
+        }
+
+        /// <summary>ADR-PA40 at publish: the validator fails a model-backed node with no ref and passes an agent-backed one.</summary>
+        [Theory]
+        [InlineData("deep-reasoning", false)]
+        [InlineData("ticket-triage", true)]
+        public async Task Publish_RefusesAMissingRefOnlyOnAModelBackedRole(string role, bool publishable)
+        {
+            var validator = new DefinitionValidator([Rule()]);
+            var definition = S930Fixtures.Build([S930Fixtures.Agent("a", role: role) with { InstructionsRef = null }]);
+
+            var report = await validator.ValidateAsync(definition, "rev-1", storedSchemaVersion: null, CancellationToken.None);
+
+            Assert.Equal(publishable, report.IsPublishable);
+        }
+
+        [Fact]
+        public void NullInstructionCatalog_Throws() =>
+            Assert.Throws<ArgumentNullException>(() => new AgentInstructionsResolveRule(null!, new FakeRoles()));
+
+        [Fact]
+        public void NullRoleCatalog_Throws() =>
+            Assert.Throws<ArgumentNullException>(() => new AgentInstructionsResolveRule(new FakeInstructions(), null!));
 
         [Fact]
         public async Task NullContext_Throws() =>
-            await Assert.ThrowsAsync<ArgumentNullException>(() =>
-                new AgentInstructionsResolveRule(new FakeInstructions()).EvaluateAsync(null!, CancellationToken.None));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => Rule().EvaluateAsync(null!, CancellationToken.None));
     }
 
     public sealed class HitlApproverRolesExistRuleTests
@@ -465,6 +535,13 @@ public sealed class S930ResourcedRuleTests
             Task.FromResult(refs.Contains(instructionsRef, StringComparer.Ordinal));
         public Task<IReadOnlyList<string>> ListRefsAsync(CancellationToken ct) =>
             Task.FromResult<IReadOnlyList<string>>(refs);
+    }
+
+    private sealed class FakeRoles(params (string RoleId, RoleBacking Backing)[] roles) : IAgentRoleCatalog
+    {
+        public Task<IReadOnlyList<AgentRoleDescriptor>> GetAgentRolesAsync(CancellationToken ct) =>
+            Task.FromResult<IReadOnlyList<AgentRoleDescriptor>>(
+                [.. roles.Select(r => new AgentRoleDescriptor { RoleId = r.RoleId, Description = r.RoleId, Backing = r.Backing })]);
     }
 
     private sealed class FakeApproverRoles(params string[] roleIds) : IApproverRoleCatalog
