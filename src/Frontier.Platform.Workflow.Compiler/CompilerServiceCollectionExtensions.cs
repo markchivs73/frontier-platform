@@ -35,6 +35,7 @@ public static class CompilerServiceCollectionExtensions
         services.AddSingleton<IDefinitionValidationRule, GraphDecisionEdgesRule>();
         services.AddSingleton<IDefinitionValidationRule, DataSingleDataPredecessorRule>();
         services.AddSingleton<IDefinitionValidationRule, DataSchemaRefMatchRule>();
+        services.AddSingleton<IDefinitionValidationRule, DataNoEdgeFromGateRule>();
         services.AddSingleton<IDefinitionValidationRule, AgentOutputNotEnvelopeRule>();
         services.TryAddSingleton(new PublishGovernanceConfig()); // ADR-DC1 default: self-approval allowed; Host overrides from deployment config (S13.7g)
         services.AddSingleton<IDefinitionValidationRule, VersioningNoClashRule>();
@@ -63,6 +64,9 @@ public static class CompilerServiceCollectionExtensions
         // capture a Scoped dependency; ValidateScopes catches this at container-build time).
         services.AddScoped<IDefinitionValidationRule, McpToolResolvesRule>();
         services.AddScoped<IDefinitionValidationRule, ModelRoleRolesExistRule>();
+        services.AddScoped<IDefinitionValidationRule, ModelRoleContractsMatchRule>();
+        services.AddScoped<IDefinitionValidationRule, McpServerNotDriftedRule>();
+        services.AddScoped<IDefinitionValidationRule, DataSchemaRefResolvesRule>();
 
         // S9.30: remaining resourced-tier catalogue rows (doc 13 §4.2). Compiler-owned catalogs
         // (reflection contract registry, retention default) register here; consumer-owned
