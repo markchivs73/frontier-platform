@@ -2636,3 +2636,15 @@ Designer grounding is the consumer's slice 5.
 Pinned by `DefinitionContractsTests`, `DefinitionContractChecksTests`, `EngineContractsTests`,
 `GateDecisionTests`, the approve-path and test-run tests, `DefinitionValidatorTests`, and the
 `workflow_definition_contracts.json` and `gate_decision.json` golden files.
+
+**Slice 2b, the agent invoker is transport only** (ADR-E27 D7, D8; Mark, 2026-10-30).
+`IAgentInvoker` has one non-generic `InvokeAsync`, which returns the reply text as it arrived in
+`AgentInvocationOutcome.Output`. The engine builds the structured-output format and passes it as
+`AgentInvocationRequest.ResponseFormat`: `CanonicalOutputSchema` for a CLR output contract, asked of
+a model target only, since A2A has no response format. The engine then binds and validates the reply,
+so a reply that is not JSON, or fails its contract, is a permanent `ContractViolationException`
+raised in one place. The reflection over `InvokeAsync<TOutput>` is gone. Rejected: a second, raw-JSON
+method for registry contracts beside the generic one, which would leave two transport paths, and
+validation inside the consumer's invokers, until the last CLR workload contract is re-expressed.
+This breaks every `IAgentInvoker` implementation; the consumer's MAF and A2A invokers drop their
+deserialization and validation when they adopt it.

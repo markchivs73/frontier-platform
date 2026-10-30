@@ -6,7 +6,7 @@ namespace Frontier.Platform.Workflow.Orchestration;
 /// Maps the wire type names carried by <see cref="AgentTaskNode.InputContractType"/> and
 /// <see cref="AgentTaskNode.OutputContractType"/> to their CLR <see cref="IVersionedContract"/>
 /// types (doc 00 §4.3): <see cref="AgentInvocationDispatcher"/> uses <see cref="Resolve"/> to
-/// pick <see cref="IAgentInvoker.InvokeAsync{TOutput}"/>'s generic argument, and
+/// build the output format and <see cref="DeserializeAndValidate"/> to bind the reply, and
 /// <see cref="AgentTaskActivityPipeline"/> uses <see cref="DeserializeAndValidate"/> for the
 /// "validate input contract" step.
 /// </summary>

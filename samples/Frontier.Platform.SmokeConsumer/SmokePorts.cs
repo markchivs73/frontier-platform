@@ -11,8 +11,8 @@ namespace Frontier.Platform.SmokeConsumer;
 
 internal sealed class SmokeAgentInvoker : IAgentInvoker
 {
-    public Task<AgentInvocationOutcome<TOutput>> InvokeAsync<TOutput>(AgentInvocationRequest request, CancellationToken ct)
-        where TOutput : IVersionedContract => throw new NotSupportedException("Smoke test: never invoked.");
+    public Task<AgentInvocationOutcome> InvokeAsync(AgentInvocationRequest request, CancellationToken ct) =>
+        throw new NotSupportedException("Smoke test: never invoked.");
 }
 
 internal sealed class SmokeInstructionsResolver : IInstructionsResolver

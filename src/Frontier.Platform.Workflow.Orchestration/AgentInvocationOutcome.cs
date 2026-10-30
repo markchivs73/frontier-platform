@@ -5,58 +5,42 @@ using Microsoft.Extensions.AI;
 namespace Frontier.Platform.Workflow.Orchestration;
 
 /// <summary>
-/// <see cref="IAgentInvoker.InvokeAsync{TOutput}"/>'s per-invocation result: the typed
-/// contract MAF bound directly (ADR-AG1) plus the provider's reported
-/// <see cref="UsageDetails"/> (S5.3, doc 05 §3), needed by
-/// <see cref="AgentTaskActivityPipeline"/> to build an <see cref="AuditTelemetryRecord"/>.
+/// <see cref="IAgentInvoker.InvokeAsync"/>'s per-invocation result: the agent's reply exactly as it
+/// arrived, plus the provider's reported <see cref="UsageDetails"/> (S5.3, doc 05 §3) and the
+/// attribution an agent target reports (ADR-PA27).
 /// </summary>
-public sealed record AgentInvocationOutcome<TOutput>
-    where TOutput : IVersionedContract
+public sealed record AgentInvocationOutcome
 {
-    /// <summary>
-    /// The agent's response bound directly to <typeparamref name="TOutput"/>. Public (despite
-    /// the enclosing type being <see langword="internal"/>) because
-    /// <see cref="AgentInvocationDispatcher"/> reads it via reflection across the
-    /// <see cref="IAgentInvoker.InvokeAsync{TOutput}"/> generic boundary (ADR-AG1) —
-    /// <c>Type.GetProperty</c>'s default <see cref="System.Reflection.BindingFlags"/> only
-    /// finds public members.
-    /// </summary>
-    public required TOutput Result { get; init; }
+    /// <summary>The agent's final reply text, unparsed. The engine binds it to the node's output contract.</summary>
+    public required string Output { get; init; }
 
-    /// <summary>Token usage reported by the provider for this turn, or <see langword="null"/> if unavailable. Public for the same reflection reason as <see cref="Result"/>.</summary>
+    /// <summary>Token usage reported by the provider for this turn, or <see langword="null"/> if unavailable.</summary>
     public required UsageDetails? Usage { get; init; }
 
     /// <summary>
-    /// MCP tools this invocation called, extracted from the MAF response's message history
-    /// (ADR-CD6, S9.25). <c>[]</c> when the node declared no tools or the model never
-    /// called one. Public for the same reflection reason as <see cref="Result"/>.
+    /// MCP tools this invocation called, extracted from the response's message history (ADR-CD6,
+    /// S9.25). <c>[]</c> when the node declared no tools or the model never called one.
     /// </summary>
     public required IReadOnlyList<ToolCall> ToolCalls { get; init; }
 
     /// <summary>
     /// The hash of the <b>pinned</b> card snapshot an agent target was called against (ADR-PA27 attribution);
-    /// <see langword="null"/> for a model. Only the invoker knows it — the card lives in the consumer's
-    /// registry. Public for the same reflection reason as <see cref="Result"/>.
+    /// <see langword="null"/> for a model. Only the invoker knows it, because the card lives in the consumer's registry.
     /// </summary>
     public string? CardHash { get; init; }
 
-    /// <summary>
-    /// The remote agent's own id for this invocation — the A2A task id (ADR-PA27 addendum), so the
-    /// audit can be matched to the agent's side; <see langword="null"/> for a model. Public for the
-    /// same reflection reason as <see cref="Result"/>.
-    /// </summary>
+    /// <summary>The remote agent's own id for this invocation, the A2A task id (ADR-PA27 addendum); <see langword="null"/> for a model.</summary>
     public string? RemoteTaskId { get; init; }
 }
 
 /// <summary>
-/// <see cref="AgentInvocationDispatcher.InvokeAsync"/>'s untyped result: an
-/// <see cref="AgentInvocationOutcome{TOutput}"/>'s <c>Result</c>/<c>Usage</c>/<c>ToolCalls</c>
-/// bridged across the reflection boundary (ADR-AG1), plus the wall-clock
-/// <see cref="LatencyMs"/> of the MAF call (S5.3).
+/// <see cref="AgentInvocationDispatcher.InvokeAsync"/>'s result: the reply bound to the node's output
+/// contract and validated, the invoker's usage and attribution, and the wall-clock
+/// <see cref="LatencyMs"/> of the call (S5.3).
 /// </summary>
 public sealed record AgentInvocationResult
 {
-    /// <summary>The validated output contract MAF returned.</summary>
+    /// <summary>The reply, bound to the node's output contract and validated.</summary>
     public required IVersionedContract Result { get; init; }
 
     /// <summary>Token usage reported by the provider for this turn, or <see langword="null"/> if unavailable.</summary>
