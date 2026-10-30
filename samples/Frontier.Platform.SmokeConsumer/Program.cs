@@ -154,6 +154,8 @@ engineServices.AddFrontierAudit(configuration);
 engineServices.AddFrontierHitl(configuration);
 engineServices.AddFrontierModelRoleConfig(configuration);
 engineServices.AddFrontierWorkflowOrchestration(configuration);
+// ADR-E27 D8: the engine validates every agent and MCP boundary with the one contract validator.
+engineServices.AddFrontierContracts(configuration);
 engineServices.AddSingleton<IAgentInvoker, SmokeAgentInvoker>();
 engineServices.AddSingleton<IInstructionsResolver, SmokeInstructionsResolver>();
 engineServices.AddSingleton<IMcpToolCatalog, SmokeToolCatalog>();

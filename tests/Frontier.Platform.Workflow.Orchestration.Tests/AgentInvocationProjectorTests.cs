@@ -28,6 +28,18 @@ public sealed class AgentInvocationProjectorTests
         Assert.Equal(record.LatencyMs, invocation.LatencyMs);
         Assert.Equal(record.ToolCalls, invocation.ToolCalls);
         Assert.Equal(record.InvokedAtUtc, invocation.InvokedAtUtc);
+        Assert.Null(invocation.InputContractHash);
+    }
+
+    [Fact]
+    public void ToAgentInvocation_CopiesTheContractHashes()
+    {
+        var record = TelemetrySamples.Record() with { InputContractHash = "sha256:in", OutputContractHash = "sha256:out" };
+
+        var invocation = AgentInvocationProjector.ToAgentInvocation(record);
+
+        Assert.Equal("sha256:in", invocation.InputContractHash);
+        Assert.Equal("sha256:out", invocation.OutputContractHash);
     }
 
     [Fact]

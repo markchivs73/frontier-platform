@@ -84,4 +84,18 @@ public sealed record StepCompletion
     [JsonPropertyOrder(10)]
     [JsonPropertyName("selected_branch_node_id")]
     public string? SelectedBranchNodeId { get; init; }
+
+    /// <summary>
+    /// The hash of the registry contract that validated this step's input (ADR-E27 D15), from the
+    /// definition's pinned snapshot; <see langword="null"/> when the input contract is a CLR type, and on
+    /// records written before contracts were data.
+    /// </summary>
+    [JsonPropertyOrder(11)]
+    [JsonPropertyName("input_contract_hash")]
+    public string? InputContractHash { get; init; }
+
+    /// <summary>The hash of the registry contract that validated this step's output (ADR-E27 D15); <see langword="null"/> when the output contract is a CLR type.</summary>
+    [JsonPropertyOrder(12)]
+    [JsonPropertyName("output_contract_hash")]
+    public string? OutputContractHash { get; init; }
 }

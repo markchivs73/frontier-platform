@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using Frontier.Platform.Abstractions;
 using Frontier.Platform.Audit;
+using Frontier.Platform.Contracts;
+using Frontier.Platform.Serialization;
 using Microsoft.Extensions.AI;
 
 namespace Frontier.Platform.Workflow.Orchestration;
@@ -16,29 +18,38 @@ internal sealed class AgentInvocationDispatcher
 {
     private readonly IAgentInvoker invoker;
     private readonly IContractTypeRegistry registry;
+    private readonly IContractValidator validator;
 
-    /// <summary>Constructs a dispatcher over <paramref name="invoker"/>, binding replies via <paramref name="registry"/>.</summary>
-    public AgentInvocationDispatcher(IAgentInvoker invoker, IContractTypeRegistry registry)
+    /// <summary>Constructs a dispatcher over <paramref name="invoker"/>, binding CLR replies via <paramref name="registry"/> and registry replies via <paramref name="validator"/>.</summary>
+    public AgentInvocationDispatcher(IAgentInvoker invoker, IContractTypeRegistry registry, IContractValidator validator)
     {
         ArgumentNullException.ThrowIfNull(invoker);
         ArgumentNullException.ThrowIfNull(registry);
+        ArgumentNullException.ThrowIfNull(validator);
 
         this.invoker = invoker;
         this.registry = registry;
+        this.validator = validator;
     }
 
-    /// <summary>Invokes the agent with the output format for <paramref name="outputContractType"/>, then binds and validates its reply.</summary>
-    internal async Task<AgentInvocationResult> InvokeAsync(string outputContractType, AgentInvocationRequest request, CancellationToken ct)
+    /// <summary>
+    /// Invokes the agent with the output format for its contract, then binds and validates the reply:
+    /// against <paramref name="outputContract"/> when the node names a registry contract, otherwise as
+    /// <paramref name="outputContractType"/>'s CLR type.
+    /// </summary>
+    internal async Task<AgentInvocationResult> InvokeAsync(string outputContractType, ContractSnapshot? outputContract, AgentInvocationRequest request, CancellationToken ct)
     {
-        var formatted = request with { ResponseFormat = ResponseFormatFor(outputContractType, request.Target) };
+        var formatted = request with { ResponseFormat = ResponseFormatFor(outputContractType, outputContract, request.Target) };
 
         var stopwatch = Stopwatch.StartNew();
         var outcome = await invoker.InvokeAsync(formatted, ct).ConfigureAwait(false);
         stopwatch.Stop();
 
+        var (payload, hash) = outputContract is null ? BindClr(outputContractType, outcome.Output) : BindRegistry(outputContract, outcome.Output);
         return new AgentInvocationResult
         {
-            Result = registry.DeserializeAndValidate(outputContractType, outcome.Output),
+            Payload = payload,
+            Hash = hash,
             Usage = outcome.Usage,
             ToolCalls = outcome.ToolCalls,
             LatencyMs = stopwatch.ElapsedMilliseconds,
@@ -49,8 +60,18 @@ internal sealed class AgentInvocationDispatcher
 
     /// <summary>
     /// The format a model target is asked to follow; <see langword="null"/> for an agent target, whose
-    /// protocol has none (ADR-E27 D7).
+    /// protocol has none, and for a registry schema that cannot be lowered (ADR-E27 D7).
     /// </summary>
-    internal ChatResponseFormat? ResponseFormatFor(string outputContractType, Frontier.Platform.ModelRoleConfig.ChainEntry target) =>
-        target is Frontier.Platform.ModelRoleConfig.ModelEntry ? CanonicalOutputSchema.For(registry.Resolve(outputContractType)) : null;
+    internal ChatResponseFormat? ResponseFormatFor(string outputContractType, ContractSnapshot? outputContract, Frontier.Platform.ModelRoleConfig.ChainEntry target) =>
+        target is not Frontier.Platform.ModelRoleConfig.ModelEntry ? null
+        : outputContract is not null ? RegistryOutputSchema.For(outputContract)
+        : CanonicalOutputSchema.For(registry.Resolve(outputContractType));
+
+    /// <summary>A CLR reply: deserialized and validated, stored as its canonical-profile bytes, hashed as JCS.</summary>
+    internal (string Payload, string Hash) BindClr(string outputContractType, string output) =>
+        OutputPayloadBuilder.Build(registry.DeserializeAndValidate(outputContractType, output), registry.Resolve(outputContractType));
+
+    /// <summary>A registry reply: validated against the pinned contract and stored as received; only its hash is canonicalised (ADR-E27 D15).</summary>
+    internal (string Payload, string Hash) BindRegistry(ContractSnapshot outputContract, string output) =>
+        (output, JsonCanonicalizer.Hash(RegistryContractCheck.Ensure(validator, outputContract, output)));
 }

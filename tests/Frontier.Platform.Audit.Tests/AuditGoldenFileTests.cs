@@ -24,4 +24,9 @@ public sealed class AuditGoldenFileTests
     [Fact]
     public void SignedAuditRecordWithOptionalFields_IsByteStableAndRoundTrips() =>
         ContractRoundTripAssertions.AssertStableAndRoundTrips(AuditContractSamples.SignedAuditRecordWithOptionalFields(), "signed_audit_record_optional_fields.json");
+
+    /// <summary>ADR-E27 D15: the per-invocation contract hashes. New golden; every older audit golden is unchanged.</summary>
+    [Fact]
+    public void AuditRecordWithContractHashes_IsByteStableAndRoundTrips() =>
+        ContractRoundTripAssertions.AssertStableAndRoundTrips(AuditContractSamples.AuditRecordWithContractHashes(), "audit_record_contract_hashes.json");
 }

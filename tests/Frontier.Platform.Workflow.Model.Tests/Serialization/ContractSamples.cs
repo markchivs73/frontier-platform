@@ -396,6 +396,23 @@ internal static class ContractSamples
         ],
     };
 
+    /// <summary>ADR-E27 D15: a step validated against registry contracts names their hashes.</summary>
+    public static ExecutionSnapshot ExecutionSnapshotWithContractHashes()
+    {
+        var snapshot = ExecutionSnapshot();
+        return snapshot with
+        {
+            CompletedSteps =
+            [
+                snapshot.CompletedSteps[0] with
+                {
+                    InputContractHash = "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+                    OutputContractHash = "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+                },
+            ],
+        };
+    }
+
     /// <summary>ADR-E27 D13: what a decided gate emits.</summary>
     public static GateDecision GateDecision() => new()
     {

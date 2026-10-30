@@ -104,4 +104,19 @@ public sealed record AgentTaskActivityInput
     [JsonPropertyOrder(14)]
     [JsonPropertyName("pinned_mapping")]
     public ModelRolePin? PinnedMapping { get; init; }
+
+    /// <summary>
+    /// The definition's pinned snapshot of <see cref="InputContractType"/> when it names a registry
+    /// contract (ADR-E27 D15): the input is validated against it, never against the registry.
+    /// <b>Additive and optional</b> per the ADR-E15 floor: <see langword="null"/> for a CLR contract,
+    /// and on every input recorded before contracts were data, which validate by CLR type as before.
+    /// </summary>
+    [JsonPropertyOrder(15)]
+    [JsonPropertyName("input_contract")]
+    public ContractSnapshot? InputContract { get; init; }
+
+    /// <summary>The definition's pinned snapshot of <see cref="OutputContractType"/> when it names a registry contract (ADR-E27 D15); optional, as <see cref="InputContract"/>.</summary>
+    [JsonPropertyOrder(16)]
+    [JsonPropertyName("output_contract")]
+    public ContractSnapshot? OutputContract { get; init; }
 }

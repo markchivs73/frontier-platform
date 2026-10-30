@@ -12,6 +12,8 @@
 *REMOVED*Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome<TOutput>.ToolCalls.init -> void
 *REMOVED*Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome<TOutput>.Usage.get -> Microsoft.Extensions.AI.UsageDetails?
 *REMOVED*Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome<TOutput>.Usage.init -> void
+*REMOVED*Frontier.Platform.Workflow.Orchestration.AgentInvocationResult.Result.get -> Frontier.Platform.Abstractions.IVersionedContract!
+*REMOVED*Frontier.Platform.Workflow.Orchestration.AgentInvocationResult.Result.init -> void
 *REMOVED*Frontier.Platform.Workflow.Orchestration.IAgentInvoker.InvokeAsync<TOutput>(Frontier.Platform.Workflow.Orchestration.AgentInvocationRequest! request, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome<TOutput>!>!
 *REMOVED*override Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome<TOutput>.Equals(object? obj) -> bool
 *REMOVED*override Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome<TOutput>.GetHashCode() -> int
@@ -34,6 +36,18 @@ Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome.Usage.get -> Mic
 Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome.Usage.init -> void
 Frontier.Platform.Workflow.Orchestration.AgentInvocationRequest.ResponseFormat.get -> Microsoft.Extensions.AI.ChatResponseFormat?
 Frontier.Platform.Workflow.Orchestration.AgentInvocationRequest.ResponseFormat.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentInvocationResult.Hash.get -> string!
+Frontier.Platform.Workflow.Orchestration.AgentInvocationResult.Hash.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentInvocationResult.Payload.get -> string!
+Frontier.Platform.Workflow.Orchestration.AgentInvocationResult.Payload.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.InputContract.get -> Frontier.Platform.Abstractions.ContractSnapshot?
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.InputContract.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.OutputContract.get -> Frontier.Platform.Abstractions.ContractSnapshot?
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.OutputContract.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult.InputContractHash.get -> string?
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult.InputContractHash.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult.OutputContractHash.get -> string?
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult.OutputContractHash.init -> void
 Frontier.Platform.Workflow.Orchestration.IAgentInvoker.InvokeAsync(Frontier.Platform.Workflow.Orchestration.AgentInvocationRequest! request, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome!>!
 override Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome.Equals(object? obj) -> bool
 override Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome.GetHashCode() -> int

@@ -5,10 +5,18 @@ shells it schedules, the agent and tool invocation pipelines, and the audit cons
 turns a finished run into signed evidence.
 
 This is the engine tier. It composes the governance libraries — HITL, audit, context assembly,
-model-role config, guardrails, resilience — through their interfaces, which is what an
+model-role config, guardrails, resilience, contracts — through their interfaces, which is what an
 interpreter does. **Nothing in the governance tier depends on this package**, so a solution that
 wants audit or approvals without an interpreter still gets them on their own (ADR-PA5, enforced
 by `GovernanceLibrary_DoesNotDependOnTheEngine`).
+
+
+**Contracts are validated at the boundary, in the engine (ADR-E27 D8, ADR-PA39).** An agent node's
+input is checked before the agent runs, and its reply after: against the definition's pinned
+snapshot when the node names a registry contract, otherwise as its CLR type. A registry reply is
+stored exactly as received; only its hash is canonicalised. The audit and the step record carry
+the hash of each registry contract that did the validating. The composition root registers the
+validator with `AddFrontierContracts`.
 
 ## Install
 

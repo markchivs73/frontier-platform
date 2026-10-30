@@ -11,7 +11,7 @@ public sealed class AgentInvocationDispatcherTests
     {
         var scope = new SummaryArtifact { Title = "Scope", Objectives = ["objective"] };
         var invoker = new FakeAgentInvoker(scope);
-        var dispatcher = new AgentInvocationDispatcher(invoker, new ContractTypeRegistry(TestContractSet.Instance));
+        var dispatcher = new AgentInvocationDispatcher(invoker, new ContractTypeRegistry(TestContractSet.Instance), TestContractValidator.Instance);
         var request = new AgentInvocationRequest
         {
             Instructions = "instructions",
@@ -21,11 +21,11 @@ public sealed class AgentInvocationDispatcherTests
             MaxOutputTokens = 100,
         };
 
-        var result = await dispatcher.InvokeAsync(nameof(SummaryArtifact), request, CancellationToken.None);
+        var result = await dispatcher.InvokeAsync(nameof(SummaryArtifact), null, request, CancellationToken.None);
 
-        var bound = Assert.IsType<SummaryArtifact>(result.Result);
-        Assert.Equal(scope.Title, bound.Title);
-        Assert.Equal(scope.Objectives, bound.Objectives);
+        var (payload, hash) = OutputPayloadBuilder.Build(scope, typeof(SummaryArtifact));
+        Assert.Equal(payload, result.Payload);
+        Assert.Equal(hash, result.Hash);
         Assert.Same(CanonicalOutputSchema.For<SummaryArtifact>(), invoker.ReceivedRequest!.ResponseFormat);
         Assert.Equal(request with { ResponseFormat = invoker.ReceivedRequest.ResponseFormat }, invoker.ReceivedRequest);
         Assert.True(result.LatencyMs >= 0);
@@ -37,7 +37,7 @@ public sealed class AgentInvocationDispatcherTests
         // ADR-PA27: only the invoker knows the pinned card it called; the dispatcher must carry it to the pipeline.
         var scope = new SummaryArtifact { Title = "Scope", Objectives = ["objective"] };
         var invoker = new CardHashReportingInvoker(scope, "sha256:pinned-card");
-        var dispatcher = new AgentInvocationDispatcher(invoker, new ContractTypeRegistry(TestContractSet.Instance));
+        var dispatcher = new AgentInvocationDispatcher(invoker, new ContractTypeRegistry(TestContractSet.Instance), TestContractValidator.Instance);
         var request = new AgentInvocationRequest
         {
             Instructions = "instructions",
@@ -54,7 +54,7 @@ public sealed class AgentInvocationDispatcherTests
             MaxOutputTokens = 0,
         };
 
-        var result = await dispatcher.InvokeAsync(nameof(SummaryArtifact), request, CancellationToken.None);
+        var result = await dispatcher.InvokeAsync(nameof(SummaryArtifact), null, request, CancellationToken.None);
 
         Assert.Equal("sha256:pinned-card", result.CardHash);
         Assert.Equal("resp_0139", result.RemoteTaskId);
@@ -65,10 +65,10 @@ public sealed class AgentInvocationDispatcherTests
     [Fact]
     public async Task InvokeAsync_AReplyThatIsNotJson_IsAContractViolation()
     {
-        var dispatcher = new AgentInvocationDispatcher(new FakeAgentInvoker(null, output: "Here is your summary!"), new ContractTypeRegistry(TestContractSet.Instance));
+        var dispatcher = new AgentInvocationDispatcher(new FakeAgentInvoker(null, output: "Here is your summary!"), new ContractTypeRegistry(TestContractSet.Instance), TestContractValidator.Instance);
 
         await Assert.ThrowsAsync<Frontier.Platform.Abstractions.ContractViolationException>(
-            () => dispatcher.InvokeAsync(nameof(SummaryArtifact), ModelRequest(), CancellationToken.None));
+            () => dispatcher.InvokeAsync(nameof(SummaryArtifact), null, ModelRequest(), CancellationToken.None));
     }
 
     /// <summary>ADR-E27 D8: the engine validates the bound reply; the invoker no longer does.</summary>
@@ -76,10 +76,10 @@ public sealed class AgentInvocationDispatcherTests
     public async Task InvokeAsync_AReplyThatFailsItsContract_IsAContractViolation()
     {
         var invalid = new SummaryArtifact { Title = "", Objectives = [] };
-        var dispatcher = new AgentInvocationDispatcher(new FakeAgentInvoker(invalid), new ContractTypeRegistry(TestContractSet.Instance));
+        var dispatcher = new AgentInvocationDispatcher(new FakeAgentInvoker(invalid), new ContractTypeRegistry(TestContractSet.Instance), TestContractValidator.Instance);
 
         await Assert.ThrowsAsync<Frontier.Platform.Abstractions.ContractViolationException>(
-            () => dispatcher.InvokeAsync(nameof(SummaryArtifact), ModelRequest(), CancellationToken.None));
+            () => dispatcher.InvokeAsync(nameof(SummaryArtifact), null, ModelRequest(), CancellationToken.None));
     }
 
     private static AgentInvocationRequest ModelRequest() => new()
@@ -94,7 +94,15 @@ public sealed class AgentInvocationDispatcherTests
     [Fact]
     public void Constructor_NullInvoker_Throws()
     {
-        Assert.Throws<ArgumentNullException>(() => new AgentInvocationDispatcher(null!, new ContractTypeRegistry(TestContractSet.Instance)));
+        Assert.Throws<ArgumentNullException>(() => new AgentInvocationDispatcher(null!, new ContractTypeRegistry(TestContractSet.Instance), TestContractValidator.Instance));
+    }
+
+    [Fact]
+    public void Constructor_NullValidator_Throws()
+    {
+        var invoker = new FakeAgentInvoker(new SummaryArtifact { Title = "Scope", Objectives = ["objective"] });
+
+        Assert.Throws<ArgumentNullException>(() => new AgentInvocationDispatcher(invoker, new ContractTypeRegistry(TestContractSet.Instance), null!));
     }
 
     [Fact]
@@ -102,7 +110,7 @@ public sealed class AgentInvocationDispatcherTests
     {
         var invoker = new FakeAgentInvoker(new SummaryArtifact { Title = "Scope", Objectives = ["objective"] });
 
-        Assert.Throws<ArgumentNullException>(() => new AgentInvocationDispatcher(invoker, null!));
+        Assert.Throws<ArgumentNullException>(() => new AgentInvocationDispatcher(invoker, null!, TestContractValidator.Instance));
     }
 
     /// <summary>An invoker standing in for an agent path: it reports the pinned card hash it called against.</summary>

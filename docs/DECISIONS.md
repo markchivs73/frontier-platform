@@ -2648,3 +2648,25 @@ method for registry contracts beside the generic one, which would leave two tran
 validation inside the consumer's invokers, until the last CLR workload contract is re-expressed.
 This breaks every `IAgentInvoker` implementation; the consumer's MAF and A2A invokers drop their
 deserialization and validation when they adopt it.
+
+**Slice 2b, registry contracts at agent nodes** (ADR-E27 D7, D8, D15). The orchestrator copies the
+definition's pinned snapshots onto `AgentTaskActivityInput.InputContract` and `OutputContract`
+(optional, so an input recorded before this replays and validates by CLR type). Each snapshot is a
+few kilobytes of schema, so the copy per call is accepted; fetching from anywhere else would break
+the pin. The pipeline validates the input before the agent runs, and the dispatcher validates the
+reply, through `IContractValidator`. A violation names the contract and carries the validator's
+bounded messages. A registry reply is stored as received and hashed as JCS. The hash of each
+registry contract that validated a step rides on the activity result, the `StepCompletion` and the
+audit's `AgentInvocation` (all optional, so every older record keeps its bytes).
+
+**A registry schema is lowered to a response format only where every strict mode accepts it.**
+`RegistryOutputSchema` keeps `type`, `properties`, `required`, `additionalProperties`, `items`,
+`enum`, `const`, `anyOf`, local `$ref`, `$defs`, `description` and `title`. It drops the annotations
+and the constraints that only narrow a value (lengths, ranges, `pattern`, `format`), because the
+validator enforces them on the reply. It refuses an object that is open or has an optional
+property, any other composition or conditional, and any keyword not named here; the call then goes
+out with no format and the reply is still validated. One rule for every provider, not one per
+provider, is the conservative reading of D7's projector: it never sends a provider a schema it might
+reject, at the cost of sending no format for contracts it could have lowered for one of them.
+Widening it per provider is a later change.
+

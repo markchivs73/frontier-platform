@@ -40,8 +40,14 @@ public sealed record AgentInvocationOutcome
 /// </summary>
 public sealed record AgentInvocationResult
 {
-    /// <summary>The reply, bound to the node's output contract and validated.</summary>
-    public required IVersionedContract Result { get; init; }
+    /// <summary>
+    /// The validated reply as it is stored: a CLR contract's canonical-profile bytes, or a registry
+    /// contract's reply exactly as received (ADR-E27 D15).
+    /// </summary>
+    public required string Payload { get; init; }
+
+    /// <summary>The SHA-256 hex hash of <see cref="Payload"/>'s RFC 8785 (JCS) form.</summary>
+    public required string Hash { get; init; }
 
     /// <summary>Token usage reported by the provider for this turn, or <see langword="null"/> if unavailable.</summary>
     public required UsageDetails? Usage { get; init; }

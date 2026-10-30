@@ -30,6 +30,8 @@
     <ProjectReference Include="..\Frontier.Platform.Hitl\Frontier.Platform.Hitl.csproj" />
     <ProjectReference Include="..\Frontier.Platform.ModelRoleConfig\Frontier.Platform.ModelRoleConfig.csproj" />
     <ProjectReference Include="..\Frontier.Platform.Resilience\Frontier.Platform.Resilience.csproj" />
+    <!-- ADR-E27 D8 / ADR-PA38: the one validator the engine runs at agent and MCP node boundaries. -->
+    <ProjectReference Include="..\Frontier.Platform.Contracts\Frontier.Platform.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

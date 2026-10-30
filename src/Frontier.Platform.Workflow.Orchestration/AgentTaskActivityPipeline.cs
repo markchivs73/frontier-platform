@@ -1,6 +1,7 @@
 using System.Text;
 using Frontier.Platform.Abstractions;
 using Frontier.Platform.Audit;
+using Frontier.Platform.Contracts;
 using Frontier.Platform.ContextAssembly;
 using Frontier.Platform.Guardrails;
 using Frontier.Platform.ModelRoleConfig;
@@ -31,6 +32,7 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
     private readonly AgentInvocationDispatcher dispatcher;
     private readonly IAuditTelemetryStaging telemetryStaging;
     private readonly IEntryPayloadBuilder entryPayloads;
+    private readonly IContractValidator contractValidator;
 
     /// <summary>Constructs the pipeline over its per-step collaborators.</summary>
     public AgentTaskActivityPipeline(
@@ -43,7 +45,8 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
         IMcpToolCatalog toolCatalog,
         AgentInvocationDispatcher dispatcher,
         IAuditTelemetryStaging telemetryStaging,
-        IEntryPayloadBuilder entryPayloads)
+        IEntryPayloadBuilder entryPayloads,
+        IContractValidator contractValidator)
     {
         ArgumentNullException.ThrowIfNull(composer);
         ArgumentNullException.ThrowIfNull(assembleContext);
@@ -55,6 +58,7 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
         ArgumentNullException.ThrowIfNull(dispatcher);
         ArgumentNullException.ThrowIfNull(telemetryStaging);
         ArgumentNullException.ThrowIfNull(entryPayloads);
+        ArgumentNullException.ThrowIfNull(contractValidator);
 
         this.composer = composer;
         this.assembleContext = assembleContext;
@@ -66,6 +70,7 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
         this.dispatcher = dispatcher;
         this.telemetryStaging = telemetryStaging;
         this.entryPayloads = entryPayloads;
+        this.contractValidator = contractValidator;
     }
 
     /// <inheritdoc />
@@ -76,16 +81,29 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
         var resolved = await modelResolver.ResolveAsync(BuildResolutionRequest(input), ct).ConfigureAwait(false);
         var context = await AssembleAsync(input, resolved, ct).ConfigureAwait(false);
         var inputPayload = BuildInputPayload(input, context, entryPayloads);
-        contractTypes.DeserializeAndValidate(input.InputContractType, inputPayload);
+        ValidateInput(input, inputPayload);
 
         var invocation = await InvokeAgentAsync(input, resolved, context, inputPayload, ct).ConfigureAwait(false);
-        var outputType = contractTypes.Resolve(input.OutputContractType);
-        var (payload, hash) = OutputPayloadBuilder.Build(invocation.Result, outputType);
 
-        var telemetry = BuildTelemetryRecord(input, resolved, invocation, inputPayload, hash);
+        var telemetry = BuildTelemetryRecord(input, resolved, invocation, inputPayload, invocation.Hash);
         await telemetryStaging.RecordInvocationAsync(telemetry, ct).ConfigureAwait(false);
 
-        return BuildResult(input, resolved, payload, hash, invocation.CardHash, invocation.RemoteTaskId);
+        return BuildResult(input, resolved, invocation.Payload, invocation.Hash, invocation.CardHash, invocation.RemoteTaskId);
+    }
+
+    /// <summary>
+    /// Validates the input before the agent sees it (ADR-E27 D8): against the pinned registry contract
+    /// when the node names one, otherwise as its CLR contract type.
+    /// </summary>
+    internal void ValidateInput(AgentTaskActivityInput input, string inputPayload)
+    {
+        if (input.InputContract is { } contract)
+        {
+            RegistryContractCheck.Ensure(contractValidator, contract, inputPayload);
+            return;
+        }
+
+        contractTypes.DeserializeAndValidate(input.InputContractType, inputPayload);
     }
 
     /// <summary>Builds the Model-Role Config resolution request for <paramref name="input"/>'s role (doc 08 §5), under the execution's pin when it took one (ADR-PA29).</summary>
@@ -138,7 +156,7 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
             Tools = tools,
         };
 
-        return await dispatcher.InvokeAsync(input.OutputContractType, request, ct).ConfigureAwait(false);
+        return await dispatcher.InvokeAsync(input.OutputContractType, input.OutputContract, request, ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -208,6 +226,8 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
         OutputHash = hash,
         ResolvedModel = ToSummary(resolved, cardHash, remoteTaskId),
         HostBuild = HostBuildInfo.Version,
+        InputContractHash = input.InputContract?.Hash,
+        OutputContractHash = input.OutputContract?.Hash,
     };
 
     /// <summary>
@@ -261,6 +281,8 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
         DynamicCacheChanged = true,
         RealTimeCacheChanged = true,
         InvokedAtUtc = DateTime.UtcNow,
+        InputContractHash = input.InputContract?.Hash,
+        OutputContractHash = input.OutputContract?.Hash,
     };
 
     /// <summary>
