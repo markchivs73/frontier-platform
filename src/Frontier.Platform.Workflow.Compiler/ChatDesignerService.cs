@@ -348,7 +348,21 @@ internal sealed class ChatDesignerService : IChatDesignerService
         // user-visible behaviour change.
         var response = await _chatClient.GetStreamingResponseAsync(messages, options, ct)
             .ToChatResponseAsync(ct).ConfigureAwait(false);
-        return BuildResult(response.Text ?? string.Empty);
+        return await StampProposalAsync(BuildResult(response.Text ?? string.Empty), ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// ADR-PA41: copies each MCP tool's registered contract refs and write flag onto the proposal's
+    /// <c>mcp_tool</c> nodes (<see cref="McpToolRegistryStamp"/>). It runs on every proposal the agent
+    /// returns, the first attempt and the repair alike, so validation, the diff and the merge all see
+    /// the registry's values and the repair pass is never spent on fields the agent cannot know.
+    /// </summary>
+    internal async Task<DesignerAgentResult> StampProposalAsync(DesignerAgentResult result, CancellationToken ct)
+    {
+        if (string.IsNullOrEmpty(result.ProposalDefinitionJson)) return result;
+        var proposed = JsonSerializer.Deserialize<WorkflowDefinition>(result.ProposalDefinitionJson, CanonicalProfile.Options)!;
+        var stamped = McpToolRegistryStamp.Apply(proposed, await _toolCatalog.GetToolsAsync(ct).ConfigureAwait(false));
+        return result with { ProposalDefinitionJson = JsonSerializer.Serialize(stamped, CanonicalProfile.Options) };
     }
 
     /// <summary>
