@@ -14,3 +14,4 @@ override Frontier.Platform.Abstractions.RegisteredContract.GetHashCode() -> int
 override Frontier.Platform.Abstractions.RegisteredContract.ToString() -> string!
 static Frontier.Platform.Abstractions.RegisteredContract.operator !=(Frontier.Platform.Abstractions.RegisteredContract? left, Frontier.Platform.Abstractions.RegisteredContract? right) -> bool
 static Frontier.Platform.Abstractions.RegisteredContract.operator ==(Frontier.Platform.Abstractions.RegisteredContract? left, Frontier.Platform.Abstractions.RegisteredContract? right) -> bool
+Frontier.Platform.Abstractions.IContractSnapshotCatalog.ListAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Frontier.Platform.Abstractions.ContractSnapshot!>!>!

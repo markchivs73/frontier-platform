@@ -118,7 +118,7 @@ public sealed class ChatDesignerStampingTests
             new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance),
             new ChatDesignerServiceTests.FakeApproverRoleCatalog(), new StampingToolCatalog(), new ChatDesignerServiceTests.FakeAgentRoleCatalog(),
             new NodeDiffService(), compiler, new ChatDesignerServiceTests.FakeDesignerModelProvider(), new ChatDesignerServiceTests.FakeInstructionCatalog(),
-            new ChatDesignerServiceTests.FakeContextComponentCatalog(), new ChatDesignerServiceTests.FakeEntryContractCatalog());
+            new ChatDesignerServiceTests.FakeContextComponentCatalog(), new ChatDesignerServiceTests.FakeEntryContractCatalog(), new ChatDesignerServiceTests.FakeContractSnapshotCatalog());
         return (service, store, client);
     }
 

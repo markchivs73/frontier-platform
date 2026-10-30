@@ -64,6 +64,15 @@ engine read a file or fetch a URL. Compatibility is strict on purpose: with clos
 FULL_TRANSITIVE means each minor accepts exactly what the others accept, so any structural change
 is a new major.
 
+### Reading a registered contract back
+
+`ContractLegibility` reads a registered `ContractSnapshot` for a person or an agent: its
+contract-level `Description`, every property under `properties` at any depth with its description
+(`Properties`, located as the lint locates them, such as `/schema/properties/total`), and its
+legibility `Gaps`. `Gaps` is the registration lint run as warnings, so it is empty for an authored
+or generated contract and lists what a discovered contract lacks. The chat designer's prompt uses
+it (ADR-PA41); a registry screen can use it to show the same gaps.
+
 ## CEL rules
 
 Rules are CEL (Celly 1.2.0, behind an internal port), evaluated with the payload bound as `self`:

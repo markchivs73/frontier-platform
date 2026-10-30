@@ -28,4 +28,9 @@
     <Compile Include="..\Shared\EmulatorCosmos.cs" Link="EmulatorCosmos.cs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Golden files pin the text the design agent is shown (ADR-PA41). -->
+    <None Include="GoldenFiles\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

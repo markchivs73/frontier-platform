@@ -44,7 +44,7 @@ is a statement about a particular deployment.
 | `IDesignerToolCatalog` | Which tools the design agent may offer |
 | `IExecutableNodeTypeCatalog` | Which node types this runtime will actually run |
 | `IContractTypeCatalog` | Which CLR data contracts this deployment declares |
-| `IContractSnapshotCatalog` | Which registry contracts exist, and whether each is retired (ADR-E27). In `Frontier.Platform.Abstractions` since v0.45.0 (ADR-PA40) |
+| `IContractSnapshotCatalog` | Which registry contracts exist, whether each is retired (ADR-E27), and which a new publish may name (ADR-PA41). In `Frontier.Platform.Abstractions` since v0.45.0 (ADR-PA40) |
 | `ICascadeGraphChecker` | Cascade-graph checks at publish |
 | `ITestRunExecutor` and friends | How a test run is executed and read back |
 | `IEntryContractCatalog` | What the entry node is handed, and from which dynamic field |
@@ -84,6 +84,26 @@ Publish does not apply it. Publish validates, and a registry change after review
 `mcp.tool-resolves` finding rather than a silent edit. A plain draft save does not apply it
 either. The function is public so you can apply the same rule wherever else you build or rewrite
 a definition, such as a migration of existing definitions.
+
+## The design agent reads what each contract says
+
+The design agent's system prompt lists every contract `IContractSnapshotCatalog.ListAsync` returns
+(the registered contracts that are not retired) beside the CLR contract names, and for each one
+shows its ref, its contract-level description, each property's location and description, its
+examples, and each rule's field path and message (ADR-PA41). That is the text your contract panel
+shows, so the agent and the human read the same annotations. Contracts are listed in ordinal ref
+order, so the block changes only when a contract version is registered or retired. Nothing is
+capped: a catalogue too large for the prompt would need a cap or retrieval, which is not built.
+
+A contract an MCP server supplied may lack descriptions or examples, because registration only
+warns for it. The prompt marks such a contract with each gap `ContractLegibility.Gaps` reports,
+which is the registration lint itself, so the prompt and registration never disagree about what
+a gap is. The prompt also says what the tool and role lists' contract refs mean: a tool with no
+`output_contract_ref` returns any JSON and is named as such, an `agent_task` bound to a
+contract-bearing role names that role's refs (`model-role.contracts-match`), and an `mcp_tool`
+node's refs and `writes` are copied by the designer, so the agent need not author them.
+
+`ListAsync` is new in v0.45.0: your adapter over the registry must implement it.
 
 ## Publish pins the contracts
 

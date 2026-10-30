@@ -43,7 +43,7 @@ public sealed class ChatDesignerServiceTests
         return new ChatDesignerService(
             store, mergeService, chatClientMock.Object, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(),
             new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), new NodeDiffService(),
-            new DefinitionValidator(Array.Empty<IDefinitionValidationRule>()), new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog());
+            new DefinitionValidator(Array.Empty<IDefinitionValidationRule>()), new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog());
     }
 
     /// <summary>S9.9a: the service consumes the streaming surface; the mock streams the response as one update.</summary>
@@ -66,6 +66,16 @@ public sealed class ChatDesignerServiceTests
                 DynamicFieldName = "case_summary",
                 Description = "the case summary",
             });
+    }
+
+    /// <summary>Registry contract catalogue double (ADR-PA41): lists the snapshots it is given, none by default.</summary>
+    internal sealed class FakeContractSnapshotCatalog(params ContractSnapshot[] contracts) : IContractSnapshotCatalog
+    {
+        public Task<RegisteredContract?> FindAsync(string contractRef, CancellationToken cancellationToken) =>
+            throw new NotSupportedException("The designer lists contracts; it never looks one up.");
+
+        public Task<IReadOnlyList<ContractSnapshot>> ListAsync(CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyList<ContractSnapshot>>(contracts);
     }
 
     /// <summary>Approver-role catalog test double with one descriptor.</summary>
@@ -196,7 +206,7 @@ public sealed class ChatDesignerServiceTests
             var service = new ChatDesignerService(store,
                 new ProposalMergeService(store, new DefinitionValidator(Array.Empty<IDefinitionValidationRule>()), new NodeDiffService()),
                 clientMock.Object, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(),
-                new FakeAgentRoleCatalog(), new NodeDiffService(), compiler, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog());
+                new FakeAgentRoleCatalog(), new NodeDiffService(), compiler, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog());
             return (service, clientMock, store);
         }
 
@@ -659,7 +669,7 @@ public sealed class ChatDesignerServiceTests
             var service = new ChatDesignerService(
                 store, merge, new Mock<IChatClient>().Object, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance),
                 new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(),
-                new NodeDiffService(), new DefinitionValidator(Array.Empty<IDefinitionValidationRule>()), provider, new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog());
+                new NodeDiffService(), new DefinitionValidator(Array.Empty<IDefinitionValidationRule>()), provider, new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog());
 
             var options = await service.BuildChatOptionsAsync("wf-x", CancellationToken.None);
 
@@ -997,23 +1007,27 @@ public sealed class ChatDesignerServiceTests
             var diff = new NodeDiffService();
             var compiler = new DefinitionValidator(Array.Empty<IDefinitionValidationRule>());
             Assert.Throws<ArgumentNullException>(() =>
-                new ChatDesignerService(store, mergeService, chat, null!, new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), diff, compiler, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog()));
+                new ChatDesignerService(store, mergeService, chat, null!, new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), diff, compiler, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog()));
             Assert.Throws<ArgumentNullException>(() =>
-                new ChatDesignerService(store, mergeService, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), null!, new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), diff, compiler, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog()));
+                new ChatDesignerService(store, mergeService, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), null!, new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), diff, compiler, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog()));
             Assert.Throws<ArgumentNullException>(() =>
-                new ChatDesignerService(store, mergeService, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), null!, new FakeAgentRoleCatalog(), diff, compiler, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog()));
+                new ChatDesignerService(store, mergeService, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), null!, new FakeAgentRoleCatalog(), diff, compiler, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog()));
             Assert.Throws<ArgumentNullException>(() =>
-                new ChatDesignerService(store, mergeService, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), null!, diff, compiler, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog()));
+                new ChatDesignerService(store, mergeService, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), null!, diff, compiler, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog()));
             Assert.Throws<ArgumentNullException>(() =>
-                new ChatDesignerService(store, mergeService, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), null!, compiler, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog()));
+                new ChatDesignerService(store, mergeService, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), null!, compiler, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog()));
             Assert.Throws<ArgumentNullException>(() =>
-                new ChatDesignerService(store, mergeService, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), diff, null!, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog()));
+                new ChatDesignerService(store, mergeService, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), diff, null!, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog()));
             Assert.Throws<ArgumentNullException>(() =>
-                new ChatDesignerService(store, mergeService, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), diff, compiler, null!, new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog()));
+                new ChatDesignerService(store, mergeService, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), diff, compiler, null!, new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog()));
             Assert.Throws<ArgumentNullException>(() =>
-                new ChatDesignerService(store, mergeService, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), diff, compiler, new FakeDesignerModelProvider(), null!, new FakeContextComponentCatalog(), new FakeEntryContractCatalog()));
+                new ChatDesignerService(store, mergeService, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), diff, compiler, new FakeDesignerModelProvider(), null!, new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog()));
             Assert.Throws<ArgumentNullException>(() =>
-                new ChatDesignerService(store, mergeService, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), diff, compiler, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), null!, new FakeEntryContractCatalog()));
+                new ChatDesignerService(store, mergeService, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), diff, compiler, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), null!, new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog()));
+            Assert.Throws<ArgumentNullException>(() =>
+                new ChatDesignerService(store, mergeService, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), diff, compiler, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), null!, new FakeContractSnapshotCatalog()));
+            Assert.Throws<ArgumentNullException>(() =>
+                new ChatDesignerService(store, mergeService, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), diff, compiler, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), null!));
         }
 
         /// <summary>Merge-service double returning a fixed outcome, to exercise outcome recording.</summary>
@@ -1160,7 +1174,7 @@ public sealed class ChatDesignerServiceTests
             var merge = new ProposalMergeService(store, validator, new NodeDiffService());
             var service = new ChatDesignerService(
                 store, merge, new Mock<IChatClient>().Object, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance),
-                new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), new NodeDiffService(), validator, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog());
+                new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), new NodeDiffService(), validator, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog());
             return (store, service);
         }
 
@@ -1191,7 +1205,7 @@ public sealed class ChatDesignerServiceTests
         }
     }
 
-    private static DefinitionDraftDocument CreateMinimalDraft(string workflowId)
+    internal static DefinitionDraftDocument CreateMinimalDraft(string workflowId)
     {
         var definition = new WorkflowDefinition
         {

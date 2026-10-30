@@ -181,7 +181,8 @@ public static class CompilerServiceCollectionExtensions
             var instructionCatalog = sp.GetRequiredService<IInstructionCatalog>();
             var componentCatalog = sp.GetRequiredService<IContextComponentCatalog>();
             var entryContractCatalog = sp.GetRequiredService<IEntryContractCatalog>();
-            return new ChatDesignerService(store, mergeService, chatClient, schemaProvider, roleCatalog, toolCatalog, agentRoleCatalog, diffService, compiler, modelProvider, instructionCatalog, componentCatalog, entryContractCatalog);
+            var contractCatalog = sp.GetRequiredService<IContractSnapshotCatalog>();
+            return new ChatDesignerService(store, mergeService, chatClient, schemaProvider, roleCatalog, toolCatalog, agentRoleCatalog, diffService, compiler, modelProvider, instructionCatalog, componentCatalog, entryContractCatalog, contractCatalog);
         });
 
         return services;

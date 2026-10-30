@@ -1,0 +1,25 @@
+- acme/invoice/1.0
+  Description: An invoice raised against one engagement. Not for credit notes.
+  Properties:
+    /schema/properties/total: The invoice total, as a canonical decimal string.
+    /schema/properties/lines: One entry per billed item.
+    /schema/properties/lines/items/properties/sku: The item's stock code.
+  Examples:
+    {"total":"10.00","lines":[{"sku":"A1"}]}
+  Rules:
+    /total: The total must not be empty.
+    (whole payload): An invoice bills at least one item.
+- io.frontier.demo.autotask/get-ticket-output/1.0
+  Description: (none)
+  Properties:
+    /schema/properties/id: (no description)
+  Examples:
+    (none)
+  Rules:
+    (whole payload): (no message)
+  Annotation gaps (an MCP server supplied this contract, and the registry accepted it with these gaps; do not guess what an undescribed field means):
+    /schema/description: Add a contract-level description that says what the contract is for, and when not to use it.
+    /schema/examples: Add at least one example payload under examples; each one must satisfy the contract.
+    /schema: State the content model: "additionalProperties": false to close it (the default to aim for), or true to leave it open.
+    /schema/properties/id: Add a description to this property.
+    /rules/0: Every rule needs a message saying what the payload must satisfy.
