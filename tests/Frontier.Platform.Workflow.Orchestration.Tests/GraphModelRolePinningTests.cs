@@ -175,6 +175,30 @@ public sealed class GraphModelRolePinningTests
         Assert.Equal(preChange, Encoding.UTF8.GetString(CanonicalProfile.SerializeCanonical(rehydrated)));
     }
 
+    /// <summary>ADR-PA40: an input recorded before instructions_ref was optional replays with its ref and its bytes.</summary>
+    [Fact]
+    public void AgentTaskActivityInput_RecordedWithAnInstructionsRef_KeepsTheRefAndItsBytes()
+    {
+        const string preChange = """{"node_id":"n-1","role":"analyst","instructions_ref":"i.md","input_contract_type":"In","output_contract_type":"Out","correlation_id":"c-1","engagement_id":"eng-1","context_request":{"schema_version":"1.0","engagement_id":"eng-1","agent_role":"analyst","baseline_components":[],"dynamic_fields":[],"requires_real_time":false,"real_time_sources":[]},"execution_id":"x","tool_refs":[]}""";
+
+        var rehydrated = JsonSerializer.Deserialize<AgentTaskActivityInput>(preChange, CanonicalProfile.Options)!;
+
+        Assert.Equal("i.md", rehydrated.InstructionsRef);
+        Assert.Equal(preChange, Encoding.UTF8.GetString(CanonicalProfile.SerializeCanonical(rehydrated)));
+    }
+
+    /// <summary>ADR-PA40: an agent-backed node's missing ref is left off the wire, not written as null or blank.</summary>
+    [Fact]
+    public void AgentTaskActivityInput_WithNoInstructionsRef_OmitsTheField()
+    {
+        const string withoutRef = """{"node_id":"n-1","role":"analyst","input_contract_type":"In","output_contract_type":"Out","correlation_id":"c-1","engagement_id":"eng-1","context_request":{"schema_version":"1.0","engagement_id":"eng-1","agent_role":"analyst","baseline_components":[],"dynamic_fields":[],"requires_real_time":false,"real_time_sources":[]},"execution_id":"x","tool_refs":[]}""";
+
+        var rehydrated = JsonSerializer.Deserialize<AgentTaskActivityInput>(withoutRef, CanonicalProfile.Options)!;
+
+        Assert.Null(rehydrated.InstructionsRef);
+        Assert.Equal(withoutRef, Encoding.UTF8.GetString(CanonicalProfile.SerializeCanonical(rehydrated)));
+    }
+
     [Fact]
     public void AgentTaskActivityInput_WithAPin_WritesItLast()
     {

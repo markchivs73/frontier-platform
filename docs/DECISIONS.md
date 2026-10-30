@@ -2858,9 +2858,12 @@ Details settled while building it (consumer S13.117; to confirm):
   as model-backed, so its node must name a ref (`model-role.roles-exist` reports the unknown role).
 - **A ref a node does name is still resolved, whatever the backing,** and a blank ref is refused on
   any role: absent is null, never `""`.
-- **Until the orchestration change lands, a node with no ref reaches the activity with a blank
-  one.** `AgentTaskActivityInput.InstructionsRef` stays a required string for that one PR; both
-  ship in v0.45.0.
+- **The activity input carries the absence as null.** `AgentTaskActivityInput.InstructionsRef`
+  is `string?`, omitted when null, so an input recorded with a ref replays with its bytes. The
+  pipeline decides after model resolution: a named ref is resolved; no ref on an `AgentEntry`
+  target invokes with empty instructions and never calls `IInstructionsResolver`; no ref on a
+  model target is a `ContractViolationException` raised before admission. A blank ref still goes
+  to the resolver, as before; only null means absent.
 
 **A contract change leaves the live mapping serving** (Mark, 2026-10-30). When a definition change
 moves an agent-backed role's contract hash, the mapping evaluated against the old hash keeps serving,

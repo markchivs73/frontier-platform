@@ -38,7 +38,7 @@ There is no reference here to a model provider or a tool transport — no Anthro
 | `IAgentInvoker` | Invoking an agent and returning its reply as sent. Transport only: the engine builds the output format and binds and validates the reply (ADR-E27 D8) |
 | `IMcpToolCatalog` / `IMcpEndpointResolver` | Resolving and calling tools |
 | `IEntryPayloadBuilder` | Mapping assembled context to the workload's entry contract |
-| `IInstructionsResolver` | Where agent instructions come from |
+| `IInstructionsResolver` | Where agent instructions come from (called only when a node names a ref; an agent-backed node may name none — ADR-PA40) |
 | `IMcpWriteClassifier` | Whether a tool mutates state, for sandbox write-fencing |
 | `IExecutionSnapshotReader` | Reading the execution projection |
 | `IContractTypeSet` (from `…Workflow.Model`) | This deployment's contract types |

@@ -10,7 +10,7 @@ namespace Frontier.Platform.Workflow.Orchestration;
 /// </summary>
 public sealed record AgentInvocationRequest
 {
-    /// <summary>The agent's instructions (the content of its <c>instructions/*.md</c> file).</summary>
+    /// <summary>The agent's instructions (the content of its <c>instructions/*.md</c> file); empty for an agent target whose node names no ref (ADR-PA40).</summary>
     public required string Instructions { get; init; }
 
     /// <summary>The assembled user-turn prompt: composed context tiers plus the validated input contract payload.</summary>

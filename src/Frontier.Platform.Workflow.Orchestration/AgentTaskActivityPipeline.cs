@@ -141,7 +141,7 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
     /// <summary>Resolves instructions and tools, builds the prompt, checks Guardrails admission, and runs the MAF invocation (doc 00 §4.3 steps 5b–5e).</summary>
     internal async Task<AgentInvocationResult> InvokeAgentAsync(AgentTaskActivityInput input, ResolvedModel resolved, ContextPackageContract context, string inputPayload, CancellationToken ct)
     {
-        var instructions = await instructionsResolver.ResolveAsync(input.InstructionsRef, ct).ConfigureAwait(false);
+        var instructions = await ResolveInstructionsAsync(input, resolved.Entry, ct).ConfigureAwait(false);
         var prompt = PromptBuilder.Build(context, input.InputContractType, inputPayload);
         var maxOutputTokens = await AdmitAsync(input, resolved, instructions, prompt, ct).ConfigureAwait(false);
         var tools = await toolCatalog.ResolveAsync(input.ToolRefs, input.EngagementId, ct).ConfigureAwait(false);
@@ -158,6 +158,20 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
 
         return await dispatcher.InvokeAsync(input.OutputContractType, input.OutputContract, request, ct).ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// Resolves <paramref name="input"/>'s instructions (doc 00 §4.3 step 5b). A node with no ref on an
+    /// agent target resolves nothing and invokes with empty instructions — the remote agent brings its
+    /// own, and the A2A path never sends them (ADR-PA40, S13.123(d)). No ref with a model target is a
+    /// contract violation, which is permanent (invariant 7): the compiler refuses that node at publish.
+    /// </summary>
+    internal async Task<string> ResolveInstructionsAsync(AgentTaskActivityInput input, ChainEntry target, CancellationToken ct) =>
+        input.InstructionsRef switch
+        {
+            { } instructionsRef => await instructionsResolver.ResolveAsync(instructionsRef, ct).ConfigureAwait(false),
+            null when target is AgentEntry => string.Empty,
+            null => throw new ContractViolationException(nameof(AgentTaskActivityInput), [$"Node '{input.NodeId}' names no instructions_ref, but role '{input.Role}' resolved to a model; only an agent target may omit it (ADR-PA40)."]),
+        };
 
     /// <summary>
     /// Checks Guardrails admission for this invocation (doc 07 §5) and returns the granted
