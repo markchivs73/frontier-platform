@@ -46,7 +46,8 @@ public sealed class McpToolResolvesRule : IDefinitionValidationRule
             .Where(node => !knownRefs.Contains(node.ToolRef))
             .Select(node => UnresolvedToolFinding(node.NodeId, node.ToolRef));
 
-        // ADR-E27 D9: an mcp_tool node names exactly the contracts the registry discovered for its tool.
+        // ADR-E27 D9 and ADR-PA41: an mcp_tool node names exactly the contracts the registry
+        // discovered for its tool, and pins exactly the write flag the registry holds for it.
         var contractFindings = ctx.Definition.Nodes
             .OfType<McpToolNode>()
             .Where(node => byRef.ContainsKey(node.ToolRef))
@@ -55,7 +56,7 @@ public sealed class McpToolResolvesRule : IDefinitionValidationRule
         return agentFindings.Concat(toolNodeFindings).Concat(contractFindings).ToList();
     }
 
-    /// <summary>Where <paramref name="node"/>'s contract refs differ from the ones registered for its tool.</summary>
+    /// <summary>Where <paramref name="node"/>'s contract refs or write flag differ from the ones registered for its tool.</summary>
     internal IEnumerable<ValidationFinding> ContractFindings(McpToolNode node, DesignerToolDescriptor tool)
     {
         if (!string.Equals(node.InputContractType, tool.InputContractRef, StringComparison.Ordinal))
@@ -67,12 +68,22 @@ public sealed class McpToolResolvesRule : IDefinitionValidationRule
         {
             yield return ContractFinding(node, "output_contract_type", node.OutputContractType, tool.OutputContractRef);
         }
+
+        if (node.Writes != tool.Writes)
+        {
+            yield return RegistryFinding(node, "writes", WireBool(node.Writes), WireBool(tool.Writes), "Pin the tool's registered write flag.");
+        }
     }
 
-    private ValidationFinding ContractFinding(McpToolNode node, string field, string? named, string? registered) => new(
+    private static string? WireBool(bool? value) => value is { } flag ? (flag ? "true" : "false") : null;
+
+    private ValidationFinding ContractFinding(McpToolNode node, string field, string? named, string? registered) =>
+        RegistryFinding(node, field, named, registered, "Name the tool's registered contract.");
+
+    private ValidationFinding RegistryFinding(McpToolNode node, string field, string? named, string? registered, string remedy) => new(
         RuleId: RuleId,
         Severity: DefaultSeverity,
-        Message: $"{field} is '{named ?? "(none)"}', but the registry holds '{registered ?? "(none)"}' for tool '{node.ToolRef}'. Name the tool's registered contract.",
+        Message: $"{field} is '{named ?? "(none)"}', but the registry holds '{registered ?? "(none)"}' for tool '{node.ToolRef}'. {remedy}",
         NodeId: node.NodeId,
         FieldPath: field);
 

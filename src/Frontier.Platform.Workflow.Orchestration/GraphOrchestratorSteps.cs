@@ -219,7 +219,9 @@ internal static class GraphOrchestratorSteps
     /// Runs one <see cref="McpToolNode"/> via <see cref="WorkflowActivityNames.InvokeMcpToolActivity"/>
     /// (S13.7c): a deterministic tool call — no agent, no model. The retry profile defaults
     /// to doc 10 §4's <c>mcp-write</c>/<c>mcp-read</c> by the tool's write classification
-    /// (a node <see cref="RetryPolicySpec"/> overrides); a write's idempotency key is the
+    /// (a node <see cref="RetryPolicySpec"/> overrides). The classification is the node's pinned
+    /// <see cref="McpToolNode.Writes"/> (ADR-PA41), or the classifier's answer for a definition
+    /// published without it, so a recorded run replays as it ran. A write's idempotency key is the
     /// step's correlation id, so activity retries provably reuse it. The result records,
     /// checkpoints, and feeds Data edges/predicates exactly like an agent step.
     /// </summary>
@@ -228,7 +230,7 @@ internal static class GraphOrchestratorSteps
         var occurrence = state.NodeOccurrences.GetValueOrDefault(node.NodeId);
         state.NodeOccurrences[node.NodeId] = occurrence + 1;
         var correlationId = $"{context.InstanceId}::{node.NodeId}::{occurrence}";
-        var isWrite = mcpWriteClassifier.IsWrite(McpToolRef.Parse(node.ToolRef));
+        var isWrite = node.Writes ?? mcpWriteClassifier.IsWrite(McpToolRef.Parse(node.ToolRef));
 
         var activityInput = new McpToolActivityInput
         {

@@ -141,6 +141,37 @@ public sealed class ContractRulesTests
         Assert.Contains("is 'crm/ticket/1.0', but the registry holds '(none)'", findings[2].Message, StringComparison.Ordinal);
     }
 
+    /// <summary>ADR-PA41: an mcp_tool node pins exactly the write flag the registry holds; null passes only against null.</summary>
+    [Fact]
+    public async Task ToolResolves_HoldsAnMcpNodeToItsToolsRegisteredWriteFlag()
+    {
+        var tools = new Mock<IDesignerToolCatalog>();
+        tools.Setup(t => t.GetToolsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(
+        [
+            Tool("crm/tickets/put", "crm/tickets") with { Writes = true },
+            Tool("crm/tickets/get", "crm/tickets") with { Writes = false },
+            Tool("crm/tickets/old", "crm/tickets"),
+        ]);
+        var definition = Definition(
+        [
+            Mcp("write-pinned", "crm/tickets/put") with { Writes = true },
+            Mcp("read-pinned", "crm/tickets/get") with { Writes = false },
+            Mcp("none-on-none", "crm/tickets/old"),
+            Mcp("write-as-read", "crm/tickets/put") with { Writes = false },
+            Mcp("unpinned", "crm/tickets/get"),
+            Mcp("pinned-on-none", "crm/tickets/old") with { Writes = true },
+        ], []);
+
+        var findings = await new McpToolResolvesRule(tools.Object).EvaluateAsync(Context(definition), CancellationToken.None);
+
+        Assert.Equal(
+            [("write-as-read", "writes"), ("unpinned", "writes"), ("pinned-on-none", "writes")],
+            findings.Select(f => (f.NodeId!, f.FieldPath!)));
+        Assert.Equal("writes is 'false', but the registry holds 'true' for tool 'crm/tickets/put'. Pin the tool's registered write flag.", findings[0].Message);
+        Assert.Contains("writes is '(none)', but the registry holds 'false'", findings[1].Message, StringComparison.Ordinal);
+        Assert.Contains("writes is 'true', but the registry holds '(none)'", findings[2].Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Constructors_RefuseNull()
     {

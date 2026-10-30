@@ -18,6 +18,11 @@ namespace Frontier.Platform.Workflow.Orchestration;
 /// applies to <see cref="Frontier.Platform.Resilience.IResiliencePolicyProvider"/>, which is
 /// constructor-injected into the orchestrator for the same reason (dtf-determinism).</para>
 ///
+/// <para>Since ADR-PA41 an <see cref="Frontier.Platform.Workflow.Model.McpToolNode"/> pins its
+/// own classification in <c>writes</c>, copied from the registry when it is designed, and the
+/// engine asks this port only for a node that does not: one from a definition published before
+/// the flag existed. The purity requirement is unchanged for those.</para>
+///
 /// <para>A deployment that cannot classify a tool should answer <see langword="true"/>: fencing
 /// a read is a wasted call, while letting an unclassified write through defeats the sandbox.</para>
 /// </summary>

@@ -41,6 +41,15 @@ public sealed record DesignerToolDescriptor
     public string? OutputContractRef { get; init; }
 
     /// <summary>
+    /// Whether the registry records the tool as mutating its connector's state (ADR-E27 D11,
+    /// ADR-PA41); <see langword="null"/> when the registry holds no value. An <c>McpToolNode</c>
+    /// calling this tool pins exactly this value in <c>writes</c> (<c>mcp.tool-resolves</c>). The
+    /// design agent is shown it, because a writing node needs an idempotency key spec.
+    /// </summary>
+    [JsonPropertyName("writes")]
+    public bool? Writes { get; init; }
+
+    /// <summary>
     /// Whether the revalidation sweep found the server's live <c>tools/list</c> drifted from its
     /// pinned snapshot (ADR-E27 D9). A new publish may not use it until it is re-registered
     /// (<c>mcp.server-not-drifted</c>). Governance only, so the design agent is never shown it.
