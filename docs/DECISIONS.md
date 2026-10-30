@@ -2906,3 +2906,126 @@ Pinned, as the stack lands, by the role-definition golden files and governance t
 mapping-history isolation test, the evidence and staleness tests, the instructions-optional compiler
 and pipeline tests, and the replay test of a run recorded with an `instructions_ref`.
 
+## ADR-PA41 — an MCP node pins whether it writes, the designer copies what the registry holds, and the design agent reads contract annotations
+
+The consumer's ADR-E27 (contracts as data) makes an MCP tool's write flag governed registry data
+(D11), gives an `mcp_tool` node the contract refs its tool was registered with (D9, here ADR-PA39),
+and promises that the designer and the design agent read the same contract annotations (A3-R16,
+the consumer's contract-grounding requirement). This ADR records the platform's half, shipped in
+v0.45.0 beside the roles work in ADR-PA40 (consumer S13.117, slices 3 and 5; Mark, 2026-10-30).
+
+**Whether an MCP node writes is pinned in the definition** (Mark, 2026-10-30; consumer register
+S3-1). `McpToolNode` gains an optional `writes` (`bool?`, after `output_contract_type`, left out
+when null), copied from the tool's registry record when the node is designed. The orchestrator uses
+`node.Writes` when it is present and asks `IMcpWriteClassifier` only when it is not. `true` gives
+the step its idempotency key and the `mcp-write` retry profile; `false` gives no key and the
+`mcp-read` profile. A node's own retry spec still wins. The sandbox's write fence is applied by the
+consumer's tool catalogue when the tool is resolved, not here; making it follow the pinned flag is
+the consumer's slice 3 change.
+- *Why:* the classifier is called inside the orchestrator body, so its answer must not change
+  across replays of one run. An answer read from the registry can change: `McpToolRef` carries no
+  server version, and the consumer resolves a tool on the newest active version, which a new
+  registration replaces mid-run. Pinning the flag is ADR-E27 D15's rule applied to one more
+  governed fact: what runs is what was published, and replay re-reads it from the recorded input.
+- *Old definitions replay unchanged.* A definition published before this has no `writes`, keeps
+  its bytes and golden files, and takes the classifier path as before; no schema version moves.
+  `IMcpWriteClassifier` keeps its purity contract and now answers only for those definitions.
+- *Rejected:* a consumer classifier over a map loaded from the registry at worker start, frozen by
+  refusing any registration that changes a tool's flag. A reload mid-run breaks the port's contract,
+  and the freeze stops a governed field from ever changing in a new version. Also rejected: leaving
+  the hard-coded classifier in place until a later release.
+- `DesignerToolDescriptor` gains an optional `writes`: the registry's value for the tool, or null
+  when the registry holds none. The design agent is shown it, because a writing node needs an
+  `idempotency_key_spec`. `mcp.write-idempotency` still requires a spec on every `mcp_tool` node;
+  a read exemption on the pinned flag is a later change.
+- `mcp.tool-resolves` holds the node's `writes` to exactly the registry's value, as it already holds
+  the contract refs (ADR-PA39, slice 2c). Null on the node passes only when the registry holds none.
+- An agent node's `tool_refs` are not pinned this way. Their write flags and schemas stay with the
+  consumer at invocation (consumer register S3-9); per-run pinning of agent tools is a recorded lever.
+
+**The designer copies the tool's registry record onto the node.** ADR-PA39 said an `mcp_tool`
+node's contract refs are copied from the tool's registry record when the node is designed, but no
+code did it, so a node could be bound only by hand-written JSON. One pure function now does it:
+for each `mcp_tool` node whose `tool_ref` the tool catalogue resolves, it sets
+`input_contract_type`, `output_contract_type` and `writes` to the descriptor's values, overwriting
+whatever the node said. A node whose tool does not resolve is left alone, and `mcp.tool-resolves`
+reports it. The registry is the authority and the node holds a copy, so there is nothing to merge.
+- *Where it runs:* on every proposal the design agent returns, the first attempt and the repair
+  attempt alike, before the proposal is validated, diffed or merged. The diff the designer reviews
+  therefore shows the copied values, and the repair pass is never spent on fields the agent cannot
+  know. The function is public, so the consumer can apply the same rule wherever else it builds or
+  rewrites a definition (its migration of existing definitions, for one).
+- *Not at publish.* Publish validates; it does not rewrite. A reviewed proposal is published as it
+  was reviewed, and a registry change after review shows up as an `mcp.tool-resolves` finding, not
+  a silent edit. ADR-PA39's embedding at publish refuses in the same way.
+- *Not on a plain draft save.* `SaveDraftAsync` returns a handle, not the saved definition, so a
+  copy made there would be invisible to the editor that sent it. The consumer's Inspector shows
+  these fields read-only (consumer register S5-19).
+- A tool with no `outputSchema` has no output contract ref (consumer register S3-2), so the copy
+  leaves `output_contract_type` null and the result runs unvalidated, as ADR-PA39 already allows.
+
+**The design agent reads contract annotations** (consumer register S5-1, S5-2). ADR-PA39 left
+designer grounding to the consumer's slice 5; its agent half lives in the platform prompt, so it
+moves here. The "Available contracts" block keeps the CLR contract names it lists today and adds,
+for each registry contract, the text the consumer's contract panel shows: its ref, its
+contract-level `description`, each property's path and `description`, its `examples`, and each
+rule's `message` with its field path. The tool and role lists already carry their contract refs
+(`DesignerToolDescriptor`, `AgentRoleDescriptor`), and the prompt now says what they mean:
+- an `agent_task` bound to a role that declares contracts names those same refs
+  (`model-role.contracts-match`);
+- an MCP tool with no output contract ref is marked as returning **any JSON**;
+- an `mcp_tool` node's contract refs and `writes` are copied by the designer, so the agent need not
+  author them.
+- *Where the annotations come from:* `IContractSnapshotCatalog`, the one contract port (consumer
+  register, the collapse of the contract-lookup ports). It gains a `ListAsync(CancellationToken)`
+  that returns every registered contract that is not retired. A retired contract cannot be named by
+  a new publish, so the agent is never offered one. This is a break for the port's implementer, the
+  consumer's one adapter over its registry. If ADR-PA40 moves the port to a lower tier, it keeps its
+  name and this member moves with it.
+- *A discovered contract's gaps are marked.* A contract an MCP server supplied may lack
+  descriptions or examples, because the registration lint only warns for it (ADR-E27 D10). The
+  prompt marks such a contract and its undescribed properties. The gaps are found by running the
+  registration lint itself, exposed from `Frontier.Platform.Contracts` as a pure function over a
+  snapshot, so the prompt and registration can never disagree about what a gap is.
+- *The text is stable.* Contracts are listed in ordinal ref order, and annotations sit inside the
+  contract hash, so the block changes only when a contract version is registered or retired.
+- *No cap yet.* Every listed contract is rendered in full. A catalogue too large for the prompt
+  would need a cap or retrieval; that is a recorded lever, not built now.
+- Adding the port member and changing the prompt are the `workflow.compiler!` break. The prompt's
+  golden snapshot changes with it.
+
+**ADR-E27 D9's exporter check: what `JsonSchemaExporter` makes of the canonical profile's types.**
+D9 has .NET contracts generated with `JsonSchemaExporter` and then registered. A probe record
+(2026-10-30) with a fixed-precision decimal, a decimal with no declared scale, a `DateTime`, an
+`EngagementId`, a smart enum, a plain enum and a nullable string showed the following.
+- *The raw exporter cannot see the profile's converters.* Every property a converter owns (both
+  decimals, the `DateTime`, the `EngagementId` and the smart enum) exports as `true`, which accepts
+  anything. A `[Description]` is ignored, no content model is stated, and the root is typed as
+  object-or-null.
+- *`CanonicalOutputSchema`, the platform's converter-aware export, fixes most of it but not all.*
+  It rewrites the decimals, the `DateTime` and the smart enum into their wire schemas. It leaves
+  `EngagementId` as `true`. And once a property carries a `[Description]`, the export arrives as a
+  description-only object rather than `true`, the rewrite never fires, and the property again
+  accepts anything. No CLR contract in either repo uses `[Description]` today, so no response format
+  sent to a provider is affected. A generated contract needs descriptions, though, so the
+  generated path would hit this on its first property.
+- *Registration still refuses every one of these exports.* Each fails the lint for a generated
+  contract (no description or examples, content model unstated), so nothing loose registers by
+  accident. But a schema that carries the descriptions, examples and closed objects the lint asks
+  for would still pass with its converter-owned properties open. The lint checks legibility; it
+  cannot know the wire format.
+- *Decided:* the check becomes a test over the probe. It asserts that `CanonicalOutputSchema` gives
+  every converter-owned property its wire schema, with or without a `[Description]`. And once the
+  contract-level description, examples and closed content model are added, it asserts the export
+  passes `IContractRegistrationCheck` as a generated contract. `CanonicalOutputSchema`'s rewrite is
+  corrected in the same change to recognise the description-only node and to give `EngagementId`
+  its string schema. For every contract that exports today, its output is unchanged.
+- *Not decided here:* whether the platform also ships a helper that generates a registrable contract
+  from a CLR type, closing its objects and taking examples from the caller. Until then the generator
+  in an agent's repository adds those, and the test above is what holds them to the wire format.
+
+Each part is pinned by the PR that builds it: `McpToolNode`'s golden files (an unchanged definition
+keeps its bytes; a new golden pins `writes`), a replay test of a recorded run without the field
+next to a run with `true` and with `false`, the `mcp.tool-resolves` rule tests, the stamping
+function's tests and the design-turn tests, the `ChatDesignerService` prompt tests and golden
+snapshot, and the exporter probe test.
