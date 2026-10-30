@@ -71,6 +71,20 @@ field the runtime then reads; if they ever name different things, every workflow
 designs will validate and then fail live. Derive both from one constant rather than stating it
 twice.
 
+## The designer copies what the registry holds for an MCP tool
+
+An `mcp_tool` node's `input_contract_type`, `output_contract_type` and `writes` are the registry's
+values for its tool, never the designer's or the agent's (ADR-PA41). `McpToolRegistryStamp.Apply`
+overwrites them from the tool's `DesignerToolDescriptor`, nulls included, and leaves a node whose
+`tool_ref` does not resolve for `mcp.tool-resolves` to report. The chat designer applies it to
+every proposal the agent returns, the first attempt and the repair alike, before the proposal is
+validated, diffed or merged.
+
+Publish does not apply it. Publish validates, and a registry change after review shows up as an
+`mcp.tool-resolves` finding rather than a silent edit. A plain draft save does not apply it
+either. The function is public so you can apply the same rule wherever else you build or rewrite
+a definition, such as a migration of existing definitions.
+
 ## Publish pins the contracts
 
 Publish and test runs both call `IDefinitionContractEmbedder`, which embeds every registry
