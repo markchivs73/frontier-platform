@@ -19,7 +19,7 @@ public static class OrchestrationServiceCollectionExtensions
     /// <para>The consumer's composition root must additionally register: the governance
     /// libraries this composes (<c>AddFrontierContextAssembly</c>, <c>AddFrontierModelRoleConfig</c>,
     /// <c>AddFrontierGuardrails</c>, <c>AddFrontierAudit</c>, <c>AddFrontierHitl</c>,
-    /// <c>AddFrontierResilience</c>), and an implementation of every port the engine cannot
+    /// <c>AddFrontierResilience</c>, <c>AddFrontierContracts</c>), and an implementation of every port the engine cannot
     /// supply for itself — <see cref="IAgentInvoker"/>, <see cref="IInstructionsResolver"/>,
     /// <see cref="IMcpToolCatalog"/>, <see cref="IMcpEndpointResolver"/>,
     /// <see cref="IMcpWriteClassifier"/>, <see cref="IExecutionSnapshotReader"/>,

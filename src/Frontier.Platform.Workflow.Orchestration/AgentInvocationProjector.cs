@@ -35,5 +35,7 @@ internal static class AgentInvocationProjector
         LatencyMs = record.LatencyMs,
         ToolCalls = record.ToolCalls,
         InvokedAtUtc = record.InvokedAtUtc,
+        InputContractHash = record.InputContractHash,
+        OutputContractHash = record.OutputContractHash,
     };
 }

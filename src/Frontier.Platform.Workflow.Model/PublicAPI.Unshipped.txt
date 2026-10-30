@@ -32,6 +32,10 @@ Frontier.Platform.Workflow.Model.ProjectionField.Literal.init -> void
 Frontier.Platform.Workflow.Model.ProjectionField.ProjectionField() -> void
 Frontier.Platform.Workflow.Model.ProjectionField.Target.get -> string!
 Frontier.Platform.Workflow.Model.ProjectionField.Target.init -> void
+Frontier.Platform.Workflow.Model.StepCompletion.InputContractHash.get -> string?
+Frontier.Platform.Workflow.Model.StepCompletion.InputContractHash.init -> void
+Frontier.Platform.Workflow.Model.StepCompletion.OutputContractHash.get -> string?
+Frontier.Platform.Workflow.Model.StepCompletion.OutputContractHash.init -> void
 Frontier.Platform.Workflow.Model.WorkflowDefinition.Contracts.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Abstractions.ContractSnapshot!>?
 Frontier.Platform.Workflow.Model.WorkflowDefinition.Contracts.init -> void
 Frontier.Platform.Workflow.Model.WorkflowEdge.Projection.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Workflow.Model.ProjectionField!>?

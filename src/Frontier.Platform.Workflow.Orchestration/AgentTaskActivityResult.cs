@@ -49,4 +49,14 @@ public sealed record AgentTaskActivityResult
     [JsonPropertyOrder(6)]
     [JsonPropertyName("host_build")]
     public string? HostBuild { get; init; }
+
+    /// <summary>The hash of the registry contract that validated the input (ADR-E27 D15); <see langword="null"/> for a CLR contract, and on results recorded before this field.</summary>
+    [JsonPropertyOrder(7)]
+    [JsonPropertyName("input_contract_hash")]
+    public string? InputContractHash { get; init; }
+
+    /// <summary>The hash of the registry contract that validated the output (ADR-E27 D15); <see langword="null"/> for a CLR contract.</summary>
+    [JsonPropertyOrder(8)]
+    [JsonPropertyName("output_contract_hash")]
+    public string? OutputContractHash { get; init; }
 }

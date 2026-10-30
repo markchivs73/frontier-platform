@@ -171,6 +171,19 @@ internal static class AuditContractSamples
     public static SignedAuditRecord SignedAuditRecordWithOptionalFields() => SignedAuditRecord() with { Sandbox = true, DynamicContextEpoch = 3, DynamicContextHash = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" };
 
     /// <summary>S13.60: an audit record citing the dynamic-context epoch and hash the execution was assembled from.</summary>
+    /// <summary>ADR-E27 D15: an invocation validated against registry contracts names their hashes.</summary>
+    public static AuditRecord AuditRecordWithContractHashes() => AuditRecord() with
+    {
+        AgentInvocations =
+        [
+            AgentInvocation() with
+            {
+                InputContractHash = "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+                OutputContractHash = "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+            },
+        ],
+    };
+
     public static AuditRecord AuditRecordWithContextPin() => AuditRecord() with { DynamicContextEpoch = 3, DynamicContextHash = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" };
 
     /// <summary>A well-formed <see cref="SignedAuditRecord"/> (doc 05 §3, all 18 fields).</summary>

@@ -511,7 +511,17 @@ internal static class GraphOrchestratorSteps
         ToolRefs = node.ToolRefs,
         DynamicContextEpoch = state.DynamicContextEpoch,
         PinnedMapping = state.PinnedMappings?.GetValueOrDefault(node.Role),
+        InputContract = PinnedContract(input.Definition, node.InputContractType),
+        OutputContract = PinnedContract(input.Definition, node.OutputContractType),
     };
+
+    /// <summary>
+    /// The definition's pinned snapshot of <paramref name="contractRef"/> (ADR-E27 D15), or null when
+    /// the definition embeds none under that ref: a CLR contract name, or a definition published before
+    /// contracts were data. Read from the orchestration input, so it is replay-safe.
+    /// </summary>
+    internal static ContractSnapshot? PinnedContract(WorkflowDefinition definition, string? contractRef) =>
+        contractRef is null ? null : definition.Contracts?.FirstOrDefault(c => string.Equals(c.ContractRef, contractRef, StringComparison.Ordinal));
 
     /// <summary>
     /// Resolves <paramref name="node"/>'s upstream Data-edge payload from
@@ -537,6 +547,8 @@ internal static class GraphOrchestratorSteps
         CompletedAtUtc = context.CurrentUtcDateTime,
         ResolvedModel = result.ResolvedModel,
         HostBuild = result.HostBuild,
+        InputContractHash = result.InputContractHash,
+        OutputContractHash = result.OutputContractHash,
     };
 
     /// <summary>

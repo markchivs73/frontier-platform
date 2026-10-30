@@ -183,6 +183,8 @@ public sealed class GraphOrchestratorStepsTests
                 MappingVersion = 1,
             },
             HostBuild = "1.2.3+abc1234",
+            InputContractHash = "sha256:in",
+            OutputContractHash = "sha256:out",
         };
 
         var completion = GraphOrchestratorSteps.BuildStepCompletion(context, node, "correlation-1", result);
@@ -197,6 +199,23 @@ public sealed class GraphOrchestratorStepsTests
         Assert.Equal(context.CurrentUtcDateTime, completion.CompletedAtUtc);
         Assert.Equal(result.ResolvedModel, completion.ResolvedModel);
         Assert.Equal("1.2.3+abc1234", completion.HostBuild);   // ADR-E15 pin set: copied from the recorded result, never orchestrator statics
+        Assert.Equal("sha256:in", completion.InputContractHash);   // ADR-E27 D15
+        Assert.Equal("sha256:out", completion.OutputContractHash);
+    }
+
+    /// <summary>ADR-E27 D15: an agent node naming registry contracts carries the definition's pinned snapshots to its activity.</summary>
+    [Fact]
+    public void BuildActivityInput_CarriesThePinnedSnapshotsOfRegistryContracts()
+    {
+        var chain = OrchestrationFixtures.ThreeArtifactChain();
+        var node = (AgentTaskNode)chain.Nodes[0] with { InputContractType = "acme/ticket/1.0" };
+        var definition = chain with { Nodes = [node, .. chain.Nodes.Skip(1)], Contracts = [RegistryContractFixtures.Ticket] };
+        var state = new GraphExecutionState { StartedAtUtc = OrchestrationFixtures.StartedAtUtc };
+
+        var activityInput = GraphOrchestratorSteps.BuildActivityInput(OrchestrationFixtures.Input(definition), node, "c", "e", state);
+
+        Assert.Same(RegistryContractFixtures.Ticket, activityInput.InputContract);
+        Assert.Null(activityInput.OutputContract);
     }
 
     [Fact]

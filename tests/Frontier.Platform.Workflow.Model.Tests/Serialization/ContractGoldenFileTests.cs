@@ -46,6 +46,11 @@ public sealed class ContractGoldenFileTests
     public void WorkflowDefinitionWithContracts_SerializesStablyAndRoundTrips() =>
         ContractRoundTripAssertions.AssertStableAndRoundTrips(ContractSamples.WorkflowDefinitionWithContracts(), "workflow_definition_contracts.json");
 
+    /// <summary>ADR-E27 D15: a step's contract hashes. New golden; every older snapshot golden is unchanged.</summary>
+    [Fact]
+    public void ExecutionSnapshotWithContractHashes_SerializesStablyAndRoundTrips() =>
+        ContractRoundTripAssertions.AssertStableAndRoundTrips(ContractSamples.ExecutionSnapshotWithContractHashes(), "execution_snapshot_contract_hashes.json");
+
     /// <summary>ADR-E27 D13: the gate-decision contract a decided gate emits.</summary>
     [Fact]
     public void GateDecision_SerializesStablyAndRoundTrips() =>
