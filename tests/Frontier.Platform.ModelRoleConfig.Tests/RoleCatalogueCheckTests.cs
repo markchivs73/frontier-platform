@@ -89,6 +89,32 @@ public sealed class RoleCatalogueCheckTests
         Assert.Contains("no active mapping", result.FailureReason, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task EvaluateAsync_RoleMappedButWithoutADefinition_ReturnsFailNamingTheDefinition()
+    {
+        // ADR-PA40: no fallback to Phase1RoleCatalogue, so an unseeded definition fails the boot even
+        // though the role's mapping is live.
+        var registry = new FakeRoleRegistry { Catalogue = new RoleCatalogue { Roles = [] } };
+        registry.Mappings["deep-reasoning"] = BuildMapping("deep-reasoning", RolloutRing.Fleet);
+
+        var result = await RoleCatalogueCheck.EvaluateAsync(new HashSet<string>(StringComparer.Ordinal) { "deep-reasoning" }, registry, CancellationToken.None);
+
+        Assert.False(result.Passed);
+        Assert.Contains("no current role definition", result.FailureReason, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task EvaluateAsync_StoredAgentBackedRoleWithFleetMapping_ReturnsPass()
+    {
+        var role = RoleDefinitionSamples.AgentBacked();
+        var registry = new FakeRoleRegistry { Catalogue = new RoleCatalogue { Roles = [role] } };
+        registry.Mappings[role.RoleId] = BuildMapping(role.RoleId, RolloutRing.Fleet);
+
+        var result = await RoleCatalogueCheck.EvaluateAsync(new HashSet<string>(StringComparer.Ordinal) { role.RoleId }, registry, CancellationToken.None);
+
+        Assert.True(result.Passed);
+    }
+
     private static RoleMapping BuildMapping(string roleId, RolloutRing ring) => new()
     {
         RoleId = roleId,
@@ -113,7 +139,9 @@ public sealed class RoleCatalogueCheckTests
     {
         public Dictionary<string, RoleMapping> Mappings { get; } = new(StringComparer.Ordinal);
 
-        public Task<RoleCatalogue> GetCatalogueAsync(CancellationToken cancellationToken) => Task.FromResult(Phase1RoleCatalogue.Catalogue);
+        public RoleCatalogue Catalogue { get; init; } = RoleDefinitionSamples.Phase1;
+
+        public Task<RoleCatalogue> GetCatalogueAsync(CancellationToken cancellationToken) => Task.FromResult(Catalogue);
 
         public Task<RoleMapping> GetActiveMappingAsync(string roleId, CancellationToken cancellationToken)
         {

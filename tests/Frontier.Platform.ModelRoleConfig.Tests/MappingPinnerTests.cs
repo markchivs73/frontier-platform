@@ -203,7 +203,7 @@ public sealed class MappingPinnerTests
 
         public void Point(string roleId, int version) => current[roleId] = version;
 
-        public Task<RoleCatalogue> GetCatalogueAsync(CancellationToken cancellationToken) => Task.FromResult(Phase1RoleCatalogue.Catalogue);
+        public Task<RoleCatalogue> GetCatalogueAsync(CancellationToken cancellationToken) => Task.FromResult(RoleDefinitionSamples.Phase1);
 
         public Task<RoleMapping> GetActiveMappingAsync(string roleId, CancellationToken cancellationToken) =>
             Failure is not null ? throw Failure

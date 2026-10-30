@@ -1,3 +1,5 @@
+#pragma warning disable CS0618 // Phase1RoleCatalogue.Catalogue is obsolete as the catalogue but remains the migration source under test (ADR-PA40).
+
 namespace Frontier.Platform.ModelRoleConfig.Tests;
 
 /// <summary>S4.3/C-3 tests for the frozen Phase 1 role catalogue and <c>deep-reasoning</c> mapping (doc 08 §4, §6).</summary>
@@ -53,5 +55,37 @@ public sealed class Phase1RoleCatalogueTests
     public void DeepReasoningMappingV1_ApprovedByMark()
     {
         Assert.Equal("user:mark", Phase1RoleCatalogue.DeepReasoningMappingV1.ApprovedBy);
+    }
+
+    [Fact]
+    public void Catalogue_EveryRoleIsModelBackedWithoutContractsOrStamps()
+    {
+        // ADR-PA40 migration: the four roles migrate as model-backed v1 definitions with no contracts.
+        Assert.All(Phase1RoleCatalogue.Catalogue.Roles, role =>
+        {
+            Assert.Equal(RoleBacking.Model, role.Backing);
+            Assert.NotNull(role.Requirements);
+            Assert.Null(role.InputContractRef);
+            Assert.Null(role.OutputContractRef);
+            Assert.Null(role.DefinitionVersion);
+            Assert.Null(role.ApprovedBy);
+            Assert.Null(role.EffectiveFromUtc);
+        });
+    }
+
+    [Fact]
+    public void Catalogue_MigratedThroughTheStoredDocument_EqualsTheConstantFieldForField()
+    {
+        // The v1 documents the consumer seeds must equal this constant: storing and reading each role
+        // back loses nothing but the approval stamps the migration adds.
+        foreach (var role in Phase1RoleCatalogue.Catalogue.Roles)
+        {
+            var migrated = RoleDefinitionSamples.Migrated(role);
+
+            var read = RoleDefinitionDocument.FromDomain(migrated).ToDomain();
+
+            Assert.Equal(migrated, read);
+            Assert.Equal(role, read with { DefinitionVersion = null, ApprovedBy = null, EffectiveFromUtc = null });
+        }
     }
 }

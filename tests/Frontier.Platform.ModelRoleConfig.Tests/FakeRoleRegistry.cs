@@ -11,7 +11,7 @@ internal sealed class FakeRoleRegistry(params RoleMapping[] mappings) : IRoleReg
 {
     /// <inheritdoc />
     public Task<RoleCatalogue> GetCatalogueAsync(CancellationToken cancellationToken) =>
-        Task.FromResult(Phase1RoleCatalogue.Catalogue);
+        Task.FromResult(RoleDefinitionSamples.Phase1);
 
     /// <inheritdoc />
     public Task<RoleMapping> GetActiveMappingAsync(string roleId, CancellationToken cancellationToken) =>
