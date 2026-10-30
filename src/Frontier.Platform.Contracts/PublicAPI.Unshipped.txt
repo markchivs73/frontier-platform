@@ -1,5 +1,0 @@
-Frontier.Platform.Contracts.ContractShapes
-static Frontier.Platform.Contracts.ContractShapes.AlwaysPresent(System.Text.Json.JsonElement root, string! location) -> bool
-static Frontier.Platform.Contracts.ContractShapes.RequiredProperties(System.Text.Json.JsonElement root) -> System.Collections.Generic.IReadOnlyList<string!>!
-static Frontier.Platform.Contracts.ContractShapes.SameShape(System.Text.Json.JsonElement left, System.Text.Json.JsonElement right) -> bool
-static Frontier.Platform.Contracts.ContractShapes.ValueSchema(System.Text.Json.JsonElement root, string! location) -> System.Text.Json.JsonElement?

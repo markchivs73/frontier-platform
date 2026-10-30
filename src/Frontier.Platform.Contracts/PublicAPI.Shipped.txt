@@ -50,6 +50,7 @@ Frontier.Platform.Contracts.ContractRegistrationResult.Findings.init -> void
 Frontier.Platform.Contracts.ContractRegistrationResult.IsAccepted.get -> bool
 Frontier.Platform.Contracts.ContractRegistrationResult.Snapshot.get -> Frontier.Platform.Abstractions.ContractSnapshot?
 Frontier.Platform.Contracts.ContractRegistrationResult.Snapshot.init -> void
+Frontier.Platform.Contracts.ContractShapes
 Frontier.Platform.Contracts.ContractValidationResult
 Frontier.Platform.Contracts.ContractValidationResult.<Clone>$() -> Frontier.Platform.Contracts.ContractValidationResult!
 Frontier.Platform.Contracts.ContractValidationResult.ContractValidationResult(System.Collections.Generic.IReadOnlyList<Frontier.Platform.Contracts.ContractViolation!>! Violations) -> void
@@ -137,6 +138,10 @@ static Frontier.Platform.Contracts.ContractRegistrationRequest.operator !=(Front
 static Frontier.Platform.Contracts.ContractRegistrationRequest.operator ==(Frontier.Platform.Contracts.ContractRegistrationRequest? left, Frontier.Platform.Contracts.ContractRegistrationRequest? right) -> bool
 static Frontier.Platform.Contracts.ContractRegistrationResult.operator !=(Frontier.Platform.Contracts.ContractRegistrationResult? left, Frontier.Platform.Contracts.ContractRegistrationResult? right) -> bool
 static Frontier.Platform.Contracts.ContractRegistrationResult.operator ==(Frontier.Platform.Contracts.ContractRegistrationResult? left, Frontier.Platform.Contracts.ContractRegistrationResult? right) -> bool
+static Frontier.Platform.Contracts.ContractShapes.AlwaysPresent(System.Text.Json.JsonElement root, string! location) -> bool
+static Frontier.Platform.Contracts.ContractShapes.RequiredProperties(System.Text.Json.JsonElement root) -> System.Collections.Generic.IReadOnlyList<string!>!
+static Frontier.Platform.Contracts.ContractShapes.SameShape(System.Text.Json.JsonElement left, System.Text.Json.JsonElement right) -> bool
+static Frontier.Platform.Contracts.ContractShapes.ValueSchema(System.Text.Json.JsonElement root, string! location) -> System.Text.Json.JsonElement?
 static Frontier.Platform.Contracts.ContractValidationResult.Valid.get -> Frontier.Platform.Contracts.ContractValidationResult!
 static Frontier.Platform.Contracts.ContractValidationResult.operator !=(Frontier.Platform.Contracts.ContractValidationResult? left, Frontier.Platform.Contracts.ContractValidationResult? right) -> bool
 static Frontier.Platform.Contracts.ContractValidationResult.operator ==(Frontier.Platform.Contracts.ContractValidationResult? left, Frontier.Platform.Contracts.ContractValidationResult? right) -> bool
