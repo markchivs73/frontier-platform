@@ -1,3 +1,5 @@
+using System.Text.Json;
+using Frontier.Platform.Serialization;
 using Frontier.TestSupport;
 
 namespace Frontier.Platform.Audit.Tests;
@@ -29,4 +31,32 @@ public sealed class AuditGoldenFileTests
     [Fact]
     public void AuditRecordWithContractHashes_IsByteStableAndRoundTrips() =>
         ContractRoundTripAssertions.AssertStableAndRoundTrips(AuditContractSamples.AuditRecordWithContractHashes(), "audit_record_contract_hashes.json");
+
+    /// <summary>ADR-PA41: MCP steps and their contract hashes. New goldens; every older audit golden is unchanged.</summary>
+    [Fact]
+    public void AuditRecordWithMcpToolInvocations_IsByteStableAndRoundTrips() =>
+        ContractRoundTripAssertions.AssertStableAndRoundTrips(AuditContractSamples.AuditRecordWithMcpToolInvocations(), "audit_record_mcp_tool_invocations.json");
+
+    [Fact]
+    public void SignedAuditRecordWithMcpToolInvocations_IsByteStableAndRoundTrips() =>
+        ContractRoundTripAssertions.AssertStableAndRoundTrips(AuditContractSamples.SignedAuditRecordWithMcpToolInvocations(), "signed_audit_record_mcp_tool_invocations.json");
+
+    /// <summary>
+    /// ADR-PA41: verification rehydrates a stored record and re-serializes it. A record signed before MCP
+    /// steps were audited must come back to exactly its stored bytes through both copies the hasher makes,
+    /// or its signature would fail and read as tampering.
+    /// </summary>
+    [Theory]
+    [InlineData("signed_audit_record.json")]
+    [InlineData("signed_audit_record_optional_fields.json")]
+    public void RecordSignedBeforeMcpSteps_RecomputesToItsStoredBytes(string goldenFileName)
+    {
+        var stored = File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "GoldenFiles", goldenFileName));
+        var record = JsonSerializer.Deserialize<SignedAuditRecord>(stored, CanonicalProfile.Options)!;
+
+        var recomputed = AuditRecordHasher.ToSignedShape(AuditRecordHasher.ToAuditRecord(record), record.PreviousRecordHash, record.RecordHash, record.Signature, record.SigningKeyId);
+
+        Assert.Null(record.McpToolInvocations);
+        Assert.Equal(stored, CanonicalProfile.SerializeCanonical(recomputed));
+    }
 }

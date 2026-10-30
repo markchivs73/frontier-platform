@@ -79,6 +79,13 @@ one is a permanent contract violation, and an `isError: true` result is held who
 as before. The engine reads the JSON by its wire names, so the adapter needs no particular SDK type.
 A node with no output contract records the whole reply, unchanged.
 
+**The signed audit records every MCP step (ADR-PA41).** An MCP step's `StepCompletion` names its
+`tool_ref`, its `input_contract_type`, the JCS hash of the arguments the tool received
+(`McpToolActivityResult.InputHash`, idempotency key included) and, for a write-fenced call,
+`simulated: true`. At consolidation each such step becomes an `McpToolInvocation` on
+`AuditRecord.McpToolInvocations`, beside the contract hashes that validated it (ADR-E27 D15). An
+execution with no MCP step leaves the field out, so its record keeps the bytes it always had.
+
 **Model-role pinning (ADR-PA29).** When `GraphOrchestratorInput.PinModelRoles` is true, the
 orchestrator's first action is `PinMappingsActivity`, and every agent invocation resolves under
 the pin it recorded. The flag exists because of replay: an input recorded without it replays

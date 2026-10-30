@@ -54,9 +54,10 @@ internal sealed class McpToolInvocationPipeline : IMcpToolInvocationPipeline
         }
 
         var arguments = BuildArguments(input);
+        var argumentsJson = ArgumentsJson(arguments);
         if (input.InputContract is { } inputContract)
         {
-            RegistryContractCheck.Ensure(contractValidator, inputContract, ArgumentsJson(arguments));
+            RegistryContractCheck.Ensure(contractValidator, inputContract, argumentsJson);
         }
 
         var result = await InvokeWithTimeoutAsync(function, arguments, input.TimeoutSeconds, ct).ConfigureAwait(false);
@@ -81,6 +82,7 @@ internal sealed class McpToolInvocationPipeline : IMcpToolInvocationPipeline
             HostBuild = HostBuildInfo.Version,
             InputContractHash = input.InputContract?.Hash,
             OutputContractHash = outputContract?.Hash,
+            InputHash = JsonCanonicalizer.Hash(Encoding.UTF8.GetBytes(argumentsJson)),
         };
     }
 

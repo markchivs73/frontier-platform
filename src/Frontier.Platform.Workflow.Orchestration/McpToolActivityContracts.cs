@@ -106,4 +106,12 @@ public sealed record McpToolActivityResult
     /// <summary>The hash of the registry contract that validated the result (ADR-E27 D15); <see langword="null"/> when there was none, or the call was write-fenced.</summary>
     [JsonPropertyName("output_contract_hash")]
     public string? OutputContractHash { get; init; }
+
+    /// <summary>
+    /// SHA-256 hex of the RFC 8785 (JCS) form of the arguments exactly as the tool received them, the
+    /// write's <c>idempotency_key</c> included (ADR-E2 decision 2, ADR-PA41); <see langword="null"/> on
+    /// results recorded before the engine hashed them.
+    /// </summary>
+    [JsonPropertyName("input_hash")]
+    public string? InputHash { get; init; }
 }

@@ -98,4 +98,28 @@ public sealed record StepCompletion
     [JsonPropertyOrder(12)]
     [JsonPropertyName("output_contract_hash")]
     public string? OutputContractHash { get; init; }
+
+    /// <summary>
+    /// For an <see cref="Abstractions.NodeType.McpTool"/> step: the tool it called (ADR-CD9), copied from the
+    /// node so the audit can name it (ADR-PA41). Null for every other node type, and on records written
+    /// before MCP steps were audited.
+    /// </summary>
+    [JsonPropertyOrder(13)]
+    [JsonPropertyName("tool_ref")]
+    public string? ToolRef { get; init; }
+
+    /// <summary>For an MCP step: the registry ref of the node's input contract (ADR-PA39); null when the node names none, and for every other node type.</summary>
+    [JsonPropertyOrder(14)]
+    [JsonPropertyName("input_contract_type")]
+    public string? InputContractType { get; init; }
+
+    /// <summary>For an MCP step: SHA-256 hex of the RFC 8785 (JCS) form of the arguments the tool received (ADR-E2 decision 2); null for every other node type.</summary>
+    [JsonPropertyOrder(15)]
+    [JsonPropertyName("input_hash")]
+    public string? InputHash { get; init; }
+
+    /// <summary>For an MCP step: <c>true</c> when the call was write-fenced to a simulated ack (doc 13 §5); null (omitted) otherwise.</summary>
+    [JsonPropertyOrder(16)]
+    [JsonPropertyName("simulated")]
+    public bool? Simulated { get; init; }
 }

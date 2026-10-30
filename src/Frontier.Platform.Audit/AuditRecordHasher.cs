@@ -54,6 +54,7 @@ internal static class AuditRecordHasher
         Sandbox = record.Sandbox,
         DynamicContextEpoch = record.DynamicContextEpoch,
         DynamicContextHash = record.DynamicContextHash,
+        McpToolInvocations = record.McpToolInvocations,
         PreviousRecordHash = previousRecordHash,
         RecordHash = recordHash,
         Signature = signature,
@@ -80,5 +81,6 @@ internal static class AuditRecordHasher
         Sandbox = record.Sandbox,
         DynamicContextEpoch = record.DynamicContextEpoch,
         DynamicContextHash = record.DynamicContextHash,
+        McpToolInvocations = record.McpToolInvocations,
     };
 }

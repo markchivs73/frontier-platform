@@ -184,6 +184,35 @@ internal static class AuditContractSamples
         ],
     };
 
+    /// <summary>ADR-PA41: an <c>mcp_tool</c> step validated against registry contracts, as the signed audit records it.</summary>
+    public static McpToolInvocation McpToolInvocation() => new()
+    {
+        CorrelationId = "eng-1::wf-1::ticket-update::0",
+        NodeId = "ticket-update",
+        ArtifactKey = "ticket",
+        ToolRef = "com.example.crm/tickets/update_ticket",
+        InputContractType = "acme/ticket-update/1.0",
+        InputHash = "3333333333333333333333333333333333333333333333333333333333333333",
+        OutputContractType = "acme/ticket/1.0",
+        OutputHash = "4444444444444444444444444444444444444444444444444444444444444444",
+        InputContractHash = "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        OutputContractHash = "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        CompletedAtUtc = new DateTime(2026, 1, 1, 0, 40, 0, DateTimeKind.Utc),
+    };
+
+    /// <summary>ADR-PA41: a record naming one real MCP step and one write-fenced one (no output contract hash, marked simulated).</summary>
+    public static AuditRecord AuditRecordWithMcpToolInvocations() => AuditRecord() with
+    {
+        McpToolInvocations =
+        [
+            McpToolInvocation(),
+            McpToolInvocation() with { CorrelationId = "eng-1::wf-1::ticket-update::1", OutputHash = "5555555555555555555555555555555555555555555555555555555555555555", OutputContractHash = null, Simulated = true },
+        ],
+    };
+
+    /// <summary>ADR-PA41: the signed shape of <see cref="AuditRecordWithMcpToolInvocations"/>.</summary>
+    public static SignedAuditRecord SignedAuditRecordWithMcpToolInvocations() => SignedAuditRecord() with { McpToolInvocations = AuditRecordWithMcpToolInvocations().McpToolInvocations };
+
     public static AuditRecord AuditRecordWithContextPin() => AuditRecord() with { DynamicContextEpoch = 3, DynamicContextHash = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" };
 
     /// <summary>A well-formed <see cref="SignedAuditRecord"/> (doc 05 §3, all 18 fields).</summary>

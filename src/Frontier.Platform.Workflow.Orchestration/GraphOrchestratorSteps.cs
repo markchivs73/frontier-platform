@@ -264,6 +264,10 @@ internal static class GraphOrchestratorSteps
             HostBuild = result.HostBuild,
             InputContractHash = result.InputContractHash,
             OutputContractHash = result.OutputContractHash,
+            ToolRef = node.ToolRef,
+            InputContractType = node.InputContractType,
+            InputHash = result.InputHash,
+            Simulated = result.Simulated ? true : null,
         });
 
         if (node.ArtifactKey is not null)
