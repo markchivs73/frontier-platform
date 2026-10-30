@@ -135,7 +135,7 @@ public sealed class McpToolInvocationPipelineTests
     [Fact]
     public async Task RunAsync_ValidArgumentsAndResult_RecordBothContractHashes()
     {
-        var pipeline = Pipeline(_ => JsonDocument.Parse("""{"id":"T-1","priority":2}""").RootElement.Clone());
+        var pipeline = Pipeline(_ => Reply(CallToolResult("""{"id":"T-1","priority":2}""")));
         var args = RegistryContractFixtures.Snapshot("crm/args/1.0",
             """{"type":"object","description":"Args.","properties":{"ticket_id":{"type":"string","description":"Id."},"idempotency_key":{"type":"string","description":"Key."}},"required":["ticket_id"],"additionalProperties":false}""");
 
@@ -150,10 +150,91 @@ public sealed class McpToolInvocationPipelineTests
     [Fact]
     public async Task RunAsync_AResultThatFailsTheOutputContract_IsAContractViolation()
     {
-        var pipeline = Pipeline(_ => JsonDocument.Parse("""{"id":"T-1"}""").RootElement.Clone());
+        var pipeline = Pipeline(_ => Reply(CallToolResult("""{"id":"T-1"}""")));
 
         await Assert.ThrowsAsync<ContractViolationException>(() =>
             pipeline.RunAsync(Input() with { OutputContract = RegistryContractFixtures.Ticket }, CancellationToken.None));
+    }
+
+    /// <summary>
+    /// ADR-PA41: a tool that declares an outputSchema answers in structuredContent (MCP 2025-06-18), and the
+    /// adapter hands over the whole CallToolResult. The step records structuredContent alone, hashed over its JCS form.
+    /// </summary>
+    [Fact]
+    public async Task RunAsync_APinnedOutputContract_RecordsAndValidatesStructuredContent()
+    {
+        var pipeline = Pipeline(_ => Reply(CallToolResult("""{"priority":2,"id":"T-1"}""")));
+
+        var result = await pipeline.RunAsync(Input() with { OutputContract = RegistryContractFixtures.Ticket }, CancellationToken.None);
+
+        Assert.Equal("""{"priority":2,"id":"T-1"}""", result.OutputPayload);
+        Assert.Equal(JsonCanonicalizer.Hash("""{"id":"T-1","priority":2}"""u8), result.OutputHash);
+        Assert.Equal(RegistryContractFixtures.Ticket.Hash, result.OutputContractHash);
+        Assert.False(result.Simulated);
+    }
+
+    /// <summary>ADR-PA41: with an output contract pinned, a reply with no structured result is a permanent contract violation that says why.</summary>
+    [Theory]
+    [InlineData("""{"content":[{"type":"text","text":"{\"id\":\"T-1\",\"priority\":2}"}]}""")]
+    [InlineData("""{"content":[],"structuredContent":null}""")]
+    [InlineData("""{"id":"T-1","priority":2}""")]
+    [InlineData("\"T-1\"")]
+    public async Task RunAsync_APinnedOutputContract_WithoutStructuredContent_IsAPermanentViolation(string reply)
+    {
+        var pipeline = Pipeline(_ => Reply(reply));
+
+        var refused = await Assert.ThrowsAsync<ContractViolationException>(() =>
+            pipeline.RunAsync(Input() with { OutputContract = RegistryContractFixtures.Ticket }, CancellationToken.None));
+
+        Assert.Equal("acme/ticket/1.0", refused.ContractType);
+        Assert.Contains("has no structuredContent", Assert.Single(refused.Violations), StringComparison.Ordinal);
+    }
+
+    /// <summary>A tool that returns nothing at all has no structured result either.</summary>
+    [Fact]
+    public async Task RunAsync_APinnedOutputContract_NullReply_IsAPermanentViolation()
+    {
+        var pipeline = Pipeline(_ => null);
+
+        await Assert.ThrowsAsync<ContractViolationException>(() =>
+            pipeline.RunAsync(Input() with { OutputContract = RegistryContractFixtures.Ticket }, CancellationToken.None));
+    }
+
+    /// <summary>An isError result keeps today's handling: the whole result is held to the pinned contract, structuredContent or not.</summary>
+    [Fact]
+    public async Task RunAsync_AnIsErrorResult_IsHeldWholeToThePinnedContract()
+    {
+        var pipeline = Pipeline(_ => Reply("""{"content":[{"type":"text","text":"boom"}],"structuredContent":{"id":"T-1","priority":2},"isError":true}"""));
+
+        var refused = await Assert.ThrowsAsync<ContractViolationException>(() =>
+            pipeline.RunAsync(Input() with { OutputContract = RegistryContractFixtures.Ticket }, CancellationToken.None));
+
+        Assert.DoesNotContain(refused.Violations, v => v.Contains("has no structuredContent", StringComparison.Ordinal));
+    }
+
+    /// <summary>An isError: false result is an ordinary reply, so its structuredContent is what is recorded.</summary>
+    [Fact]
+    public async Task RunAsync_AnIsErrorFalseResult_RecordsStructuredContent()
+    {
+        var pipeline = Pipeline(_ => Reply("""{"content":[],"structuredContent":{"id":"T-1","priority":2},"isError":false}"""));
+
+        var result = await pipeline.RunAsync(Input() with { OutputContract = RegistryContractFixtures.Ticket }, CancellationToken.None);
+
+        Assert.Equal("""{"id":"T-1","priority":2}""", result.OutputPayload);
+    }
+
+    /// <summary>With no output contract pinned, the whole CallToolResult is recorded exactly as before.</summary>
+    [Fact]
+    public async Task RunAsync_NoOutputContract_RecordsTheWholeResultUnchanged()
+    {
+        var whole = CallToolResult("""{"id":"T-1","priority":2}""");
+        var pipeline = Pipeline(_ => Reply(whole));
+
+        var result = await pipeline.RunAsync(Input(), CancellationToken.None);
+
+        Assert.Equal(whole, result.OutputPayload);
+        Assert.Equal(JsonCanonicalizer.Hash(System.Text.Encoding.UTF8.GetBytes(whole)), result.OutputHash);
+        Assert.Null(result.OutputContractHash);
     }
 
     /// <summary>A write-fenced call returns the sandbox's ack, not the tool's reply, so the output contract does not apply.</summary>
@@ -181,6 +262,12 @@ public sealed class McpToolInvocationPipelineTests
 
         Assert.Equal("""{"ticket_id":"T-1","idempotency_key":"key-1"}""", McpToolInvocationPipeline.ArgumentsJson(arguments));
     }
+
+    /// <summary>A conforming MCP 2025-06-18 CallToolResult for a tool with an outputSchema: the text block mirrors the structured content.</summary>
+    private static string CallToolResult(string structured) =>
+        $$"""{"content":[{"type":"text","text":{{JsonSerializer.Serialize(structured)}}}],"structuredContent":{{structured}}}""";
+
+    private static JsonElement Reply(string json) => JsonDocument.Parse(json).RootElement.Clone();
 
     private static McpToolInvocationPipeline Pipeline(Func<AIFunctionArguments, object?> tool) =>
         new(new StubCatalog(new StubTool(tool)), TestContractValidator.Instance);

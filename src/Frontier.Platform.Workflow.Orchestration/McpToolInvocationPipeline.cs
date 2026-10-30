@@ -12,7 +12,9 @@ namespace Frontier.Platform.Workflow.Orchestration;
 /// resolve the node's one tool through <see cref="IMcpToolCatalog"/> (registry-backed
 /// endpoints; sandbox write-fencing applies exactly as it does for agent-mediated calls),
 /// map the upstream payload onto the tool's arguments by wire name, call it under the
-/// node's timeout, and return the canonical-JSON result. Stateless-core-friendly: no
+/// node's timeout, and return the canonical-JSON result. When the node pins an output contract,
+/// the recorded output is the tool's <c>structuredContent</c>, validated against that contract
+/// (ADR-PA41, see <see cref="McpStructuredResult"/>). Stateless-core-friendly: no
 /// section/store writes here — the orchestrator records outputs through the same
 /// activities agent steps use.
 /// </summary>
@@ -58,11 +60,13 @@ internal sealed class McpToolInvocationPipeline : IMcpToolInvocationPipeline
         }
 
         var result = await InvokeWithTimeoutAsync(function, arguments, input.TimeoutSeconds, ct).ConfigureAwait(false);
-        var payload = Canonicalize(result);
-        var simulated = IsSimulatedAck(payload);
+        var reply = Canonicalize(result);
+        var simulated = IsSimulatedAck(reply);
         var outputContract = simulated ? null : input.OutputContract;
+        var payload = reply;
         if (outputContract is not null)
         {
+            payload = McpStructuredResult.Output(reply, outputContract);
             RegistryContractCheck.Ensure(contractValidator, outputContract, payload);
         }
 

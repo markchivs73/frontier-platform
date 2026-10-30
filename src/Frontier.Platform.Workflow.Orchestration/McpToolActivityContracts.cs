@@ -79,7 +79,11 @@ public sealed record McpToolActivityResult
     [JsonPropertyName("tool_ref")]
     public required string ToolRef { get; init; }
 
-    /// <summary>The tool result as canonical JSON (a sandbox-fenced write returns the simulated ack, <c>{"simulated":true,...}</c>).</summary>
+    /// <summary>
+    /// The tool result as canonical JSON (a sandbox-fenced write returns the simulated ack, <c>{"simulated":true,...}</c>).
+    /// When the node pins an output contract, it is the result's <c>structuredContent</c> alone, the value held to
+    /// that contract (ADR-PA41).
+    /// </summary>
     [JsonPropertyName("output_payload")]
     public required string OutputPayload { get; init; }
 

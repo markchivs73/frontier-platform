@@ -71,6 +71,14 @@ asks `IMcpWriteClassifier`: `true` gives the step its idempotency key and the `m
 `false` neither key nor write profile (`mcp-read`). A node's own retry spec still wins. A definition
 published without the flag replays exactly as before, classified by the port.
 
+**An MCP node's output contract holds the tool's `structuredContent` (ADR-PA41).** A tool that
+declares an `outputSchema` answers in the `CallToolResult`'s `structuredContent` (MCP 2025-06-18),
+and the `IMcpToolCatalog` adapter may hand the engine that whole result as JSON. When the node pins
+`output_contract_type`, the step validates and records `structuredContent` alone; a reply without
+one is a permanent contract violation, and an `isError: true` result is held whole to the contract
+as before. The engine reads the JSON by its wire names, so the adapter needs no particular SDK type.
+A node with no output contract records the whole reply, unchanged.
+
 **Model-role pinning (ADR-PA29).** When `GraphOrchestratorInput.PinModelRoles` is true, the
 orchestrator's first action is `PinMappingsActivity`, and every agent invocation resolves under
 the pin it recorded. The flag exists because of replay: an input recorded without it replays

@@ -3029,3 +3029,39 @@ keeps its bytes; a new golden pins `writes`), a replay test of a recorded run wi
 next to a run with `true` and with `false`, the `mcp.tool-resolves` rule tests, the stamping
 function's tests and the design-turn tests, the `ChatDesignerService` prompt tests and golden
 snapshot, and the exporter probe test.
+
+**An MCP node's output contract is held to the tool's `structuredContent`** (Mark, 2026-10-30;
+found by the consumer's slice 3 team). The MCP specification (2025-06-18, Tools, "Structured
+Content" and "Output Schema") has a tool that declares an `outputSchema` return its result as a JSON
+object in the `CallToolResult`'s `structuredContent`, and says servers MUST return structured
+results that conform to that schema and clients SHOULD validate them against it. The same result
+carries `content` blocks (for backwards compatibility, a tool SHOULD also put the serialized JSON in
+a text block) and an optional `isError`. The consumer's tool adapter, the MCP C# SDK's
+`McpClientTool`, hands the engine that whole `CallToolResult` as JSON. Slice 2b validated the whole
+object, so every conforming reply failed its output contract, permanently.
+- *What changed:* when the node pins an output contract (`output_contract_type`, so
+  `McpToolActivityInput.OutputContract` is set) and the reply is not the sandbox's simulated ack,
+  the pipeline takes `structuredContent` out of the reply, validates it against the pinned contract,
+  and records it as the step's output: `output_payload` is its canonical JSON in the tool's key
+  order, and `output_hash` is taken over its RFC 8785 form, as for any payload (ADR-E2 decision 2).
+  The `content` blocks are not recorded, because what the next node consumes is the value the
+  contract describes.
+- *No structured result is a contract violation.* A reply with no `structuredContent` (or a null
+  one), or one that is not a `CallToolResult` object at all, is a permanent `ContractViolationException`
+  naming the contract, whose one violation says the result has no `structuredContent` and that a tool
+  declaring an `outputSchema` must return it. It is never retried: a contract ref is pinned only for
+  a tool registered with an `outputSchema` (consumer register S3-2), so the tool broke its own
+  declaration.
+- *`isError` keeps today's handling.* A result with `isError: true` is held whole to the pinned
+  contract, as before, so it still fails as a contract violation. Classifying a tool-level error on
+  its own (transient or permanent, with the tool's own message) is a recorded lever, not built now.
+- *The engine reads a JSON shape, not an SDK type.* It looks up `structuredContent` and `isError`
+  by their wire names on the reply's canonical JSON. No MCP SDK type enters the engine, and a
+  consumer adapter that produces the same JSON shape any other way works the same.
+- *A node with no output contract is unchanged.* The whole reply is recorded with the same bytes and
+  hash as before, and the sandbox ack is still recognised on the whole reply and never held to a
+  contract. Nothing recorded changes shape, so no activity contract, golden file or replay moves.
+- Pinned by the pipeline tests: a conforming `CallToolResult` records its `structuredContent` and
+  hashes its JCS form; a reply with no structured result, a null one, a bare object or a scalar, and
+  a null reply are refused with that message; `isError: true` is held whole; `isError: false` records
+  its `structuredContent`; and a node with no output contract records the whole result unchanged.
