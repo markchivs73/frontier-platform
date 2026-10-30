@@ -17,8 +17,12 @@ internal sealed class SmokeCatalogues :
     IContextComponentCatalog,
     IRetryProfileCatalog,
     IDesignerToolCatalog,
-    ICascadeGraphChecker
+    ICascadeGraphChecker,
+    IContractSnapshotCatalog
 {
+    public Task<RegisteredContract?> FindAsync(string contractRef, CancellationToken cancellationToken) =>
+        Task.FromResult<RegisteredContract?>(null);
+
     public Task<IReadOnlyList<AgentRoleDescriptor>> GetAgentRolesAsync(CancellationToken ct) =>
         Task.FromResult<IReadOnlyList<AgentRoleDescriptor>>([]);
 

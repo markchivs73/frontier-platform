@@ -174,7 +174,7 @@ Console.WriteLine($"  engine resolves : {orchestrator.GetType().Name}, {pipeline
 //    format that tells a model which contract to return, and the tool-name round trip. An
 //    adapter that had to reimplement either would become a second source of truth for bytes the
 //    engine already defines.
-_ = CanonicalOutputSchema.For<WorkflowDefinition>();
+_ = CanonicalOutputSchema.For<GateDecision>();
 await engineProvider.GetRequiredService<IMcpToolCatalog>()
     .ResolveAsync(["com.example.crm/tickets/get_ticket"], "eng-smoke-001::wf-smoke", CancellationToken.None);
 
@@ -192,12 +192,27 @@ engineServices.AddSingleton<IContextComponentCatalog, SmokeCatalogues>();
 engineServices.AddSingleton<IRetryProfileCatalog, SmokeCatalogues>();
 engineServices.AddSingleton<IDesignerToolCatalog, SmokeCatalogues>();
 engineServices.AddSingleton<ICascadeGraphChecker, SmokeCatalogues>();
+engineServices.AddSingleton<IContractSnapshotCatalog, SmokeCatalogues>();
 
 using var compilerProvider = engineServices.BuildServiceProvider();
 var compiler = compilerProvider.GetRequiredService<IDefinitionCompiler>();
 var rules = compilerProvider.GetServices<IDefinitionValidationRule>().Count();
 
 Console.WriteLine($"  compiler        : {compiler.GetType().Name}, {rules} validation rules registered");
+
+// ADR-PA39: publish pins the contracts a definition names, through a catalog the consumer supplies.
+// A definition naming only the engine's own gate-decision contract embeds it without the registry.
+using (var scope = compilerProvider.CreateScope())
+{
+    var embedder = scope.ServiceProvider.GetRequiredService<IDefinitionContractEmbedder>();
+    var pinned = await embedder.EmbedAsync(
+        definition with
+        {
+            Edges = [new WorkflowEdge { FromNodeId = "gate", ToNodeId = "next", Kind = EdgeKind.Data, ContractType = GateDecision.ContractRef }],
+        },
+        CancellationToken.None);
+    Console.WriteLine($"  contracts pinned: {string.Join(", ", pinned.Contracts!.Select(c => c.ContractRef))}");
+}
 
 if (rules < 20)
 {
