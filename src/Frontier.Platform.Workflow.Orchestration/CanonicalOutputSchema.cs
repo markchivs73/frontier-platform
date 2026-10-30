@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Reflection;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization.Metadata;
+using Frontier.Platform.Abstractions;
 using Frontier.Platform.Serialization;
 using Microsoft.Extensions.AI;
 using Frontier.Platform.Workflow.Model;
@@ -16,7 +17,7 @@ namespace Frontier.Platform.Workflow.Orchestration;
 /// alone is not enough: <see cref="System.Text.Json.Schema.JsonSchemaExporter"/> cannot
 /// introspect custom converters, so every property whose type is handled by one of
 /// <see cref="CanonicalProfile"/>'s converters (fixed-precision decimals, ISO-8601
-/// <see cref="DateTime"/>s, smart enums) came out as the boolean accept-anything schema
+/// <see cref="DateTime"/>s, <see cref="EngagementId"/>s, smart enums) came out as the boolean accept-anything schema
 /// <c>true</c> — which the Anthropic API rejects with <c>invalid_request_error</c>
 /// ("For 'object' type, property 'properties' is not supported"). Found live in S9.28's
 /// execution proof: <c>MatchDeveloperOutput.Score</c> (the first <see cref="decimal"/> on
@@ -113,7 +114,9 @@ public static class CanonicalOutputSchema
     /// (<c>"'additionalProperties' must be explicitly set to false"</c> — found live
     /// running <c>PricingSection</c> through <c>AuditGateTests</c>, the first
     /// dictionary-shaped contract property any live gate test exercised). Every other
-    /// node passes through unchanged. A boolean node for a scalar type this method does
+    /// node passes through unchanged, except a description-only node for a converter-opaque type,
+    /// which is what a <c>[Description]</c> makes of the boolean: it gets the wire-form schema with
+    /// the author's description kept in front (ADR-PA41). A boolean node for a scalar type this method does
     /// not recognise is left as-is — <c>CanonicalOutputSchemaTests</c>' sweep over every
     /// contract type fails on any that remain, so an unhandled converter is a PR-time test
     /// failure, not a production Anthropic 400.
@@ -125,14 +128,54 @@ public static class CanonicalOutputSchema
             return WithAdditionalProperties(node, elementType, context);
         }
 
+        if (DescriptionOnly(node) is { } description)
+        {
+            return WithDescription(OpaqueSchema(context), description) ?? node;
+        }
+
         if (node.GetValueKind() is not (System.Text.Json.JsonValueKind.True or System.Text.Json.JsonValueKind.False))
         {
             return node;
         }
 
-        // Nullable<T> properties (e.g. DateTime? EnrichedAtUtc) opaque the same way as T:
-        // STJ wraps the underlying converter, so schematize the underlying type.
-        return SchemaForType(Nullable.GetUnderlyingType(context.TypeInfo.Type) ?? context.TypeInfo.Type, context) ?? node;
+        return OpaqueSchema(context) ?? node;
+    }
+
+    /// <summary>
+    /// The wire-form schema for the converter-opaque type <paramref name="context"/> describes, or
+    /// <see langword="null"/>. <see cref="Nullable{T}"/> properties (e.g. <c>DateTime? EnrichedAtUtc</c>)
+    /// are opaque the same way as <c>T</c>, since STJ wraps the underlying converter, so the
+    /// underlying type is schematised.
+    /// </summary>
+    internal static JsonObject? OpaqueSchema(AIJsonSchemaCreateContext context) =>
+        SchemaForType(Nullable.GetUnderlyingType(context.TypeInfo.Type) ?? context.TypeInfo.Type, context);
+
+    /// <summary>
+    /// The text of a node that holds nothing but a <c>description</c>, or <see langword="null"/>.
+    /// A <c>[Description]</c> on a converter-opaque property turns the exporter's <c>true</c> into
+    /// this node (ADR-PA41), which accepts anything just the same.
+    /// </summary>
+    internal static string? DescriptionOnly(JsonNode node) =>
+        node is JsonObject { Count: 1 } schema
+        && schema["description"] is JsonValue value
+        && value.TryGetValue<string>(out var description)
+            ? description
+            : null;
+
+    /// <summary>
+    /// <paramref name="wire"/> with the author's <paramref name="description"/> in front of any
+    /// description of the wire form, or <see langword="null"/> when there is no wire schema.
+    /// </summary>
+    internal static JsonObject? WithDescription(JsonObject? wire, string description)
+    {
+        if (wire is null)
+        {
+            return null;
+        }
+
+        var wireDescription = wire["description"]?.GetValue<string>();
+        wire["description"] = wireDescription is null ? description : $"{description} {wireDescription}";
+        return wire;
     }
 
     /// <summary>Adds an explicit <c>additionalProperties</c> schema for <paramref name="valueType"/> to <paramref name="node"/> (which may already be a partial object schema, or fully opaque boolean <c>true</c>).</summary>
@@ -155,6 +198,11 @@ public static class CanonicalOutputSchema
         if (type == typeof(DateTime))
         {
             return DateTimeSchema();
+        }
+
+        if (type == typeof(EngagementId))
+        {
+            return new JsonObject { ["type"] = "string" };
         }
 
         return IsSmartEnum(type) ? SmartEnumSchema(type) : null;
