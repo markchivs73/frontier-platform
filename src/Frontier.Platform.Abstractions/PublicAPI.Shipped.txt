@@ -26,6 +26,31 @@ Frontier.Platform.Abstractions.ContextRequest.SchemaVersion.get -> string!
 Frontier.Platform.Abstractions.ContextRequest.SchemaVersion.init -> void
 Frontier.Platform.Abstractions.ContextRequest.Validate() -> void
 Frontier.Platform.Abstractions.ContractMigrator
+Frontier.Platform.Abstractions.ContractRule
+Frontier.Platform.Abstractions.ContractRule.<Clone>$() -> Frontier.Platform.Abstractions.ContractRule!
+Frontier.Platform.Abstractions.ContractRule.ContractRule() -> void
+Frontier.Platform.Abstractions.ContractRule.Equals(Frontier.Platform.Abstractions.ContractRule? other) -> bool
+Frontier.Platform.Abstractions.ContractRule.FieldPath.get -> string?
+Frontier.Platform.Abstractions.ContractRule.FieldPath.init -> void
+Frontier.Platform.Abstractions.ContractRule.Message.get -> string!
+Frontier.Platform.Abstractions.ContractRule.Message.init -> void
+Frontier.Platform.Abstractions.ContractRule.Rule.get -> string!
+Frontier.Platform.Abstractions.ContractRule.Rule.init -> void
+Frontier.Platform.Abstractions.ContractSnapshot
+Frontier.Platform.Abstractions.ContractSnapshot.<Clone>$() -> Frontier.Platform.Abstractions.ContractSnapshot!
+Frontier.Platform.Abstractions.ContractSnapshot.ContractRef.get -> string!
+Frontier.Platform.Abstractions.ContractSnapshot.ContractRef.init -> void
+Frontier.Platform.Abstractions.ContractSnapshot.ContractSnapshot() -> void
+Frontier.Platform.Abstractions.ContractSnapshot.Equals(Frontier.Platform.Abstractions.ContractSnapshot? other) -> bool
+Frontier.Platform.Abstractions.ContractSnapshot.Hash.get -> string!
+Frontier.Platform.Abstractions.ContractSnapshot.Hash.init -> void
+Frontier.Platform.Abstractions.ContractSnapshot.Rules.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Abstractions.ContractRule!>!
+Frontier.Platform.Abstractions.ContractSnapshot.Rules.init -> void
+Frontier.Platform.Abstractions.ContractSnapshot.Schema.get -> System.Text.Json.JsonElement
+Frontier.Platform.Abstractions.ContractSnapshot.Schema.init -> void
+Frontier.Platform.Abstractions.ContractSnapshot.SchemaVersion.get -> string!
+Frontier.Platform.Abstractions.ContractSnapshot.SchemaVersion.init -> void
+Frontier.Platform.Abstractions.ContractSnapshot.Validate() -> void
 Frontier.Platform.Abstractions.ContractViolationException
 Frontier.Platform.Abstractions.ContractViolationException.ContractType.get -> string!
 Frontier.Platform.Abstractions.ContractViolationException.ContractViolationException() -> void
@@ -115,6 +140,12 @@ const Frontier.Platform.Abstractions.ExecutionId.Separator = "::" -> string!
 override Frontier.Platform.Abstractions.ContextRequest.Equals(object? obj) -> bool
 override Frontier.Platform.Abstractions.ContextRequest.GetHashCode() -> int
 override Frontier.Platform.Abstractions.ContextRequest.ToString() -> string!
+override Frontier.Platform.Abstractions.ContractRule.Equals(object? obj) -> bool
+override Frontier.Platform.Abstractions.ContractRule.GetHashCode() -> int
+override Frontier.Platform.Abstractions.ContractRule.ToString() -> string!
+override Frontier.Platform.Abstractions.ContractSnapshot.Equals(object? obj) -> bool
+override Frontier.Platform.Abstractions.ContractSnapshot.GetHashCode() -> int
+override Frontier.Platform.Abstractions.ContractSnapshot.ToString() -> string!
 override Frontier.Platform.Abstractions.DynamicContextRefreshRequired.Equals(object? obj) -> bool
 override Frontier.Platform.Abstractions.DynamicContextRefreshRequired.GetHashCode() -> int
 override Frontier.Platform.Abstractions.DynamicContextRefreshRequired.ToString() -> string!
@@ -133,6 +164,10 @@ override Frontier.Platform.Abstractions.SmartEnum<TEnum>.ToString() -> string!
 static Frontier.Platform.Abstractions.ContextRequest.operator !=(Frontier.Platform.Abstractions.ContextRequest? left, Frontier.Platform.Abstractions.ContextRequest? right) -> bool
 static Frontier.Platform.Abstractions.ContextRequest.operator ==(Frontier.Platform.Abstractions.ContextRequest? left, Frontier.Platform.Abstractions.ContextRequest? right) -> bool
 static Frontier.Platform.Abstractions.ContractMigrator.Rehydrate<T>(System.ReadOnlyMemory<byte> storedBytes, System.Text.Json.JsonSerializerOptions! options, System.Collections.Generic.IReadOnlyDictionary<string!, System.Func<System.Text.Json.JsonElement, System.Text.Json.JsonSerializerOptions!, T>!>? adapters = null) -> T
+static Frontier.Platform.Abstractions.ContractRule.operator !=(Frontier.Platform.Abstractions.ContractRule? left, Frontier.Platform.Abstractions.ContractRule? right) -> bool
+static Frontier.Platform.Abstractions.ContractRule.operator ==(Frontier.Platform.Abstractions.ContractRule? left, Frontier.Platform.Abstractions.ContractRule? right) -> bool
+static Frontier.Platform.Abstractions.ContractSnapshot.operator !=(Frontier.Platform.Abstractions.ContractSnapshot? left, Frontier.Platform.Abstractions.ContractSnapshot? right) -> bool
+static Frontier.Platform.Abstractions.ContractSnapshot.operator ==(Frontier.Platform.Abstractions.ContractSnapshot? left, Frontier.Platform.Abstractions.ContractSnapshot? right) -> bool
 static Frontier.Platform.Abstractions.DynamicContextRefreshRequired.operator !=(Frontier.Platform.Abstractions.DynamicContextRefreshRequired? left, Frontier.Platform.Abstractions.DynamicContextRefreshRequired? right) -> bool
 static Frontier.Platform.Abstractions.DynamicContextRefreshRequired.operator ==(Frontier.Platform.Abstractions.DynamicContextRefreshRequired? left, Frontier.Platform.Abstractions.DynamicContextRefreshRequired? right) -> bool
 static Frontier.Platform.Abstractions.EngagementId.implicit operator Frontier.Platform.Abstractions.EngagementId!(string! value) -> Frontier.Platform.Abstractions.EngagementId!
