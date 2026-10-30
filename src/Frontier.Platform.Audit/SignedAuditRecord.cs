@@ -124,6 +124,11 @@ public sealed record SignedAuditRecord : IVersionedContract
     [JsonPropertyName("dynamic_context_hash")]
     public string? DynamicContextHash { get; init; }
 
+    /// <summary><see cref="AuditRecord.McpToolInvocations"/>, carried through and covered by <see cref="RecordHash"/> (ADR-PA41); omitted when null.</summary>
+    [JsonPropertyOrder(21)]
+    [JsonPropertyName("mcp_tool_invocations")]
+    public IReadOnlyList<McpToolInvocation>? McpToolInvocations { get; init; }
+
     /// <inheritdoc />
     public void Validate()
     {

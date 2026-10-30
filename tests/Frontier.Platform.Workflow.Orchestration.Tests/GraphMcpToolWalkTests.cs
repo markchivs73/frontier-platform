@@ -57,6 +57,38 @@ public sealed class GraphMcpToolWalkTests
         Assert.Null(step.InputContractHash);
     }
 
+    /// <summary>ADR-PA41: an MCP step names its tool, its input contract and the arguments' hash, so the audit can record it.</summary>
+    [Fact]
+    public async Task ToolNode_StepNamesItsToolInputContractAndArgumentsHash()
+    {
+        var definition = Definition(toolRef: "com.example.crm/tickets/update_ticket");
+        definition = definition with
+        {
+            Nodes = [.. definition.Nodes.Select(n => n is McpToolNode tool ? tool with { InputContractType = "acme/ticket-update/1.0" } : n)],
+        };
+        var harness = new McpHarness(definition);
+
+        var state = await harness.RunWalkAsync();
+
+        var step = Assert.Single(state.CompletedSteps, s => s.NodeId == "t-tool");
+        Assert.Equal("com.example.crm/tickets/update_ticket", step.ToolRef);
+        Assert.Equal("acme/ticket-update/1.0", step.InputContractType);
+        Assert.Equal(McpHarness.ArgumentsHash, step.InputHash);
+        Assert.Null(step.Simulated); // a real call is never marked
+        Assert.Null(Assert.Single(state.CompletedSteps, s => s.NodeId != "t-tool").ToolRef); // only MCP steps name a tool
+    }
+
+    /// <summary>A write-fenced call is marked simulated on its step, as on an agent's <c>ToolCall</c>.</summary>
+    [Fact]
+    public async Task ToolNode_SimulatedCall_IsMarkedOnTheStep()
+    {
+        var harness = new McpHarness(Definition(toolRef: "com.example.crm/tickets/update_ticket")) { Simulated = true };
+
+        var state = await harness.RunWalkAsync();
+
+        Assert.True(Assert.Single(state.CompletedSteps, s => s.NodeId == "t-tool").Simulated);
+    }
+
     [Fact]
     public async Task ReadToolNode_NoIdempotencyKey_ReadProfile()
     {
@@ -271,8 +303,9 @@ public sealed class GraphMcpToolWalkTests
                     ToolRef = activityInput.ToolRef,
                     OutputPayload = payload,
                     OutputHash = CanonicalProfile.Hash(payload),
-                    Simulated = false,
+                    Simulated = Simulated,
                     HostBuild = "test-build",
+                    InputHash = ArgumentsHash,
                     InputContractHash = activityInput.InputContract?.Hash,
                     OutputContractHash = activityInput.OutputContract?.Hash,
                 };
@@ -288,6 +321,10 @@ public sealed class GraphMcpToolWalkTests
                 return new ArtifactStateActivityResponse { SectionRef = $"{request.ExecutionId}:{request.ArtifactKey}:v{request.Version}" };
             };
         }
+
+        public const string ArgumentsHash = "args-hash";
+
+        public bool Simulated { get; init; }
 
         public FakeTaskOrchestrationContext Context { get; }
         public FakeResiliencePolicyProvider PolicyProvider { get; } = new();

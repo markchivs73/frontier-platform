@@ -3065,3 +3065,38 @@ object, so every conforming reply failed its output contract, permanently.
   hashes its JCS form; a reply with no structured result, a null one, a bare object or a scalar, and
   a null reply are refused with that message; `isError: true` is held whole; `isError: false` records
   its `structuredContent`; and a node with no output contract records the whole result unchanged.
+
+**The signed audit records each MCP step and the contract hashes that validated it** (Mark,
+2026-10-30). ADR-E27 D15 says the audit records the contract hash that validated each step. Slice 2b
+put those hashes on `AgentInvocation`, but the signed `AuditRecord` held agent invocations only, so an
+`mcp_tool` step's hashes reached the snapshot and never the signed record.
+- *What is recorded:* `AuditRecord.McpToolInvocations` (`mcp_tool_invocations`, after
+  `dynamic_context_hash`), a list of `McpToolInvocation`: `correlation_id`, `node_id`,
+  `artifact_key`, `tool_ref`, `input_contract_type`, `input_hash`, `output_contract_type`,
+  `output_hash`, `input_contract_hash`, `output_contract_hash`, `simulated` and `completed_at_utc`.
+  Hashes, never payloads (doc 05 §6). A node that names no output contract records none rather
+  than the step's empty name, and a write-fenced call is `simulated: true` with no output contract
+  hash, as its step already has. The name follows `AgentInvocation`; it is not a `ToolCall`, which is
+  a call an agent made inside its invocation.
+- *Signed, through the existing path.* `SignedAuditRecord` carries the field after
+  `dynamic_context_hash`, and `AuditRecordHasher` copies it both ways, so it sits inside
+  `record_hash` and an edit to any entry fails the signature. Nothing else in the signing path moved.
+- *Where it comes from:* the final snapshot's completed steps, the DTF-side evidence the consolidator
+  already reads for the timeline. An MCP step is not a model call, so it stages no telemetry. The
+  step therefore now names, all optional: `tool_ref` and `input_contract_type`, copied from the node
+  in the orchestrator body (replay-safe: the definition rides inline), `input_hash` from the activity
+  result, and `simulated` (`true` or absent). Only MCP steps set them.
+- *The arguments are hashed.* No hash of an MCP call's arguments existed. The pipeline now hashes
+  the arguments exactly as the tool received them, the object it already validates, idempotency key
+  included, over their RFC 8785 form (ADR-E2 decision 2), as `McpToolActivityResult.InputHash`
+  (optional, so a result recorded before replays with none).
+- *Older records keep their bytes.* The field is omitted when an execution ran no MCP step and is
+  absent from every record signed before it, so those records recompute to exactly their stored
+  bytes and verify unchanged. An MCP step recorded before steps named their tool has no entry; its
+  `task_completed` event is still on the timeline. No schema version moves: this is an additive,
+  optional change, the canonical profile's minor-change rule, as `sandbox` and the context pin were.
+- Pinned by the new `audit_record_mcp_tool_invocations.json`,
+  `signed_audit_record_mcp_tool_invocations.json` and `execution_snapshot_mcp_step.json` golden files
+  (every older golden unchanged); a test that the two older signed goldens recompute to their stored
+  bytes; a verifier test that a record with MCP steps verifies and an edited contract hash breaks it;
+  the signed-shape parity test; and the projector, consolidator, walk and pipeline tests.

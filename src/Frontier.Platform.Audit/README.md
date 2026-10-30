@@ -61,7 +61,8 @@ reads it from user-secrets on that test project).
 
 - `AuditRecord` — one execution's unsigned record: identity, the pinned definition version and
   hash, start/close timestamps, terminal status, the orchestration event timeline, agent
-  invocations, validator outcomes, human decisions and aggregated cache metrics.
+  invocations, validator outcomes, human decisions and aggregated cache metrics; and, optionally,
+  the execution's `mcp_tool` steps.
 - `SignedAuditRecord` — the same fields plus `previous_record_hash`, `record_hash`, `signature`
   and `signing_key_id`. This is what lands in Cosmos.
 - `WorkflowEvent` / `WorkflowEventType` — the durable-history event kinds the consolidator maps
@@ -69,6 +70,10 @@ reads it from user-secrets on that test project).
   execution started/completed).
 - `AgentInvocation`, `ToolCall`, `ValidatorOutcome`, `HumanDecisionRecord`, `CacheMetrics` /
   `CacheTierMetrics` — the per-invocation evidence the record aggregates.
+- `McpToolInvocation` — one `mcp_tool` node's deterministic tool call (ADR-PA41): its `tool_ref`,
+  input and output contract refs, the arguments' and output's hashes, the hash of each registry
+  contract that validated it (ADR-E27 D15), and `simulated` for a write-fenced call. Not to be
+  confused with `ToolCall`, which is a call an agent made inside an `AgentInvocation`.
 - `AuditTelemetryRecord` — one invocation's staged telemetry, written by the invocation pipeline
   as it happens and read back at consolidation.
 - `AuditQuery` / `AuditSummary` / `VerificationResult` — the governance read surface.
@@ -193,6 +198,10 @@ migrated. Git history holds the 1.0 bytes if they are ever needed.
   and `workflow_id` as explicit fields; the partition key comes from the typed field, not from
   splitting the composite id. Reading it back out is what produced ADR-PA12's mis-partitioning
   defect.
+- **MCP steps are recorded, and only when there are some** (ADR-PA41). `mcp_tool_invocations` is
+  covered by `record_hash` like every other content field. It is omitted when the execution ran no
+  MCP step, and absent on every record signed before it existed, so those records recompute to
+  their stored bytes and verify unchanged; no schema version moved, per the minor-change rule above.
 - **Sandbox runs are marked, not mixed.** `AuditRecord.Sandbox` is `true` for a `SANDBOX-`-prefixed
   engagement and omitted entirely otherwise, so existing golden bytes are unaffected and the
   aggregation layer can filter test runs out of empirical evidence with a one-line predicate.

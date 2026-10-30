@@ -466,6 +466,36 @@ internal static class ContractSamples
         };
     }
 
+    /// <summary>ADR-PA41: an <c>mcp_tool</c> step names its tool, its input contract and the arguments' hash, and a write-fenced one is marked simulated.</summary>
+    public static ExecutionSnapshot ExecutionSnapshotWithMcpStep()
+    {
+        var snapshot = ExecutionSnapshot();
+        return snapshot with
+        {
+            CompletedSteps =
+            [
+                .. snapshot.CompletedSteps,
+                new StepCompletion
+                {
+                    NodeId = "ticket-update",
+                    NodeType = NodeType.McpTool,
+                    ArtifactKey = "ticket",
+                    CorrelationId = "eng-1::wf-1::ticket-update::0",
+                    OutputContractType = "acme/ticket/1.0",
+                    OutputHash = "4444444444444444444444444444444444444444444444444444444444444444",
+                    RetryCount = 0,
+                    CompletedAtUtc = new DateTime(2026, 1, 1, 0, 40, 0, DateTimeKind.Utc),
+                    HostBuild = "1.2.3+abc",
+                    InputContractHash = "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+                    ToolRef = "com.example.crm/tickets/update_ticket",
+                    InputContractType = "acme/ticket-update/1.0",
+                    InputHash = "3333333333333333333333333333333333333333333333333333333333333333",
+                    Simulated = true,
+                },
+            ],
+        };
+    }
+
     /// <summary>ADR-E27 D13: what a decided gate emits.</summary>
     public static GateDecision GateDecision() => new()
     {

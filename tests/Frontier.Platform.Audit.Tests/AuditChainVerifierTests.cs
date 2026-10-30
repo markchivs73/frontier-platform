@@ -58,6 +58,23 @@ public sealed class AuditChainVerifierTests
         Assert.Equal(tampered.ExecutionId, result.BrokenLinkAt);
     }
 
+    /// <summary>ADR-PA41: MCP steps sit inside the hashed bytes, so a record naming them signs and verifies, and an edited contract hash is caught.</summary>
+    [Fact]
+    public void Verify_RecordWithMcpToolInvocations_VerifiesAndAnEditedContractHashIsCaught()
+    {
+        var unsigned = AuditRecordHasherTests.Sample() with { McpToolInvocations = AuditContractSamples.AuditRecordWithMcpToolInvocations().McpToolInvocations };
+        var record = Sign(unsigned, AuditRecordHasher.ComputeGenesisHash("eng-1"), V1);
+        var tampered = record with { McpToolInvocations = [record.McpToolInvocations![0] with { InputContractHash = "sha256:forged" }] };
+
+        var valid = AuditChainVerifier.Verify([record], record.ExecutionId, "eng-1", Keys(V1));
+        var broken = AuditChainVerifier.Verify([tampered], tampered.ExecutionId, "eng-1", Keys(V1));
+
+        Assert.True(valid.SignatureValid);
+        Assert.True(valid.ChainValid);
+        Assert.False(broken.SignatureValid);
+        Assert.Equal(tampered.ExecutionId, broken.BrokenLinkAt);
+    }
+
     [Fact]
     public void Verify_TwoRecordChain_SecondLinksToFirst()
     {

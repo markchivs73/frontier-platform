@@ -109,6 +109,16 @@ public sealed record AuditRecord : IVersionedContract
     [JsonPropertyName("dynamic_context_hash")]
     public string? DynamicContextHash { get; init; }
 
+    /// <summary>
+    /// The execution's <c>mcp_tool</c> steps, each with the hashes of the registry contracts that
+    /// validated it (ADR-E27 D15, ADR-PA41). <see langword="null"/> (omitted on the wire) when the
+    /// execution ran none, and on records written before MCP steps were audited, so existing golden
+    /// and signed bytes are unaffected.
+    /// </summary>
+    [JsonPropertyOrder(17)]
+    [JsonPropertyName("mcp_tool_invocations")]
+    public IReadOnlyList<McpToolInvocation>? McpToolInvocations { get; init; }
+
     /// <inheritdoc />
     public void Validate()
     {

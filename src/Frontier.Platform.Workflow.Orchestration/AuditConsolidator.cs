@@ -54,6 +54,8 @@ internal sealed class AuditConsolidator(IExecutionSnapshotReader snapshotReader,
         // final pin), beside the definition hash it has always carried.
         DynamicContextEpoch = snapshot.DynamicContextEpoch,
         DynamicContextHash = snapshot.DynamicContextHash,
+        // ADR-PA41: each mcp_tool step and the contract hashes that validated it (ADR-E27 D15).
+        McpToolInvocations = McpToolInvocationProjector.Project(snapshot.CompletedSteps),
         // S9.38e: SANDBOX-{guid} engagement ids are minted only by S9.38a's TestRunExecutorAdapter.
         Sandbox = engagementId.StartsWith(SandboxEngagementIdPrefix, StringComparison.Ordinal) ? true : null,
     };

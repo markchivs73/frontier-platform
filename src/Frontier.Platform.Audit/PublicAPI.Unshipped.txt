@@ -1,0 +1,37 @@
+Frontier.Platform.Audit.AuditRecord.McpToolInvocations.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.McpToolInvocation!>?
+Frontier.Platform.Audit.AuditRecord.McpToolInvocations.init -> void
+Frontier.Platform.Audit.McpToolInvocation
+Frontier.Platform.Audit.McpToolInvocation.<Clone>$() -> Frontier.Platform.Audit.McpToolInvocation!
+Frontier.Platform.Audit.McpToolInvocation.ArtifactKey.get -> string?
+Frontier.Platform.Audit.McpToolInvocation.ArtifactKey.init -> void
+Frontier.Platform.Audit.McpToolInvocation.CompletedAtUtc.get -> System.DateTime
+Frontier.Platform.Audit.McpToolInvocation.CompletedAtUtc.init -> void
+Frontier.Platform.Audit.McpToolInvocation.CorrelationId.get -> string!
+Frontier.Platform.Audit.McpToolInvocation.CorrelationId.init -> void
+Frontier.Platform.Audit.McpToolInvocation.Equals(Frontier.Platform.Audit.McpToolInvocation? other) -> bool
+Frontier.Platform.Audit.McpToolInvocation.InputContractHash.get -> string?
+Frontier.Platform.Audit.McpToolInvocation.InputContractHash.init -> void
+Frontier.Platform.Audit.McpToolInvocation.InputContractType.get -> string?
+Frontier.Platform.Audit.McpToolInvocation.InputContractType.init -> void
+Frontier.Platform.Audit.McpToolInvocation.InputHash.get -> string?
+Frontier.Platform.Audit.McpToolInvocation.InputHash.init -> void
+Frontier.Platform.Audit.McpToolInvocation.McpToolInvocation() -> void
+Frontier.Platform.Audit.McpToolInvocation.NodeId.get -> string!
+Frontier.Platform.Audit.McpToolInvocation.NodeId.init -> void
+Frontier.Platform.Audit.McpToolInvocation.OutputContractHash.get -> string?
+Frontier.Platform.Audit.McpToolInvocation.OutputContractHash.init -> void
+Frontier.Platform.Audit.McpToolInvocation.OutputContractType.get -> string?
+Frontier.Platform.Audit.McpToolInvocation.OutputContractType.init -> void
+Frontier.Platform.Audit.McpToolInvocation.OutputHash.get -> string!
+Frontier.Platform.Audit.McpToolInvocation.OutputHash.init -> void
+Frontier.Platform.Audit.McpToolInvocation.Simulated.get -> bool?
+Frontier.Platform.Audit.McpToolInvocation.Simulated.init -> void
+Frontier.Platform.Audit.McpToolInvocation.ToolRef.get -> string!
+Frontier.Platform.Audit.McpToolInvocation.ToolRef.init -> void
+Frontier.Platform.Audit.SignedAuditRecord.McpToolInvocations.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.McpToolInvocation!>?
+Frontier.Platform.Audit.SignedAuditRecord.McpToolInvocations.init -> void
+override Frontier.Platform.Audit.McpToolInvocation.Equals(object? obj) -> bool
+override Frontier.Platform.Audit.McpToolInvocation.GetHashCode() -> int
+override Frontier.Platform.Audit.McpToolInvocation.ToString() -> string!
+static Frontier.Platform.Audit.McpToolInvocation.operator !=(Frontier.Platform.Audit.McpToolInvocation? left, Frontier.Platform.Audit.McpToolInvocation? right) -> bool
+static Frontier.Platform.Audit.McpToolInvocation.operator ==(Frontier.Platform.Audit.McpToolInvocation? left, Frontier.Platform.Audit.McpToolInvocation? right) -> bool

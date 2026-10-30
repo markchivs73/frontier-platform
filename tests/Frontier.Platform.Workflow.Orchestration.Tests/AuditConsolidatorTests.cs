@@ -70,6 +70,28 @@ public sealed class AuditConsolidatorTests
         Assert.Equal(CacheMetricsAggregator.Aggregate([telemetry]), record.CacheMetrics);
     }
 
+    /// <summary>ADR-PA41: the record names each MCP step and the contract hashes that validated it (ADR-E27 D15).</summary>
+    [Fact]
+    public void BuildAuditRecord_McpStep_IsRecordedWithItsContractHashes()
+    {
+        var snapshot = WorkflowEventProjectorTests.Snapshot();
+        snapshot = snapshot with { CompletedSteps = [.. snapshot.CompletedSteps, McpToolInvocationProjectorTests.McpStep()] };
+
+        var record = AuditConsolidator.BuildAuditRecord(Input, snapshot.EngagementId, snapshot.WorkflowId, snapshot, []);
+
+        var invocation = Assert.Single(record.McpToolInvocations!);
+        Assert.Equal(McpToolInvocationProjector.ToMcpToolInvocation(McpToolInvocationProjectorTests.McpStep()), invocation);
+    }
+
+    /// <summary>An execution with no MCP step leaves the field out, so its record keeps the bytes it had.</summary>
+    [Fact]
+    public void BuildAuditRecord_NoMcpStep_LeavesMcpToolInvocationsNull()
+    {
+        var snapshot = WorkflowEventProjectorTests.Snapshot();
+
+        Assert.Null(AuditConsolidator.BuildAuditRecord(Input, snapshot.EngagementId, snapshot.WorkflowId, snapshot, []).McpToolInvocations);
+    }
+
     [Fact]
     public void BuildAuditRecord_AlwaysSetsEmptyValidatorOutcomes()
     {

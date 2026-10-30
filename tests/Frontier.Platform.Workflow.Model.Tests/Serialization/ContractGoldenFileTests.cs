@@ -61,6 +61,11 @@ public sealed class ContractGoldenFileTests
     public void ExecutionSnapshotWithContractHashes_SerializesStablyAndRoundTrips() =>
         ContractRoundTripAssertions.AssertStableAndRoundTrips(ContractSamples.ExecutionSnapshotWithContractHashes(), "execution_snapshot_contract_hashes.json");
 
+    /// <summary>ADR-PA41: an MCP step's audit fields. New golden; every older snapshot golden is unchanged.</summary>
+    [Fact]
+    public void ExecutionSnapshotWithMcpStep_SerializesStablyAndRoundTrips() =>
+        ContractRoundTripAssertions.AssertStableAndRoundTrips(ContractSamples.ExecutionSnapshotWithMcpStep(), "execution_snapshot_mcp_step.json");
+
     /// <summary>ADR-E27 D13: the gate-decision contract a decided gate emits.</summary>
     [Fact]
     public void GateDecision_SerializesStablyAndRoundTrips() =>

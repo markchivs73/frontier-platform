@@ -60,6 +60,20 @@ public sealed class McpToolInvocationPipelineTests
         Assert.False(McpToolInvocationPipeline.IsSimulatedAck("\"scalar\""));
     }
 
+    /// <summary>ADR-PA41: the arguments' hash is taken over the RFC 8785 form of what the tool received, key included, so payload key order does not move it.</summary>
+    [Fact]
+    public async Task RunAsync_RecordsTheJcsHashOfTheArgumentsTheToolReceived()
+    {
+        var pipeline = new McpToolInvocationPipeline(
+            new StubCatalog(new StubTool(_ => JsonDocument.Parse("""{"updated":true}""").RootElement.Clone())),
+            TestContractValidator.Instance);
+
+        var result = await pipeline.RunAsync(Input() with { InputPayload = """{"b":1,"a":"x"}""", IdempotencyKey = "k-1" }, CancellationToken.None);
+
+        var expected = JsonCanonicalizer.Hash("""{"a":"x","b":1,"idempotency_key":"k-1"}"""u8);
+        Assert.Equal(expected, result.InputHash);
+    }
+
     [Fact]
     public async Task RunAsync_InvokesResolvedTool_AndReturnsCanonicalHashedResult()
     {
