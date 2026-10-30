@@ -410,6 +410,45 @@ internal static class ContractSamples
         ],
     };
 
+    /// <summary>
+    /// ADR-PA41: MCP nodes that pin their write classification, one of each value. Pins where
+    /// <c>writes</c> sits on the wire; every older definition golden, whose nodes carry no flag, is
+    /// untouched, which is the compatibility claim.
+    /// </summary>
+    public static WorkflowDefinition WorkflowDefinitionWithPinnedWrites() => new()
+    {
+        WorkflowId = "wf-pinned-writes",
+        DefinitionVersion = 1,
+        EngagementType = "support-triage",
+        Name = "Triage with pinned write flags",
+        Nodes =
+        [
+            new McpToolNode
+            {
+                NodeId = "get-ticket",
+                ToolRef = "com.example.crm/tickets/get_ticket",
+                TimeoutSeconds = 30,
+                IdempotencyKeySpec = "engagementId",
+                OutputContractType = "com.example.crm/ticket/1.0",
+                Writes = false,
+            },
+            new McpToolNode
+            {
+                NodeId = "update-ticket",
+                ToolRef = "com.example.crm/tickets/update_ticket",
+                TimeoutSeconds = 30,
+                IdempotencyKeySpec = "engagementId",
+                Writes = true,
+            },
+        ],
+        Edges =
+        [
+            new WorkflowEdge { FromNodeId = "get-ticket", ToNodeId = "update-ticket", Kind = EdgeKind.Control },
+        ],
+        DefinitionHash = "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        Mode = ExecutionMode.OneShot,
+    };
+
     /// <summary>ADR-E27 D15: a step validated against registry contracts names their hashes.</summary>
     public static ExecutionSnapshot ExecutionSnapshotWithContractHashes()
     {

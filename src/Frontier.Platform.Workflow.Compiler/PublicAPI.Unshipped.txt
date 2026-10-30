@@ -22,3 +22,5 @@ Frontier.Platform.Workflow.Compiler.Rules.DataSchemaRefResolvesRule.DataSchemaRe
 Frontier.Platform.Workflow.Compiler.AgentRoleDescriptor.Backing.get -> Frontier.Platform.ModelRoleConfig.RoleBacking!
 Frontier.Platform.Workflow.Compiler.AgentRoleDescriptor.Backing.init -> void
 Frontier.Platform.Workflow.Compiler.Rules.AgentInstructionsResolveRule.AgentInstructionsResolveRule(Frontier.Platform.Workflow.Compiler.IInstructionCatalog! instructions, Frontier.Platform.Workflow.Compiler.IAgentRoleCatalog! roles) -> void
+Frontier.Platform.Workflow.Compiler.DesignerToolDescriptor.Writes.get -> bool?
+Frontier.Platform.Workflow.Compiler.DesignerToolDescriptor.Writes.init -> void

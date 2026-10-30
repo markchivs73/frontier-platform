@@ -51,6 +51,11 @@ public sealed class ContractGoldenFileTests
     public void WorkflowDefinitionAgentBacked_SerializesStablyAndRoundTrips() =>
         ContractRoundTripAssertions.AssertStableAndRoundTrips(ContractSamples.WorkflowDefinitionAgentBacked(), "workflow_definition_agent_backed.json");
 
+    /// <summary>ADR-PA41: an MCP node's pinned <c>writes</c>, both values. New golden; every older definition golden is unchanged.</summary>
+    [Fact]
+    public void WorkflowDefinitionWithPinnedWrites_SerializesStablyAndRoundTrips() =>
+        ContractRoundTripAssertions.AssertStableAndRoundTrips(ContractSamples.WorkflowDefinitionWithPinnedWrites(), "workflow_definition_mcp_writes.json");
+
     /// <summary>ADR-E27 D15: a step's contract hashes. New golden; every older snapshot golden is unchanged.</summary>
     [Fact]
     public void ExecutionSnapshotWithContractHashes_SerializesStablyAndRoundTrips() =>

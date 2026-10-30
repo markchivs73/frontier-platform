@@ -1,2 +1,4 @@
 *REMOVED*Frontier.Platform.Workflow.Model.AgentTaskNode.InstructionsRef.get -> string!
 Frontier.Platform.Workflow.Model.AgentTaskNode.InstructionsRef.get -> string?
+Frontier.Platform.Workflow.Model.McpToolNode.Writes.get -> bool?
+Frontier.Platform.Workflow.Model.McpToolNode.Writes.init -> void

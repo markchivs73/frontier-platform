@@ -48,4 +48,15 @@ public sealed record McpToolNode : WorkflowNode
     [JsonPropertyOrder(7)]
     [JsonPropertyName("output_contract_type")]
     public string? OutputContractType { get; init; }
+
+    /// <summary>
+    /// Whether the tool mutates its connector's state, copied from the tool's registry record when
+    /// the node is designed (ADR-PA41; consumer ADR-E27 D11) and held to it by
+    /// <c>mcp.tool-resolves</c>. The engine runs a write with an idempotency key and the
+    /// <c>mcp-write</c> profile, and a read with neither. Omitted on definitions published before
+    /// the flag was pinned; for those the engine asks the deployment's write classifier, as it did.
+    /// </summary>
+    [JsonPropertyOrder(8)]
+    [JsonPropertyName("writes")]
+    public bool? Writes { get; init; }
 }

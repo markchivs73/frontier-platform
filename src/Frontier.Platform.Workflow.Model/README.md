@@ -56,7 +56,9 @@ exactly that.
   CLR type name or by a registry ref (`{namespace}/{name}/{major}.{minor}`); `McpToolNode`
   carries optional input and output refs like an agent node. At publish, the definition embeds
   every registry contract it names in `Contracts`, sorted by ref, so a run never fetches one.
-  All three additions are optional, so every older definition keeps its bytes.
+  All three additions are optional, so every older definition keeps its bytes. `McpToolNode`
+  also pins `writes`, whether its tool mutates state, copied from the registry (ADR-PA41); it too
+  is optional, and a node without it is classified by the consumer's write classifier.
 - **`AgentTaskNode.InstructionsRef` is optional (ADR-PA40, v0.45.0).** A node on an agent-backed
   role may omit it, because the agent brings its own instructions. Null is left off the wire, so a
   definition stored with a ref keeps its bytes and its hash. Reading it is now a nullable read.

@@ -39,7 +39,7 @@ There is no reference here to a model provider or a tool transport — no Anthro
 | `IMcpToolCatalog` / `IMcpEndpointResolver` | Resolving and calling tools |
 | `IEntryPayloadBuilder` | Mapping assembled context to the workload's entry contract |
 | `IInstructionsResolver` | Where agent instructions come from (called only when a node names a ref; an agent-backed node may name none — ADR-PA40) |
-| `IMcpWriteClassifier` | Whether a tool mutates state, for sandbox write-fencing |
+| `IMcpWriteClassifier` | Whether a tool mutates state, for a node whose definition does not pin `writes` (ADR-PA41) |
 | `IExecutionSnapshotReader` | Reading the execution projection |
 | `IContractTypeSet` (from `…Workflow.Model`) | This deployment's contract types |
 | `IDynamicContextContentProducer` | Rendering an engagement's dynamic-context components on a refresh |
@@ -64,6 +64,12 @@ substrate replays every decision: `IResiliencePolicyProvider`, `IRollbackPlanner
 `IMcpWriteClassifier`. Implementations of those three must be **pure** — a total function of
 their arguments, with no I/O, no clock, and the same answer on every replay. Everything
 non-deterministic belongs in an activity, which is where the rest of the surface lives.
+
+**Pinned write classification (ADR-PA41).** An `McpToolNode` carries `writes`, copied from the
+tool's registry record when it is designed. When it is present the orchestrator uses it and never
+asks `IMcpWriteClassifier`: `true` gives the step its idempotency key and the `mcp-write` profile,
+`false` neither key nor write profile (`mcp-read`). A node's own retry spec still wins. A definition
+published without the flag replays exactly as before, classified by the port.
 
 **Model-role pinning (ADR-PA29).** When `GraphOrchestratorInput.PinModelRoles` is true, the
 orchestrator's first action is `PinMappingsActivity`, and every agent invocation resolves under
