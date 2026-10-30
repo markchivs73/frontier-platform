@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Reflection;
 using Frontier.Platform.Abstractions;
 using Frontier.Platform.Audit;
 using Microsoft.Extensions.AI;
@@ -7,23 +6,18 @@ using Microsoft.Extensions.AI;
 namespace Frontier.Platform.Workflow.Orchestration;
 
 /// <summary>
-/// Bridges <see cref="AgentTaskActivityPipeline"/>'s runtime <c>string</c>
-/// <see cref="AgentTaskNode.OutputContractType"/> to <see cref="IAgentInvoker.InvokeAsync{TOutput}"/>'s
-/// compile-time generic parameter (ADR-AG1 direct-POCO binding, doc 00 §4.3 step 5):
-/// resolves the output type via <see cref="IContractTypeRegistry"/>, then invokes the
-/// generic method by reflection, timing the call for <see cref="AgentInvocationResult.LatencyMs"/>
-/// (S5.3) and unwrapping its <see cref="AgentInvocationOutcome{TOutput}"/> into an
-/// <see cref="AgentInvocationResult"/>.
+/// Calls <see cref="IAgentInvoker"/> for an agent node and binds the reply to the node's output
+/// contract (doc 00 §4.3 step 5; ADR-E27 D7, D8). The engine, not the invoker, builds the
+/// structured-output format a model target is asked for, and the engine deserializes and validates
+/// whatever came back: a reply that is not valid JSON, or fails the contract, is a permanent
+/// <see cref="ContractViolationException"/>. Times the call for <see cref="AgentInvocationResult.LatencyMs"/> (S5.3).
 /// </summary>
 internal sealed class AgentInvocationDispatcher
 {
-    private static readonly MethodInfo InvokeAsyncMethod = typeof(IAgentInvoker)
-        .GetMethod(nameof(IAgentInvoker.InvokeAsync))!;
-
     private readonly IAgentInvoker invoker;
     private readonly IContractTypeRegistry registry;
 
-    /// <summary>Constructs a dispatcher over <paramref name="invoker"/>, resolving output types via <paramref name="registry"/>.</summary>
+    /// <summary>Constructs a dispatcher over <paramref name="invoker"/>, binding replies via <paramref name="registry"/>.</summary>
     public AgentInvocationDispatcher(IAgentInvoker invoker, IContractTypeRegistry registry)
     {
         ArgumentNullException.ThrowIfNull(invoker);
@@ -33,32 +27,30 @@ internal sealed class AgentInvocationDispatcher
         this.registry = registry;
     }
 
-    /// <summary>
-    /// Invokes <see cref="IAgentInvoker.InvokeAsync{TOutput}"/> with <typeparamref name="TOutput"/>
-    /// bound to <paramref name="outputContractType"/>'s CLR type, timing the call for
-    /// <see cref="AgentInvocationResult.LatencyMs"/> (S5.3).
-    /// </summary>
+    /// <summary>Invokes the agent with the output format for <paramref name="outputContractType"/>, then binds and validates its reply.</summary>
     internal async Task<AgentInvocationResult> InvokeAsync(string outputContractType, AgentInvocationRequest request, CancellationToken ct)
     {
-        var outputType = registry.Resolve(outputContractType);
-        var typedInvoke = InvokeAsyncMethod.MakeGenericMethod(outputType);
+        var formatted = request with { ResponseFormat = ResponseFormatFor(outputContractType, request.Target) };
 
         var stopwatch = Stopwatch.StartNew();
-        var task = (Task)typedInvoke.Invoke(invoker, [request, ct])!;
-        await task.ConfigureAwait(false);
+        var outcome = await invoker.InvokeAsync(formatted, ct).ConfigureAwait(false);
         stopwatch.Stop();
-
-        var outcome = task.GetType().GetProperty("Result")!.GetValue(task)!;
-        var outcomeType = outcome.GetType();
 
         return new AgentInvocationResult
         {
-            Result = (IVersionedContract)outcomeType.GetProperty("Result")!.GetValue(outcome)!,
-            Usage = (UsageDetails?)outcomeType.GetProperty("Usage")!.GetValue(outcome),
-            ToolCalls = (IReadOnlyList<ToolCall>)outcomeType.GetProperty("ToolCalls")!.GetValue(outcome)!,
+            Result = registry.DeserializeAndValidate(outputContractType, outcome.Output),
+            Usage = outcome.Usage,
+            ToolCalls = outcome.ToolCalls,
             LatencyMs = stopwatch.ElapsedMilliseconds,
-            CardHash = (string?)outcomeType.GetProperty("CardHash")!.GetValue(outcome),
-            RemoteTaskId = (string?)outcomeType.GetProperty("RemoteTaskId")!.GetValue(outcome),
+            CardHash = outcome.CardHash,
+            RemoteTaskId = outcome.RemoteTaskId,
         };
     }
+
+    /// <summary>
+    /// The format a model target is asked to follow; <see langword="null"/> for an agent target, whose
+    /// protocol has none (ADR-E27 D7).
+    /// </summary>
+    internal ChatResponseFormat? ResponseFormatFor(string outputContractType, Frontier.Platform.ModelRoleConfig.ChainEntry target) =>
+        target is Frontier.Platform.ModelRoleConfig.ModelEntry ? CanonicalOutputSchema.For(registry.Resolve(outputContractType)) : null;
 }

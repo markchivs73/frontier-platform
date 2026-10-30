@@ -27,7 +27,7 @@ There is no reference here to a model provider or a tool transport — no Anthro
 
 | Port | What the consumer supplies |
 |---|---|
-| `IAgentInvoker` | Invoking an agent with a prompt and typed contracts |
+| `IAgentInvoker` | Invoking an agent and returning its reply as sent. Transport only: the engine builds the output format and binds and validates the reply (ADR-E27 D8) |
 | `IMcpToolCatalog` / `IMcpEndpointResolver` | Resolving and calling tools |
 | `IEntryPayloadBuilder` | Mapping assembled context to the workload's entry contract |
 | `IInstructionsResolver` | Where agent instructions come from |

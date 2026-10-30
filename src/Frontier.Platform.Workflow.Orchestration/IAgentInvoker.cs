@@ -3,21 +3,16 @@ using Frontier.Platform.Abstractions;
 namespace Frontier.Platform.Workflow.Orchestration;
 
 /// <summary>
-/// Runs one MAF agent turn and returns its output bound directly to the requested
-/// <typeparamref name="TOutput"/> contract (doc 00 §4.3 step 5, ADR-AG1: MAF's
-/// <c>AgentResponse&lt;T&gt;.Result</c> direct-POCO binding). Implementations never
-/// validate <typeparamref name="TOutput"/> — that is <see cref="IContractTypeRegistry"/>'s
-/// job once the typed result is returned.
+/// Runs one agent turn and returns the reply as the agent sent it (doc 00 §4.3 step 5). Transport
+/// only (ADR-E27 D8): the engine builds the structured-output format it asks for
+/// (<see cref="AgentInvocationRequest.ResponseFormat"/>), then binds and validates the reply against
+/// the node's output contract itself. An invoker never deserializes or validates the reply.
 /// </summary>
 public interface IAgentInvoker
 {
     /// <summary>
-    /// Invokes the agent described by <paramref name="request"/> and deserializes its
-    /// response as <typeparamref name="TOutput"/>, alongside the provider's reported
-    /// token usage (S5.3). Throws <see cref="ContractViolationException"/>
-    /// (permanent, doc 09) if the model's response is not valid JSON for
-    /// <typeparamref name="TOutput"/>.
+    /// Invokes the agent described by <paramref name="request"/> and returns its final reply text,
+    /// with the provider's reported token usage and the tools it called.
     /// </summary>
-    Task<AgentInvocationOutcome<TOutput>> InvokeAsync<TOutput>(AgentInvocationRequest request, CancellationToken ct)
-        where TOutput : IVersionedContract;
+    Task<AgentInvocationOutcome> InvokeAsync(AgentInvocationRequest request, CancellationToken ct);
 }

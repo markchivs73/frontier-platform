@@ -36,4 +36,12 @@ public sealed record AgentInvocationRequest
     /// leaves <see cref="ChatOptions.Tools"/> unset rather than an empty list in that case.
     /// </summary>
     public IReadOnlyList<AITool> Tools { get; init; } = [];
+
+    /// <summary>
+    /// The structured-output format the engine asks the model to follow, built from the node's
+    /// output contract (ADR-E27 D7). A generation aid only: the engine validates the reply whatever
+    /// the provider did. <see langword="null"/> when there is none to ask for; an invoker whose
+    /// protocol has no response format (A2A) ignores it.
+    /// </summary>
+    public ChatResponseFormat? ResponseFormat { get; init; }
 }

@@ -13,7 +13,7 @@ namespace Frontier.Platform.Workflow.Orchestration;
 /// <summary>
 /// The full <c>InvokeAgentActivity</c> pipeline (doc 00 §4.3 step 5, S4.2): assemble
 /// context, validate the input contract, resolve the agent's model (Model-Role Config),
-/// check Guardrails admission, invoke MAF (ADR-AG1 direct-POCO binding), then validate
+/// check Guardrails admission, invoke the agent, then bind and validate
 /// the output contract. Model-Role resolution runs <em>before</em> context assembly —
 /// doc 00 §4.3 orders them the other way round, but <see cref="CachingMetadata"/> (which
 /// <see cref="AssembleContextActivity"/> requires) needs the resolved model's provider/id
