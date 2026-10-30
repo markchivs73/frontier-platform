@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using System.Text.Json;
+using Frontier.Platform.Abstractions;
 using Frontier.Platform.Serialization;
 using Microsoft.Extensions.AI;
 
@@ -67,7 +68,7 @@ public sealed class McpToolInvocationPipelineTests
         {
             seen = arguments;
             return JsonDocument.Parse("""{"updated":true}""").RootElement.Clone();
-        })));
+        })), TestContractValidator.Instance);
 
         var result = await pipeline.RunAsync(Input() with
         {
@@ -100,7 +101,7 @@ public sealed class McpToolInvocationPipelineTests
     public async Task RunAsync_SimulatedAck_IsFlagged()
     {
         var pipeline = new McpToolInvocationPipeline(new StubCatalog(new StubTool(_ =>
-            new SimulatedAck(true, "com.example.crm/tickets/update_ticket"))));
+            new SimulatedAck(true, "com.example.crm/tickets/update_ticket"))), TestContractValidator.Instance);
 
         var result = await pipeline.RunAsync(Input(), CancellationToken.None);
 
@@ -110,13 +111,82 @@ public sealed class McpToolInvocationPipelineTests
     [Fact]
     public async Task RunAsync_UnresolvableTool_Throws()
     {
-        var pipeline = new McpToolInvocationPipeline(new StubCatalog(tool: null));
+        var pipeline = new McpToolInvocationPipeline(new StubCatalog(tool: null), TestContractValidator.Instance);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => pipeline.RunAsync(Input(), CancellationToken.None));
     }
 
+    /// <summary>ADR-E27 D8: the arguments the tool receives, idempotency key included, are validated against the pinned input contract before the call.</summary>
+    [Fact]
+    public async Task RunAsync_ArgumentsThatFailTheInputContract_AreRefusedBeforeTheCall()
+    {
+        var called = false;
+        var pipeline = Pipeline(_ => { called = true; return null; });
+        var args = RegistryContractFixtures.Snapshot("crm/args/1.0",
+            """{"type":"object","description":"Args.","properties":{"ticket_id":{"type":"string","description":"Id."}},"required":["ticket_id"],"additionalProperties":false}""");
+
+        var refused = await Assert.ThrowsAsync<ContractViolationException>(() => pipeline.RunAsync(
+            Input() with { InputPayload = """{"ticket_id":"T-1"}""", IdempotencyKey = "key-1", InputContract = args }, CancellationToken.None));
+
+        Assert.Equal("crm/args/1.0", refused.ContractType);
+        Assert.False(called);
+    }
+
+    [Fact]
+    public async Task RunAsync_ValidArgumentsAndResult_RecordBothContractHashes()
+    {
+        var pipeline = Pipeline(_ => JsonDocument.Parse("""{"id":"T-1","priority":2}""").RootElement.Clone());
+        var args = RegistryContractFixtures.Snapshot("crm/args/1.0",
+            """{"type":"object","description":"Args.","properties":{"ticket_id":{"type":"string","description":"Id."},"idempotency_key":{"type":"string","description":"Key."}},"required":["ticket_id"],"additionalProperties":false}""");
+
+        var result = await pipeline.RunAsync(
+            Input() with { InputPayload = """{"ticket_id":"T-1"}""", IdempotencyKey = "key-1", InputContract = args, OutputContract = RegistryContractFixtures.Ticket },
+            CancellationToken.None);
+
+        Assert.Equal(args.Hash, result.InputContractHash);
+        Assert.Equal(RegistryContractFixtures.Ticket.Hash, result.OutputContractHash);
+    }
+
+    [Fact]
+    public async Task RunAsync_AResultThatFailsTheOutputContract_IsAContractViolation()
+    {
+        var pipeline = Pipeline(_ => JsonDocument.Parse("""{"id":"T-1"}""").RootElement.Clone());
+
+        await Assert.ThrowsAsync<ContractViolationException>(() =>
+            pipeline.RunAsync(Input() with { OutputContract = RegistryContractFixtures.Ticket }, CancellationToken.None));
+    }
+
+    /// <summary>A write-fenced call returns the sandbox's ack, not the tool's reply, so the output contract does not apply.</summary>
+    [Fact]
+    public async Task RunAsync_ASimulatedAck_IsNotHeldToTheOutputContract()
+    {
+        var pipeline = Pipeline(_ => new SimulatedAck(true, "com.example.crm/tickets/update_ticket"));
+
+        var result = await pipeline.RunAsync(Input() with { OutputContract = RegistryContractFixtures.Ticket }, CancellationToken.None);
+
+        Assert.True(result.Simulated);
+        Assert.Null(result.OutputContractHash);
+    }
+
+    [Fact]
+    public void Constructor_NullContractValidator_Throws()
+    {
+        Assert.Throws<ArgumentNullException>(() => new McpToolInvocationPipeline(new StubCatalog(tool: null), null!));
+    }
+
+    [Fact]
+    public void ArgumentsJson_IsTheArgumentObjectAsSent()
+    {
+        var arguments = McpToolInvocationPipeline.BuildArguments(Input() with { InputPayload = """{"ticket_id":"T-1"}""", IdempotencyKey = "key-1" });
+
+        Assert.Equal("""{"ticket_id":"T-1","idempotency_key":"key-1"}""", McpToolInvocationPipeline.ArgumentsJson(arguments));
+    }
+
+    private static McpToolInvocationPipeline Pipeline(Func<AIFunctionArguments, object?> tool) =>
+        new(new StubCatalog(new StubTool(tool)), TestContractValidator.Instance);
+
     private static Task<McpToolActivityResult> RunReturningAsync(string json) =>
-        new McpToolInvocationPipeline(new StubCatalog(new StubTool(_ => JsonDocument.Parse(json).RootElement.Clone())))
+        new McpToolInvocationPipeline(new StubCatalog(new StubTool(_ => JsonDocument.Parse(json).RootElement.Clone())), TestContractValidator.Instance)
             .RunAsync(Input(), CancellationToken.None);
 
     private static McpToolActivityInput Input() => new()

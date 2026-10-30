@@ -240,6 +240,8 @@ internal static class GraphOrchestratorSteps
             ExecutionId = context.InstanceId,
             EngagementId = input.EngagementId,
             InputPayload = ResolveUpstreamPayloadForNode(input.Definition, node.NodeId, state),
+            InputContract = PinnedContract(input.Definition, node.InputContractType),
+            OutputContract = PinnedContract(input.Definition, node.OutputContractType),
         };
 
         var taskOptions = policyProvider.GetTaskOptions(node.Retry?.ProfileName ?? (isWrite ? McpWriteProfile : McpReadProfile));
@@ -252,11 +254,13 @@ internal static class GraphOrchestratorSteps
             NodeType = NodeType.McpTool,
             ArtifactKey = node.ArtifactKey,
             CorrelationId = correlationId,
-            OutputContractType = string.Empty,
+            OutputContractType = node.OutputContractType ?? string.Empty,
             OutputHash = result.OutputHash,
             RetryCount = 0,
             CompletedAtUtc = context.CurrentUtcDateTime,
             HostBuild = result.HostBuild,
+            InputContractHash = result.InputContractHash,
+            OutputContractHash = result.OutputContractHash,
         });
 
         if (node.ArtifactKey is not null)

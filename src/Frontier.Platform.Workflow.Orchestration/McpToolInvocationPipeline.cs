@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json;
+using Frontier.Platform.Contracts;
 using Frontier.Platform.Serialization;
 using Microsoft.Extensions.AI;
 
@@ -28,12 +29,15 @@ internal sealed class McpToolInvocationPipeline : IMcpToolInvocationPipeline
     internal const string IdempotencyKeyArgument = "idempotency_key";
 
     private readonly IMcpToolCatalog toolCatalog;
+    private readonly IContractValidator contractValidator;
 
-    /// <summary>Constructs the pipeline over the runtime tool catalog.</summary>
-    public McpToolInvocationPipeline(IMcpToolCatalog toolCatalog)
+    /// <summary>Constructs the pipeline over the runtime tool catalog and the contract validator.</summary>
+    public McpToolInvocationPipeline(IMcpToolCatalog toolCatalog, IContractValidator contractValidator)
     {
         ArgumentNullException.ThrowIfNull(toolCatalog);
+        ArgumentNullException.ThrowIfNull(contractValidator);
         this.toolCatalog = toolCatalog;
+        this.contractValidator = contractValidator;
     }
 
     /// <inheritdoc />
@@ -48,8 +52,19 @@ internal sealed class McpToolInvocationPipeline : IMcpToolInvocationPipeline
         }
 
         var arguments = BuildArguments(input);
+        if (input.InputContract is { } inputContract)
+        {
+            RegistryContractCheck.Ensure(contractValidator, inputContract, ArgumentsJson(arguments));
+        }
+
         var result = await InvokeWithTimeoutAsync(function, arguments, input.TimeoutSeconds, ct).ConfigureAwait(false);
         var payload = Canonicalize(result);
+        var simulated = IsSimulatedAck(payload);
+        var outputContract = simulated ? null : input.OutputContract;
+        if (outputContract is not null)
+        {
+            RegistryContractCheck.Ensure(contractValidator, outputContract, payload);
+        }
 
         return new McpToolActivityResult
         {
@@ -58,8 +73,10 @@ internal sealed class McpToolInvocationPipeline : IMcpToolInvocationPipeline
             ToolRef = input.ToolRef,
             OutputPayload = payload,
             OutputHash = JsonCanonicalizer.Hash(Encoding.UTF8.GetBytes(payload)),
-            Simulated = IsSimulatedAck(payload),
+            Simulated = simulated,
             HostBuild = HostBuildInfo.Version,
+            InputContractHash = input.InputContract?.Hash,
+            OutputContractHash = outputContract?.Hash,
         };
     }
 
@@ -90,6 +107,13 @@ internal sealed class McpToolInvocationPipeline : IMcpToolInvocationPipeline
 
         return arguments;
     }
+
+    /// <summary>
+    /// The arguments exactly as the tool receives them, as a JSON object: the validated input of the
+    /// call (ADR-E27 D8), including the idempotency key a write carries.
+    /// </summary>
+    internal static string ArgumentsJson(AIFunctionArguments arguments) =>
+        JsonSerializer.Serialize(arguments.ToDictionary(a => a.Key, a => a.Value, StringComparer.Ordinal), CanonicalProfile.Options);
 
     /// <summary>Invokes the tool under the node's per-invocation timeout (doc 10 §7's innermost tier; <c>timeouts.nesting</c> guarantees it fits the activity cap).</summary>
     [ExcludeFromCodeCoverage(Justification = "Timeout composition over the real invocation path — the cancellation race needs a live slow connector; covered by the S9.25-family gate tests, not unit tests.")]

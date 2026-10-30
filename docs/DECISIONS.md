@@ -2670,3 +2670,12 @@ provider, is the conservative reading of D7's projector: it never sends a provid
 reject, at the cost of sending no format for contracts it could have lowered for one of them.
 Widening it per provider is a later change.
 
+**Slice 2b, registry contracts at MCP nodes** (ADR-E27 D8, D9). The orchestrator copies the MCP
+node's pinned snapshots onto `McpToolActivityInput` as it does for an agent node. The pipeline
+validates the arguments exactly as the tool receives them, as one JSON object that includes the
+`idempotency_key` a write carries, because that object is the call's input; a tool whose contract is
+closed must declare the key. The result is validated before it is recorded. A sandbox write-fence
+ack is not the tool's reply, so it is never held to the output contract, and its step records no
+output contract hash. The MCP step's `StepCompletion` now names the node's output contract ref
+instead of an empty string. A node with no refs runs unvalidated, as it did.
+

@@ -35,6 +35,27 @@ public sealed class GraphMcpToolWalkTests
         Assert.Equal(ArtifactStatus.Draft, state.ArtifactStatuses["ticket-update"]);
     }
 
+    /// <summary>ADR-E27 D15: an MCP node naming registry contracts gets their pinned snapshots, and its step records the ref and the hashes.</summary>
+    [Fact]
+    public async Task ToolNodeWithRegistryContracts_PinsThemAndRecordsTheirHashes()
+    {
+        var definition = Definition(toolRef: "com.example.crm/tickets/get_new_ticket");
+        definition = definition with
+        {
+            Nodes = [.. definition.Nodes.Select(n => n is McpToolNode tool ? tool with { OutputContractType = "acme/ticket/1.0" } : n)],
+            Contracts = [RegistryContractFixtures.Ticket],
+        };
+        var harness = new McpHarness(definition);
+
+        var state = await harness.RunWalkAsync();
+
+        Assert.Same(RegistryContractFixtures.Ticket, Assert.Single(harness.ToolInputs).OutputContract);
+        var step = Assert.Single(state.CompletedSteps, s => s.NodeId == "t-tool");
+        Assert.Equal("acme/ticket/1.0", step.OutputContractType);
+        Assert.Equal(RegistryContractFixtures.Ticket.Hash, step.OutputContractHash);
+        Assert.Null(step.InputContractHash);
+    }
+
     [Fact]
     public async Task ReadToolNode_NoIdempotencyKey_ReadProfile()
     {
@@ -167,6 +188,8 @@ public sealed class GraphMcpToolWalkTests
                     OutputHash = CanonicalProfile.Hash(payload),
                     Simulated = false,
                     HostBuild = "test-build",
+                    InputContractHash = activityInput.InputContract?.Hash,
+                    OutputContractHash = activityInput.OutputContract?.Hash,
                 };
             };
             Context.ActivityHandlers[WorkflowActivityNames.SnapshotStateActivity] = input =>

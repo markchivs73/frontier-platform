@@ -50,6 +50,18 @@ public sealed record McpToolActivityInput
     /// <summary>The upstream Data-edge payload (canonical JSON object), mapped onto the tool's arguments by wire name; null when the node has no Data-edge predecessor.</summary>
     [JsonPropertyName("input_payload")]
     public string? InputPayload { get; init; }
+
+    /// <summary>
+    /// The definition's pinned snapshot of the node's input contract (ADR-E27 D9, D15): the tool's
+    /// arguments are validated against it before the call. Optional per the ADR-E15 floor:
+    /// <see langword="null"/> when the node names none, and on inputs recorded before contracts were data.
+    /// </summary>
+    [JsonPropertyName("input_contract")]
+    public Frontier.Platform.Abstractions.ContractSnapshot? InputContract { get; init; }
+
+    /// <summary>The definition's pinned snapshot of the node's output contract (ADR-E27 D9, D15): the tool's result is validated against it; optional, as <see cref="InputContract"/>.</summary>
+    [JsonPropertyName("output_contract")]
+    public Frontier.Platform.Abstractions.ContractSnapshot? OutputContract { get; init; }
 }
 
 /// <summary>Result of <c>InvokeMcpToolActivity</c>: the tool's response as canonical JSON, hashed for the step record.</summary>
@@ -82,4 +94,12 @@ public sealed record McpToolActivityResult
     /// <summary>The host build that executed this call (ADR-E15/S13.17 pin-set stamp; activity-side, never orchestrator statics).</summary>
     [JsonPropertyName("host_build")]
     public string? HostBuild { get; init; }
+
+    /// <summary>The hash of the registry contract that validated the arguments (ADR-E27 D15); <see langword="null"/> when there was none.</summary>
+    [JsonPropertyName("input_contract_hash")]
+    public string? InputContractHash { get; init; }
+
+    /// <summary>The hash of the registry contract that validated the result (ADR-E27 D15); <see langword="null"/> when there was none, or the call was write-fenced.</summary>
+    [JsonPropertyName("output_contract_hash")]
+    public string? OutputContractHash { get; init; }
 }
