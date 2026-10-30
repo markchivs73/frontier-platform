@@ -67,7 +67,7 @@ public sealed class MappingGovernanceServiceTests
         var dangling = new DanglingPointerStore();
 
         var proposal = await new MappingGovernanceService(
-                dangling, new FakeRoleMappingWriter(), new FakeMappingDecisionRecorder(), new FixedTimeProvider(FixedTimeProvider.Now),
+                dangling, ModelRoleDefinitions(), new FakeRoleMappingWriter(), new FakeMappingDecisionRecorder(), new FixedTimeProvider(FixedTimeProvider.Now),
                 Microsoft.Extensions.Options.Options.Create(FastRetry))
             .ProposeAsync(Change(), Proposer, CancellationToken.None);
 
@@ -297,7 +297,7 @@ public sealed class MappingGovernanceServiceTests
 
         // Every read hands back a token the write will reject, so the decision can never land.
         var service = new MappingGovernanceService(
-            new EtagChurningStore(store), new FakeRoleMappingWriter(), recorder, new FixedTimeProvider(FixedTimeProvider.Now),
+            new EtagChurningStore(store), ModelRoleDefinitions(), new FakeRoleMappingWriter(), recorder, new FixedTimeProvider(FixedTimeProvider.Now),
             Microsoft.Extensions.Options.Options.Create(FastRetry));
 
         await Assert.ThrowsAsync<MappingGovernanceException>(() =>

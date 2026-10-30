@@ -59,13 +59,22 @@ internal static class MappingProposalSamples
     /// <summary>Retry settings with the delays removed, so a contention test does not sleep.</summary>
     internal static MappingGovernanceOptions FastRetry => new() { DecisionBaseDelayMs = 0, DecisionMaxDelayMs = 0 };
 
-    /// <summary>The service under test, wired to <paramref name="store"/> and <paramref name="recorder"/>.</summary>
+    /// <summary>The definitions every mapping test runs against unless it says otherwise: <see cref="RoleId"/>, model-backed, as migrated.</summary>
+    internal static FakeRoleDefinitionStore ModelRoleDefinitions() =>
+        new FakeRoleDefinitionStore().WithDefinition(RoleDefinitionSamples.Migrated(RoleDefinitionSamples.Phase1Role(RoleId)));
+
+    /// <summary>
+    /// The service under test, wired to <paramref name="store"/> and <paramref name="recorder"/>, and to
+    /// <paramref name="definitions"/> (default <see cref="ModelRoleDefinitions"/>).
+    /// </summary>
     internal static MappingGovernanceService Service(
         FakeMappingProposalStore store,
         FakeMappingDecisionRecorder recorder,
         FakeRoleMappingWriter? writer = null,
-        MappingGovernanceOptions? options = null) =>
-        new(store, writer ?? new FakeRoleMappingWriter(), recorder, new FixedTimeProvider(FixedTimeProvider.Now), Options.Create(options ?? FastRetry));
+        MappingGovernanceOptions? options = null,
+        FakeRoleDefinitionStore? definitions = null) =>
+        new(store, definitions ?? ModelRoleDefinitions(), writer ?? new FakeRoleMappingWriter(), recorder,
+            new FixedTimeProvider(FixedTimeProvider.Now), Options.Create(options ?? FastRetry));
 }
 
 /// <summary>Captures the <c>current</c> pointer writes a rollback makes.</summary>

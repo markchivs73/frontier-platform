@@ -92,3 +92,20 @@ static Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.operator !=(Fron
 static Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal.operator ==(Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal? left, Frontier.Platform.ModelRoleConfig.RoleDefinitionProposal? right) -> bool
 static Frontier.Platform.ModelRoleConfig.RoleDefinitionProposalPage.operator !=(Frontier.Platform.ModelRoleConfig.RoleDefinitionProposalPage? left, Frontier.Platform.ModelRoleConfig.RoleDefinitionProposalPage? right) -> bool
 static Frontier.Platform.ModelRoleConfig.RoleDefinitionProposalPage.operator ==(Frontier.Platform.ModelRoleConfig.RoleDefinitionProposalPage? left, Frontier.Platform.ModelRoleConfig.RoleDefinitionProposalPage? right) -> bool
+Frontier.Platform.ModelRoleConfig.ChainBackingMismatchException
+Frontier.Platform.ModelRoleConfig.ChainBackingMismatchException.ChainBackingMismatchException(string! contractType, System.Collections.Generic.IReadOnlyList<string!>! violations) -> void
+Frontier.Platform.ModelRoleConfig.EvaluationEvidence
+Frontier.Platform.ModelRoleConfig.EvaluationEvidenceRequiredException
+Frontier.Platform.ModelRoleConfig.EvaluationEvidenceRequiredException.EvaluationEvidenceRequiredException(string! contractType, System.Collections.Generic.IReadOnlyList<string!>! violations) -> void
+Frontier.Platform.ModelRoleConfig.EvaluationEvidenceStaleException
+Frontier.Platform.ModelRoleConfig.EvaluationEvidenceStaleException.EvaluationEvidenceStaleException(string! contractType, System.Collections.Generic.IReadOnlyList<string!>! violations) -> void
+Frontier.Platform.ModelRoleConfig.RoleMapping.InputContractHash.get -> string?
+Frontier.Platform.ModelRoleConfig.RoleMapping.InputContractHash.init -> void
+Frontier.Platform.ModelRoleConfig.RoleMapping.OutputContractHash.get -> string?
+Frontier.Platform.ModelRoleConfig.RoleMapping.OutputContractHash.init -> void
+Frontier.Platform.ModelRoleConfig.UnknownRoleDefinitionException
+Frontier.Platform.ModelRoleConfig.UnknownRoleDefinitionException.UnknownRoleDefinitionException(string! contractType, System.Collections.Generic.IReadOnlyList<string!>! violations) -> void
+const Frontier.Platform.ModelRoleConfig.EvaluationEvidence.KitPrefix = "eval-run:kit:" -> string!
+const Frontier.Platform.ModelRoleConfig.EvaluationEvidence.ManualPrefix = "eval-run:manual:" -> string!
+static Frontier.Platform.ModelRoleConfig.EvaluationEvidence.IsEligibilityReopened(Frontier.Platform.ModelRoleConfig.RoleDefinition! role, Frontier.Platform.ModelRoleConfig.RoleMapping! mapping) -> bool
+static Frontier.Platform.ModelRoleConfig.EvaluationEvidence.IsWellFormed(string? evidenceRef) -> bool

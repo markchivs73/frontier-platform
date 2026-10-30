@@ -131,3 +131,39 @@ public sealed class UnknownRoleContractException(string contractType, IReadOnlyL
 [SuppressMessage("Design", "CA1032:Implement standard exception constructors", Justification = "See InvalidMappingChangeException; refusals are constructed only by the governance service with their violation list (ADR-PA34).")]
 public sealed class RoleBackingChangeException(string contractType, IReadOnlyList<string> violations)
     : MappingGovernanceRefusalException(contractType, violations);
+
+/// <summary>
+/// The role has no current definition (ADR-PA40), so a mapping proposal for it cannot be checked
+/// against its backing or its contracts. The consumer maps it to <b>404</b>: define the role first.
+/// </summary>
+[SuppressMessage("Design", "CA1032:Implement standard exception constructors", Justification = "See InvalidMappingChangeException; refusals are constructed only by the governance service with their violation list (ADR-PA34).")]
+public sealed class UnknownRoleDefinitionException(string contractType, IReadOnlyList<string> violations)
+    : MappingGovernanceRefusalException(contractType, violations);
+
+/// <summary>
+/// The proposed chain's kind (all models or all agents, ADR-PA27) is not the role's declared
+/// backing (ADR-PA40). The consumer maps it to <b>400</b>: an agent chain serves only an
+/// agent-backed role, and a model chain only a model-backed one.
+/// </summary>
+[SuppressMessage("Design", "CA1032:Implement standard exception constructors", Justification = "See InvalidMappingChangeException; refusals are constructed only by the governance service with their violation list (ADR-PA34).")]
+public sealed class ChainBackingMismatchException(string contractType, IReadOnlyList<string> violations)
+    : MappingGovernanceRefusalException(contractType, violations);
+
+/// <summary>
+/// A mapping proposal for an agent-backed role names no evaluation evidence, or names a ref that is
+/// not <c>eval-run:{manual|kit}:{id}</c> (ADR-E27 D16, ADR-PA40). The consumer maps it to <b>400</b>
+/// <c>evaluation_evidence_required</c>.
+/// </summary>
+[SuppressMessage("Design", "CA1032:Implement standard exception constructors", Justification = "See InvalidMappingChangeException; refusals are constructed only by the governance service with their violation list (ADR-PA34).")]
+public sealed class EvaluationEvidenceRequiredException(string contractType, IReadOnlyList<string> violations)
+    : MappingGovernanceRefusalException(contractType, violations);
+
+/// <summary>
+/// The role's contract hashes have moved since the mapping proposal stamped them (ADR-E27 D16,
+/// ADR-PA40): a new contract version re-opens eligibility, so the evidence no longer covers what the
+/// role now takes and returns. The consumer maps it to <b>409</b> <c>evaluation_evidence_stale</c>;
+/// the remedy is a new proposal with evidence for the new hashes.
+/// </summary>
+[SuppressMessage("Design", "CA1032:Implement standard exception constructors", Justification = "See InvalidMappingChangeException; refusals are constructed only by the governance service with their violation list (ADR-PA34).")]
+public sealed class EvaluationEvidenceStaleException(string contractType, IReadOnlyList<string> violations)
+    : MappingGovernanceRefusalException(contractType, violations);

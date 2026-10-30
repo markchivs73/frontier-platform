@@ -169,7 +169,7 @@ public sealed class CosmosMappingGovernanceSurfaceIntegrationTests : IAsyncLifet
 
     /// <summary>The governance service over the real store.</summary>
     private MappingGovernanceService Service() =>
-        new(store, new NoOpWriter(), new FakeMappingDecisionRecorder(), TimeProvider.System,
+        new(store, new CosmosRoleDefinitionStore(client, Options.Create(new CosmosOptions { Database = DatabaseId })), new NoOpWriter(), new FakeMappingDecisionRecorder(), TimeProvider.System,
             Options.Create(new MappingGovernanceOptions { DecisionMaxAttempts = 50, DecisionBaseDelayMs = 5, DecisionMaxDelayMs = 200 }));
 
     /// <summary>A well-formed change targeting <paramref name="role"/>.</summary>
@@ -182,10 +182,13 @@ public sealed class CosmosMappingGovernanceSurfaceIntegrationTests : IAsyncLifet
     /// <summary>Stores one pending proposal for <paramref name="role"/> and returns its id.</summary>
     private async Task<string> SeedAsync(string role)
     {
+        await RoleDefinitionSeed.DefineModelRoleAsync(Container, role);
         var proposal = Pending($"p-{Guid.NewGuid():N}") with { RoleId = role, PredecessorFleetVersion = null, Change = ChangeFor(role) };
         await store.CreateProposalAsync(proposal, CancellationToken.None);
         return proposal.ProposalId;
     }
+
+    private Container Container => client.GetContainer(DatabaseId, CosmosRoleRegistry.ContainerName);
 
     private static string UniqueRole() => $"it-surface-{Guid.NewGuid():N}";
 
