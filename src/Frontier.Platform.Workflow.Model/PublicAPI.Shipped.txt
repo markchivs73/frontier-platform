@@ -6,7 +6,7 @@ Frontier.Platform.Workflow.Model.AgentTaskNode.ContextRequest.init -> void
 Frontier.Platform.Workflow.Model.AgentTaskNode.Equals(Frontier.Platform.Workflow.Model.AgentTaskNode? other) -> bool
 Frontier.Platform.Workflow.Model.AgentTaskNode.InputContractType.get -> string!
 Frontier.Platform.Workflow.Model.AgentTaskNode.InputContractType.init -> void
-Frontier.Platform.Workflow.Model.AgentTaskNode.InstructionsRef.get -> string!
+Frontier.Platform.Workflow.Model.AgentTaskNode.InstructionsRef.get -> string?
 Frontier.Platform.Workflow.Model.AgentTaskNode.InstructionsRef.init -> void
 Frontier.Platform.Workflow.Model.AgentTaskNode.OutputContractType.get -> string!
 Frontier.Platform.Workflow.Model.AgentTaskNode.OutputContractType.init -> void
@@ -229,6 +229,8 @@ Frontier.Platform.Workflow.Model.McpToolNode.TimeoutSeconds.get -> int
 Frontier.Platform.Workflow.Model.McpToolNode.TimeoutSeconds.init -> void
 Frontier.Platform.Workflow.Model.McpToolNode.ToolRef.get -> string!
 Frontier.Platform.Workflow.Model.McpToolNode.ToolRef.init -> void
+Frontier.Platform.Workflow.Model.McpToolNode.Writes.get -> bool?
+Frontier.Platform.Workflow.Model.McpToolNode.Writes.init -> void
 Frontier.Platform.Workflow.Model.MigratingWorkflowDefinitionConverter
 Frontier.Platform.Workflow.Model.MigratingWorkflowDefinitionConverter.MigratingWorkflowDefinitionConverter() -> void
 Frontier.Platform.Workflow.Model.NodeType
@@ -291,6 +293,10 @@ Frontier.Platform.Workflow.Model.StepCompletion.HostBuild.get -> string?
 Frontier.Platform.Workflow.Model.StepCompletion.HostBuild.init -> void
 Frontier.Platform.Workflow.Model.StepCompletion.InputContractHash.get -> string?
 Frontier.Platform.Workflow.Model.StepCompletion.InputContractHash.init -> void
+Frontier.Platform.Workflow.Model.StepCompletion.InputContractType.get -> string?
+Frontier.Platform.Workflow.Model.StepCompletion.InputContractType.init -> void
+Frontier.Platform.Workflow.Model.StepCompletion.InputHash.get -> string?
+Frontier.Platform.Workflow.Model.StepCompletion.InputHash.init -> void
 Frontier.Platform.Workflow.Model.StepCompletion.NodeId.get -> string!
 Frontier.Platform.Workflow.Model.StepCompletion.NodeId.init -> void
 Frontier.Platform.Workflow.Model.StepCompletion.NodeType.get -> Frontier.Platform.Workflow.Model.NodeType!
@@ -307,7 +313,11 @@ Frontier.Platform.Workflow.Model.StepCompletion.RetryCount.get -> int
 Frontier.Platform.Workflow.Model.StepCompletion.RetryCount.init -> void
 Frontier.Platform.Workflow.Model.StepCompletion.SelectedBranchNodeId.get -> string?
 Frontier.Platform.Workflow.Model.StepCompletion.SelectedBranchNodeId.init -> void
+Frontier.Platform.Workflow.Model.StepCompletion.Simulated.get -> bool?
+Frontier.Platform.Workflow.Model.StepCompletion.Simulated.init -> void
 Frontier.Platform.Workflow.Model.StepCompletion.StepCompletion() -> void
+Frontier.Platform.Workflow.Model.StepCompletion.ToolRef.get -> string?
+Frontier.Platform.Workflow.Model.StepCompletion.ToolRef.init -> void
 Frontier.Platform.Workflow.Model.TypedPayload (forwarded, contained in Frontier.Platform.Serialization)
 Frontier.Platform.Workflow.Model.TypedPayload.<Clone>$() -> Frontier.Platform.Workflow.Model.TypedPayload! (forwarded, contained in Frontier.Platform.Serialization)
 Frontier.Platform.Workflow.Model.TypedPayload.Equals(Frontier.Platform.Workflow.Model.TypedPayload? other) -> bool (forwarded, contained in Frontier.Platform.Serialization)

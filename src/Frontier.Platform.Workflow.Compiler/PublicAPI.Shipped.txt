@@ -13,6 +13,8 @@ Frontier.Platform.Workflow.Compiler.AgentProposalParser
 Frontier.Platform.Workflow.Compiler.AgentRoleDescriptor
 Frontier.Platform.Workflow.Compiler.AgentRoleDescriptor.<Clone>$() -> Frontier.Platform.Workflow.Compiler.AgentRoleDescriptor!
 Frontier.Platform.Workflow.Compiler.AgentRoleDescriptor.AgentRoleDescriptor() -> void
+Frontier.Platform.Workflow.Compiler.AgentRoleDescriptor.Backing.get -> Frontier.Platform.ModelRoleConfig.RoleBacking!
+Frontier.Platform.Workflow.Compiler.AgentRoleDescriptor.Backing.init -> void
 Frontier.Platform.Workflow.Compiler.AgentRoleDescriptor.Description.get -> string!
 Frontier.Platform.Workflow.Compiler.AgentRoleDescriptor.Description.init -> void
 Frontier.Platform.Workflow.Compiler.AgentRoleDescriptor.Equals(Frontier.Platform.Workflow.Compiler.AgentRoleDescriptor? other) -> bool
@@ -141,6 +143,8 @@ Frontier.Platform.Workflow.Compiler.DesignerToolDescriptor.ServerDrifted.get -> 
 Frontier.Platform.Workflow.Compiler.DesignerToolDescriptor.ServerDrifted.init -> void
 Frontier.Platform.Workflow.Compiler.DesignerToolDescriptor.ToolRef.get -> string!
 Frontier.Platform.Workflow.Compiler.DesignerToolDescriptor.ToolRef.init -> void
+Frontier.Platform.Workflow.Compiler.DesignerToolDescriptor.Writes.get -> bool?
+Frontier.Platform.Workflow.Compiler.DesignerToolDescriptor.Writes.init -> void
 Frontier.Platform.Workflow.Compiler.DraftHandle
 Frontier.Platform.Workflow.Compiler.DraftHandle.<Clone>$() -> Frontier.Platform.Workflow.Compiler.DraftHandle!
 Frontier.Platform.Workflow.Compiler.DraftHandle.CreatedUtc.get -> System.DateTime
@@ -178,8 +182,6 @@ Frontier.Platform.Workflow.Compiler.IChatDesignerService.SubmitDesignTurnAsync(s
 Frontier.Platform.Workflow.Compiler.IContextComponentCatalog
 Frontier.Platform.Workflow.Compiler.IContextComponentCatalog.GetBaselineComponentNamesAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyCollection<string!>!>!
 Frontier.Platform.Workflow.Compiler.IContextComponentCatalog.GetDynamicFieldNamesAsync(System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyCollection<string!>!>!
-Frontier.Platform.Workflow.Compiler.IContractSnapshotCatalog
-Frontier.Platform.Workflow.Compiler.IContractSnapshotCatalog.FindAsync(string! contractRef, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.RegisteredContract?>!
 Frontier.Platform.Workflow.Compiler.IContractTypeCatalog
 Frontier.Platform.Workflow.Compiler.IContractTypeCatalog.Names.get -> System.Collections.Generic.IReadOnlyList<string!>!
 Frontier.Platform.Workflow.Compiler.IContractTypeCatalog.Resolve(string! contractTypeName) -> System.Type?
@@ -244,6 +246,7 @@ Frontier.Platform.Workflow.Compiler.ITestRunTelemetryReader
 Frontier.Platform.Workflow.Compiler.ITestRunTelemetryReader.GetCostMetricsAsync(string! executionId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.TestRunCostMetrics!>!
 Frontier.Platform.Workflow.Compiler.IWorkflowEntryInspector
 Frontier.Platform.Workflow.Compiler.IWorkflowEntryInspector.GetEntry(Frontier.Platform.Workflow.Model.WorkflowDefinition! definition) -> Frontier.Platform.Workflow.Compiler.WorkflowEntry?
+Frontier.Platform.Workflow.Compiler.McpToolRegistryStamp
 Frontier.Platform.Workflow.Compiler.MentionKind
 Frontier.Platform.Workflow.Compiler.MergeOutcome
 Frontier.Platform.Workflow.Compiler.MergeOutcome.MergeOutcome() -> void
@@ -410,15 +413,6 @@ Frontier.Platform.Workflow.Compiler.ReflectionContractTypeCatalog.Names.get -> S
 Frontier.Platform.Workflow.Compiler.ReflectionContractTypeCatalog.ReflectionContractTypeCatalog(Frontier.Platform.Workflow.Model.IContractTypeSet! contractTypes) -> void
 Frontier.Platform.Workflow.Compiler.ReflectionContractTypeCatalog.Resolve(string! contractTypeName) -> System.Type?
 Frontier.Platform.Workflow.Compiler.ReflectionContractTypeCatalog.Resolves(string! contractTypeName) -> bool
-Frontier.Platform.Workflow.Compiler.RegisteredContract
-Frontier.Platform.Workflow.Compiler.RegisteredContract.<Clone>$() -> Frontier.Platform.Workflow.Compiler.RegisteredContract!
-Frontier.Platform.Workflow.Compiler.RegisteredContract.Deconstruct(out Frontier.Platform.Abstractions.ContractSnapshot! Snapshot, out bool IsRetired) -> void
-Frontier.Platform.Workflow.Compiler.RegisteredContract.Equals(Frontier.Platform.Workflow.Compiler.RegisteredContract? other) -> bool
-Frontier.Platform.Workflow.Compiler.RegisteredContract.IsRetired.get -> bool
-Frontier.Platform.Workflow.Compiler.RegisteredContract.IsRetired.init -> void
-Frontier.Platform.Workflow.Compiler.RegisteredContract.RegisteredContract(Frontier.Platform.Abstractions.ContractSnapshot! Snapshot, bool IsRetired) -> void
-Frontier.Platform.Workflow.Compiler.RegisteredContract.Snapshot.get -> Frontier.Platform.Abstractions.ContractSnapshot!
-Frontier.Platform.Workflow.Compiler.RegisteredContract.Snapshot.init -> void
 Frontier.Platform.Workflow.Compiler.ResourceMention
 Frontier.Platform.Workflow.Compiler.ResourceMention.<Clone>$() -> Frontier.Platform.Workflow.Compiler.ResourceMention!
 Frontier.Platform.Workflow.Compiler.ResourceMention.Equals(Frontier.Platform.Workflow.Compiler.ResourceMention? other) -> bool
@@ -476,7 +470,7 @@ Frontier.Platform.Workflow.Compiler.RuleTier.Pure = 0 -> Frontier.Platform.Workf
 Frontier.Platform.Workflow.Compiler.RuleTier.Resourced = 1 -> Frontier.Platform.Workflow.Compiler.RuleTier
 Frontier.Platform.Workflow.Compiler.RuleTier.Runtime = 2 -> Frontier.Platform.Workflow.Compiler.RuleTier
 Frontier.Platform.Workflow.Compiler.Rules.AgentInstructionsResolveRule
-Frontier.Platform.Workflow.Compiler.Rules.AgentInstructionsResolveRule.AgentInstructionsResolveRule(Frontier.Platform.Workflow.Compiler.IInstructionCatalog! instructions) -> void
+Frontier.Platform.Workflow.Compiler.Rules.AgentInstructionsResolveRule.AgentInstructionsResolveRule(Frontier.Platform.Workflow.Compiler.IInstructionCatalog! instructions, Frontier.Platform.Workflow.Compiler.IAgentRoleCatalog! roles) -> void
 Frontier.Platform.Workflow.Compiler.Rules.AgentInstructionsResolveRule.DefaultSeverity.get -> Frontier.Platform.Workflow.Compiler.ValidationSeverity
 Frontier.Platform.Workflow.Compiler.Rules.AgentInstructionsResolveRule.EvaluateAsync(Frontier.Platform.Workflow.Compiler.DefinitionValidationContext! ctx, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Frontier.Platform.Workflow.Compiler.ValidationFinding!>!>!
 Frontier.Platform.Workflow.Compiler.Rules.AgentInstructionsResolveRule.RuleId.get -> string!
@@ -508,7 +502,7 @@ Frontier.Platform.Workflow.Compiler.Rules.DataEdgeTypeMatchRule.Tier.get -> Fron
 Frontier.Platform.Workflow.Compiler.Rules.DataNoEdgeFromGateRule
 Frontier.Platform.Workflow.Compiler.Rules.DataNoEdgeFromGateRule.DataNoEdgeFromGateRule() -> void
 Frontier.Platform.Workflow.Compiler.Rules.DataProjectionCompatibleRule
-Frontier.Platform.Workflow.Compiler.Rules.DataProjectionCompatibleRule.DataProjectionCompatibleRule(Frontier.Platform.Workflow.Compiler.IContractSnapshotCatalog! contracts, Frontier.Platform.Contracts.IContractValidator! validator) -> void
+Frontier.Platform.Workflow.Compiler.Rules.DataProjectionCompatibleRule.DataProjectionCompatibleRule(Frontier.Platform.Abstractions.IContractSnapshotCatalog! contracts, Frontier.Platform.Contracts.IContractValidator! validator) -> void
 Frontier.Platform.Workflow.Compiler.Rules.DataProjectionCompatibleRule.DefaultSeverity.get -> Frontier.Platform.Workflow.Compiler.ValidationSeverity
 Frontier.Platform.Workflow.Compiler.Rules.DataProjectionCompatibleRule.EvaluateAsync(Frontier.Platform.Workflow.Compiler.DefinitionValidationContext! ctx, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Frontier.Platform.Workflow.Compiler.ValidationFinding!>!>!
 Frontier.Platform.Workflow.Compiler.Rules.DataProjectionCompatibleRule.RuleId.get -> string!
@@ -516,7 +510,7 @@ Frontier.Platform.Workflow.Compiler.Rules.DataProjectionCompatibleRule.Tier.get 
 Frontier.Platform.Workflow.Compiler.Rules.DataSchemaRefMatchRule
 Frontier.Platform.Workflow.Compiler.Rules.DataSchemaRefMatchRule.DataSchemaRefMatchRule() -> void
 Frontier.Platform.Workflow.Compiler.Rules.DataSchemaRefResolvesRule
-Frontier.Platform.Workflow.Compiler.Rules.DataSchemaRefResolvesRule.DataSchemaRefResolvesRule(Frontier.Platform.Workflow.Compiler.IContractSnapshotCatalog! contracts) -> void
+Frontier.Platform.Workflow.Compiler.Rules.DataSchemaRefResolvesRule.DataSchemaRefResolvesRule(Frontier.Platform.Abstractions.IContractSnapshotCatalog! contracts) -> void
 Frontier.Platform.Workflow.Compiler.Rules.DataSchemaRefResolvesRule.DefaultSeverity.get -> Frontier.Platform.Workflow.Compiler.ValidationSeverity
 Frontier.Platform.Workflow.Compiler.Rules.DataSchemaRefResolvesRule.EvaluateAsync(Frontier.Platform.Workflow.Compiler.DefinitionValidationContext! ctx, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Frontier.Platform.Workflow.Compiler.ValidationFinding!>!>!
 Frontier.Platform.Workflow.Compiler.Rules.DataSchemaRefResolvesRule.RuleId.get -> string!
@@ -1413,9 +1407,6 @@ override Frontier.Platform.Workflow.Compiler.PublishedVersion.ToString() -> stri
 override Frontier.Platform.Workflow.Compiler.PublishedVersionInfo.Equals(object? obj) -> bool
 override Frontier.Platform.Workflow.Compiler.PublishedVersionInfo.GetHashCode() -> int
 override Frontier.Platform.Workflow.Compiler.PublishedVersionInfo.ToString() -> string!
-override Frontier.Platform.Workflow.Compiler.RegisteredContract.Equals(object? obj) -> bool
-override Frontier.Platform.Workflow.Compiler.RegisteredContract.GetHashCode() -> int
-override Frontier.Platform.Workflow.Compiler.RegisteredContract.ToString() -> string!
 override Frontier.Platform.Workflow.Compiler.ResourceMention.Equals(object? obj) -> bool
 override Frontier.Platform.Workflow.Compiler.ResourceMention.GetHashCode() -> int
 override Frontier.Platform.Workflow.Compiler.ResourceMention.ToString() -> string!
@@ -1633,6 +1624,7 @@ static Frontier.Platform.Workflow.Compiler.DraftHandle.operator !=(Frontier.Plat
 static Frontier.Platform.Workflow.Compiler.DraftHandle.operator ==(Frontier.Platform.Workflow.Compiler.DraftHandle? left, Frontier.Platform.Workflow.Compiler.DraftHandle? right) -> bool
 static Frontier.Platform.Workflow.Compiler.EntryContractDescriptor.operator !=(Frontier.Platform.Workflow.Compiler.EntryContractDescriptor? left, Frontier.Platform.Workflow.Compiler.EntryContractDescriptor? right) -> bool
 static Frontier.Platform.Workflow.Compiler.EntryContractDescriptor.operator ==(Frontier.Platform.Workflow.Compiler.EntryContractDescriptor? left, Frontier.Platform.Workflow.Compiler.EntryContractDescriptor? right) -> bool
+static Frontier.Platform.Workflow.Compiler.McpToolRegistryStamp.Apply(Frontier.Platform.Workflow.Model.WorkflowDefinition! definition, System.Collections.Generic.IReadOnlyList<Frontier.Platform.Workflow.Compiler.DesignerToolDescriptor!>! tools) -> Frontier.Platform.Workflow.Model.WorkflowDefinition!
 static Frontier.Platform.Workflow.Compiler.MergeOutcome.operator !=(Frontier.Platform.Workflow.Compiler.MergeOutcome? left, Frontier.Platform.Workflow.Compiler.MergeOutcome? right) -> bool
 static Frontier.Platform.Workflow.Compiler.MergeOutcome.operator ==(Frontier.Platform.Workflow.Compiler.MergeOutcome? left, Frontier.Platform.Workflow.Compiler.MergeOutcome? right) -> bool
 static Frontier.Platform.Workflow.Compiler.MergeOutcomeConflict.operator !=(Frontier.Platform.Workflow.Compiler.MergeOutcomeConflict? left, Frontier.Platform.Workflow.Compiler.MergeOutcomeConflict? right) -> bool
@@ -1662,8 +1654,6 @@ static Frontier.Platform.Workflow.Compiler.PublishedVersion.operator !=(Frontier
 static Frontier.Platform.Workflow.Compiler.PublishedVersion.operator ==(Frontier.Platform.Workflow.Compiler.PublishedVersion? left, Frontier.Platform.Workflow.Compiler.PublishedVersion? right) -> bool
 static Frontier.Platform.Workflow.Compiler.PublishedVersionInfo.operator !=(Frontier.Platform.Workflow.Compiler.PublishedVersionInfo? left, Frontier.Platform.Workflow.Compiler.PublishedVersionInfo? right) -> bool
 static Frontier.Platform.Workflow.Compiler.PublishedVersionInfo.operator ==(Frontier.Platform.Workflow.Compiler.PublishedVersionInfo? left, Frontier.Platform.Workflow.Compiler.PublishedVersionInfo? right) -> bool
-static Frontier.Platform.Workflow.Compiler.RegisteredContract.operator !=(Frontier.Platform.Workflow.Compiler.RegisteredContract? left, Frontier.Platform.Workflow.Compiler.RegisteredContract? right) -> bool
-static Frontier.Platform.Workflow.Compiler.RegisteredContract.operator ==(Frontier.Platform.Workflow.Compiler.RegisteredContract? left, Frontier.Platform.Workflow.Compiler.RegisteredContract? right) -> bool
 static Frontier.Platform.Workflow.Compiler.ResourceMention.operator !=(Frontier.Platform.Workflow.Compiler.ResourceMention? left, Frontier.Platform.Workflow.Compiler.ResourceMention? right) -> bool
 static Frontier.Platform.Workflow.Compiler.ResourceMention.operator ==(Frontier.Platform.Workflow.Compiler.ResourceMention? left, Frontier.Platform.Workflow.Compiler.ResourceMention? right) -> bool
 static Frontier.Platform.Workflow.Compiler.RetirementCandidate.operator !=(Frontier.Platform.Workflow.Compiler.RetirementCandidate? left, Frontier.Platform.Workflow.Compiler.RetirementCandidate? right) -> bool

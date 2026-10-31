@@ -15,6 +15,16 @@ Frontier.Platform.Contracts.ContractFinding.Severity.init -> void
 Frontier.Platform.Contracts.ContractFindingCodes
 Frontier.Platform.Contracts.ContractFindingSeverity
 Frontier.Platform.Contracts.ContractHash
+Frontier.Platform.Contracts.ContractLegibility
+Frontier.Platform.Contracts.ContractPropertyAnnotation
+Frontier.Platform.Contracts.ContractPropertyAnnotation.<Clone>$() -> Frontier.Platform.Contracts.ContractPropertyAnnotation!
+Frontier.Platform.Contracts.ContractPropertyAnnotation.ContractPropertyAnnotation(string! Location, string? Description) -> void
+Frontier.Platform.Contracts.ContractPropertyAnnotation.Deconstruct(out string! Location, out string? Description) -> void
+Frontier.Platform.Contracts.ContractPropertyAnnotation.Description.get -> string?
+Frontier.Platform.Contracts.ContractPropertyAnnotation.Description.init -> void
+Frontier.Platform.Contracts.ContractPropertyAnnotation.Equals(Frontier.Platform.Contracts.ContractPropertyAnnotation? other) -> bool
+Frontier.Platform.Contracts.ContractPropertyAnnotation.Location.get -> string!
+Frontier.Platform.Contracts.ContractPropertyAnnotation.Location.init -> void
 Frontier.Platform.Contracts.ContractProvenance
 Frontier.Platform.Contracts.ContractProvenance.LintRefuses.get -> bool
 Frontier.Platform.Contracts.ContractRef
@@ -113,6 +123,9 @@ const Frontier.Platform.Contracts.ContractsOptions.SectionName = "Contracts" -> 
 override Frontier.Platform.Contracts.ContractFinding.Equals(object? obj) -> bool
 override Frontier.Platform.Contracts.ContractFinding.GetHashCode() -> int
 override Frontier.Platform.Contracts.ContractFinding.ToString() -> string!
+override Frontier.Platform.Contracts.ContractPropertyAnnotation.Equals(object? obj) -> bool
+override Frontier.Platform.Contracts.ContractPropertyAnnotation.GetHashCode() -> int
+override Frontier.Platform.Contracts.ContractPropertyAnnotation.ToString() -> string!
 override Frontier.Platform.Contracts.ContractRef.Equals(object? obj) -> bool
 override Frontier.Platform.Contracts.ContractRef.GetHashCode() -> int
 override Frontier.Platform.Contracts.ContractRef.ToString() -> string!
@@ -131,6 +144,11 @@ override Frontier.Platform.Contracts.ContractViolation.ToString() -> string!
 static Frontier.Platform.Contracts.ContractFinding.operator !=(Frontier.Platform.Contracts.ContractFinding? left, Frontier.Platform.Contracts.ContractFinding? right) -> bool
 static Frontier.Platform.Contracts.ContractFinding.operator ==(Frontier.Platform.Contracts.ContractFinding? left, Frontier.Platform.Contracts.ContractFinding? right) -> bool
 static Frontier.Platform.Contracts.ContractHash.Compute(System.Text.Json.JsonElement schema, System.Collections.Generic.IReadOnlyList<Frontier.Platform.Abstractions.ContractRule!>! rules) -> string!
+static Frontier.Platform.Contracts.ContractLegibility.Description(Frontier.Platform.Abstractions.ContractSnapshot! snapshot) -> string?
+static Frontier.Platform.Contracts.ContractLegibility.Gaps(Frontier.Platform.Abstractions.ContractSnapshot! snapshot) -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Contracts.ContractFinding!>!
+static Frontier.Platform.Contracts.ContractLegibility.Properties(Frontier.Platform.Abstractions.ContractSnapshot! snapshot) -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Contracts.ContractPropertyAnnotation!>!
+static Frontier.Platform.Contracts.ContractPropertyAnnotation.operator !=(Frontier.Platform.Contracts.ContractPropertyAnnotation? left, Frontier.Platform.Contracts.ContractPropertyAnnotation? right) -> bool
+static Frontier.Platform.Contracts.ContractPropertyAnnotation.operator ==(Frontier.Platform.Contracts.ContractPropertyAnnotation? left, Frontier.Platform.Contracts.ContractPropertyAnnotation? right) -> bool
 static Frontier.Platform.Contracts.ContractRef.TryParse(string? value, out Frontier.Platform.Contracts.ContractRef? contractRef) -> bool
 static Frontier.Platform.Contracts.ContractRef.operator !=(Frontier.Platform.Contracts.ContractRef? left, Frontier.Platform.Contracts.ContractRef? right) -> bool
 static Frontier.Platform.Contracts.ContractRef.operator ==(Frontier.Platform.Contracts.ContractRef? left, Frontier.Platform.Contracts.ContractRef? right) -> bool
