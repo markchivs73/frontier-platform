@@ -104,9 +104,21 @@ Frontier.Platform.Abstractions.HitlDecision.RequestId.get -> string!
 Frontier.Platform.Abstractions.HitlDecision.RequestId.init -> void
 Frontier.Platform.Abstractions.HitlDecision.RollbackToNodeId.get -> string?
 Frontier.Platform.Abstractions.HitlDecision.RollbackToNodeId.init -> void
+Frontier.Platform.Abstractions.IContractSnapshotCatalog
+Frontier.Platform.Abstractions.IContractSnapshotCatalog.FindAsync(string! contractRef, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Abstractions.RegisteredContract?>!
+Frontier.Platform.Abstractions.IContractSnapshotCatalog.ListAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Frontier.Platform.Abstractions.ContractSnapshot!>!>!
 Frontier.Platform.Abstractions.IVersionedContract
 Frontier.Platform.Abstractions.IVersionedContract.SchemaVersion.get -> string!
 Frontier.Platform.Abstractions.IVersionedContract.Validate() -> void
+Frontier.Platform.Abstractions.RegisteredContract
+Frontier.Platform.Abstractions.RegisteredContract.<Clone>$() -> Frontier.Platform.Abstractions.RegisteredContract!
+Frontier.Platform.Abstractions.RegisteredContract.Deconstruct(out Frontier.Platform.Abstractions.ContractSnapshot! Snapshot, out bool IsRetired) -> void
+Frontier.Platform.Abstractions.RegisteredContract.Equals(Frontier.Platform.Abstractions.RegisteredContract? other) -> bool
+Frontier.Platform.Abstractions.RegisteredContract.IsRetired.get -> bool
+Frontier.Platform.Abstractions.RegisteredContract.IsRetired.init -> void
+Frontier.Platform.Abstractions.RegisteredContract.RegisteredContract(Frontier.Platform.Abstractions.ContractSnapshot! Snapshot, bool IsRetired) -> void
+Frontier.Platform.Abstractions.RegisteredContract.Snapshot.get -> Frontier.Platform.Abstractions.ContractSnapshot!
+Frontier.Platform.Abstractions.RegisteredContract.Snapshot.init -> void
 Frontier.Platform.Abstractions.ResolvedModelSummary
 Frontier.Platform.Abstractions.ResolvedModelSummary.<Clone>$() -> Frontier.Platform.Abstractions.ResolvedModelSummary!
 Frontier.Platform.Abstractions.ResolvedModelSummary.CardHash.get -> string?
@@ -155,6 +167,9 @@ override Frontier.Platform.Abstractions.EngagementId.ToString() -> string!
 override Frontier.Platform.Abstractions.HitlDecision.Equals(object? obj) -> bool
 override Frontier.Platform.Abstractions.HitlDecision.GetHashCode() -> int
 override Frontier.Platform.Abstractions.HitlDecision.ToString() -> string!
+override Frontier.Platform.Abstractions.RegisteredContract.Equals(object? obj) -> bool
+override Frontier.Platform.Abstractions.RegisteredContract.GetHashCode() -> int
+override Frontier.Platform.Abstractions.RegisteredContract.ToString() -> string!
 override Frontier.Platform.Abstractions.ResolvedModelSummary.Equals(object? obj) -> bool
 override Frontier.Platform.Abstractions.ResolvedModelSummary.GetHashCode() -> int
 override Frontier.Platform.Abstractions.ResolvedModelSummary.ToString() -> string!
@@ -178,6 +193,8 @@ static Frontier.Platform.Abstractions.ExecutionId.ForRun(string! runToken) -> st
 static Frontier.Platform.Abstractions.ExecutionId.Mint(string! engagementId, string! workflowId) -> string!
 static Frontier.Platform.Abstractions.HitlDecision.operator !=(Frontier.Platform.Abstractions.HitlDecision? left, Frontier.Platform.Abstractions.HitlDecision? right) -> bool
 static Frontier.Platform.Abstractions.HitlDecision.operator ==(Frontier.Platform.Abstractions.HitlDecision? left, Frontier.Platform.Abstractions.HitlDecision? right) -> bool
+static Frontier.Platform.Abstractions.RegisteredContract.operator !=(Frontier.Platform.Abstractions.RegisteredContract? left, Frontier.Platform.Abstractions.RegisteredContract? right) -> bool
+static Frontier.Platform.Abstractions.RegisteredContract.operator ==(Frontier.Platform.Abstractions.RegisteredContract? left, Frontier.Platform.Abstractions.RegisteredContract? right) -> bool
 static Frontier.Platform.Abstractions.ResolvedModelSummary.operator !=(Frontier.Platform.Abstractions.ResolvedModelSummary? left, Frontier.Platform.Abstractions.ResolvedModelSummary? right) -> bool
 static Frontier.Platform.Abstractions.ResolvedModelSummary.operator ==(Frontier.Platform.Abstractions.ResolvedModelSummary? left, Frontier.Platform.Abstractions.ResolvedModelSummary? right) -> bool
 static Frontier.Platform.Abstractions.SmartEnum<TEnum>.FromName(string! name) -> TEnum!

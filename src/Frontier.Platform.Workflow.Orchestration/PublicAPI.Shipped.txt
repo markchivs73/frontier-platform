@@ -71,7 +71,7 @@ Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.InputContract.ge
 Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.InputContract.init -> void
 Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.InputContractType.get -> string!
 Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.InputContractType.init -> void
-Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.InstructionsRef.get -> string!
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.InstructionsRef.get -> string?
 Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.InstructionsRef.init -> void
 Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.NodeId.get -> string!
 Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.NodeId.init -> void
@@ -289,6 +289,8 @@ Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.HostBuild.get -> 
 Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.HostBuild.init -> void
 Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.InputContractHash.get -> string?
 Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.InputContractHash.init -> void
+Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.InputHash.get -> string?
+Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.InputHash.init -> void
 Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.McpToolActivityResult() -> void
 Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.NodeId.get -> string!
 Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.NodeId.init -> void
