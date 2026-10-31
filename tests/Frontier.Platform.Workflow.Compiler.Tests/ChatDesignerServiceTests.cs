@@ -802,6 +802,19 @@ public sealed class ChatDesignerServiceTests
             Assert.Contains("omit the field rather than leaving it blank", prompt, StringComparison.Ordinal);
         }
 
+        /// <summary>ADR-PA40 addendum: the agent is told what a role's stakes mean, and a role with none still renders without the field.</summary>
+        [Fact]
+        public async Task BuildSystemPrompt_ExplainsStakes_AndOmitsThemWhenTheCatalogueGivesNone()
+        {
+            var service = CreateService(new InMemoryDefinitionStore(), BuildMergeService(out _));
+
+            var prompt = Flatten(await service.BuildSystemPromptAsync(CreateMinimalDraft("wf-x"), CancellationToken.None));
+
+            Assert.Contains("A role's `stakes`, when given, says what is commercially at stake if its output is wrong", prompt, StringComparison.Ordinal);
+            Assert.Contains("`material` (it feeds client deliverables directly)", prompt, StringComparison.Ordinal);
+            Assert.DoesNotContain("\"stakes\":", prompt, StringComparison.Ordinal);
+        }
+
         /// <summary>The prompt with every run of whitespace as one space, so an assertion does not depend on where a line wraps.</summary>
         private static string Flatten(string prompt) => System.Text.RegularExpressions.Regex.Replace(prompt, @"\s+", " ");
 

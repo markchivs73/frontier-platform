@@ -23,6 +23,14 @@ public sealed record AgentRoleDescriptor
     public required string Description { get; init; }
 
     /// <summary>
+    /// What is commercially at stake if the role's output is wrong (ADR-PA40): <c>material</c>,
+    /// <c>standard</c> or <c>mechanical</c>. Shown to the design agent beside the description;
+    /// <see langword="null"/> for a catalogue that does not say, and then omitted from the prompt.
+    /// </summary>
+    [JsonPropertyName("stakes")]
+    public StakesLevel? Stakes { get; init; }
+
+    /// <summary>
     /// The registry contract ref a node bound to this role must take as input, when the role is
     /// contract-bearing (ADR-E27 D12; <c>model-role.contracts-match</c>). Agent-backed roles declare
     /// one; a model-backed role may. <see langword="null"/> leaves the node free to name its own.

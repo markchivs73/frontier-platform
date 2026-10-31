@@ -1,0 +1,2 @@
+Frontier.Platform.Workflow.Compiler.AgentRoleDescriptor.Stakes.get -> Frontier.Platform.ModelRoleConfig.StakesLevel?
+Frontier.Platform.Workflow.Compiler.AgentRoleDescriptor.Stakes.init -> void

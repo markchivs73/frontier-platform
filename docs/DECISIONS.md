@@ -2906,6 +2906,14 @@ Pinned, as the stack lands, by the role-definition golden files and governance t
 mapping-history isolation test, the evidence and staleness tests, the instructions-optional compiler
 and pipeline tests, and the replay test of a run recorded with an `instructions_ref`.
 
+**Addendum (v0.46.0): the design agent sees `stakes`.** v0.45.0 gave `AgentRoleDescriptor` the
+role's backing and contract refs but not its stakes, so the design agent chose a role from its
+description alone. The descriptor gains an optional `stakes`, which the consumer's catalogue fills
+from the stored definition, and the prompt says what each level means. It is optional and omitted
+when null, so a catalogue that does not supply it produces the same prompt as before. Stakes still
+drives governance posture; showing it to the design agent changes no rule. Mark chose this on
+2026-10-31 over deferring it until a designer eval asked for it.
+
 ## ADR-PA41 — an MCP node pins whether it writes, the designer copies what the registry holds, and the design agent reads contract annotations
 
 The consumer's ADR-E27 (contracts as data) makes an MCP tool's write flag governed registry data

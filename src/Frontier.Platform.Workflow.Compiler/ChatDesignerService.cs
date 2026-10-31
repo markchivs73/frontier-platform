@@ -568,7 +568,10 @@ internal sealed class ChatDesignerService : IChatDesignerService
             {{toolsJson}}
 
             Available agent roles — use ONLY these role_id values for agent_task.role. Each role's
-            `backing` says what serves it: `model` (a model chain) or `agent` (a registered agent):
+            `backing` says what serves it: `model` (a model chain) or `agent` (a registered agent).
+            A role's `stakes`, when given, says what is commercially at stake if its output is wrong:
+            `material` (it feeds client deliverables directly), `standard` (it is checked or
+            summarised before use) or `mechanical` (no client-facing content):
             {{agentRolesJson}}
 
             Available contracts — the ONLY valid values for an agent_task's `input_contract_type`

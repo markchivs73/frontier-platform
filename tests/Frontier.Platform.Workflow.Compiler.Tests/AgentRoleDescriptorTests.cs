@@ -22,4 +22,16 @@ public sealed class AgentRoleDescriptorTests
 
         Assert.Equal("""{"role_id":"ticket-triage","description":"d","backing":"agent"}""", json);
     }
+
+    [Fact]
+    public void Stakes_SerializesAfterTheDescription_AndIsOmittedWhenNull()
+    {
+        var withStakes = JsonSerializer.Serialize(
+            new AgentRoleDescriptor { RoleId = "deep-reasoning", Description = "d", Stakes = StakesLevel.Material }, CanonicalProfile.Options);
+        var without = JsonSerializer.Serialize(
+            new AgentRoleDescriptor { RoleId = "deep-reasoning", Description = "d" }, CanonicalProfile.Options);
+
+        Assert.Equal("""{"role_id":"deep-reasoning","description":"d","stakes":"material","backing":"model"}""", withStakes);
+        Assert.Equal("""{"role_id":"deep-reasoning","description":"d","backing":"model"}""", without);
+    }
 }
