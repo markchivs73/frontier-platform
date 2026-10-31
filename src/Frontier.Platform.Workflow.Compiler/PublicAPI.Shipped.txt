@@ -24,6 +24,8 @@ Frontier.Platform.Workflow.Compiler.AgentRoleDescriptor.OutputContractRef.get ->
 Frontier.Platform.Workflow.Compiler.AgentRoleDescriptor.OutputContractRef.init -> void
 Frontier.Platform.Workflow.Compiler.AgentRoleDescriptor.RoleId.get -> string!
 Frontier.Platform.Workflow.Compiler.AgentRoleDescriptor.RoleId.init -> void
+Frontier.Platform.Workflow.Compiler.AgentRoleDescriptor.Stakes.get -> Frontier.Platform.ModelRoleConfig.StakesLevel?
+Frontier.Platform.Workflow.Compiler.AgentRoleDescriptor.Stakes.init -> void
 Frontier.Platform.Workflow.Compiler.ApproverRoleDescriptor
 Frontier.Platform.Workflow.Compiler.ApproverRoleDescriptor.<Clone>$() -> Frontier.Platform.Workflow.Compiler.ApproverRoleDescriptor!
 Frontier.Platform.Workflow.Compiler.ApproverRoleDescriptor.ApplicableGateKinds.get -> System.Collections.Generic.IReadOnlyList<string!>!
