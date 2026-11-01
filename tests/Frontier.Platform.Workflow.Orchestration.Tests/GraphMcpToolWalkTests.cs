@@ -127,6 +127,33 @@ public sealed class GraphMcpToolWalkTests
         Assert.DoesNotContain(GraphOrchestratorSteps.McpWriteProfile, harness.PolicyProvider.RequestedProfileNames);
     }
 
+    /// <summary>
+    /// ADR-PA42 replay: the node's pinned flag rides to the activity so the sandbox fence follows it; a
+    /// definition recorded without it hands the activity null on every replay, as before the field existed.
+    /// </summary>
+    [Theory]
+    [InlineData("", null)]
+    [InlineData(""","writes":true""", true)]
+    [InlineData(""","writes":false""", false)]
+    public async Task RecordedDefinition_HandsItsPinnedWritesToTheActivity(string writesMember, bool? expected)
+    {
+        var recorded = $$"""
+            {"schema_version":"2.0","workflow_id":"wf-recorded","definition_version":1,"engagement_type":"support-triage","name":"Recorded run",
+             "nodes":[{"node_type":"mcp_tool","node_id":"t-tool","tool_ref":"com.example.crm/tickets/update_ticket","timeout_seconds":45,"idempotency_key_spec":"correlation"{{writesMember}}}],
+             "edges":[],"definition_hash":"sha256:recorded","mode":"one_shot"}
+            """;
+
+        var handed = new List<bool?>();
+        for (var replay = 0; replay < 2; replay++)
+        {
+            var harness = new McpHarness(JsonSerializer.Deserialize<WorkflowDefinition>(recorded, CanonicalProfile.Options)!);
+            await harness.RunWalkAsync();
+            handed.Add(Assert.Single(harness.ToolInputs).Writes);
+        }
+
+        Assert.Equal([expected, expected], handed);
+    }
+
     /// <summary>ADR-PA41: with the flag pinned the classifier is never asked, so its answer cannot vary a replay.</summary>
     [Fact]
     public async Task PinnedFlag_DoesNotConsultTheClassifier()

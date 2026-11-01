@@ -124,4 +124,15 @@ public sealed record AgentTaskActivityInput
     [JsonPropertyOrder(16)]
     [JsonPropertyName("output_contract")]
     public ContractSnapshot? OutputContract { get; init; }
+
+    /// <summary>
+    /// What the definition pins for <see cref="ToolRefs"/> (ADR-PA42): one entry per
+    /// <see cref="Frontier.Platform.Workflow.Model.AgentTaskNode.ToolContracts"/> entry, its contract refs resolved to the
+    /// definition's embedded snapshots. <see cref="IMcpToolCatalog"/> builds each tool from its pin.
+    /// <b>Additive and optional</b> per the ADR-E15 floor: <see langword="null"/> when the node pins
+    /// nothing, and on every input recorded before the pins, whose tools resolve as they did.
+    /// </summary>
+    [JsonPropertyOrder(17)]
+    [JsonPropertyName("tool_pins")]
+    public IReadOnlyList<McpToolPin>? ToolPins { get; init; }
 }

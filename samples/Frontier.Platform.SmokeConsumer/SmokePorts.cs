@@ -22,7 +22,7 @@ internal sealed class SmokeInstructionsResolver : IInstructionsResolver
 
 internal sealed class SmokeToolCatalog : IMcpToolCatalog
 {
-    public Task<IReadOnlyList<AITool>> ResolveAsync(IReadOnlyList<string> toolRefs, string executionId, CancellationToken ct)
+    public Task<IReadOnlyList<AITool>> ResolveAsync(IReadOnlyList<string> toolRefs, IReadOnlyList<McpToolPin>? pins, string engagementId, CancellationToken ct)
     {
         // A real catalogue presents tools to the model under the engine's model-safe encoding
         // and maps the model's calls back through it. Exercising the round trip here is the

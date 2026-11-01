@@ -215,13 +215,15 @@ public sealed class AgentTaskActivityPipelineTests
         var toolCatalog = new FakeMcpToolCatalog([tool]);
         var d = Dependencies(scope) with { ToolCatalog = toolCatalog, Dispatcher = new AgentInvocationDispatcher(invoker, registry, TestContractValidator.Instance), ContractTypes = registry };
         var pipeline = new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance);
-        var input = BuildInput(nameof(BriefArtifact), nameof(SummaryArtifact), upstreamPayload: null) with { ToolRefs = ["com.example.crm/tickets/get_new_ticket"] };
+        IReadOnlyList<McpToolPin> pins = [new McpToolPin { ToolRef = "com.example.crm/tickets/get_new_ticket", InputContract = RegistryContractFixtures.Ticket, Writes = false }];
+        var input = BuildInput(nameof(BriefArtifact), nameof(SummaryArtifact), upstreamPayload: null) with { ToolRefs = ["com.example.crm/tickets/get_new_ticket"], ToolPins = pins };
         var resolved = ResolvedModelFixture();
         var context = Package("{}");
 
         await pipeline.InvokeAgentAsync(input, resolved, context, "{}", CancellationToken.None);
 
         Assert.Equal(input.ToolRefs, toolCatalog.ReceivedToolRefs);
+        Assert.Same(pins, toolCatalog.ReceivedPins);   // ADR-PA42: the catalogue builds each tool from its pin
         Assert.Same(tool, Assert.Single(invoker.ReceivedRequest!.Tools));
     }
 

@@ -245,6 +245,7 @@ internal static class GraphOrchestratorSteps
             InputPayload = ResolveUpstreamPayloadForNode(input.Definition, node.NodeId, state),
             InputContract = PinnedContract(input.Definition, node.InputContractType),
             OutputContract = PinnedContract(input.Definition, node.OutputContractType),
+            Writes = node.Writes,
         };
 
         var taskOptions = policyProvider.GetTaskOptions(node.Retry?.ProfileName ?? (isWrite ? McpWriteProfile : McpReadProfile));
@@ -534,7 +535,22 @@ internal static class GraphOrchestratorSteps
         PinnedMapping = state.PinnedMappings?.GetValueOrDefault(node.Role),
         InputContract = PinnedContract(input.Definition, node.InputContractType),
         OutputContract = PinnedContract(input.Definition, node.OutputContractType),
+        ToolPins = ToolPins(input.Definition, node),
     };
+
+    /// <summary>
+    /// What <paramref name="node"/> pins for its tools (ADR-PA42): each <see cref="AgentTaskNode.ToolContracts"/>
+    /// entry with its contract refs resolved through <see cref="PinnedContract"/>, or null when the node pins
+    /// none (a definition published before the pins). Read from the orchestration input, so it is replay-safe.
+    /// </summary>
+    internal static IReadOnlyList<McpToolPin>? ToolPins(WorkflowDefinition definition, AgentTaskNode node) =>
+        node.ToolContracts?.Select(pin => new McpToolPin
+        {
+            ToolRef = pin.ToolRef,
+            InputContract = PinnedContract(definition, pin.InputContractType),
+            OutputContract = PinnedContract(definition, pin.OutputContractType),
+            Writes = pin.Writes,
+        }).ToList();
 
     /// <summary>
     /// The definition's pinned snapshot of <paramref name="contractRef"/> (ADR-E27 D15), or null when

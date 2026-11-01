@@ -3190,3 +3190,39 @@ definition golden unchanged, which is the compatibility claim); the stamp tests 
 unresolved and unlisted tools, an untouched tool-less node); the design-turn test that a proposed
 agent is pinned before validation; the rule tests for exact, missing, differing, stray and
 duplicate pins; and the `Collect` test for an agent's pinned refs.
+
+**PR2 as built (`workflow.orchestration!`).** The second half, as decided above (Mark,
+2026-11-01; consumer S13.144, register items 2 to 6).
+- *One pin type for both step kinds.* `McpToolPin {tool_ref, input_contract, output_contract,
+  writes}` carries the snapshots themselves, not refs: the orchestrator resolves each ref through
+  the existing `PinnedContract` lookup over `WorkflowDefinition.Contracts`, so the activity and
+  the catalogue never fetch a contract. Each field stands alone: null means nothing is pinned for
+  that fact (a tool registered before contracts were data, a tool with no output schema, a
+  definition published before `writes`), and the catalogue resolves that fact as before.
+- *Agent steps.* `AgentTaskActivityInput` gains `tool_pins` (order 17, after `output_contract`),
+  one pin per `tool_contracts` entry in its order, null when the node has none. Left out when
+  null, so every input recorded before it keeps its bytes.
+- *`mcp_tool` steps (item 5).* The orchestrator already decides the idempotency key and retry
+  profile from the node's `writes` (ADR-PA41); the fence did not, because the consumer's
+  catalogue classified the tool itself on the newest registry version. `McpToolActivityInput`
+  gains `writes` (the node's own value, never the classifier's fallback, so an unpinned node's
+  input keeps its bytes), and the pipeline hands the catalogue one pin built from it and the
+  node's two pinned snapshots. Its members also gain `[JsonPropertyOrder]` in their declaration
+  order, which the canonical profile requires and which moves no byte.
+- *The port (items 2, 4, 6).* `IMcpToolCatalog.ResolveAsync(toolRefs, pins, engagementId, ct)`:
+  the new `pins` (nullable) sits between the refs and the engagement. A pinned tool is built from
+  its pinned input contract, its schema and its description (annotations are inside the hash,
+  consumer ADR-E27 Q2), and fenced in a sandbox by the pinned flag; only a null fact, an unpinned
+  tool or a null `pins` falls back to the newest active version, where an unclassifiable tool is
+  still treated as a write. Endpoints stay on the newest active version. A pin list rather than a
+  request object keeps the break to one added argument for the port's one implementer.
+- *Pin only (item 3).* Nothing in the engine validates an agent's tool-call arguments or results
+  against the pins.
+- *Breaking:* the port signature, for the consumer's catalogue (and the smoke consumer, updated
+  here). The activity inputs change only additively.
+
+Pinned by PR2's tests: the pre-change wire tests for both activity inputs (null reads, bytes
+unchanged, the new member written last); the replay tests that a recorded definition hands its
+activity the same pins, or the same `writes`, on every replay, and none when it was published
+without them; the step tests that each pin resolves to the embedded snapshot; and the pipeline
+tests that both pipelines hand the catalogue their pins.

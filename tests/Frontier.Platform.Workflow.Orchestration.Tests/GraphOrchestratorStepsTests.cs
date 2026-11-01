@@ -231,6 +231,45 @@ public sealed class GraphOrchestratorStepsTests
         Assert.Null(activityInput.OutputContract);
     }
 
+    /// <summary>ADR-PA42: each pinned tool reaches the activity with its refs resolved to the definition's embedded snapshots and its write flag.</summary>
+    [Fact]
+    public void BuildActivityInput_ResolvesEachToolPinToTheEmbeddedSnapshots()
+    {
+        var chain = OrchestrationFixtures.ThreeArtifactChain();
+        var node = (AgentTaskNode)chain.Nodes[0] with
+        {
+            ToolRefs = ["com.example.crm/tickets/get_ticket", "com.example.crm/tickets/ping"],
+            ToolContracts =
+            [
+                new AgentToolContract { ToolRef = "com.example.crm/tickets/get_ticket", InputContractType = "acme/ticket/1.0", OutputContractType = "acme/ticket/9.9", Writes = true },
+                new AgentToolContract { ToolRef = "com.example.crm/tickets/ping" },
+            ],
+        };
+        var definition = chain with { Nodes = [node, .. chain.Nodes.Skip(1)], Contracts = [RegistryContractFixtures.Ticket] };
+        var state = new GraphExecutionState { StartedAtUtc = OrchestrationFixtures.StartedAtUtc };
+
+        var pins = GraphOrchestratorSteps.BuildActivityInput(OrchestrationFixtures.Input(definition), node, "c", "e", state).ToolPins!;
+
+        Assert.Equal(["com.example.crm/tickets/get_ticket", "com.example.crm/tickets/ping"], pins.Select(p => p.ToolRef));
+        Assert.Same(RegistryContractFixtures.Ticket, pins[0].InputContract);
+        Assert.Null(pins[0].OutputContract);   // a ref the definition does not embed resolves to nothing, as PinnedContract does
+        Assert.True(pins[0].Writes);
+        Assert.Equal(new McpToolPin { ToolRef = "com.example.crm/tickets/ping" }, pins[1]);
+    }
+
+    /// <summary>ADR-PA42: a node published before the pins hands the activity no pins, so its input keeps its bytes.</summary>
+    [Fact]
+    public void BuildActivityInput_NodeWithoutToolContracts_CarriesNoPins()
+    {
+        var definition = OrchestrationFixtures.ThreeArtifactChain();
+        var node = (AgentTaskNode)definition.Nodes[0] with { ToolRefs = ["com.example.crm/tickets/get_ticket"] };
+        var state = new GraphExecutionState { StartedAtUtc = OrchestrationFixtures.StartedAtUtc };
+
+        var activityInput = GraphOrchestratorSteps.BuildActivityInput(OrchestrationFixtures.Input(definition), node, "c", "e", state);
+
+        Assert.Null(activityInput.ToolPins);
+    }
+
     [Fact]
     public void BuildSnapshot_StampsDynamicContextPinFromState()
     {
