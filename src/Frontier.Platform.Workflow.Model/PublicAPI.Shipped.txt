@@ -12,8 +12,22 @@ Frontier.Platform.Workflow.Model.AgentTaskNode.OutputContractType.get -> string!
 Frontier.Platform.Workflow.Model.AgentTaskNode.OutputContractType.init -> void
 Frontier.Platform.Workflow.Model.AgentTaskNode.Role.get -> string!
 Frontier.Platform.Workflow.Model.AgentTaskNode.Role.init -> void
+Frontier.Platform.Workflow.Model.AgentTaskNode.ToolContracts.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Workflow.Model.AgentToolContract!>?
+Frontier.Platform.Workflow.Model.AgentTaskNode.ToolContracts.init -> void
 Frontier.Platform.Workflow.Model.AgentTaskNode.ToolRefs.get -> System.Collections.Generic.IReadOnlyList<string!>!
 Frontier.Platform.Workflow.Model.AgentTaskNode.ToolRefs.init -> void
+Frontier.Platform.Workflow.Model.AgentToolContract
+Frontier.Platform.Workflow.Model.AgentToolContract.<Clone>$() -> Frontier.Platform.Workflow.Model.AgentToolContract!
+Frontier.Platform.Workflow.Model.AgentToolContract.AgentToolContract() -> void
+Frontier.Platform.Workflow.Model.AgentToolContract.Equals(Frontier.Platform.Workflow.Model.AgentToolContract? other) -> bool
+Frontier.Platform.Workflow.Model.AgentToolContract.InputContractType.get -> string?
+Frontier.Platform.Workflow.Model.AgentToolContract.InputContractType.init -> void
+Frontier.Platform.Workflow.Model.AgentToolContract.OutputContractType.get -> string?
+Frontier.Platform.Workflow.Model.AgentToolContract.OutputContractType.init -> void
+Frontier.Platform.Workflow.Model.AgentToolContract.ToolRef.get -> string!
+Frontier.Platform.Workflow.Model.AgentToolContract.ToolRef.init -> void
+Frontier.Platform.Workflow.Model.AgentToolContract.Writes.get -> bool?
+Frontier.Platform.Workflow.Model.AgentToolContract.Writes.init -> void
 Frontier.Platform.Workflow.Model.ArtifactStatus
 Frontier.Platform.Workflow.Model.ArtifactStatus.CanTransitionTo(Frontier.Platform.Workflow.Model.ArtifactStatus! target) -> bool
 Frontier.Platform.Workflow.Model.ArtifactVocabularyMigration
@@ -424,6 +438,9 @@ override Frontier.Platform.Workflow.Model.AgentTaskNode.Equals(object? obj) -> b
 override Frontier.Platform.Workflow.Model.AgentTaskNode.GetHashCode() -> int
 override Frontier.Platform.Workflow.Model.AgentTaskNode.NodeType.get -> Frontier.Platform.Workflow.Model.NodeType!
 override Frontier.Platform.Workflow.Model.AgentTaskNode.ToString() -> string!
+override Frontier.Platform.Workflow.Model.AgentToolContract.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Model.AgentToolContract.GetHashCode() -> int
+override Frontier.Platform.Workflow.Model.AgentToolContract.ToString() -> string!
 override Frontier.Platform.Workflow.Model.CascadeCheckNode.<Clone>$() -> Frontier.Platform.Workflow.Model.CascadeCheckNode!
 override Frontier.Platform.Workflow.Model.CascadeCheckNode.Equals(object? obj) -> bool
 override Frontier.Platform.Workflow.Model.CascadeCheckNode.GetHashCode() -> int
@@ -529,6 +546,8 @@ override sealed Frontier.Platform.Workflow.Model.McpToolNode.Equals(Frontier.Pla
 override sealed Frontier.Platform.Workflow.Model.ParallelNode.Equals(Frontier.Platform.Workflow.Model.WorkflowNode? other) -> bool
 static Frontier.Platform.Workflow.Model.AgentTaskNode.operator !=(Frontier.Platform.Workflow.Model.AgentTaskNode? left, Frontier.Platform.Workflow.Model.AgentTaskNode? right) -> bool
 static Frontier.Platform.Workflow.Model.AgentTaskNode.operator ==(Frontier.Platform.Workflow.Model.AgentTaskNode? left, Frontier.Platform.Workflow.Model.AgentTaskNode? right) -> bool
+static Frontier.Platform.Workflow.Model.AgentToolContract.operator !=(Frontier.Platform.Workflow.Model.AgentToolContract? left, Frontier.Platform.Workflow.Model.AgentToolContract? right) -> bool
+static Frontier.Platform.Workflow.Model.AgentToolContract.operator ==(Frontier.Platform.Workflow.Model.AgentToolContract? left, Frontier.Platform.Workflow.Model.AgentToolContract? right) -> bool
 static Frontier.Platform.Workflow.Model.ArtifactVocabularyMigration.DefinitionAdapters.get -> System.Collections.Generic.IReadOnlyDictionary<string!, System.Func<System.Text.Json.JsonElement, System.Text.Json.JsonSerializerOptions!, Frontier.Platform.Workflow.Model.WorkflowDefinition!>!>!
 static Frontier.Platform.Workflow.Model.ArtifactVocabularyMigration.SnapshotAdapters.get -> System.Collections.Generic.IReadOnlyDictionary<string!, System.Func<System.Text.Json.JsonElement, System.Text.Json.JsonSerializerOptions!, Frontier.Platform.Workflow.Model.ExecutionSnapshot!>!>!
 static Frontier.Platform.Workflow.Model.CascadeCheckNode.operator !=(Frontier.Platform.Workflow.Model.CascadeCheckNode? left, Frontier.Platform.Workflow.Model.CascadeCheckNode? right) -> bool

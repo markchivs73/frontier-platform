@@ -25,6 +25,21 @@ Frontier.Platform.Abstractions.ContextRequest.RequiresRealTime.init -> void
 Frontier.Platform.Abstractions.ContextRequest.SchemaVersion.get -> string!
 Frontier.Platform.Abstractions.ContextRequest.SchemaVersion.init -> void
 Frontier.Platform.Abstractions.ContextRequest.Validate() -> void
+Frontier.Platform.Abstractions.ContractBudgets
+Frontier.Platform.Abstractions.ContractBudgets.<Clone>$() -> Frontier.Platform.Abstractions.ContractBudgets!
+Frontier.Platform.Abstractions.ContractBudgets.ContractBudgets() -> void
+Frontier.Platform.Abstractions.ContractBudgets.Equals(Frontier.Platform.Abstractions.ContractBudgets? other) -> bool
+Frontier.Platform.Abstractions.ContractBudgets.MaxPayloadDepth.get -> int
+Frontier.Platform.Abstractions.ContractBudgets.MaxPayloadDepth.init -> void
+Frontier.Platform.Abstractions.ContractBudgets.MaxRuleCost.get -> int
+Frontier.Platform.Abstractions.ContractBudgets.MaxRuleCost.init -> void
+Frontier.Platform.Abstractions.ContractBudgets.MaxRuleIterations.get -> int
+Frontier.Platform.Abstractions.ContractBudgets.MaxRuleIterations.init -> void
+Frontier.Platform.Abstractions.ContractBudgets.MaxViolations.get -> int
+Frontier.Platform.Abstractions.ContractBudgets.MaxViolations.init -> void
+Frontier.Platform.Abstractions.ContractBudgets.SchemaVersion.get -> string!
+Frontier.Platform.Abstractions.ContractBudgets.SchemaVersion.init -> void
+Frontier.Platform.Abstractions.ContractBudgets.Validate() -> void
 Frontier.Platform.Abstractions.ContractMigrator
 Frontier.Platform.Abstractions.ContractRule
 Frontier.Platform.Abstractions.ContractRule.<Clone>$() -> Frontier.Platform.Abstractions.ContractRule!
@@ -147,11 +162,16 @@ Frontier.Platform.Abstractions.SmartEnum<TEnum>
 Frontier.Platform.Abstractions.SmartEnum<TEnum>.Equals(Frontier.Platform.Abstractions.SmartEnum<TEnum!>? other) -> bool
 Frontier.Platform.Abstractions.SmartEnum<TEnum>.Name.get -> string!
 Frontier.Platform.Abstractions.SmartEnum<TEnum>.SmartEnum(string! name) -> void
+const Frontier.Platform.Abstractions.ContractBudgets.PayloadDepthCeiling = 256 -> int
+const Frontier.Platform.Abstractions.ContractBudgets.ViolationsCeiling = 1000 -> int
 const Frontier.Platform.Abstractions.ExecutionId.MaxInstanceIdLength = 100 -> int
 const Frontier.Platform.Abstractions.ExecutionId.Separator = "::" -> string!
 override Frontier.Platform.Abstractions.ContextRequest.Equals(object? obj) -> bool
 override Frontier.Platform.Abstractions.ContextRequest.GetHashCode() -> int
 override Frontier.Platform.Abstractions.ContextRequest.ToString() -> string!
+override Frontier.Platform.Abstractions.ContractBudgets.Equals(object? obj) -> bool
+override Frontier.Platform.Abstractions.ContractBudgets.GetHashCode() -> int
+override Frontier.Platform.Abstractions.ContractBudgets.ToString() -> string!
 override Frontier.Platform.Abstractions.ContractRule.Equals(object? obj) -> bool
 override Frontier.Platform.Abstractions.ContractRule.GetHashCode() -> int
 override Frontier.Platform.Abstractions.ContractRule.ToString() -> string!
@@ -178,6 +198,9 @@ override Frontier.Platform.Abstractions.SmartEnum<TEnum>.GetHashCode() -> int
 override Frontier.Platform.Abstractions.SmartEnum<TEnum>.ToString() -> string!
 static Frontier.Platform.Abstractions.ContextRequest.operator !=(Frontier.Platform.Abstractions.ContextRequest? left, Frontier.Platform.Abstractions.ContextRequest? right) -> bool
 static Frontier.Platform.Abstractions.ContextRequest.operator ==(Frontier.Platform.Abstractions.ContextRequest? left, Frontier.Platform.Abstractions.ContextRequest? right) -> bool
+static Frontier.Platform.Abstractions.ContractBudgets.Default.get -> Frontier.Platform.Abstractions.ContractBudgets!
+static Frontier.Platform.Abstractions.ContractBudgets.operator !=(Frontier.Platform.Abstractions.ContractBudgets? left, Frontier.Platform.Abstractions.ContractBudgets? right) -> bool
+static Frontier.Platform.Abstractions.ContractBudgets.operator ==(Frontier.Platform.Abstractions.ContractBudgets? left, Frontier.Platform.Abstractions.ContractBudgets? right) -> bool
 static Frontier.Platform.Abstractions.ContractMigrator.Rehydrate<T>(System.ReadOnlyMemory<byte> storedBytes, System.Text.Json.JsonSerializerOptions! options, System.Collections.Generic.IReadOnlyDictionary<string!, System.Func<System.Text.Json.JsonElement, System.Text.Json.JsonSerializerOptions!, T>!>? adapters = null) -> T
 static Frontier.Platform.Abstractions.ContractRule.operator !=(Frontier.Platform.Abstractions.ContractRule? left, Frontier.Platform.Abstractions.ContractRule? right) -> bool
 static Frontier.Platform.Abstractions.ContractRule.operator ==(Frontier.Platform.Abstractions.ContractRule? left, Frontier.Platform.Abstractions.ContractRule? right) -> bool
