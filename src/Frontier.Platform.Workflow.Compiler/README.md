@@ -26,8 +26,14 @@ Requires a GitHub Packages source with a `read:packages` token — see the
 [repository README](https://github.com/markchivs73/frontier-platform).
 
 ```csharp
-services.AddFrontierWorkflowCompiler();
+services.AddFrontierWorkflowCompiler(configuration);
 ```
+
+Since v0.48.0 the compiler binds `CosmosOptions` from the `Cosmos` section, so the definition store
+and the retirement monitor use `Cosmos:Database` (default `frontier-workflow`). Before that the name
+was hard-coded, so a consumer or test that set a different database still read and wrote definitions
+in `frontier-workflow`. The parameterless overload is obsolete: it keeps the default database whatever
+the configuration says, and goes at the next phase boundary.
 
 That registers the compiler's own internals — the validator, the structural rules, schema
 generation and the lifecycle. It does **not** register any catalogue, because every catalogue

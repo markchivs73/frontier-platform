@@ -15,7 +15,7 @@ public sealed class ExecutableNodeTypeCatalogDefaultTests
     [Fact]
     public void Default_IsTheInterpretersActualCapabilities_NotPermissive()
     {
-        var services = new ServiceCollection().AddFrontierWorkflowCompiler();
+        var services = new ServiceCollection().AddFrontierWorkflowCompiler(new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build());
 
         var descriptor = Assert.Single(services, d => d.ServiceType == typeof(IExecutableNodeTypeCatalog));
 

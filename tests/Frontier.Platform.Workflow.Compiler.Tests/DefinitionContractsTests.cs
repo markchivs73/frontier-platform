@@ -164,7 +164,7 @@ public sealed class DefinitionContractEmbedderRegistrationTests
     [Fact]
     public void AddFrontierWorkflowCompiler_ResolvesTheEmbedderOverTheRegisteredCatalog()
     {
-        var services = new ServiceCollection().AddFrontierWorkflowCompiler();
+        var services = new ServiceCollection().AddFrontierWorkflowCompiler(new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build());
         services.AddScoped(_ => Mock.Of<IContractSnapshotCatalog>());
 
         using var provider = services.BuildServiceProvider();

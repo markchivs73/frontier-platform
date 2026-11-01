@@ -143,7 +143,7 @@ public sealed class RuleCatalogueSpecCoverageTests
         // S13.12c (E16): the contract set is a composition-root registration — supply it here
         // exactly as the Host does, since the rules resolve through the real DI path.
         services.AddSingleton(TestContractSet.Instance);
-        services.AddFrontierWorkflowCompiler();
+        services.AddFrontierWorkflowCompiler(new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build());
         services.AddSingleton<IDesignerToolCatalog>(new EmptyToolCatalog());
         services.AddSingleton<IAgentRoleCatalog>(new EmptyAgentRoleCatalog());
         services.AddSingleton<IApproverRoleCatalog>(new EmptyApproverRoleCatalog());
