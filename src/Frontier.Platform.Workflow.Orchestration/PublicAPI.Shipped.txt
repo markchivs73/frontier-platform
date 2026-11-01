@@ -58,6 +58,8 @@ Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.ArtifactKey.get 
 Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.ArtifactKey.init -> void
 Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.ContextRequest.get -> Frontier.Platform.Abstractions.ContextRequest!
 Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.ContextRequest.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.ContractBudgets.get -> Frontier.Platform.Abstractions.ContractBudgets?
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.ContractBudgets.init -> void
 Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.CorrelationId.get -> string!
 Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.CorrelationId.init -> void
 Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.DynamicContextEpoch.get -> int?
@@ -85,6 +87,8 @@ Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.RevisionNote.get
 Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.RevisionNote.init -> void
 Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.Role.get -> string!
 Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.Role.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.ToolPins.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Workflow.Orchestration.McpToolPin!>?
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.ToolPins.init -> void
 Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.ToolRefs.get -> System.Collections.Generic.IReadOnlyList<string!>!
 Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.ToolRefs.init -> void
 Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.UpstreamPayload.get -> string?
@@ -200,6 +204,8 @@ Frontier.Platform.Workflow.Orchestration.GraphOrchestrator
 Frontier.Platform.Workflow.Orchestration.GraphOrchestrator.GraphOrchestrator(Frontier.Platform.Resilience.IResiliencePolicyProvider! policyProvider, Frontier.Platform.Hitl.IRollbackPlanner! rollbackPlanner, Frontier.Platform.Workflow.Orchestration.IMcpWriteClassifier! mcpWriteClassifier) -> void
 Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput
 Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.<Clone>$() -> Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput!
+Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.ContractBudgets.get -> Frontier.Platform.Abstractions.ContractBudgets?
+Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.ContractBudgets.init -> void
 Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.Definition.get -> Frontier.Platform.Workflow.Model.WorkflowDefinition!
 Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.Definition.init -> void
 Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.DispatcherRolloverThreshold.get -> int?
@@ -247,7 +253,7 @@ Frontier.Platform.Workflow.Orchestration.IInstructionsResolver.ResolveAsync(stri
 Frontier.Platform.Workflow.Orchestration.IMcpEndpointResolver
 Frontier.Platform.Workflow.Orchestration.IMcpEndpointResolver.ResolveAsync(string! serverName, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Uri!>!
 Frontier.Platform.Workflow.Orchestration.IMcpToolCatalog
-Frontier.Platform.Workflow.Orchestration.IMcpToolCatalog.ResolveAsync(System.Collections.Generic.IReadOnlyList<string!>! toolRefs, string! engagementId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Microsoft.Extensions.AI.AITool!>!>!
+Frontier.Platform.Workflow.Orchestration.IMcpToolCatalog.ResolveAsync(System.Collections.Generic.IReadOnlyList<string!>! toolRefs, System.Collections.Generic.IReadOnlyList<Frontier.Platform.Workflow.Orchestration.McpToolPin!>? pins, string! engagementId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Microsoft.Extensions.AI.AITool!>!>!
 Frontier.Platform.Workflow.Orchestration.IMcpToolInvocationPipeline
 Frontier.Platform.Workflow.Orchestration.IMcpToolInvocationPipeline.RunAsync(Frontier.Platform.Workflow.Orchestration.McpToolActivityInput! input, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Orchestration.McpToolActivityResult!>!
 Frontier.Platform.Workflow.Orchestration.IMcpWriteClassifier
@@ -258,6 +264,8 @@ Frontier.Platform.Workflow.Orchestration.McpToolActivityInput
 Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.<Clone>$() -> Frontier.Platform.Workflow.Orchestration.McpToolActivityInput!
 Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.ArtifactKey.get -> string?
 Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.ArtifactKey.init -> void
+Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.ContractBudgets.get -> Frontier.Platform.Abstractions.ContractBudgets?
+Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.ContractBudgets.init -> void
 Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.CorrelationId.get -> string!
 Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.CorrelationId.init -> void
 Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.EngagementId.get -> string!
@@ -280,6 +288,8 @@ Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.TimeoutSeconds.get
 Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.TimeoutSeconds.init -> void
 Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.ToolRef.get -> string!
 Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.ToolRef.init -> void
+Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.Writes.get -> bool?
+Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.Writes.init -> void
 Frontier.Platform.Workflow.Orchestration.McpToolActivityResult
 Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.<Clone>$() -> Frontier.Platform.Workflow.Orchestration.McpToolActivityResult!
 Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.ArtifactKey.get -> string?
@@ -304,6 +314,18 @@ Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.Simulated.get -> 
 Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.Simulated.init -> void
 Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.ToolRef.get -> string!
 Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.ToolRef.init -> void
+Frontier.Platform.Workflow.Orchestration.McpToolPin
+Frontier.Platform.Workflow.Orchestration.McpToolPin.<Clone>$() -> Frontier.Platform.Workflow.Orchestration.McpToolPin!
+Frontier.Platform.Workflow.Orchestration.McpToolPin.Equals(Frontier.Platform.Workflow.Orchestration.McpToolPin? other) -> bool
+Frontier.Platform.Workflow.Orchestration.McpToolPin.InputContract.get -> Frontier.Platform.Abstractions.ContractSnapshot?
+Frontier.Platform.Workflow.Orchestration.McpToolPin.InputContract.init -> void
+Frontier.Platform.Workflow.Orchestration.McpToolPin.McpToolPin() -> void
+Frontier.Platform.Workflow.Orchestration.McpToolPin.OutputContract.get -> Frontier.Platform.Abstractions.ContractSnapshot?
+Frontier.Platform.Workflow.Orchestration.McpToolPin.OutputContract.init -> void
+Frontier.Platform.Workflow.Orchestration.McpToolPin.ToolRef.get -> string!
+Frontier.Platform.Workflow.Orchestration.McpToolPin.ToolRef.init -> void
+Frontier.Platform.Workflow.Orchestration.McpToolPin.Writes.get -> bool?
+Frontier.Platform.Workflow.Orchestration.McpToolPin.Writes.init -> void
 Frontier.Platform.Workflow.Orchestration.McpToolRef
 Frontier.Platform.Workflow.Orchestration.McpToolRef.Deconstruct(out string! Server, out string! Tool) -> void
 Frontier.Platform.Workflow.Orchestration.McpToolRef.Equals(Frontier.Platform.Workflow.Orchestration.McpToolRef other) -> bool
@@ -427,6 +449,9 @@ override Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.ToString(
 override Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.Equals(object? obj) -> bool
 override Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.GetHashCode() -> int
 override Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.ToString() -> string!
+override Frontier.Platform.Workflow.Orchestration.McpToolPin.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Orchestration.McpToolPin.GetHashCode() -> int
+override Frontier.Platform.Workflow.Orchestration.McpToolPin.ToString() -> string!
 override Frontier.Platform.Workflow.Orchestration.McpToolRef.GetHashCode() -> int
 override Frontier.Platform.Workflow.Orchestration.PinMappingsActivity.RunAsync(Microsoft.DurableTask.TaskActivityContext! context, Frontier.Platform.Workflow.Orchestration.PinMappingsRequest! input) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Frontier.Platform.ModelRoleConfig.ModelRolePin!>!>!
 override Frontier.Platform.Workflow.Orchestration.PinMappingsRequest.Equals(object? obj) -> bool
@@ -481,6 +506,8 @@ static Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.operator !=
 static Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.operator ==(Frontier.Platform.Workflow.Orchestration.McpToolActivityInput? left, Frontier.Platform.Workflow.Orchestration.McpToolActivityInput? right) -> bool
 static Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.operator !=(Frontier.Platform.Workflow.Orchestration.McpToolActivityResult? left, Frontier.Platform.Workflow.Orchestration.McpToolActivityResult? right) -> bool
 static Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.operator ==(Frontier.Platform.Workflow.Orchestration.McpToolActivityResult? left, Frontier.Platform.Workflow.Orchestration.McpToolActivityResult? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.McpToolPin.operator !=(Frontier.Platform.Workflow.Orchestration.McpToolPin? left, Frontier.Platform.Workflow.Orchestration.McpToolPin? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.McpToolPin.operator ==(Frontier.Platform.Workflow.Orchestration.McpToolPin? left, Frontier.Platform.Workflow.Orchestration.McpToolPin? right) -> bool
 static Frontier.Platform.Workflow.Orchestration.McpToolRef.Parse(string! reference) -> Frontier.Platform.Workflow.Orchestration.McpToolRef
 static Frontier.Platform.Workflow.Orchestration.McpToolRef.ParseModelSafeName(string! safeName) -> Frontier.Platform.Workflow.Orchestration.McpToolRef
 static Frontier.Platform.Workflow.Orchestration.McpToolRef.operator !=(Frontier.Platform.Workflow.Orchestration.McpToolRef left, Frontier.Platform.Workflow.Orchestration.McpToolRef right) -> bool
