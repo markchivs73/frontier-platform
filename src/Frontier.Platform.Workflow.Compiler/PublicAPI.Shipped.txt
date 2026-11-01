@@ -59,6 +59,10 @@ Frontier.Platform.Workflow.Compiler.ChatHistoryData.Turns.init -> void
 Frontier.Platform.Workflow.Compiler.ChatHistoryData.WorkflowId.get -> string!
 Frontier.Platform.Workflow.Compiler.ChatHistoryData.WorkflowId.init -> void
 Frontier.Platform.Workflow.Compiler.CompilerServiceCollectionExtensions
+Frontier.Platform.Workflow.Compiler.CosmosOptions
+Frontier.Platform.Workflow.Compiler.CosmosOptions.CosmosOptions() -> void
+Frontier.Platform.Workflow.Compiler.CosmosOptions.Database.get -> string!
+Frontier.Platform.Workflow.Compiler.CosmosOptions.Database.init -> void
 Frontier.Platform.Workflow.Compiler.DefinitionContractRefs
 Frontier.Platform.Workflow.Compiler.DefinitionLifecycleService
 Frontier.Platform.Workflow.Compiler.DefinitionLifecycleService.ApplyAgentMergeAsync(string! workflowId, System.Collections.Generic.IReadOnlyList<string!>! approvedChangeIds, string! expectedRevision, string! userId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.MergeOutcome!>!
@@ -1605,6 +1609,7 @@ static Frontier.Platform.Workflow.Compiler.ApproverRoleDescriptor.operator ==(Fr
 static Frontier.Platform.Workflow.Compiler.ChatHistoryData.operator !=(Frontier.Platform.Workflow.Compiler.ChatHistoryData? left, Frontier.Platform.Workflow.Compiler.ChatHistoryData? right) -> bool
 static Frontier.Platform.Workflow.Compiler.ChatHistoryData.operator ==(Frontier.Platform.Workflow.Compiler.ChatHistoryData? left, Frontier.Platform.Workflow.Compiler.ChatHistoryData? right) -> bool
 static Frontier.Platform.Workflow.Compiler.CompilerServiceCollectionExtensions.AddFrontierWorkflowCompiler(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Frontier.Platform.Workflow.Compiler.CompilerServiceCollectionExtensions.AddFrontierWorkflowCompiler(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Microsoft.Extensions.Configuration.IConfiguration! configuration) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Frontier.Platform.Workflow.Compiler.DefinitionContractRefs.Collect(Frontier.Platform.Workflow.Model.WorkflowDefinition! definition) -> System.Collections.Generic.IReadOnlyList<string!>!
 static Frontier.Platform.Workflow.Compiler.DefinitionValidationContext.operator !=(Frontier.Platform.Workflow.Compiler.DefinitionValidationContext? left, Frontier.Platform.Workflow.Compiler.DefinitionValidationContext? right) -> bool
 static Frontier.Platform.Workflow.Compiler.DefinitionValidationContext.operator ==(Frontier.Platform.Workflow.Compiler.DefinitionValidationContext? left, Frontier.Platform.Workflow.Compiler.DefinitionValidationContext? right) -> bool
