@@ -1,5 +1,0 @@
-Frontier.Platform.Workflow.Compiler.CosmosOptions
-Frontier.Platform.Workflow.Compiler.CosmosOptions.CosmosOptions() -> void
-Frontier.Platform.Workflow.Compiler.CosmosOptions.Database.get -> string!
-Frontier.Platform.Workflow.Compiler.CosmosOptions.Database.init -> void
-static Frontier.Platform.Workflow.Compiler.CompilerServiceCollectionExtensions.AddFrontierWorkflowCompiler(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Microsoft.Extensions.Configuration.IConfiguration! configuration) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
