@@ -534,6 +534,23 @@ public sealed class AgentTaskActivityPipelineTests
         Assert.Null(d.Invoker.ReceivedRequest);
     }
 
+    /// <summary>ADR-PA43: the input and the reply are validated under the run's pinned budgets, not the configured ones.</summary>
+    [Theory]
+    [InlineData("""{"id":"","priority":"x"}""", """{"id":"T-2","priority":1}""")]
+    [InlineData("""{"id":"T-1","priority":3}""", """{"id":"","priority":"x"}""")]
+    public async Task RunAsync_RegistryContracts_ValidateUnderThePinnedBudgets(string upstream, string reply)
+    {
+        var input = BuildInput("acme/ticket/1.0", "acme/ticket/1.0", upstreamPayload: upstream)
+            with { InputContract = RegistryContractFixtures.Ticket, OutputContract = RegistryContractFixtures.Ticket };
+
+        var configured = await Assert.ThrowsAsync<ContractViolationException>(() => Pipeline(RegistryDependencies(reply)).RunAsync(input, CancellationToken.None));
+        var pinned = await Assert.ThrowsAsync<ContractViolationException>(() =>
+            Pipeline(RegistryDependencies(reply)).RunAsync(input with { ContractBudgets = ContractBudgets.Default with { MaxViolations = 1 } }, CancellationToken.None));
+
+        Assert.Equal(2, configured.Violations.Count);
+        Assert.Single(pinned.Violations);
+    }
+
     [Fact]
     public void Constructor_NullContractValidator_Throws()
     {

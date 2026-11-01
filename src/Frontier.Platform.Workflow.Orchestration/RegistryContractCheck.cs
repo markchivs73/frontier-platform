@@ -12,12 +12,15 @@ namespace Frontier.Platform.Workflow.Orchestration;
 /// </summary>
 internal static class RegistryContractCheck
 {
-    /// <summary>Validates <paramref name="payload"/> against <paramref name="contract"/> and returns its UTF-8 bytes.</summary>
+    /// <summary>
+    /// Validates <paramref name="payload"/> against <paramref name="contract"/> and returns its UTF-8 bytes:
+    /// under the run's pinned <paramref name="budgets"/>, or the configured ones when the run pinned none (ADR-PA43).
+    /// </summary>
     /// <exception cref="ContractViolationException">The payload does not satisfy the contract.</exception>
-    internal static byte[] Ensure(IContractValidator validator, ContractSnapshot contract, string payload)
+    internal static byte[] Ensure(IContractValidator validator, ContractSnapshot contract, string payload, ContractBudgets? budgets)
     {
         var bytes = Encoding.UTF8.GetBytes(payload);
-        var result = validator.Validate(contract, bytes);
+        var result = budgets is null ? validator.Validate(contract, bytes) : validator.Validate(contract, bytes, budgets);
         return result.IsValid
             ? bytes
             : throw new ContractViolationException(contract.ContractRef, [.. result.Violations.Select(Describe)]);

@@ -35,9 +35,10 @@ internal sealed class AgentInvocationDispatcher
     /// <summary>
     /// Invokes the agent with the output format for its contract, then binds and validates the reply:
     /// against <paramref name="outputContract"/> when the node names a registry contract, otherwise as
-    /// <paramref name="outputContractType"/>'s CLR type.
+    /// <paramref name="outputContractType"/>'s CLR type. A registry reply is validated under the run's
+    /// pinned <paramref name="budgets"/>, or the configured ones when it pinned none (ADR-PA43).
     /// </summary>
-    internal async Task<AgentInvocationResult> InvokeAsync(string outputContractType, ContractSnapshot? outputContract, AgentInvocationRequest request, CancellationToken ct)
+    internal async Task<AgentInvocationResult> InvokeAsync(string outputContractType, ContractSnapshot? outputContract, ContractBudgets? budgets, AgentInvocationRequest request, CancellationToken ct)
     {
         var formatted = request with { ResponseFormat = ResponseFormatFor(outputContractType, outputContract, request.Target) };
 
@@ -45,7 +46,7 @@ internal sealed class AgentInvocationDispatcher
         var outcome = await invoker.InvokeAsync(formatted, ct).ConfigureAwait(false);
         stopwatch.Stop();
 
-        var (payload, hash) = outputContract is null ? BindClr(outputContractType, outcome.Output) : BindRegistry(outputContract, outcome.Output);
+        var (payload, hash) = outputContract is null ? BindClr(outputContractType, outcome.Output) : BindRegistry(outputContract, outcome.Output, budgets);
         return new AgentInvocationResult
         {
             Payload = payload,
@@ -72,6 +73,6 @@ internal sealed class AgentInvocationDispatcher
         OutputPayloadBuilder.Build(registry.DeserializeAndValidate(outputContractType, output), registry.Resolve(outputContractType));
 
     /// <summary>A registry reply: validated against the pinned contract and stored as received; only its hash is canonicalised (ADR-E27 D15).</summary>
-    internal (string Payload, string Hash) BindRegistry(ContractSnapshot outputContract, string output) =>
-        (output, JsonCanonicalizer.Hash(RegistryContractCheck.Ensure(validator, outputContract, output)));
+    internal (string Payload, string Hash) BindRegistry(ContractSnapshot outputContract, string output, ContractBudgets? budgets) =>
+        (output, JsonCanonicalizer.Hash(RegistryContractCheck.Ensure(validator, outputContract, output, budgets)));
 }

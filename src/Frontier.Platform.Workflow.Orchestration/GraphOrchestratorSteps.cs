@@ -246,6 +246,7 @@ internal static class GraphOrchestratorSteps
             InputContract = PinnedContract(input.Definition, node.InputContractType),
             OutputContract = PinnedContract(input.Definition, node.OutputContractType),
             Writes = node.Writes,
+            ContractBudgets = input.ContractBudgets,
         };
 
         var taskOptions = policyProvider.GetTaskOptions(node.Retry?.ProfileName ?? (isWrite ? McpWriteProfile : McpReadProfile));
@@ -536,6 +537,7 @@ internal static class GraphOrchestratorSteps
         InputContract = PinnedContract(input.Definition, node.InputContractType),
         OutputContract = PinnedContract(input.Definition, node.OutputContractType),
         ToolPins = ToolPins(input.Definition, node),
+        ContractBudgets = input.ContractBudgets,
     };
 
     /// <summary>

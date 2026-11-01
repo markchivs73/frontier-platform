@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Frontier.Platform.Abstractions;
 using Frontier.Platform.Workflow.Model;
 
 namespace Frontier.Platform.Workflow.Orchestration;
@@ -95,4 +96,16 @@ public sealed record GraphOrchestratorInput
     [JsonPropertyOrder(8)]
     [JsonPropertyName("dispatcher_rollover_threshold")]
     public int? DispatcherRolloverThreshold { get; init; }
+
+    /// <summary>
+    /// The contract validator's budgets this run is pinned to (ADR-PA43): the governed record the Host
+    /// factory resolved once at start, as the definition is (ADR-2), so no step reads a store. Copied
+    /// onto every activity input that validates and carried across <c>ContinueAsNew</c> and into
+    /// dispatcher children. <b>Additive and optional</b> per the ADR-E15 floor: inputs recorded before
+    /// this field carry <see langword="null"/>, which validates under the deployment's configured
+    /// budgets, exactly as they did.
+    /// </summary>
+    [JsonPropertyOrder(9)]
+    [JsonPropertyName("contract_budgets")]
+    public ContractBudgets? ContractBudgets { get; init; }
 }

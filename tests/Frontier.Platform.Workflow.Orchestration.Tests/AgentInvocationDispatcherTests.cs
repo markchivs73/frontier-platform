@@ -21,7 +21,7 @@ public sealed class AgentInvocationDispatcherTests
             MaxOutputTokens = 100,
         };
 
-        var result = await dispatcher.InvokeAsync(nameof(SummaryArtifact), null, request, CancellationToken.None);
+        var result = await dispatcher.InvokeAsync(nameof(SummaryArtifact), null, null, request, CancellationToken.None);
 
         var (payload, hash) = OutputPayloadBuilder.Build(scope, typeof(SummaryArtifact));
         Assert.Equal(payload, result.Payload);
@@ -54,7 +54,7 @@ public sealed class AgentInvocationDispatcherTests
             MaxOutputTokens = 0,
         };
 
-        var result = await dispatcher.InvokeAsync(nameof(SummaryArtifact), null, request, CancellationToken.None);
+        var result = await dispatcher.InvokeAsync(nameof(SummaryArtifact), null, null, request, CancellationToken.None);
 
         Assert.Equal("sha256:pinned-card", result.CardHash);
         Assert.Equal("resp_0139", result.RemoteTaskId);
@@ -68,7 +68,7 @@ public sealed class AgentInvocationDispatcherTests
         var dispatcher = new AgentInvocationDispatcher(new FakeAgentInvoker(null, output: "Here is your summary!"), new ContractTypeRegistry(TestContractSet.Instance), TestContractValidator.Instance);
 
         await Assert.ThrowsAsync<Frontier.Platform.Abstractions.ContractViolationException>(
-            () => dispatcher.InvokeAsync(nameof(SummaryArtifact), null, ModelRequest(), CancellationToken.None));
+            () => dispatcher.InvokeAsync(nameof(SummaryArtifact), null, null, ModelRequest(), CancellationToken.None));
     }
 
     /// <summary>ADR-E27 D8: the engine validates the bound reply; the invoker no longer does.</summary>
@@ -79,7 +79,7 @@ public sealed class AgentInvocationDispatcherTests
         var dispatcher = new AgentInvocationDispatcher(new FakeAgentInvoker(invalid), new ContractTypeRegistry(TestContractSet.Instance), TestContractValidator.Instance);
 
         await Assert.ThrowsAsync<Frontier.Platform.Abstractions.ContractViolationException>(
-            () => dispatcher.InvokeAsync(nameof(SummaryArtifact), null, ModelRequest(), CancellationToken.None));
+            () => dispatcher.InvokeAsync(nameof(SummaryArtifact), null, null, ModelRequest(), CancellationToken.None));
     }
 
     private static AgentInvocationRequest ModelRequest() => new()

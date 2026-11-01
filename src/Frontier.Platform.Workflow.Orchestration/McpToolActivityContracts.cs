@@ -84,6 +84,16 @@ public sealed record McpToolActivityInput
     [JsonPropertyOrder(11)]
     [JsonPropertyName("writes")]
     public bool? Writes { get; init; }
+
+    /// <summary>
+    /// The run's pinned validator budgets (<see cref="GraphOrchestratorInput.ContractBudgets"/>,
+    /// ADR-PA43): the arguments and result are validated under them. Optional per the ADR-E15 floor:
+    /// <see langword="null"/> on inputs recorded before this field, which validate under the
+    /// configured budgets as before.
+    /// </summary>
+    [JsonPropertyOrder(12)]
+    [JsonPropertyName("contract_budgets")]
+    public Frontier.Platform.Abstractions.ContractBudgets? ContractBudgets { get; init; }
 }
 
 /// <summary>Result of <c>InvokeMcpToolActivity</c>: the tool's response as canonical JSON, hashed for the step record.</summary>

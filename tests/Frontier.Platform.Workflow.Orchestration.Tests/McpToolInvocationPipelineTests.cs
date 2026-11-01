@@ -194,6 +194,22 @@ public sealed class McpToolInvocationPipelineTests
         Assert.Equal(RegistryContractFixtures.Ticket.Hash, result.OutputContractHash);
     }
 
+    /// <summary>ADR-PA43: the arguments and the result are validated under the run's pinned budgets, not the configured ones.</summary>
+    [Fact]
+    public async Task RunAsync_ValidatesArgumentsAndResultUnderThePinnedBudgets()
+    {
+        var budgets = ContractBudgets.Default with { MaxViolations = 1 };
+        var args = RegistryContractFixtures.Snapshot("crm/args/1.0",
+            """{"type":"object","description":"Args.","properties":{"id":{"type":"string","minLength":1,"description":"Id."},"n":{"type":"number","description":"N."}},"additionalProperties":false}""");
+        var badResult = Pipeline(_ => Reply(CallToolResult("""{"id":"","priority":"x"}""")));
+        var badArgs = Input() with { InputPayload = """{"id":"","n":"x"}""", InputContract = args };
+
+        Assert.Equal(2, (await Assert.ThrowsAsync<ContractViolationException>(() => badResult.RunAsync(Input() with { OutputContract = RegistryContractFixtures.Ticket }, CancellationToken.None))).Violations.Count);
+        Assert.Single((await Assert.ThrowsAsync<ContractViolationException>(() => badResult.RunAsync(Input() with { OutputContract = RegistryContractFixtures.Ticket, ContractBudgets = budgets }, CancellationToken.None))).Violations);
+        Assert.Equal(2, (await Assert.ThrowsAsync<ContractViolationException>(() => badResult.RunAsync(badArgs, CancellationToken.None))).Violations.Count);
+        Assert.Single((await Assert.ThrowsAsync<ContractViolationException>(() => badResult.RunAsync(badArgs with { ContractBudgets = budgets }, CancellationToken.None))).Violations);
+    }
+
     [Fact]
     public async Task RunAsync_AResultThatFailsTheOutputContract_IsAContractViolation()
     {

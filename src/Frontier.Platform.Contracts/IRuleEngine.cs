@@ -10,8 +10,13 @@ namespace Frontier.Platform.Contracts;
 /// </summary>
 internal interface IRuleEngine
 {
-    /// <summary>Compiles <paramref name="rules"/> against the types <paramref name="schema"/> declares.</summary>
-    RuleCompilation Compile(JsonElement schema, IReadOnlyList<ContractRule> rules);
+    /// <summary>
+    /// Compiles <paramref name="rules"/> against the types <paramref name="schema"/> declares. A rule
+    /// whose cost the schema does not bound is always refused; one estimated over
+    /// <paramref name="maxRuleCost"/> is refused only when a ceiling is given, which registration does
+    /// and the validator does not (ADR-E27 D2, ADR-PA43).
+    /// </summary>
+    RuleCompilation Compile(JsonElement schema, IReadOnlyList<ContractRule> rules, int? maxRuleCost);
 }
 
 /// <summary>
@@ -25,7 +30,9 @@ internal interface ICompiledRules
 {
     /// <summary>
     /// The violations of <paramref name="payload"/>, which must already satisfy the schema, at most
-    /// <paramref name="maxViolations"/>; empty when every rule holds.
+    /// <paramref name="maxViolations"/>; empty when every rule holds. Each rule may take
+    /// <paramref name="maxIterations"/> comprehension iterations. Both are the caller's budgets, so
+    /// one compilation serves every budget (ADR-PA43).
     /// </summary>
-    IReadOnlyList<ContractViolation> Evaluate(JsonElement payload, int maxViolations);
+    IReadOnlyList<ContractViolation> Evaluate(JsonElement payload, int maxViolations, int maxIterations);
 }

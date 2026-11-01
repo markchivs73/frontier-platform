@@ -5,6 +5,9 @@ namespace Frontier.Platform.Contracts.Tests;
 /// <summary>ADR-E27 D1 and D2 against the real CEL engine.</summary>
 public sealed class CellyRuleEngineTests
 {
+    private static readonly int Ceiling = ContractBudgets.Default.MaxRuleCost;
+    private static readonly int Iterations = ContractBudgets.Default.MaxRuleIterations;
+
     private const string Schema = """
         {
           "type": "object",
@@ -28,48 +31,48 @@ public sealed class CellyRuleEngineTests
     {
         var rules = Compile(Rule("self.end >= self.start", "End is not before start.", "/end"), Rule("size(self.name) > 0", "A name is required."));
 
-        Assert.Empty(rules.Evaluate(Json.Parse("""{ "start": 1, "end": 2, "name": "a" }"""), 10));
+        Assert.Empty(rules.Evaluate(Json.Parse("""{ "start": 1, "end": 2, "name": "a" }"""), 10, Iterations));
         Assert.Equal(
             [new ContractViolation("/end", "rule", "End is not before start."), new ContractViolation("", "rule", "A name is required.")],
-            rules.Evaluate(Json.Parse("""{ "start": 3, "end": 2, "name": "" }"""), 10));
+            rules.Evaluate(Json.Parse("""{ "start": 3, "end": 2, "name": "" }"""), 10, Iterations));
     }
 
     [Fact]
     public void Evaluate_StopsAtMaxViolations() =>
-        Assert.Single(Compile(Rule("false", "One."), Rule("false", "Two.")).Evaluate(Json.Parse("{}"), 1));
+        Assert.Single(Compile(Rule("false", "One."), Rule("false", "Two.")).Evaluate(Json.Parse("{}"), 1, Iterations));
 
     [Fact]
-    public void Evaluate_NoRules_IsAlwaysEmpty() => Assert.Empty(Compile().Evaluate(Json.Parse("{}"), 10));
+    public void Evaluate_NoRules_IsAlwaysEmpty() => Assert.Empty(Compile().Evaluate(Json.Parse("{}"), 10, Iterations));
 
     [Fact]
     public void Evaluate_AnAbsentField_IsAViolation_WhileHasIsTheGuard()
     {
         var rules = Compile(Rule("self.name != ''", "A name is required."), Rule("!has(self.note) || size(self.note) < 0", "Never."));
 
-        var violations = rules.Evaluate(Json.Parse("{}"), 10);
+        var violations = rules.Evaluate(Json.Parse("{}"), 10, Iterations);
 
         Assert.Equal(["A name is required. (the rule could not be evaluated)"], violations.Select(v => v.Message));
     }
 
     [Fact]
     public void Evaluate_ARuleWithAnUntypedResultThatIsNotBoolean_IsAViolation() =>
-        Assert.Equal(["Must be true. (the rule could not be evaluated)"], Compile(Rule("self.any", "Must be true.")).Evaluate(Json.Parse("""{ "any": "x" }"""), 10).Select(v => v.Message));
+        Assert.Equal(["Must be true. (the rule could not be evaluated)"], Compile(Rule("self.any", "Must be true.")).Evaluate(Json.Parse("""{ "any": "x" }"""), 10, Iterations).Select(v => v.Message));
 
     [Fact]
     public void Evaluate_IteratesMapsInKeyOrder_WhateverOrderThePayloadUsed()
     {
         var rules = Compile(Rule("self.m.map(k, self.m[k])[0] == 2.0", "The first key is a, whose value is 2."));
 
-        Assert.Empty(rules.Evaluate(Json.Parse("""{ "m": { "c": 1, "a": 2, "b": 3 } }"""), 10));
+        Assert.Empty(rules.Evaluate(Json.Parse("""{ "m": { "c": 1, "a": 2, "b": 3 } }"""), 10, Iterations));
     }
 
     [Fact]
     public void Evaluate_ARuleThatRunsPastItsIterationBudget_IsAViolation()
     {
-        var rules = Compile(o => o.MaxRuleIterations = 10, Rule("self.lines.all(l, l.codes.all(c, c != 'x'))", "No x."));
+        var rules = Compile(Rule("self.lines.all(l, l.codes.all(c, c != 'x'))", "No x."));
         var lines = string.Join(",", Enumerable.Repeat("""{ "codes": ["a", "b", "c", "d"] }""", 5));
 
-        var violation = Assert.Single(rules.Evaluate(Json.Parse($$"""{ "lines": [{{lines}}] }"""), 10));
+        var violation = Assert.Single(rules.Evaluate(Json.Parse($$"""{ "lines": [{{lines}}] }"""), 10, 10));
 
         Assert.Equal("No x. (the rule ran past its evaluation budget)", violation.Message);
     }
@@ -120,16 +123,26 @@ public sealed class CellyRuleEngineTests
     [Fact]
     public void Compile_ARuleOverTheCostCeiling_IsRefused()
     {
-        var finding = Assert.Single(new CellyRuleEngine(Engine.Options(o => o.MaxRuleCost = 10)).Compile(Json.Parse(Schema), [Rule("self.lines.all(l, l.codes.all(c, c != 'x'))", "No x.")]).Findings);
+        var finding = Assert.Single(new CellyRuleEngine().Compile(Json.Parse(Schema), [Rule("self.lines.all(l, l.codes.all(c, c != 'x'))", "No x.")], maxRuleCost: 10).Findings);
 
         Assert.Equal(ContractFindingCodes.RuleCostExceeded, finding.Code);
         Assert.Contains("over the limit of 10", finding.Message, StringComparison.Ordinal);
     }
 
+    /// <summary>ADR-PA43: the validator compiles with no ceiling, since registration checked it; an unbounded estimate is refused either way.</summary>
+    [Fact]
+    public void Compile_WithNoCeiling_AcceptsACostlyRule_ButStillRefusesAnUnboundedOne()
+    {
+        var engine = new CellyRuleEngine();
+
+        Assert.Empty(engine.Compile(Json.Parse(Schema), [Rule("self.lines.all(l, l.codes.all(c, c != 'x'))", "No x.")], maxRuleCost: null).Findings);
+        Assert.Equal(ContractFindingCodes.RuleCostUnbounded, Assert.Single(engine.Compile(Json.Parse(Schema), [Rule("self.note == 'a'", "m")], maxRuleCost: null).Findings).Code);
+    }
+
     [Fact]
     public void Compile_ReportsEveryBadRule_AndCompilesNone()
     {
-        var compilation = new CellyRuleEngine(Engine.Options()).Compile(Json.Parse(Schema), [Rule("true", "ok"), Rule("self.x", "bad"), Rule("1", "bad")]);
+        var compilation = new CellyRuleEngine().Compile(Json.Parse(Schema), [Rule("true", "ok"), Rule("self.x", "bad"), Rule("1", "bad")], Ceiling);
 
         Assert.Null(compilation.Rules);
         Assert.Equal(["/rules/1", "/rules/2"], compilation.Findings.Select(f => f.Location));
@@ -137,15 +150,13 @@ public sealed class CellyRuleEngineTests
 
     internal static ContractRule Rule(string expression, string message, string? fieldPath = null) => new() { Rule = expression, Message = message, FieldPath = fieldPath };
 
-    private static ICompiledRules Compile(params ContractRule[] rules) => Compile(null, rules);
-
-    private static ICompiledRules Compile(Action<ContractsOptions>? configure, params ContractRule[] rules)
+    private static ICompiledRules Compile(params ContractRule[] rules)
     {
-        var compilation = new CellyRuleEngine(Engine.Options(configure)).Compile(Json.Parse(Schema), rules);
+        var compilation = new CellyRuleEngine().Compile(Json.Parse(Schema), rules, Ceiling);
         Assert.Empty(compilation.Findings);
         return compilation.Rules!;
     }
 
     private static IReadOnlyList<ContractFinding> Refusals(string expression) =>
-        new CellyRuleEngine(Engine.Options()).Compile(Json.Parse(Schema), [Rule(expression, "m")]).Findings;
+        new CellyRuleEngine().Compile(Json.Parse(Schema), [Rule(expression, "m")], Ceiling).Findings;
 }

@@ -106,6 +106,14 @@ in their durable task registry. The DI registration is done here; the activity n
 `IMappingPinner`, which `AddFrontierModelRoleConfig` registers. A dispatcher carries the flag to
 each child, and each child pins at its own start.
 
+**Contract budgets are pinned per run (ADR-PA43).** `GraphOrchestratorInput.ContractBudgets` is
+the validator's budgets record the run validates under, resolved by the consumer when it starts the
+execution, as the definition is. The orchestrator copies it onto every `AgentTaskActivityInput` and
+`McpToolActivityInput`, and a dispatcher carries it to each child and across `ContinueAsNew`, so a
+change to the governed record applies to new runs only and no step reads a store. A run started
+without it, and every input recorded before the field, validates under the `Contracts`
+configuration section as before, and its recorded inputs keep their bytes.
+
 Activity names are identity, not labels. They are matched against recorded history on replay, so
 renaming one is a breaking change to in-flight executions and no worker-side alias can soften it.
 

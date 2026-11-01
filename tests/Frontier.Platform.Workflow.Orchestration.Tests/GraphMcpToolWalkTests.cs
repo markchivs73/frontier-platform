@@ -36,6 +36,21 @@ public sealed class GraphMcpToolWalkTests
         Assert.Equal(ArtifactStatus.Draft, state.ArtifactStatuses["ticket-update"]);
     }
 
+    /// <summary>ADR-PA43: an MCP node's activity input carries the run's pinned validator budgets, and none when the run pinned none.</summary>
+    [Fact]
+    public async Task ToolNode_CarriesTheRunsPinnedBudgets()
+    {
+        var budgets = ContractBudgets.Default with { MaxViolations = 1 };
+        var unpinned = new McpHarness(Definition(toolRef: "com.example.crm/tickets/get_new_ticket"));
+        var pinned = new McpHarness(Definition(toolRef: "com.example.crm/tickets/get_new_ticket")) { Budgets = budgets };
+
+        await unpinned.RunWalkAsync();
+        await pinned.RunWalkAsync();
+
+        Assert.Null(Assert.Single(unpinned.ToolInputs).ContractBudgets);
+        Assert.Equal(budgets, Assert.Single(pinned.ToolInputs).ContractBudgets);
+    }
+
     /// <summary>ADR-E27 D15: an MCP node naming registry contracts gets their pinned snapshots, and its step records the ref and the hashes.</summary>
     [Fact]
     public async Task ToolNodeWithRegistryContracts_PinsThemAndRecordsTheirHashes()
@@ -353,12 +368,14 @@ public sealed class GraphMcpToolWalkTests
 
         public bool Simulated { get; init; }
 
+        public ContractBudgets? Budgets { get; init; }
+
         public FakeTaskOrchestrationContext Context { get; }
         public FakeResiliencePolicyProvider PolicyProvider { get; } = new();
         public List<McpToolActivityInput> ToolInputs { get; } = [];
         public Dictionary<string, string?> AgentUpstreamPayloads { get; } = new(StringComparer.Ordinal);
 
         public Task<GraphExecutionState> RunWalkAsync() =>
-            GraphOrchestratorSteps.RunInitialWalkAsync(Context, OrchestrationFixtures.Input(_definition), new RollbackPlanner(), PolicyProvider, _classifier);
+            GraphOrchestratorSteps.RunInitialWalkAsync(Context, OrchestrationFixtures.Input(_definition) with { ContractBudgets = Budgets }, new RollbackPlanner(), PolicyProvider, _classifier);
     }
 }

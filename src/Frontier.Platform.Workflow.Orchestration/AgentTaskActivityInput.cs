@@ -135,4 +135,14 @@ public sealed record AgentTaskActivityInput
     [JsonPropertyOrder(17)]
     [JsonPropertyName("tool_pins")]
     public IReadOnlyList<McpToolPin>? ToolPins { get; init; }
+
+    /// <summary>
+    /// The run's pinned validator budgets (<see cref="GraphOrchestratorInput.ContractBudgets"/>,
+    /// ADR-PA43): the input and output are validated under them against a registry contract.
+    /// <b>Additive and optional</b> per the ADR-E15 floor: <see langword="null"/> on every input
+    /// recorded before this field, which validates under the configured budgets as before.
+    /// </summary>
+    [JsonPropertyOrder(18)]
+    [JsonPropertyName("contract_budgets")]
+    public ContractBudgets? ContractBudgets { get; init; }
 }

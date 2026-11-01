@@ -57,7 +57,7 @@ internal sealed class McpToolInvocationPipeline : IMcpToolInvocationPipeline
         var argumentsJson = ArgumentsJson(arguments);
         if (input.InputContract is { } inputContract)
         {
-            RegistryContractCheck.Ensure(contractValidator, inputContract, argumentsJson);
+            RegistryContractCheck.Ensure(contractValidator, inputContract, argumentsJson, input.ContractBudgets);
         }
 
         var result = await InvokeWithTimeoutAsync(function, arguments, input.TimeoutSeconds, ct).ConfigureAwait(false);
@@ -68,7 +68,7 @@ internal sealed class McpToolInvocationPipeline : IMcpToolInvocationPipeline
         if (outputContract is not null)
         {
             payload = McpStructuredResult.Output(reply, outputContract);
-            RegistryContractCheck.Ensure(contractValidator, outputContract, payload);
+            RegistryContractCheck.Ensure(contractValidator, outputContract, payload, input.ContractBudgets);
         }
 
         return new McpToolActivityResult
