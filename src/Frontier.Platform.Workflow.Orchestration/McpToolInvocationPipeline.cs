@@ -9,8 +9,8 @@ namespace Frontier.Platform.Workflow.Orchestration;
 
 /// <summary>
 /// The work behind <c>InvokeMcpToolActivity</c> (S13.7c, ADR-CD9/ADR-CD6-superseded-half):
-/// resolve the node's one tool through <see cref="IMcpToolCatalog"/> (registry-backed
-/// endpoints; sandbox write-fencing applies exactly as it does for agent-mediated calls),
+/// resolve the node's one tool through <see cref="IMcpToolCatalog"/> on the node's pins (registry-backed
+/// endpoints; sandbox write-fencing follows the pinned write flag, as it does for agent-mediated calls, ADR-PA42),
 /// map the upstream payload onto the tool's arguments by wire name, call it under the
 /// node's timeout, and return the canonical-JSON result. When the node pins an output contract,
 /// the recorded output is the tool's <c>structuredContent</c>, validated against that contract
@@ -47,7 +47,7 @@ internal sealed class McpToolInvocationPipeline : IMcpToolInvocationPipeline
     {
         ArgumentNullException.ThrowIfNull(input);
 
-        var tools = await toolCatalog.ResolveAsync([input.ToolRef], input.EngagementId, ct).ConfigureAwait(false);
+        var tools = await toolCatalog.ResolveAsync([input.ToolRef], [Pin(input)], input.EngagementId, ct).ConfigureAwait(false);
         if (tools is not [AIFunction function])
         {
             throw new InvalidOperationException($"Tool ref '{input.ToolRef}' did not resolve to an invocable tool.");
@@ -85,6 +85,19 @@ internal sealed class McpToolInvocationPipeline : IMcpToolInvocationPipeline
             InputHash = JsonCanonicalizer.Hash(Encoding.UTF8.GetBytes(argumentsJson)),
         };
     }
+
+    /// <summary>
+    /// The node's pins for its one tool (ADR-PA42): the contract snapshots and write flag the definition
+    /// pins, so the catalogue fences the tool by the pinned flag. A field the node does not pin stays
+    /// null, and the catalogue resolves it as before.
+    /// </summary>
+    internal static McpToolPin Pin(McpToolActivityInput input) => new()
+    {
+        ToolRef = input.ToolRef,
+        InputContract = input.InputContract,
+        OutputContract = input.OutputContract,
+        Writes = input.Writes,
+    };
 
     /// <summary>
     /// Maps the upstream payload's top-level wire properties onto the tool's arguments;

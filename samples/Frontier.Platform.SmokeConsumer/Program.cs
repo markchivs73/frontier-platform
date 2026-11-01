@@ -178,7 +178,7 @@ Console.WriteLine($"  engine resolves : {orchestrator.GetType().Name}, {pipeline
 //    engine already defines.
 _ = CanonicalOutputSchema.For<GateDecision>();
 await engineProvider.GetRequiredService<IMcpToolCatalog>()
-    .ResolveAsync(["com.example.crm/tickets/get_ticket"], "eng-smoke-001::wf-smoke", CancellationToken.None);
+    .ResolveAsync(["com.example.crm/tickets/get_ticket"], [new McpToolPin { ToolRef = "com.example.crm/tickets/get_ticket", Writes = false }], "eng-smoke-001", CancellationToken.None);
 
 Console.WriteLine("  adapter surface : output schema + tool-name round trip reachable");
 

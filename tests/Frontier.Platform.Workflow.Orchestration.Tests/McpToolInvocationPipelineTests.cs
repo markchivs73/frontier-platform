@@ -122,6 +122,39 @@ public sealed class McpToolInvocationPipelineTests
         Assert.True(result.Simulated);
     }
 
+    /// <summary>ADR-PA42: the catalogue resolves the node's tool on the node's pins, so the sandbox fence follows the pinned write flag.</summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    [InlineData(null)]
+    public async Task RunAsync_ResolvesTheToolOnTheNodesPins(bool? writes)
+    {
+        var catalog = new StubCatalog(new StubTool(_ => JsonDocument.Parse("""{"updated":true}""").RootElement.Clone()));
+        var pipeline = new McpToolInvocationPipeline(catalog, TestContractValidator.Instance);
+
+        await pipeline.RunAsync(Input() with { InputPayload = """{"id":"T-1","priority":1}""", Writes = writes, InputContract = RegistryContractFixtures.Ticket }, CancellationToken.None);
+
+        var pin = Assert.Single(catalog.ReceivedPins!);
+        Assert.Equal("com.example.crm/tickets/update_ticket", pin.ToolRef);
+        Assert.Equal(writes, pin.Writes);
+        Assert.Same(RegistryContractFixtures.Ticket, pin.InputContract);
+        Assert.Null(pin.OutputContract);
+    }
+
+    /// <summary>ADR-PA42: an input recorded before <c>writes</c> existed reads null and keeps its bytes; a pinned flag is written last.</summary>
+    [Fact]
+    public void McpToolActivityInput_WithoutWrites_KeepsItsPreChangeBytes_AndWritesAPinnedFlagLast()
+    {
+        const string preChange = """{"node_id":"t-update","artifact_key":"ticket-update","tool_ref":"com.example.crm/tickets/update_ticket","timeout_seconds":30,"idempotency_key":"k-1","correlation_id":"c-1","execution_id":"x","engagement_id":"eng-1","input_payload":"{}"}""";
+
+        var rehydrated = JsonSerializer.Deserialize<McpToolActivityInput>(preChange, CanonicalProfile.Options)!;
+
+        Assert.Null(rehydrated.Writes);
+        Assert.Equal(preChange, System.Text.Encoding.UTF8.GetString(CanonicalProfile.SerializeCanonical(rehydrated)));
+        var pinned = System.Text.Encoding.UTF8.GetString(CanonicalProfile.SerializeCanonical(rehydrated with { Writes = false }));
+        Assert.EndsWith(""","input_payload":"{}","writes":false}""", pinned, StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task RunAsync_UnresolvableTool_Throws()
     {
@@ -303,8 +336,13 @@ public sealed class McpToolInvocationPipelineTests
 
     private sealed class StubCatalog(AITool? tool) : IMcpToolCatalog
     {
-        public Task<IReadOnlyList<AITool>> ResolveAsync(IReadOnlyList<string> toolRefs, string engagementId, CancellationToken ct) =>
-            Task.FromResult<IReadOnlyList<AITool>>(tool is null ? [] : [tool]);
+        public IReadOnlyList<McpToolPin>? ReceivedPins { get; private set; }
+
+        public Task<IReadOnlyList<AITool>> ResolveAsync(IReadOnlyList<string> toolRefs, IReadOnlyList<McpToolPin>? pins, string engagementId, CancellationToken ct)
+        {
+            ReceivedPins = pins;
+            return Task.FromResult<IReadOnlyList<AITool>>(tool is null ? [] : [tool]);
+        }
     }
 
     private sealed class StubTool(Func<AIFunctionArguments, object?> implementation) : AIFunction

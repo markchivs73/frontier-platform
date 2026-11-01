@@ -71,6 +71,18 @@ asks `IMcpWriteClassifier`: `true` gives the step its idempotency key and the `m
 `false` neither key nor write profile (`mcp-read`). A node's own retry spec still wins. A definition
 published without the flag replays exactly as before, classified by the port.
 
+**Tools resolve on their pins (ADR-PA42).** `IMcpToolCatalog.ResolveAsync` takes the step's
+`McpToolPin`s beside its tool refs. An agent step's pins come from its node's `tool_contracts`,
+each contract ref resolved to the snapshot the definition embeds, and ride on
+`AgentTaskActivityInput.ToolPins`; an `mcp_tool` step passes one pin built from its pinned
+contracts and `writes` (carried on `McpToolActivityInput.Writes`). The catalogue builds a pinned
+tool from its pinned input contract (schema and description) and fences it in a sandbox by the
+pinned write flag, not by the newest registry version's. Only a fact a pin leaves null, a tool
+with no pin, or a call with no pins at all (a definition published before them) falls back to the
+newest active version; endpoints always resolve there. Both new activity-input members are left
+out when null, so recorded inputs keep their bytes. The engine does not validate an agent's
+tool-call arguments or results against the pins.
+
 **An MCP node's output contract holds the tool's `structuredContent` (ADR-PA41).** A tool that
 declares an `outputSchema` answers in the `CallToolResult`'s `structuredContent` (MCP 2025-06-18),
 and the `IMcpToolCatalog` adapter may hand the engine that whole result as JSON. When the node pins

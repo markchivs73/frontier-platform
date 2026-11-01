@@ -12,18 +12,22 @@ namespace Frontier.Platform.Workflow.Orchestration;
 public sealed record McpToolActivityInput
 {
     /// <summary>The invoking node's id.</summary>
+    [JsonPropertyOrder(0)]
     [JsonPropertyName("node_id")]
     public required string NodeId { get; init; }
 
     /// <summary>The section this node writes, if any.</summary>
+    [JsonPropertyOrder(1)]
     [JsonPropertyName("artifact_key")]
     public string? ArtifactKey { get; init; }
 
     /// <summary>The registered tool to call, <c>{reverse-dns-server}/{tool}</c> (ADR-CD9).</summary>
+    [JsonPropertyOrder(2)]
     [JsonPropertyName("tool_ref")]
     public required string ToolRef { get; init; }
 
     /// <summary>Per-invocation timeout in seconds (<see cref="Abstractions.McpToolNode.TimeoutSeconds"/>; <c>timeouts.nesting</c> validates it against the DTF cap).</summary>
+    [JsonPropertyOrder(3)]
     [JsonPropertyName("timeout_seconds")]
     public required int TimeoutSeconds { get; init; }
 
@@ -32,22 +36,27 @@ public sealed record McpToolActivityInput
     /// minted orchestrator-side as the step's correlation id — deterministic per node
     /// occurrence, so an activity retry provably reuses the same key. Null for reads.
     /// </summary>
+    [JsonPropertyOrder(4)]
     [JsonPropertyName("idempotency_key")]
     public string? IdempotencyKey { get; init; }
 
     /// <summary>Idempotency and audit join key for this invocation.</summary>
+    [JsonPropertyOrder(5)]
     [JsonPropertyName("correlation_id")]
     public required string CorrelationId { get; init; }
 
     /// <summary>The running execution's instance id (sandbox runs carry the <c>SANDBOX-</c> prefix, which write-fences the tool — doc 13 §5).</summary>
+    [JsonPropertyOrder(6)]
     [JsonPropertyName("execution_id")]
     public required string ExecutionId { get; init; }
 
     /// <summary>The engagement this execution runs for.</summary>
+    [JsonPropertyOrder(7)]
     [JsonPropertyName("engagement_id")]
     public required string EngagementId { get; init; }
 
     /// <summary>The upstream Data-edge payload (canonical JSON object), mapped onto the tool's arguments by wire name; null when the node has no Data-edge predecessor.</summary>
+    [JsonPropertyOrder(8)]
     [JsonPropertyName("input_payload")]
     public string? InputPayload { get; init; }
 
@@ -56,12 +65,25 @@ public sealed record McpToolActivityInput
     /// arguments are validated against it before the call. Optional per the ADR-E15 floor:
     /// <see langword="null"/> when the node names none, and on inputs recorded before contracts were data.
     /// </summary>
+    [JsonPropertyOrder(9)]
     [JsonPropertyName("input_contract")]
     public Frontier.Platform.Abstractions.ContractSnapshot? InputContract { get; init; }
 
     /// <summary>The definition's pinned snapshot of the node's output contract (ADR-E27 D9, D15): the tool's result is validated against it; optional, as <see cref="InputContract"/>.</summary>
+    [JsonPropertyOrder(10)]
     [JsonPropertyName("output_contract")]
     public Frontier.Platform.Abstractions.ContractSnapshot? OutputContract { get; init; }
+
+    /// <summary>
+    /// The node's pinned write flag (<see cref="Abstractions.McpToolNode.Writes"/>, ADR-PA41), handed to
+    /// <see cref="IMcpToolCatalog"/> on the tool's <see cref="McpToolPin"/> so the sandbox write fence
+    /// follows it rather than the newest registry version's flag (ADR-PA42). <b>Additive and optional</b>
+    /// per the ADR-E15 floor: <see langword="null"/> for a node that pins none, and on every input recorded
+    /// before this field, whose tool is fenced as before.
+    /// </summary>
+    [JsonPropertyOrder(11)]
+    [JsonPropertyName("writes")]
+    public bool? Writes { get; init; }
 }
 
 /// <summary>Result of <c>InvokeMcpToolActivity</c>: the tool's response as canonical JSON, hashed for the step record.</summary>

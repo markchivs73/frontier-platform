@@ -8,12 +8,16 @@ internal sealed class FakeMcpToolCatalog(IReadOnlyList<AITool>? tools = null) : 
     /// <summary>The most recent <c>toolRefs</c> passed to <see cref="ResolveAsync"/>.</summary>
     internal IReadOnlyList<string>? ReceivedToolRefs { get; private set; }
 
+    /// <summary>The most recent <c>pins</c> passed to <see cref="ResolveAsync"/>.</summary>
+    internal IReadOnlyList<McpToolPin>? ReceivedPins { get; private set; }
+
     /// <summary>The most recent <c>engagementId</c> passed to <see cref="ResolveAsync"/>.</summary>
     internal string? ReceivedEngagementId { get; private set; }
 
-    public Task<IReadOnlyList<AITool>> ResolveAsync(IReadOnlyList<string> toolRefs, string engagementId, CancellationToken ct)
+    public Task<IReadOnlyList<AITool>> ResolveAsync(IReadOnlyList<string> toolRefs, IReadOnlyList<McpToolPin>? pins, string engagementId, CancellationToken ct)
     {
         ReceivedToolRefs = toolRefs;
+        ReceivedPins = pins;
         ReceivedEngagementId = engagementId;
         return Task.FromResult(tools ?? []);
     }
