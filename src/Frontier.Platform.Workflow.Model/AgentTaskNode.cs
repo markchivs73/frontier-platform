@@ -60,4 +60,15 @@ public sealed record AgentTaskNode : WorkflowNode
     [JsonPropertyOrder(8)]
     [JsonPropertyName("tool_refs")]
     public IReadOnlyList<string> ToolRefs { get; init; } = [];
+
+    /// <summary>
+    /// The contracts and write flag pinned for each <see cref="ToolRefs"/> entry, one entry per tool
+    /// in <see cref="ToolRefs"/> order, copied from the registry when the node is designed (ADR-PA42)
+    /// and held to it by <c>mcp.tool-resolves</c>. Publish embeds the contracts they name into
+    /// <see cref="WorkflowDefinition.Contracts"/>. Omitted from the wire when null, so a definition
+    /// published before the pins keeps its bytes and its hash; its tools resolve as they did.
+    /// </summary>
+    [JsonPropertyOrder(9)]
+    [JsonPropertyName("tool_contracts")]
+    public IReadOnlyList<AgentToolContract>? ToolContracts { get; init; }
 }

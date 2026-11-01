@@ -59,6 +59,12 @@ exactly that.
   All three additions are optional, so every older definition keeps its bytes. `McpToolNode`
   also pins `writes`, whether its tool mutates state, copied from the registry (ADR-PA41); it too
   is optional, and a node without it is classified by the consumer's write classifier.
+- **An agent node pins its tools (ADR-PA42).** `AgentTaskNode.ToolContracts` (`tool_contracts`,
+  after `tool_refs`) holds one `AgentToolContract` per tool: its `tool_ref`, the registry's
+  `input_contract_type` and `output_contract_type` for it, and its `writes` flag, each null when the
+  registry holds none. The designer copies them from the registry and publish embeds the contracts
+  they name. The field is optional and omitted when null, so every older definition keeps its bytes
+  and its hash.
 - An MCP step's `StepCompletion` also names its `tool_ref`, `input_contract_type`, the arguments'
   `input_hash` and, for a write-fenced call, `simulated`, so the signed audit can record the step
   (ADR-PA41). Every one is optional and null on every other node type, so older snapshots keep

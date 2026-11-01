@@ -411,6 +411,42 @@ internal static class ContractSamples
     };
 
     /// <summary>
+    /// ADR-PA42: an agent node that pins each of its tools' contracts and write flag: one tool with
+    /// both contracts, one that writes and declares no output schema, and one the registry holds
+    /// nothing for, whose null pins are left off the wire. Every older definition golden, whose agent
+    /// nodes carry no <c>tool_contracts</c>, is untouched, which is the compatibility claim.
+    /// </summary>
+    public static WorkflowDefinition WorkflowDefinitionWithToolContracts() => WorkflowDefinitionAgentBacked() with
+    {
+        WorkflowId = "wf-tool-contracts",
+        Nodes =
+        [
+            WorkflowDefinitionAgentBacked().Nodes[0],
+            (AgentTaskNode)WorkflowDefinitionAgentBacked().Nodes[1] with
+            {
+                ToolRefs = ["com.example.crm/tickets/get_ticket", "com.example.crm/tickets/update_ticket", "com.example.crm/tickets/ping"],
+                ToolContracts =
+                [
+                    new AgentToolContract
+                    {
+                        ToolRef = "com.example.crm/tickets/get_ticket",
+                        InputContractType = "com.example.crm/get-ticket-input/1.0",
+                        OutputContractType = "com.example.crm/ticket/1.0",
+                        Writes = false,
+                    },
+                    new AgentToolContract
+                    {
+                        ToolRef = "com.example.crm/tickets/update_ticket",
+                        InputContractType = "com.example.crm/update-ticket-input/1.0",
+                        Writes = true,
+                    },
+                    new AgentToolContract { ToolRef = "com.example.crm/tickets/ping" },
+                ],
+            },
+        ],
+    };
+
+    /// <summary>
     /// ADR-PA41: MCP nodes that pin their write classification, one of each value. Pins where
     /// <c>writes</c> sits on the wire; every older definition golden, whose nodes carry no flag, is
     /// untouched, which is the compatibility claim.

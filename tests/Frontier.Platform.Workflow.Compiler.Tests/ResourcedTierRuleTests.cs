@@ -19,7 +19,9 @@ public sealed class ResourcedTierRuleTests
         public async Task AllToolRefsKnown_ReturnsEmpty()
         {
             var rule = new McpToolResolvesRule(new FakeToolCatalog("io.frontier.demo/autotask/get_new_ticket"));
-            var ctx = new DefinitionValidationContext(DefinitionWithAgentTask(toolRefs: ["io.frontier.demo/autotask/get_new_ticket"]));
+            var definition = DefinitionWithAgentTask(toolRefs: ["io.frontier.demo/autotask/get_new_ticket"]);
+            var agent = (AgentTaskNode)definition.Nodes[0] with { ToolContracts = [new AgentToolContract { ToolRef = "io.frontier.demo/autotask/get_new_ticket" }] };
+            var ctx = new DefinitionValidationContext(definition with { Nodes = [agent] });
 
             var findings = await rule.EvaluateAsync(ctx, CancellationToken.None);
 
