@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Frontier.Platform.Workflow.Compiler.Tests;
 
-/// <summary>ADR-PA41: the designer copies a tool's registered contract refs and write flag onto its mcp_tool nodes.</summary>
+/// <summary>ADR-PA41, ADR-PA42: the designer copies a tool's registered contract refs and write flag onto its mcp_tool nodes and onto the agent nodes that list it.</summary>
 public sealed class McpToolRegistryStampTests
 {
     private const string Ticket = "io.frontier.demo/autotask/get_new_ticket";
@@ -57,7 +57,6 @@ public sealed class McpToolRegistryStampTests
             InstructionsRef = "scope-gen",
             InputContractType = "EngagementBriefSection",
             OutputContractType = "ScopeSection",
-            ToolRefs = [Ticket],
             ContextRequest = new ContextRequest { EngagementId = "eng-1", AgentRole = "gen-scope", BaselineComponents = [], DynamicFields = [] },
         };
         var definition = Definition(agent, Mcp("m", Ticket, null, null, null));
@@ -87,6 +86,72 @@ public sealed class McpToolRegistryStampTests
         Assert.Throws<ArgumentNullException>(() => McpToolRegistryStamp.Apply(null!, []));
         Assert.Throws<ArgumentNullException>(() => McpToolRegistryStamp.Apply(Definition(), null!));
     }
+
+    /// <summary>ADR-PA42: an agent node pins each tool it lists, in tool_refs order, nulls included, once per tool.</summary>
+    [Fact]
+    public void Apply_PinsEachOfAnAgentsTools_InToolRefsOrder_OverwritingWhatTheNodeSaid()
+    {
+        var agent = Agent([Update, Ticket, Update]) with
+        {
+            ToolContracts = [new AgentToolContract { ToolRef = Ticket, InputContractType = "hand/in/1.0", Writes = true }],
+        };
+
+        var pins = SingleAgent(McpToolRegistryStamp.Apply(Definition(agent), [TicketTool, Tool(Update, "u/in/1.0", null, true)])).ToolContracts;
+
+        Assert.Equal(
+            [
+                new AgentToolContract { ToolRef = Update, InputContractType = "u/in/1.0", Writes = true },
+                new AgentToolContract
+                {
+                    ToolRef = Ticket,
+                    InputContractType = TicketTool.InputContractRef,
+                    OutputContractType = TicketTool.OutputContractRef,
+                    Writes = false,
+                },
+            ],
+            pins);
+    }
+
+    /// <summary>ADR-PA42: an unresolvable tool keeps the node's own entry; an entry for a tool the node no longer lists is dropped.</summary>
+    [Fact]
+    public void Apply_KeepsTheEntryOfAnUnresolvedTool_AndDropsEntriesForUnlistedTools()
+    {
+        var invented = new AgentToolContract { ToolRef = "io.frontier.demo/autotask/no_such_tool", InputContractType = "hand/in/1.0" };
+        var agent = Agent([invented.ToolRef, "io.frontier.demo/autotask/also_missing"]) with
+        {
+            ToolContracts = [new AgentToolContract { ToolRef = Ticket }, invented],
+        };
+
+        var pins = SingleAgent(McpToolRegistryStamp.Apply(Definition(agent), [TicketTool])).ToolContracts;
+
+        Assert.Same(invented, Assert.Single(pins!));
+    }
+
+    /// <summary>ADR-PA42: an agent with no tools, or none the catalogue resolves, keeps its bytes; one whose entries all go is left with none rather than an empty list.</summary>
+    [Fact]
+    public void Apply_LeavesAnAgentWithNoTools_AndClearsPinsItNoLongerNeeds()
+    {
+        var bare = Agent([]);
+        var unresolved = Agent(["io.frontier.demo/autotask/no_such_tool"]) with { NodeId = "u" };
+        var stale = Agent([]) with { NodeId = "b", ToolContracts = [new AgentToolContract { ToolRef = Ticket }] };
+
+        var stamped = McpToolRegistryStamp.Apply(Definition(bare, unresolved, stale), [TicketTool]);
+
+        Assert.Same(bare, stamped.Nodes[0]);
+        Assert.Same(unresolved, stamped.Nodes[1]);
+        Assert.Null(Assert.IsType<AgentTaskNode>(stamped.Nodes[2]).ToolContracts);
+    }
+
+    internal static AgentTaskNode Agent(IReadOnlyList<string> toolRefs) => new()
+    {
+        NodeId = "a",
+        Role = "gen-scope",
+        InstructionsRef = "scope-gen",
+        InputContractType = "EngagementBriefSection",
+        OutputContractType = "ScopeSection",
+        ToolRefs = toolRefs,
+        ContextRequest = new ContextRequest { EngagementId = "eng-1", AgentRole = "gen-scope", BaselineComponents = [], DynamicFields = [] },
+    };
 
     internal static DesignerToolDescriptor Tool(string toolRef, string? input, string? output, bool? writes) => new()
     {
@@ -121,6 +186,8 @@ public sealed class McpToolRegistryStampTests
         DefinitionHash = "test-hash",
         Mode = ExecutionMode.OneShot,
     };
+
+    private static AgentTaskNode SingleAgent(WorkflowDefinition definition) => Assert.IsType<AgentTaskNode>(Assert.Single(definition.Nodes));
 
     private static McpToolNode Single(WorkflowDefinition definition) => Assert.IsType<McpToolNode>(Assert.Single(definition.Nodes));
 }

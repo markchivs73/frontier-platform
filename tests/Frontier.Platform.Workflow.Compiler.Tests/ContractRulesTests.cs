@@ -172,6 +172,76 @@ public sealed class ContractRulesTests
         Assert.Contains("writes is 'true', but the registry holds '(none)'", findings[2].Message, StringComparison.Ordinal);
     }
 
+    /// <summary>ADR-PA42: an agent pins each resolvable tool once, with exactly the registry's contract refs and write flag; null passes only against null.</summary>
+    [Fact]
+    public async Task ToolResolves_HoldsAnAgentsToolContractsToTheRegistry()
+    {
+        var tools = new Mock<IDesignerToolCatalog>();
+        tools.Setup(t => t.GetToolsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(
+        [
+            Tool("crm/tickets/get", "crm/tickets") with { InputContractRef = "crm/get-in/1.0", OutputContractRef = "crm/ticket/1.0", Writes = false },
+            Tool("crm/tickets/put", "crm/tickets") with { InputContractRef = "crm/put-in/1.0", Writes = true },
+            Tool("crm/tickets/old", "crm/tickets"),
+        ]);
+        AgentToolContract[] exact =
+        [
+            new() { ToolRef = "crm/tickets/get", InputContractType = "crm/get-in/1.0", OutputContractType = "crm/ticket/1.0", Writes = false },
+            new() { ToolRef = "crm/tickets/put", InputContractType = "crm/put-in/1.0", Writes = true },
+            new() { ToolRef = "crm/tickets/old" },
+        ];
+        var definition = Definition(
+        [
+            Agent("pinned", "ScopeRequest", "ScopeSection") with { ToolRefs = ["crm/tickets/get", "crm/tickets/put", "crm/tickets/old"], ToolContracts = exact },
+            Agent("unpinned", "ScopeRequest", "ScopeSection") with { ToolRefs = ["crm/tickets/get"] },
+            Agent("drifted", "ScopeRequest", "ScopeSection") with
+            {
+                ToolRefs = ["crm/tickets/put", "crm/tickets/old"],
+                ToolContracts = [exact[1] with { InputContractType = null, OutputContractType = "crm/ticket/1.0", Writes = false }, exact[2] with { Writes = true }],
+            },
+        ], []);
+
+        var findings = await new McpToolResolvesRule(tools.Object).EvaluateAsync(Context(definition), CancellationToken.None);
+
+        Assert.Equal(
+            [
+                ("unpinned", "tool_contracts"),
+                ("drifted", "tool_contracts[0].input_contract_type"),
+                ("drifted", "tool_contracts[0].output_contract_type"),
+                ("drifted", "tool_contracts[0].writes"),
+                ("drifted", "tool_contracts[1].writes"),
+            ],
+            findings.Select(f => (f.NodeId!, f.FieldPath!)));
+        Assert.Equal("tool_ref 'crm/tickets/get' has no tool_contracts entry. Pin the tool's registered contracts and write flag.", findings[0].Message);
+        Assert.Equal("tool_contracts[0].input_contract_type is '(none)', but the registry holds 'crm/put-in/1.0' for tool 'crm/tickets/put'. Name the tool's registered contract.", findings[1].Message);
+        Assert.Contains("writes is 'true', but the registry holds '(none)' for tool 'crm/tickets/old'", findings[4].Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>ADR-PA42: an entry for a tool the agent does not list, or a second entry for one tool, is refused; an unresolved tool is reported once.</summary>
+    [Fact]
+    public async Task ToolResolves_RefusesStrayAndRepeatedToolContracts_AndReportsAnUnresolvedToolOnce()
+    {
+        var tools = new Mock<IDesignerToolCatalog>();
+        tools.Setup(t => t.GetToolsAsync(It.IsAny<CancellationToken>())).ReturnsAsync([Tool("crm/tickets/old", "crm/tickets")]);
+        var pin = new AgentToolContract { ToolRef = "crm/tickets/old" };
+        var definition = Definition(
+        [
+            Agent("a", "ScopeRequest", "ScopeSection") with
+            {
+                ToolRefs = ["crm/tickets/old", "crm/tickets/invented"],
+                ToolContracts = [pin, new AgentToolContract { ToolRef = "crm/tickets/unlisted" }, pin with { Writes = true }],
+            },
+        ], []);
+
+        var findings = await new McpToolResolvesRule(tools.Object).EvaluateAsync(Context(definition), CancellationToken.None);
+
+        Assert.Equal(
+            [("a", "tool_refs"), ("a", "tool_contracts[1]"), ("a", "tool_contracts[2]")],
+            findings.Select(f => (f.NodeId!, f.FieldPath!)));
+        Assert.Equal(
+            "tool_contracts[1] pins tool 'crm/tickets/unlisted', which tool_refs does not list or an earlier entry already pins. Pin each tool_refs entry once.",
+            findings[1].Message);
+    }
+
     [Fact]
     public void Constructors_RefuseNull()
     {

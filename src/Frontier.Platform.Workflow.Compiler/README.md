@@ -80,6 +80,15 @@ overwrites them from the tool's `DesignerToolDescriptor`, nulls included, and le
 every proposal the agent returns, the first attempt and the repair alike, before the proposal is
 validated, diffed or merged.
 
+The same function pins an `agent_task` node's tools (ADR-PA42). It rebuilds `tool_contracts` as
+one entry per `tool_refs` entry, in order, with the registry's contract refs and `writes` for each
+tool, nulls included. A tool the catalogue does not resolve keeps the node's own entry, an entry for
+a tool the node no longer lists is dropped, and a node with no tools is left untouched.
+`mcp.tool-resolves` then requires exactly one matching entry per resolvable tool, and refuses an
+entry for a tool the node does not list. Publish embeds the pinned contracts with the rest
+(`DefinitionContractRefs.Collect` names them). A stored draft that lists tools needs a design turn,
+or your own call to `Apply`, before it publishes.
+
 Publish does not apply it. Publish validates, and a registry change after review shows up as an
 `mcp.tool-resolves` finding rather than a silent edit. A plain draft save does not apply it
 either. The function is public so you can apply the same rule wherever else you build or rewrite

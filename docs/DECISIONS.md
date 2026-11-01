@@ -3108,3 +3108,85 @@ put those hashes on `AgentInvocation`, but the signed `AuditRecord` held agent i
   (every older golden unchanged); a test that the two older signed goldens recompute to their stored
   bytes; a verifier test that a record with MCP steps verifies and an edited contract hash breaks it;
   the signed-shape parity test; and the projector, consolidator, walk and pipeline tests.
+
+## ADR-PA42 — an agent node pins its tools' contracts and write flags
+
+ADR-PA41 left an agent node's `tool_refs` unpinned: their schemas and write flags stayed with the
+consumer at invocation, resolved on the newest active registry version, and per-run pinning was a
+recorded lever. Consumer task S13.144 pulls that lever (Mark, 2026-11-01; consumer decision register
+for S13.144, items 1 to 7). It ships in two PRs: PR1 (`workflow.model` and `workflow.compiler`,
+additive) and PR2 (`workflow.orchestration!`). This ADR records both designs; PR1 builds the first
+half.
+
+**The tool-to-contract mapping lives on the node** (register item 1). `AgentTaskNode` gains an
+optional `tool_contracts` (after `tool_refs`, left out when null): a list of `AgentToolContract`,
+one entry per distinct `tool_refs` entry in that order, each `{tool_ref, input_contract_type,
+output_contract_type, writes}`. Input and output contracts and the write flag are all pinned
+(item 2).
+- *Old definitions keep their bytes.* A definition published before the pins has no
+  `tool_contracts`, keeps its golden files and its hash, and no schema version moves: an additive,
+  optional field under the canonical profile's minor-change rule, as `writes` was on `mcp_tool`
+  (ADR-PA41). Such a definition runs as today: its tools resolve on the newest active registry
+  version, and an unpinned write is still treated as a write (item 4).
+- *A tool with no discovered contract pins null* (item 7). The precedent is the `mcp_tool` node: a
+  tool registered before contracts were data (consumer S13.117) has no contract ref, so the node
+  holds null and `mcp.tool-resolves` passes null only against null. An agent's entry does the same,
+  so `input_contract_type` is nullable on the entry, though the register's sketch showed it
+  required; the entry still exists, because it pins `writes`, and because a tool_ref without one is
+  refused. A tool with no `outputSchema` likewise pins no output contract (consumer register S3-2).
+
+**The designer copies the registry's values** (item 1). `McpToolRegistryStamp.Apply`, the one
+function ADR-PA41 made for `mcp_tool` nodes, now also rebuilds each agent node's `tool_contracts`:
+a tool the catalogue resolves gets its `DesignerToolDescriptor`'s contract refs and write flag,
+nulls included; a tool it does not resolve keeps whatever entry the node gave it, for
+`mcp.tool-resolves` to report; and entries for tools the node no longer lists are dropped. An agent
+node with no tools and no pins is returned as it is, and one left with no pins gets null, never an
+empty list, so its bytes do not change. It runs where ADR-PA41's stamp runs: on every proposal the
+design agent returns, before it is validated, diffed or merged; never at publish, never on a plain
+draft save. A consumer applying the function to existing definitions (a migration, say) now pins
+their agents' tools too, which is the intent.
+
+**`mcp.tool-resolves` holds the pins to the registry** (item 1). For each agent `tool_refs` entry
+that resolves, the node must hold exactly one entry, and its three fields must equal the
+registry's. The findings are: no entry (`tool_contracts`); a field that differs
+(`tool_contracts[i].input_contract_type`, `.output_contract_type`, `.writes`, with the same
+messages as the `mcp_tool` checks); and an entry for a tool `tool_refs` does not list, or a second
+entry for one tool (`tool_contracts[i]`). An unresolvable tool_ref is reported once, as unresolved.
+- *"On newly compiled definitions."* The rule runs only where definitions are compiled: design-time
+  validation and publish. A published definition is immutable and never revalidated, so the
+  refusal reaches only new work; a stored draft that lists tools must be re-stamped (a design turn,
+  or the consumer applying `McpToolRegistryStamp.Apply`) before it publishes, as unpinned
+  `mcp_tool` drafts had to under ADR-PA41.
+- The stray and duplicate checks are a minor detail settled here: a stray entry would embed a
+  contract no step uses, and a duplicate would make "the" pin ambiguous.
+
+**Publish embeds the pinned contracts** (item 2). `DefinitionContractRefs.Collect` adds every
+schema ref an agent's `tool_contracts` name, so the existing embedder (ADR-PA39) writes their
+snapshots into `WorkflowDefinition.Contracts`, and refuses to publish when one is unregistered or
+retired. A run therefore holds the exact contract versions its agent's tools were designed against.
+
+**What PR2 does (`workflow.orchestration!`).** Decided now, built in the next PR.
+- The orchestrator copies the node's pins onto `AgentTaskActivityInput` as a new optional member,
+  omitted when null, so every recorded input replays byte-identically; the PR proves it with a
+  golden and a replay test.
+- `IMcpToolCatalog` takes the pins, so the consumer's catalogue resolves each pinned tool against
+  its pinned contracts and write flag rather than the newest registry version. That is the break
+  for the port's one implementer, the consumer's adapter (consumer follow-up after v0.47.0).
+- The tool description shown to the model is the pinned contract's own `description`. Annotations
+  sit inside the contract hash (consumer ADR-E27 Q2), so what the model reads is pinned with it.
+- Pin only (item 3): the engine does not validate an agent's tool-call arguments or results against
+  the pinned contracts in this task. That is a separate, later task.
+- The `mcp_tool` half-pin gap closes (item 5): the sandbox's write fence follows the node's pinned
+  `writes`, not the newest registry version's flag. A node with no pin keeps today's behaviour.
+- Endpoint resolution stays on the newest active server version (item 6): an endpoint is not a
+  contract, so it is not pinned.
+
+**Not changed.** The design agent's prompt is unchanged: the stamp overwrites whatever the agent
+writes in `tool_contracts`, so it never needs to author them. Saying so in the prompt, as ADR-PA41
+did for `mcp_tool` nodes, is a later wording change with its own prompt-snapshot update.
+
+Pinned by PR1's tests: the new `workflow_definition_tool_contracts.json` golden (every older
+definition golden unchanged, which is the compatibility claim); the stamp tests (order, nulls,
+unresolved and unlisted tools, an untouched tool-less node); the design-turn test that a proposed
+agent is pinned before validation; the rule tests for exact, missing, differing, stray and
+duplicate pins; and the `Collect` test for an agent's pinned refs.

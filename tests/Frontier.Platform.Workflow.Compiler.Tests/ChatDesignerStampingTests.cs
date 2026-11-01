@@ -16,8 +16,9 @@ using static Frontier.Platform.Workflow.Compiler.Tests.McpToolRegistryStampTests
 namespace Frontier.Platform.Workflow.Compiler.Tests;
 
 /// <summary>
-/// ADR-PA41: every proposal the design agent returns, the first attempt and the repair alike, has
-/// its mcp_tool nodes stamped from the tool catalogue before it is validated, diffed or merged.
+/// ADR-PA41, ADR-PA42: every proposal the design agent returns, the first attempt and the repair alike,
+/// has its mcp_tool nodes and its agent nodes' tools stamped from the tool catalogue before it is
+/// validated, diffed or merged.
 /// </summary>
 public sealed class ChatDesignerStampingTests
 {
@@ -58,6 +59,20 @@ public sealed class ChatDesignerStampingTests
         await RunTurnAsync(service, store, autoMerge: true);
 
         AssertStamped(Deserialize(Assert.Single(merge.ProposedJson)));
+    }
+
+    /// <summary>ADR-PA42: an agent node the design agent proposes has its tools pinned before it is validated.</summary>
+    [Fact]
+    public async Task AnAgentsTools_ArePinnedBeforeValidation()
+    {
+        var compiler = new RecordingCompiler(failFirst: false);
+        var json = JsonSerializer.Serialize(Definition(Agent([Ticket])), CanonicalProfile.Options);
+        var (service, store, _) = Build(compiler, new CapturingMergeService(), $$"""{"reason":"r","definition":{{json}},"changed_node_ids":["a"]}""");
+
+        await RunTurnAsync(service, store, autoMerge: false);
+
+        var agent = Assert.IsType<AgentTaskNode>(Assert.Single(Assert.Single(compiler.Validated).Nodes));
+        Assert.Equal([new AgentToolContract { ToolRef = Ticket, InputContractType = InputRef, OutputContractType = OutputRef, Writes = true }], agent.ToolContracts);
     }
 
     [Fact]

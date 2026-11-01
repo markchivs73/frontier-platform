@@ -37,6 +37,24 @@ public sealed class DefinitionContractsTests
             DefinitionContractRefs.Collect(definition));
     }
 
+    /// <summary>ADR-PA42: the contracts an agent pins for its tools are collected, so publish embeds them.</summary>
+    [Fact]
+    public void Collect_NamesTheContractsAnAgentPinsForItsTools()
+    {
+        var agent = Agent("agent", "ScopeRequest", "ScopeSection") with
+        {
+            ToolRefs = ["crm/tickets/get", "crm/tickets/put", "crm/tickets/ping"],
+            ToolContracts =
+            [
+                new AgentToolContract { ToolRef = "crm/tickets/get", InputContractType = "crm/get-in/1.0", OutputContractType = "crm/ticket/1.0" },
+                new AgentToolContract { ToolRef = "crm/tickets/put", InputContractType = "crm/ticket/1.0", Writes = true },
+                new AgentToolContract { ToolRef = "crm/tickets/ping" },
+            ],
+        };
+
+        Assert.Equal(["crm/get-in/1.0", "crm/ticket/1.0"], DefinitionContractRefs.Collect(Definition([agent], [])));
+    }
+
     [Fact]
     public void Collect_IgnoresClrContractNames()
     {

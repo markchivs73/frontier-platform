@@ -1,0 +1,19 @@
+Frontier.Platform.Workflow.Model.AgentTaskNode.ToolContracts.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Workflow.Model.AgentToolContract!>?
+Frontier.Platform.Workflow.Model.AgentTaskNode.ToolContracts.init -> void
+Frontier.Platform.Workflow.Model.AgentToolContract
+Frontier.Platform.Workflow.Model.AgentToolContract.<Clone>$() -> Frontier.Platform.Workflow.Model.AgentToolContract!
+Frontier.Platform.Workflow.Model.AgentToolContract.AgentToolContract() -> void
+Frontier.Platform.Workflow.Model.AgentToolContract.Equals(Frontier.Platform.Workflow.Model.AgentToolContract? other) -> bool
+Frontier.Platform.Workflow.Model.AgentToolContract.InputContractType.get -> string?
+Frontier.Platform.Workflow.Model.AgentToolContract.InputContractType.init -> void
+Frontier.Platform.Workflow.Model.AgentToolContract.OutputContractType.get -> string?
+Frontier.Platform.Workflow.Model.AgentToolContract.OutputContractType.init -> void
+Frontier.Platform.Workflow.Model.AgentToolContract.ToolRef.get -> string!
+Frontier.Platform.Workflow.Model.AgentToolContract.ToolRef.init -> void
+Frontier.Platform.Workflow.Model.AgentToolContract.Writes.get -> bool?
+Frontier.Platform.Workflow.Model.AgentToolContract.Writes.init -> void
+override Frontier.Platform.Workflow.Model.AgentToolContract.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Model.AgentToolContract.GetHashCode() -> int
+override Frontier.Platform.Workflow.Model.AgentToolContract.ToString() -> string!
+static Frontier.Platform.Workflow.Model.AgentToolContract.operator !=(Frontier.Platform.Workflow.Model.AgentToolContract? left, Frontier.Platform.Workflow.Model.AgentToolContract? right) -> bool
+static Frontier.Platform.Workflow.Model.AgentToolContract.operator ==(Frontier.Platform.Workflow.Model.AgentToolContract? left, Frontier.Platform.Workflow.Model.AgentToolContract? right) -> bool

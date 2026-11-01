@@ -20,7 +20,8 @@ public interface IDefinitionContractEmbedder
 
 /// <summary>
 /// The schema refs a definition names (ADR-E2's <c>{namespace}/{name}/{major}.{minor}</c>; a CLR
-/// contract name has no <c>/</c>): node input and output contracts and data-edge contract types,
+/// contract name has no <c>/</c>): node input and output contracts, the contracts an agent node pins
+/// for its tools (<see cref="AgentTaskNode.ToolContracts"/>, ADR-PA42) and data-edge contract types,
 /// distinct and ordinally sorted.
 /// </summary>
 public static class DefinitionContractRefs
@@ -39,10 +40,13 @@ public static class DefinitionContractRefs
 
     private static IEnumerable<string?> NodeRefs(WorkflowNode node) => node switch
     {
-        AgentTaskNode agent => [agent.InputContractType, agent.OutputContractType],
+        AgentTaskNode agent => [agent.InputContractType, agent.OutputContractType, .. ToolRefs(agent)],
         McpToolNode tool => [tool.InputContractType, tool.OutputContractType],
         _ => [],
     };
+
+    private static IEnumerable<string?> ToolRefs(AgentTaskNode agent) =>
+        (agent.ToolContracts ?? []).SelectMany(pin => new[] { pin.InputContractType, pin.OutputContractType });
 }
 
 /// <summary>
