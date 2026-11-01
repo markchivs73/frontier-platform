@@ -80,7 +80,7 @@ public sealed class DefinitionCompilerPhaseC_IntegrationTests : IAsyncLifetime, 
         // S13.12c: the contract set is a composition-root input now — the compiler no longer
         // reflects over a workload assembly to find it (E16 option 2 / ADR-E3a).
         services.AddSingleton(TestContractSet.Instance);
-        services.AddFrontierWorkflowCompiler();
+        services.AddFrontierWorkflowCompiler(new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build());
         services.AddSingleton(_container);
         // AddFrontierWorkflowCompiler's IDefinitionStore factory resolves a CosmosClient
         // and hard-codes the production database/container names; override it with this

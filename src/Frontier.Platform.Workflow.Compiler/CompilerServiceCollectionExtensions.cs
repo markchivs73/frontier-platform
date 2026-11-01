@@ -5,8 +5,10 @@ using Frontier.Platform.Workflow.Compiler.Schema;
 using Frontier.Platform.Workflow.Compiler.Storage;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
 namespace Frontier.Platform.Workflow.Compiler;
 
@@ -22,7 +24,30 @@ namespace Frontier.Platform.Workflow.Compiler;
 [ExcludeFromCodeCoverage(Justification = "DI registration: only configuration, no testable logic")]
 public static class CompilerServiceCollectionExtensions
 {
+    /// <summary>
+    /// Registers the compiler, binding and validating <see cref="CosmosOptions"/> from the <c>Cosmos</c>
+    /// section of <paramref name="configuration"/>, so the definition store and the retirement monitor use
+    /// the configured database (S13.148).
+    /// </summary>
+    public static IServiceCollection AddFrontierWorkflowCompiler(this IServiceCollection services, IConfiguration configuration)
+    {
+        ArgumentNullException.ThrowIfNull(configuration);
+        services.AddOptions<CosmosOptions>()
+            .Bind(configuration.GetSection("Cosmos"))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        return services.AddCompilerServices();
+    }
+
+    /// <summary>Registers the compiler with the default <see cref="CosmosOptions"/> database, whatever the configuration says.</summary>
+    [Obsolete("Pass the IConfiguration, so the compiler's stores use Cosmos:Database rather than the default database (S13.148). Removed at the next phase boundary.")]
     public static IServiceCollection AddFrontierWorkflowCompiler(this IServiceCollection services)
+    {
+        services.AddOptions<CosmosOptions>();
+        return services.AddCompilerServices();
+    }
+
+    private static IServiceCollection AddCompilerServices(this IServiceCollection services)
     {
         // Register compiler-owned pure-tier rules (Phase 1 catalogue per C-8)
         services.AddSingleton<IDefinitionValidationRule, StructureRequiredFieldsRule>();
@@ -118,8 +143,7 @@ public static class CompilerServiceCollectionExtensions
         // Phase B: Register definition store and lifecycle service
         services.AddScoped<IDefinitionStore>(sp =>
         {
-            var cosmosClient = sp.GetRequiredService<CosmosClient>();
-            var container = cosmosClient.GetDatabase("frontier-workflow").GetContainer("workflow-definitions");
+            var container = CompilerContainers.Definitions(sp.GetRequiredService<CosmosClient>(), sp.GetRequiredService<IOptions<CosmosOptions>>());
             return new CosmosDefinitionStore(container);
         });
 
@@ -151,8 +175,7 @@ public static class CompilerServiceCollectionExtensions
         // Phase D: Register retirement monitor (evidence-based candidate detection)
         services.AddScoped<IRetirementMonitor>(sp =>
         {
-            var cosmosClient = sp.GetRequiredService<CosmosClient>();
-            var container = cosmosClient.GetDatabase("frontier-workflow").GetContainer("execution-snapshots");
+            var container = CompilerContainers.Snapshots(sp.GetRequiredService<CosmosClient>(), sp.GetRequiredService<IOptions<CosmosOptions>>());
             return new RetirementMonitor(container);
         });
 

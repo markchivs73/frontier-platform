@@ -186,7 +186,7 @@ Console.WriteLine("  adapter surface : output schema + tool-name round trip reac
 //    catalogue port. This is the check that cost three round trips when the interpreter moved
 //    without it: a package can be complete, packed and green and still be unimplementable from
 //    another assembly.
-engineServices.AddFrontierWorkflowCompiler();
+engineServices.AddFrontierWorkflowCompiler(configuration);
 engineServices.AddSingleton<IAgentRoleCatalog, SmokeCatalogues>();
 engineServices.AddSingleton<IApproverRoleCatalog, SmokeCatalogues>();
 engineServices.AddSingleton<IInstructionCatalog, SmokeCatalogues>();
