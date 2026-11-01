@@ -16,7 +16,7 @@ public sealed class RegistryContractValidationTests
     [Fact]
     public void Ensure_ReturnsThePayloadBytesWhenItSatisfiesTheContract()
     {
-        var bytes = RegistryContractCheck.Ensure(TestContractValidator.Instance, RegistryContractFixtures.Ticket, GoodTicket);
+        var bytes = RegistryContractCheck.Ensure(TestContractValidator.Instance, RegistryContractFixtures.Ticket, GoodTicket, null);
 
         Assert.Equal(System.Text.Encoding.UTF8.GetBytes(GoodTicket), bytes);
     }
@@ -25,9 +25,9 @@ public sealed class RegistryContractValidationTests
     public void Ensure_RefusesAPayloadThatFailsTheSchemaOrARule_NamingTheContract()
     {
         var schema = Assert.Throws<ContractViolationException>(() =>
-            RegistryContractCheck.Ensure(TestContractValidator.Instance, RegistryContractFixtures.Ticket, """{"id":"","priority":1}"""));
+            RegistryContractCheck.Ensure(TestContractValidator.Instance, RegistryContractFixtures.Ticket, """{"id":"","priority":1}""", null));
         var rule = Assert.Throws<ContractViolationException>(() =>
-            RegistryContractCheck.Ensure(TestContractValidator.Instance, RegistryContractFixtures.Ticket, """{"id":"T-1","priority":-1}"""));
+            RegistryContractCheck.Ensure(TestContractValidator.Instance, RegistryContractFixtures.Ticket, """{"id":"T-1","priority":-1}""", null));
 
         Assert.Equal("acme/ticket/1.0", schema.ContractType);
         Assert.StartsWith("/id: minLength: ", Assert.Single(schema.Violations), StringComparison.Ordinal);
@@ -46,7 +46,7 @@ public sealed class RegistryContractValidationTests
         var invoker = new FakeAgentInvoker(null, output: GoodTicket);
         var dispatcher = Dispatcher(invoker);
 
-        var result = await dispatcher.InvokeAsync("acme/ticket/1.0", RegistryContractFixtures.Ticket, Request(ModelTarget()), CancellationToken.None);
+        var result = await dispatcher.InvokeAsync("acme/ticket/1.0", RegistryContractFixtures.Ticket, null, Request(ModelTarget()), CancellationToken.None);
 
         Assert.Equal(GoodTicket, result.Payload);
         Assert.Equal(JsonCanonicalizer.Hash("""{"id":"T-1","priority":2}"""u8), result.Hash);
@@ -59,7 +59,7 @@ public sealed class RegistryContractValidationTests
         var dispatcher = Dispatcher(new FakeAgentInvoker(null, output: """{"id":"T-1"}"""));
 
         await Assert.ThrowsAsync<ContractViolationException>(() =>
-            dispatcher.InvokeAsync("acme/ticket/1.0", RegistryContractFixtures.Ticket, Request(ModelTarget()), CancellationToken.None));
+            dispatcher.InvokeAsync("acme/ticket/1.0", RegistryContractFixtures.Ticket, null, Request(ModelTarget()), CancellationToken.None));
     }
 
     [Fact]
@@ -67,7 +67,7 @@ public sealed class RegistryContractValidationTests
     {
         var invoker = new FakeAgentInvoker(null, output: GoodTicket);
 
-        await Dispatcher(invoker).InvokeAsync("acme/ticket/1.0", RegistryContractFixtures.Ticket, Request(AgentTarget()), CancellationToken.None);
+        await Dispatcher(invoker).InvokeAsync("acme/ticket/1.0", RegistryContractFixtures.Ticket, null, Request(AgentTarget()), CancellationToken.None);
 
         Assert.Null(invoker.ReceivedRequest!.ResponseFormat);
     }

@@ -10,46 +10,55 @@ namespace Frontier.Platform.Contracts;
 /// <summary>
 /// The one validator (ADR-E27 D8). Each contract is compiled once, keyed by its hash, and the hash is
 /// recomputed from the snapshot's content on every call, so a snapshot whose content was altered
-/// after it was hashed is refused rather than validated against a stale compilation.
+/// after it was hashed is refused rather than validated against a stale compilation. The budgets are
+/// the caller's, per call (ADR-PA43); a call without them uses <see cref="ContractsOptions"/>.
 /// </summary>
 internal sealed class ContractValidator(ISchemaEngine engine, IRuleEngine ruleEngine, IOptions<ContractsOptions> options) : IContractValidator
 {
     private readonly ConcurrentDictionary<string, Lazy<CompiledContract>> _compiled = new(StringComparer.Ordinal);
 
     /// <inheritdoc />
-    public ContractValidationResult Validate(ContractSnapshot contract, ReadOnlyMemory<byte> utf8Payload)
+    public ContractValidationResult Validate(ContractSnapshot contract, ReadOnlyMemory<byte> utf8Payload) =>
+        Validate(contract, utf8Payload, ConfiguredBudgets.From(options.Value));
+
+    /// <inheritdoc />
+    public ContractValidationResult Validate(ContractSnapshot contract, JsonElement payload) =>
+        Validate(contract, payload, ConfiguredBudgets.From(options.Value));
+
+    /// <inheritdoc />
+    public ContractValidationResult Validate(ContractSnapshot contract, ReadOnlyMemory<byte> utf8Payload, ContractBudgets budgets)
     {
-        ArgumentNullException.ThrowIfNull(contract);
+        Checked(contract, budgets);
         JsonDocument document;
         try
         {
-            document = JsonDocument.Parse(utf8Payload, new JsonDocumentOptions { MaxDepth = options.Value.MaxPayloadDepth });
+            document = JsonDocument.Parse(utf8Payload, new JsonDocumentOptions { MaxDepth = budgets.MaxPayloadDepth });
         }
         catch (JsonException)
         {
-            return new ContractValidationResult([NotJson()]);
+            return new ContractValidationResult([NotJson(budgets)]);
         }
 
         using (document)
         {
-            return Validate(contract, document.RootElement);
+            return Validate(contract, document.RootElement, budgets);
         }
     }
 
     /// <inheritdoc />
-    public ContractValidationResult Validate(ContractSnapshot contract, JsonElement payload)
+    public ContractValidationResult Validate(ContractSnapshot contract, JsonElement payload, ContractBudgets budgets)
     {
-        ArgumentNullException.ThrowIfNull(contract);
+        Checked(contract, budgets);
         var compiled = CompiledFor(contract);
-        if (PayloadDepth.Of(payload) > options.Value.MaxPayloadDepth)
+        if (PayloadDepth.Of(payload) > budgets.MaxPayloadDepth)
         {
-            return new ContractValidationResult([NotJson()]);
+            return new ContractValidationResult([NotJson(budgets)]);
         }
 
-        var violations = compiled.Schema.Validate(payload.GetRawText(), options.Value.MaxViolations);
+        var violations = compiled.Schema.Validate(payload.GetRawText(), budgets.MaxViolations);
         if (violations.Count == 0)
         {
-            violations = compiled.Rules.Evaluate(payload, options.Value.MaxViolations);
+            violations = compiled.Rules.Evaluate(payload, budgets.MaxViolations, budgets.MaxRuleIterations);
         }
 
         return violations.Count == 0 ? ContractValidationResult.Valid : new ContractValidationResult(violations);
@@ -68,7 +77,9 @@ internal sealed class ContractValidator(ISchemaEngine engine, IRuleEngine ruleEn
 
     /// <summary>
     /// Compiles a pinned contract's schema and rules. Registration compiled both already, so a
-    /// failure here is a permanent violation, never a retry.
+    /// failure here is a permanent violation, never a retry. The cost ceiling was checked at
+    /// registration and is not checked again (ADR-E27 D2): the compilation is keyed by hash alone, so
+    /// it holds no budget, and a rule registered under one ceiling still runs after it is lowered.
     /// </summary>
     internal CompiledContract Compile(string hash, ContractSnapshot contract)
     {
@@ -77,7 +88,7 @@ internal sealed class ContractValidator(ISchemaEngine engine, IRuleEngine ruleEn
             throw Refused(contract, "the schema does not compile: " + SchemaViolations.Bound(error));
         }
 
-        var rules = ruleEngine.Compile(contract.Schema, contract.Rules);
+        var rules = ruleEngine.Compile(contract.Schema, contract.Rules, maxRuleCost: null);
         return rules.Rules is not null
             ? new CompiledContract(schema, rules.Rules)
             : throw Refused(contract, "a rule does not compile: " + rules.Findings[0].Message);
@@ -86,8 +97,15 @@ internal sealed class ContractValidator(ISchemaEngine engine, IRuleEngine ruleEn
     private static ContractViolationException Refused(ContractSnapshot contract, string reason) =>
         new(nameof(ContractSnapshot), [$"{contract.ContractRef}: {reason}"]);
 
-    private ContractViolation NotJson() =>
-        new(string.Empty, "json", $"The payload is not valid JSON, or nests deeper than {options.Value.MaxPayloadDepth} levels.");
+    private static ContractViolation NotJson(ContractBudgets budgets) =>
+        new(string.Empty, "json", $"The payload is not valid JSON, or nests deeper than {budgets.MaxPayloadDepth} levels.");
+
+    /// <summary>Refuses a missing contract, and a missing or out-of-range record, before either is used.</summary>
+    private static void Checked(ContractSnapshot contract, ContractBudgets budgets)
+    {
+        ArgumentNullException.ThrowIfNull(contract);
+        ConfiguredBudgets.EnsureValid(budgets);
+    }
 }
 
 /// <summary>A pinned contract's compiled schema and rules.</summary>

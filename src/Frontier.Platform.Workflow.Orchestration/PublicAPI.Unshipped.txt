@@ -21,3 +21,9 @@ override Frontier.Platform.Workflow.Orchestration.McpToolPin.GetHashCode() -> in
 override Frontier.Platform.Workflow.Orchestration.McpToolPin.ToString() -> string!
 static Frontier.Platform.Workflow.Orchestration.McpToolPin.operator !=(Frontier.Platform.Workflow.Orchestration.McpToolPin? left, Frontier.Platform.Workflow.Orchestration.McpToolPin? right) -> bool
 static Frontier.Platform.Workflow.Orchestration.McpToolPin.operator ==(Frontier.Platform.Workflow.Orchestration.McpToolPin? left, Frontier.Platform.Workflow.Orchestration.McpToolPin? right) -> bool
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.ContractBudgets.get -> Frontier.Platform.Abstractions.ContractBudgets?
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.ContractBudgets.init -> void
+Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.ContractBudgets.get -> Frontier.Platform.Abstractions.ContractBudgets?
+Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.ContractBudgets.init -> void
+Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.ContractBudgets.get -> Frontier.Platform.Abstractions.ContractBudgets?
+Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.ContractBudgets.init -> void

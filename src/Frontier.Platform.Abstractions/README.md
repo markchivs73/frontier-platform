@@ -76,6 +76,12 @@ definition's contract refs through it, so it lives below both. It moved from
 `Frontier.Platform.Workflow.Compiler` with its names and members unchanged; an implementer changes
 one `using`. Register one adapter over your registry for every library that needs it.
 
+`ContractBudgets` (since v0.47.0, ADR-PA43) is the contract validator's budgets
+as one governed record: the cost ceiling checked at registration, the iteration budget, the depth
+limit and the violation cap, with `ContractBudgets.Default` as today's defaults. The validator in
+`Frontier.Platform.Contracts` takes it, and the orchestration input carries a run's pinned copy, so
+it lives below both. It has no wall-clock field.
+
 ## Key invariants
 
 - **Nothing gets added here casually.** A type earns a place in the kernel by being needed by

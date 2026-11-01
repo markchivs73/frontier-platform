@@ -283,6 +283,12 @@ if (contractValidator.Validate(registration.Snapshot!, wrongShape.RootElement).I
     throw new InvalidOperationException("A payload breaking its contract validated.");
 }
 
-Console.WriteLine($"  contracts       : registered {registration.Snapshot!.ContractRef} ({registration.Snapshot.Hash[..19]}…), refused a bad shape and a broken rule");
+// ADR-PA43: a run's pinned budgets reach the validator through the public overload.
+if (contractValidator.Validate(registration.Snapshot!, breaksRule.RootElement, ContractBudgets.Default with { MaxViolations = 1 }).IsValid)
+{
+    throw new InvalidOperationException("A payload breaking its contract validated under pinned budgets.");
+}
+
+Console.WriteLine($"  contracts       : registered {registration.Snapshot!.ContractRef} ({registration.Snapshot.Hash[..19]}…), refused a bad shape and a broken rule, with and without pinned budgets");
 Console.WriteLine();
 Console.WriteLine("PASS - all thirteen packages restored, loaded and registered.");

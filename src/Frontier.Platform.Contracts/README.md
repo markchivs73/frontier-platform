@@ -44,6 +44,32 @@ if (result.IsAccepted)
 var validation = validator.Validate(snapshot, payload);
 ```
 
+## Budgets are governance data (ADR-PA43)
+
+The four validator budgets travel as a `ContractBudgets` record (in
+`Frontier.Platform.Abstractions`): `MaxRuleCost`, `MaxRuleIterations`, `MaxPayloadDepth` and
+`MaxViolations`. Every call has an overload that takes one:
+
+```csharp
+var validation = validator.Validate(snapshot, payload, budgets);      // a run's pinned record
+var result = check.Check(request, registeredVersionsOfThisId, budgets); // the record in force now
+```
+
+The overloads without it use the `Contracts` configuration section, whose defaults are
+`ContractBudgets.Default`, so code that never passes a record behaves exactly as before.
+
+- **The cost ceiling is a registration check.** `MaxRuleCost` is checked by `Check` and nowhere
+  else. The validator still refuses a rule whose cost the schema leaves unbounded, but it never
+  re-checks the ceiling, so lowering it does not break a contract that was registered under it.
+- **One compilation serves every budget.** A contract is compiled once, by hash; the iteration
+  budget and the violation cap are passed in on each call, and the depth limit is applied per call.
+- **An out-of-range record is refused** with `ContractViolationException` before it is used.
+- **`RegexMatchTimeoutMilliseconds` is not in the record.** It is the one wall-clock limit, so it
+  describes the deployment and stays in configuration.
+
+Where the governed record is stored, who may change it and how a run picks it up are the
+consumer's. The orchestration package carries a run's record to every step that validates.
+
 ## What registration checks
 
 | Check | Refuses | Finding codes |
@@ -90,7 +116,7 @@ Rules are CEL (Celly 1.2.0, behind an internal port), evaluated with the payload
 - **Cost is bounded by the schema.** A rule that iterates an array needs its `maxItems`, a map its
   `maxProperties`, and a string it compares its `maxLength`; otherwise the estimate is unbounded and
   the rule is refused. At run time each rule also has `MaxRuleIterations`, a count rather than a
-  clock.
+  clock, taken from the call's budgets.
 - **Maps are seen in key order,** so no result depends on the order a provider wrote them in.
 - False, an evaluation error and an exhausted budget are all violations, reported with the rule's
   own `message` at its `field_path`. An evaluation error's text is never passed on.

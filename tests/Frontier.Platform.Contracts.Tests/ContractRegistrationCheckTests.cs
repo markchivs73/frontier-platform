@@ -46,7 +46,7 @@ public sealed class ContractRegistrationCheckTests
         var engine = new CountingEngine(Engine.Real());
         var schema = Json.LegibleSchema.Replace("\"type\": \"integer\", \"minimum\": 0", "\"$ref\": \"https://example.com/total.json\"", StringComparison.Ordinal);
 
-        var result = new ContractRegistrationCheck(engine, Engine.Rules()).Check(Request(schema), []);
+        var result = new ContractRegistrationCheck(engine, Engine.Rules(), Engine.Options()).Check(Request(schema), []);
 
         Assert.Equal([ContractFindingCodes.RefNotLocal], result.Findings.Select(f => f.Code));
         Assert.Equal(0, engine.Compilations);
@@ -58,7 +58,7 @@ public sealed class ContractRegistrationCheckTests
         var engine = new CountingEngine(Engine.Real());
         var schema = Json.LegibleSchema.Replace("\"minimum\": 0", "\"minimum\": \"zero\"", StringComparison.Ordinal);
 
-        var finding = Assert.Single(new ContractRegistrationCheck(engine, Engine.Rules()).Check(Request(schema), []).Findings);
+        var finding = Assert.Single(new ContractRegistrationCheck(engine, Engine.Rules(), Engine.Options()).Check(Request(schema), []).Findings);
 
         Assert.Equal((ContractFindingCodes.SchemaInvalid, ContractFindingSeverity.Error, "/schema/properties/total/minimum"), (finding.Code, finding.Severity, finding.Location));
         Assert.StartsWith("This is not valid JSON Schema 2020-12: ", finding.Message, StringComparison.Ordinal);
@@ -68,7 +68,7 @@ public sealed class ContractRegistrationCheckTests
     [Fact]
     public void Check_ASchemaTheEngineCannotCompile_IsRefused()
     {
-        var finding = Assert.Single(new ContractRegistrationCheck(new CountingEngine(Engine.Real(), refuseWith: "unsupported"), Engine.Rules()).Check(Request(Json.LegibleSchema), []).Findings);
+        var finding = Assert.Single(new ContractRegistrationCheck(new CountingEngine(Engine.Real(), refuseWith: "unsupported"), Engine.Rules(), Engine.Options()).Check(Request(Json.LegibleSchema), []).Findings);
 
         Assert.Equal((ContractFindingCodes.SchemaInvalid, "/schema", "The schema does not compile: unsupported"), (finding.Code, finding.Location, finding.Message));
     }
@@ -154,7 +154,7 @@ public sealed class ContractRegistrationCheckTests
     [InlineData("""{ }""")]
     [InlineData("""{ "examples": { } }""")]
     public void ExampleFindings_WithNoExamplesArray_AreNone_SinceTheLintReportsTheGap(string schema) =>
-        Assert.Empty(ContractRegistrationCheck.ExampleFindings(Json.Parse(schema), null!, null, ContractFindingSeverity.Error));
+        Assert.Empty(ContractRegistrationCheck.ExampleFindings(Json.Parse(schema), null!, null, ContractFindingSeverity.Error, 1));
 
     [Fact]
     public void Check_NullRules_AreTreatedAsNone()
@@ -171,7 +171,7 @@ public sealed class ContractRegistrationCheckTests
         ContractSnapshot snapshot;
         using (var document = JsonDocument.Parse(Json.LegibleSchema))
         {
-            snapshot = new ContractRegistrationCheck(Engine.Real(), Engine.Rules()).Check(Request(Json.LegibleSchema) with { Schema = document.RootElement }, []).Snapshot!;
+            snapshot = new ContractRegistrationCheck(Engine.Real(), Engine.Rules(), Engine.Options()).Check(Request(Json.LegibleSchema) with { Schema = document.RootElement }, []).Snapshot!;
         }
 
         Assert.Equal(JsonValueKind.Object, snapshot.Schema.ValueKind);
@@ -180,14 +180,14 @@ public sealed class ContractRegistrationCheckTests
     [Fact]
     public void Check_NullArguments_Throw()
     {
-        var check = new ContractRegistrationCheck(Engine.Real(), Engine.Rules());
+        var check = new ContractRegistrationCheck(Engine.Real(), Engine.Rules(), Engine.Options());
 
         Assert.Throws<ArgumentNullException>(() => check.Check(null!, []));
         Assert.Throws<ArgumentNullException>(() => check.Check(Request(Json.LegibleSchema), null!));
     }
 
     private static ContractRegistrationResult Check(ContractRegistrationRequest request, IReadOnlyList<ContractSnapshot>? registered = null) =>
-        new ContractRegistrationCheck(Engine.Real(), Engine.Rules()).Check(request, registered ?? []);
+        new ContractRegistrationCheck(Engine.Real(), Engine.Rules(), Engine.Options()).Check(request, registered ?? []);
 
     private static ContractRegistrationRequest Request(string schema) => new()
     {

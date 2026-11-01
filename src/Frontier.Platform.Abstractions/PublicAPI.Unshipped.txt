@@ -1,0 +1,23 @@
+const Frontier.Platform.Abstractions.ContractBudgets.PayloadDepthCeiling = 256 -> int
+const Frontier.Platform.Abstractions.ContractBudgets.ViolationsCeiling = 1000 -> int
+Frontier.Platform.Abstractions.ContractBudgets
+Frontier.Platform.Abstractions.ContractBudgets.<Clone>$() -> Frontier.Platform.Abstractions.ContractBudgets!
+Frontier.Platform.Abstractions.ContractBudgets.ContractBudgets() -> void
+Frontier.Platform.Abstractions.ContractBudgets.Equals(Frontier.Platform.Abstractions.ContractBudgets? other) -> bool
+Frontier.Platform.Abstractions.ContractBudgets.MaxPayloadDepth.get -> int
+Frontier.Platform.Abstractions.ContractBudgets.MaxPayloadDepth.init -> void
+Frontier.Platform.Abstractions.ContractBudgets.MaxRuleCost.get -> int
+Frontier.Platform.Abstractions.ContractBudgets.MaxRuleCost.init -> void
+Frontier.Platform.Abstractions.ContractBudgets.MaxRuleIterations.get -> int
+Frontier.Platform.Abstractions.ContractBudgets.MaxRuleIterations.init -> void
+Frontier.Platform.Abstractions.ContractBudgets.MaxViolations.get -> int
+Frontier.Platform.Abstractions.ContractBudgets.MaxViolations.init -> void
+Frontier.Platform.Abstractions.ContractBudgets.SchemaVersion.get -> string!
+Frontier.Platform.Abstractions.ContractBudgets.SchemaVersion.init -> void
+Frontier.Platform.Abstractions.ContractBudgets.Validate() -> void
+override Frontier.Platform.Abstractions.ContractBudgets.Equals(object? obj) -> bool
+override Frontier.Platform.Abstractions.ContractBudgets.GetHashCode() -> int
+override Frontier.Platform.Abstractions.ContractBudgets.ToString() -> string!
+static Frontier.Platform.Abstractions.ContractBudgets.Default.get -> Frontier.Platform.Abstractions.ContractBudgets!
+static Frontier.Platform.Abstractions.ContractBudgets.operator !=(Frontier.Platform.Abstractions.ContractBudgets? left, Frontier.Platform.Abstractions.ContractBudgets? right) -> bool
+static Frontier.Platform.Abstractions.ContractBudgets.operator ==(Frontier.Platform.Abstractions.ContractBudgets? left, Frontier.Platform.Abstractions.ContractBudgets? right) -> bool

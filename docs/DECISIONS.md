@@ -3226,3 +3226,79 @@ unchanged, the new member written last); the replay tests that a recorded defini
 activity the same pins, or the same `writes`, on every replay, and none when it was published
 without them; the step tests that each pin resolves to the embedded snapshot; and the pipeline
 tests that both pipelines hand the catalogue their pins.
+
+## ADR-PA43 — the contract validator's budgets are a governed record, pinned per run
+
+The consumer's ADR-E27 D2 calls the validator's budgets governance data: a static cost ceiling
+checked at registration and a count-based run-time budget, never wall-clock. Until now all four
+were deployment configuration (`ContractsOptions`), read on every call, and the iteration budget was
+baked into each contract's compilation. This ADR records the platform's half of making them a
+governed record (consumer S13.140; Mark, 2026-11-01, register items 1, 2, 6 and 7). The store, the
+change control, the permission and resolving the record at run start are the consumer's.
+
+**One record, in Abstractions.** `ContractBudgets` (`schema_version` "1.0", then `max_rule_cost`,
+`max_rule_iterations`, `max_payload_depth`, `max_violations`, all required) is an
+`IVersionedContract` in `Frontier.Platform.Abstractions`. The validator in `Contracts` takes it and
+`Workflow.Orchestration` carries it, and the consumer's store will hold it, so it lives below all of
+them. `ContractBudgets.Default` holds today's defaults (1,000,000; 100,000; 64; 20), and
+`ContractsOptions` now takes its defaults and range ceilings from it, so the two cannot drift.
+`Validate()` refuses a value below 1, a depth over 256 or a violation cap over 1,000, the ranges
+`ContractsOptions` already enforced.
+- *No wall-clock field.* `RegexMatchTimeoutMilliseconds` stays in `ContractsOptions` (register
+  item 7). It is the one time limit, it describes the deployment's hardware rather than a policy,
+  and it only ever refuses a payload.
+- *Deployment-wide only* (register item 6). There is no per-engagement-type layering, so the record
+  has no key beyond what the consumer's store gives it.
+
+**The validator and the registration check take budgets per call.** `IContractValidator` gains
+`Validate(contract, payload, budgets)` for bytes and for a parsed element, and
+`IContractRegistrationCheck` gains `Check(request, registered, budgets)`. The existing overloads are
+unchanged in behaviour: they build the record from `ContractsOptions`, so a caller that never passes
+one sees exactly what it saw before. An out-of-range record is refused with a permanent
+`ContractViolationException` before it is used.
+- *The registration overload is needed for the ceiling to be governed at all.* The cost ceiling is
+  checked only at registration (next point), and registration is platform code, so without this
+  overload the governed `max_rule_cost` would have no effect. The examples run under the same
+  record's iteration budget, so a contract's own examples are checked under the budget it will run
+  with.
+- *Adding members to these interfaces is the `contracts!` break.* Neither is a consumer-owned port,
+  and neither has an implementer outside this repository, but a test double that implements either
+  must add the overloads (ADR-PA41 treats a new member the same way).
+
+**The cost ceiling is checked at registration only** (register item 2, ADR-E27 D2's text). At run
+time the validator compiles a pinned contract with no ceiling. It keeps refusing a rule whose cost
+the schema leaves unbounded, because such a rule has no ceiling at all. A contract registered under
+one ceiling therefore keeps running after the ceiling is lowered; the ceiling governs what may be
+registered, not what was.
+
+**The compilation holds no budget.** The validator's cache is keyed by contract hash, so a budget
+baked into a compilation would have served the first caller's budget to every later one.
+`ICompiledRules.Evaluate` now takes the iteration budget beside the violation cap, and the depth
+limit is applied per call, so one compilation serves every run's record. `CellyRuleEngine` no longer
+reads options.
+
+**A run pins its record at start** (register item 1). `GraphOrchestratorInput` gains an optional
+`contract_budgets` (after `dispatcher_rollover_threshold`, omitted when null). The orchestrator
+copies it onto every `AgentTaskActivityInput` (after `output_contract`) and every
+`McpToolActivityInput` (last), the two activities that validate, and `DispatcherSteps` carries it to
+each child and into the next generation's input at `ContinueAsNew`. The pipelines pass it to the
+validator for the input, the agent's reply, and an MCP call's arguments and result. No step reads a
+store, and the orchestrator body only copies a field it was given (hard invariant 2).
+- *Absent means today's behaviour.* An input recorded before the field, and a run the consumer
+  starts without one, carries null, and every step validates through the existing overloads under
+  `ContractsOptions`. Nothing recorded changes shape: no schema version moves and no golden file
+  changes.
+- *It is carried whole.* A run never checks `max_rule_cost`, but it carries the whole record so its
+  inputs name exactly the record it ran under.
+- *The port is the consumer's.* No platform caller resolves the record, so the platform defines no
+  port for it (register's platform scope). The consumer's Host factory resolves it once and sets the
+  field.
+
+Pinned by `contract_budgets.json` (a new golden; every other golden unchanged), a replay test that
+an orchestration input recorded without the field deserializes and runs twice to byte-identical
+agent activity inputs naming no budgets, byte-identity tests of `GraphOrchestratorInput`,
+`AgentTaskActivityInput` and `McpToolActivityInput` recorded without the field, the walk and
+dispatcher tests that carry the record, the pipeline tests that validate under it, and the
+validator and registration tests: one compilation across two budgets, the iteration budget and
+violation cap per call, no ceiling at run time, an unbounded rule still refused, and the ceiling and
+iteration budget applied at registration.

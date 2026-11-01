@@ -93,13 +93,13 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
 
     /// <summary>
     /// Validates the input before the agent sees it (ADR-E27 D8): against the pinned registry contract
-    /// when the node names one, otherwise as its CLR contract type.
+    /// when the node names one, under the run's pinned budgets (ADR-PA43), otherwise as its CLR contract type.
     /// </summary>
     internal void ValidateInput(AgentTaskActivityInput input, string inputPayload)
     {
         if (input.InputContract is { } contract)
         {
-            RegistryContractCheck.Ensure(contractValidator, contract, inputPayload);
+            RegistryContractCheck.Ensure(contractValidator, contract, inputPayload, input.ContractBudgets);
             return;
         }
 
@@ -156,7 +156,7 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
             Tools = tools,
         };
 
-        return await dispatcher.InvokeAsync(input.OutputContractType, input.OutputContract, request, ct).ConfigureAwait(false);
+        return await dispatcher.InvokeAsync(input.OutputContractType, input.OutputContract, input.ContractBudgets, request, ct).ConfigureAwait(false);
     }
 
     /// <summary>
