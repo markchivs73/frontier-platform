@@ -63,7 +63,8 @@ internal static class GraphOrchestratorSteps
     /// Runs every <see cref="AgentTaskNode"/>/<see cref="HumanGateNode"/> once via the
     /// ADR-5 ready-set scheduler (S13.7i): all ready non-gate nodes are scheduled
     /// concurrently (the DTF fan-out pattern — the orchestrator's single-threaded event
-    /// loop keeps state mutation race-free; history order keeps replay deterministic),
+    /// loop keeps each synchronous state mutation race-free, but not a read-then-write that
+    /// spans an await, which siblings can interleave; history order keeps replay deterministic),
     /// gates run only at full quiescence (Decision 2), and a permanent failure lets
     /// in-flight siblings finish before the walk pauses attributed (Decision 4).
     /// </summary>
@@ -87,23 +88,26 @@ internal static class GraphOrchestratorSteps
         // ever receive a signal) would hang at the point the graph is otherwise finished. Leaving
         // it dangling when the walk ends is correct; DTF discards it with the instance.
         var refreshWait = context.WaitForExternalEvent<DynamicContextRefreshRequired>(DynamicContextRefreshEventName);
-        DynamicContextRefreshRequired? pendingRefresh = null;
+        var pendingRefreshes = new Queue<DynamicContextRefreshRequired>();
 
         while (walk.HasWork)
         {
-            if (pendingRefresh is null && refreshWait.IsCompleted)
+            // Drain every delivered signal, pending or not (review-01 ENG-01). A completed wait left
+            // undrained makes the WhenAny below return synchronously on every pass, so the body
+            // never yields and the in-flight nodes' results can never be applied. Each signal is
+            // kept whole, in arrival order, so every refresh still carries its own reason (ADR-CR1).
+            while (refreshWait.IsCompleted)
             {
-                pendingRefresh = await refreshWait;
+                pendingRefreshes.Enqueue(await refreshWait);
                 refreshWait = context.WaitForExternalEvent<DynamicContextRefreshRequired>(DynamicContextRefreshEventName);
             }
 
             // Refresh at quiescence only. Moving the run's pin while activities scheduled against
             // the old epoch are still in flight would leave the snapshot attesting to an epoch half
             // the completed steps never read; doc 04 §8's "queue for next checkpoint" is this.
-            if (pendingRefresh is not null && walk.Running.Count == 0)
+            while (pendingRefreshes.Count > 0 && walk.Running.Count == 0)
             {
-                await RefreshDynamicContextAsync(context, input, state, pendingRefresh, policyProvider);
-                pendingRefresh = null;
+                await RefreshDynamicContextAsync(context, input, state, pendingRefreshes.Dequeue(), policyProvider);
             }
 
             if (walk.FirstFailure is null && await TryScheduleAsync(context, input, walk, state, rollbackPlanner, policyProvider, mcpWriteClassifier))
@@ -674,15 +678,17 @@ internal static class GraphOrchestratorSteps
     /// <summary>
     /// Calls <see cref="WorkflowActivityNames.SnapshotStateActivity"/> with the
     /// <see cref="ExecutionSnapshot"/> built from <paramref name="state"/> at its current
-    /// <see cref="GraphExecutionState.Sequence"/>, then advances the counter (doc 02 §5:
-    /// sequence is the orchestrator's own checkpoint counter, never wall-clock).
+    /// <see cref="GraphExecutionState.Sequence"/>, advancing the counter <b>before</b> the write is
+    /// awaited (doc 02 §5: sequence is the orchestrator's own checkpoint counter, never wall-clock).
+    /// Under fan-out a sibling node can complete while this write is in flight; reserving the number
+    /// synchronously gives it the next one instead of this one (review-01 ENG-02).
     /// </summary>
     internal static async Task WriteSnapshotAsync(TaskOrchestrationContext context, GraphOrchestratorInput input, GraphExecutionState state, ExecutionStatus status, string? currentNodeId, IResiliencePolicyProvider policyProvider, string? pausedAtGateId = null, string? failureClassification = null, ExecutionFailureDetail? failureDetail = null)
     {
         var snapshot = BuildSnapshot(context, input, state, status, currentNodeId, pausedAtGateId, failureClassification, failureDetail);
+        state.Sequence++;
         var taskOptions = policyProvider.GetTaskOptions(SnapshotPersistenceProfile);
         await context.CallActivityAsync<SnapshotActivityResponse>(WorkflowActivityNames.SnapshotStateActivity, snapshot, taskOptions);
-        state.Sequence++;
     }
 
     /// <summary>Projects <paramref name="state"/> into the <see cref="ExecutionSnapshot"/> for the current checkpoint (doc 02 §2, §5).</summary>

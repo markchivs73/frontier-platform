@@ -143,8 +143,44 @@ internal sealed class FakeTaskOrchestrationContext : TaskOrchestrationContext
             throw new InvalidOperationException($"No handler registered for activity '{name.Name}'.");
         }
 
+        if (HeldActivities.Contains(name.Name))
+        {
+            // The handler runs after the release, in the body's own continuation, so a throwing
+            // handler faults this activity task exactly as it does on the inline path below.
+            var held = new TaskCompletionSource();
+            heldCalls.Enqueue(held.SetResult);
+            await held.Task;
+        }
+
         return (TResult)handler(input);
     }
+
+    /// <summary>
+    /// Activity names whose calls are held open instead of completing inline (review-01 ENG-02).
+    /// <para>
+    /// Every other path here completes an activity on the calling thread, so a body can never be
+    /// observed <em>between</em> scheduling an activity and receiving its result — exactly the
+    /// window in which a second node completing under fan-out can read state the first has not
+    /// yet advanced. A held call is queued with its input and runs its
+    /// <see cref="ActivityHandlers"/> entry only when <see cref="ReleaseHeldActivities"/> is
+    /// called, so a test can stack two writes in flight before either lands.
+    /// </para>
+    /// </summary>
+    public HashSet<string> HeldActivities { get; } = new(StringComparer.Ordinal);
+
+    /// <summary>How many held activity calls are waiting for <see cref="ReleaseHeldActivities"/>.</summary>
+    public int HeldActivityCount => heldCalls.Count;
+
+    /// <summary>Completes every held activity call, oldest first, with its handler's result.</summary>
+    public void ReleaseHeldActivities()
+    {
+        while (heldCalls.TryDequeue(out var release))
+        {
+            release();
+        }
+    }
+
+    private readonly Queue<Action> heldCalls = new();
 
     /// <inheritdoc />
     public override Task CreateTimer(DateTime fireAt, CancellationToken cancellationToken)
