@@ -133,25 +133,12 @@ public sealed class ProposalMergeService : IProposalMergeService
             };
         }
 
-        // Merge: update draft with proposed definition
-        var newRevision = GenerateNewRevision(draft.DraftRevision);
-        var updatedDraft = draft with
-        {
-            DraftRevision = newRevision,
-            Definition = proposedDefinition,
-            LastEditedBy = designerId,
-            LastEditedUtc = DateTime.UtcNow
-        };
-
-        await _store.SaveDraftAsync(workflowId, updatedDraft, "no-etag-check", ct);
-
-        return new ProposalMergeOutcomeMerged
-        {
-            DraftRevisionAfterMerge = newRevision,
-            UpdatedDraft = updatedDraft
-        };
+        // Merge under the revision guard; a lost save is a conflict, never a merge (GOV-09).
+        return await SaveMergedAsync(workflowId, draft, proposedDefinition, draft.DraftRevision, designerId, ct);
     }
 
+    /// <inheritdoc />
+    [Obsolete("Deprecated in v0.49.0: merges against the newest turn, not the proposal the designer clicked (UI-05). Use ApplyApprovedChangesAsync(workflowId, turnId, baseRevision, approvedChangeIds, designerId, ct). Removed at the next phase boundary.")]
     public async Task<ProposalMergeOutcome> ApplyApprovedChangesAsync(
         string workflowId,
         IReadOnlyList<string> approvedChangeIds,
@@ -164,36 +151,67 @@ public sealed class ProposalMergeService : IProposalMergeService
         ArgumentNullException.ThrowIfNullOrEmpty(expectedRevision);
         ArgumentNullException.ThrowIfNullOrEmpty(designerId);
 
+        return await MergeApprovedAsync(workflowId, approvedChangeIds, expectedRevision, designerId, LoadLatestProposalAsync, ct);
+    }
+
+    /// <inheritdoc />
+    public async Task<ProposalMergeOutcome> ApplyApprovedChangesAsync(
+        string workflowId,
+        string turnId,
+        string baseRevision,
+        IReadOnlyList<string> approvedChangeIds,
+        string designerId,
+        CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNullOrEmpty(workflowId);
+        ArgumentNullException.ThrowIfNullOrEmpty(turnId);
+        ArgumentNullException.ThrowIfNullOrEmpty(baseRevision);
+        ArgumentNullException.ThrowIfNull(approvedChangeIds);
+        ArgumentNullException.ThrowIfNullOrEmpty(designerId);
+
+        return await MergeApprovedAsync(
+            workflowId, approvedChangeIds, baseRevision, designerId, (wf, token) => LoadTurnProposalAsync(wf, turnId, token), ct);
+    }
+
+    /// <summary>The shared granular merge: guards the base revision, loads the proposal, validates, then saves.</summary>
+    private async Task<ProposalMergeOutcome> MergeApprovedAsync(
+        string workflowId,
+        IReadOnlyList<string> approvedChangeIds,
+        string expectedRevision,
+        string designerId,
+        Func<string, CancellationToken, Task<WorkflowDefinition?>> loadProposal,
+        CancellationToken ct)
+    {
         var draft = await _store.GetDraftAsync(workflowId, ct);
         if (draft == null) return Blocked("draft-not-found", $"No draft found for workflow {workflowId}", "no-draft");
 
         // Stale base → conflict (doc 14 §4.2; surfaces as 409 to the UI).
-        if (draft.DraftRevision != expectedRevision)
-        {
-            return new ProposalMergeOutcomeConflict
-            {
-                DraftRevisionAfterMerge = draft.DraftRevision,
-                Conflicts = [],
-                DesignerEdit = draft.Definition,
-                AgentProposal = draft.Definition,
-            };
-        }
+        if (draft.DraftRevision != expectedRevision) return StaleConflict(draft);
 
-        var proposed = await LoadLatestProposalAsync(workflowId, ct);
+        var proposed = await loadProposal(workflowId, ct);
         if (proposed == null) return Blocked("no-proposal", "No agent proposal is available to merge", draft.DraftRevision);
 
         var merged = ApplyApproved(draft.Definition, proposed, new HashSet<string>(approvedChangeIds, StringComparer.Ordinal));
 
         var blocking = _compiler.ValidateStructural(merged).Where(f => f.Severity == ValidationSeverity.Error).ToList();
         if (blocking.Count > 0)
-        {
-            return new ProposalMergeOutcomeValidationBlocked
-            {
-                DraftRevisionAfterMerge = draft.DraftRevision,
-                BlockingFindings = blocking.AsReadOnly(),
-            };
-        }
+            return new ProposalMergeOutcomeValidationBlocked { DraftRevisionAfterMerge = draft.DraftRevision, BlockingFindings = blocking.AsReadOnly() };
 
+        return await SaveMergedAsync(workflowId, draft, merged, expectedRevision, designerId, ct);
+    }
+
+    /// <summary>
+    /// Saves the merged draft under the revision guard. A save that loses the guard is a conflict
+    /// against the winning draft, never a merge (GOV-09).
+    /// </summary>
+    private async Task<ProposalMergeOutcome> SaveMergedAsync(
+        string workflowId,
+        DefinitionDraftDocument draft,
+        WorkflowDefinition merged,
+        string expectedRevision,
+        string designerId,
+        CancellationToken ct)
+    {
         var newRevision = GenerateNewRevision(draft.DraftRevision);
         var updatedDraft = draft with
         {
@@ -202,10 +220,21 @@ public sealed class ProposalMergeService : IProposalMergeService
             LastEditedBy = designerId,
             LastEditedUtc = DateTime.UtcNow,
         };
-        await _store.SaveDraftAsync(workflowId, updatedDraft, expectedRevision, ct);
+        var saved = await _store.SaveDraftAsync(workflowId, updatedDraft, expectedRevision, ct);
 
-        return new ProposalMergeOutcomeMerged { DraftRevisionAfterMerge = newRevision, UpdatedDraft = updatedDraft };
+        return saved is SaveDraftResultConflict lost
+            ? StaleConflict(lost.CurrentDocument)
+            : new ProposalMergeOutcomeMerged { DraftRevisionAfterMerge = newRevision, UpdatedDraft = updatedDraft };
     }
+
+    /// <summary>A conflict against <paramref name="current"/>: the designer must reload before merging.</summary>
+    private static ProposalMergeOutcomeConflict StaleConflict(DefinitionDraftDocument current) => new()
+    {
+        DraftRevisionAfterMerge = current.DraftRevision,
+        Conflicts = [],
+        DesignerEdit = current.Definition,
+        AgentProposal = current.Definition,
+    };
 
     /// <summary>Loads and deserializes the most recent turn's proposed definition, or null if none.</summary>
     internal async Task<WorkflowDefinition?> LoadLatestProposalAsync(string workflowId, CancellationToken ct)
@@ -215,13 +244,31 @@ public sealed class ProposalMergeService : IProposalMergeService
             .Where(t => !string.IsNullOrEmpty(t.AgentProposalJson))
             .OrderByDescending(t => t.TurnNumber)
             .FirstOrDefault();
-        if (latest?.AgentProposalJson is null) return null;
+        return ReadProposal(latest?.AgentProposalJson);
+    }
+
+    /// <summary>
+    /// Loads and deserializes the proposal on turn <paramref name="turnId"/>, or null when the turn is
+    /// missing, belongs to another workflow, or carries no readable proposal.
+    /// </summary>
+    internal async Task<WorkflowDefinition?> LoadTurnProposalAsync(string workflowId, string turnId, CancellationToken ct)
+    {
+        var turn = await _store.GetDesignTurnAsync(turnId, ct);
+        return turn is not null && string.Equals(turn.WorkflowId, workflowId, StringComparison.Ordinal)
+            ? ReadProposal(turn.AgentProposalJson)
+            : null;
+    }
+
+    /// <summary>Deserializes a persisted proposal, migrating it on read; null when absent or malformed.</summary>
+    internal static WorkflowDefinition? ReadProposal(string? proposalJson)
+    {
+        if (string.IsNullOrEmpty(proposalJson)) return null;
 
         try
         {
             // Migrated on read: a proposal persisted before a schema change would otherwise
             // merge nulls into a draft and block the write it was meant to unblock.
-            return MigratingWorkflowDefinitionConverter.ReadMigrated(latest.AgentProposalJson, CanonicalProfile.Options);
+            return MigratingWorkflowDefinitionConverter.ReadMigrated(proposalJson, CanonicalProfile.Options);
         }
         catch (JsonException)
         {
