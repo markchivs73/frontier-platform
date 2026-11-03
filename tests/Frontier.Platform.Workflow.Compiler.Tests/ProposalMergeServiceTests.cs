@@ -218,6 +218,35 @@ public sealed class ProposalMergeServiceTests
     }
 
     [Fact]
+    public async Task ApplyProposalAsync_SavesUnderTheDraftRevisionGuard()
+    {
+        // GOV-09: the auto-merge save is guarded by the draft's revision, not a literal that always loses.
+        const string workflowId = "wf-test";
+        var draft = CreateMinimalDraft(workflowId);
+        await _store.SaveDraftAsync(workflowId, draft, "no-etag", CancellationToken.None);
+        var proposedJson = JsonSerializer.Serialize(draft.Definition, CanonicalProfile.Options);
+
+        await _service.ApplyProposalAsync(workflowId, proposedJson, "Change", "designer-1", CancellationToken.None);
+
+        Assert.Equal("rev-1", _store.LastExpectedETag);
+    }
+
+    [Fact]
+    public async Task ApplyProposalAsync_SaveLosesRevisionGuard_ReturnsConflictNotMerged()
+    {
+        // GOV-09: a save that loses the revision guard left the draft unchanged, so it is a conflict.
+        const string workflowId = "wf-test";
+        var draft = CreateMinimalDraft(workflowId);
+        await _store.SaveDraftAsync(workflowId, draft, "no-etag", CancellationToken.None);
+        _store.NextSaveConflict = new SaveDraftResultConflict("etag", "rev-9", draft with { DraftRevision = "rev-9" });
+        var proposedJson = JsonSerializer.Serialize(draft.Definition, CanonicalProfile.Options);
+
+        var result = await _service.ApplyProposalAsync(workflowId, proposedJson, "Change", "designer-1", CancellationToken.None);
+
+        Assert.Equal("rev-9", Assert.IsType<ProposalMergeOutcomeConflict>(result).DraftRevisionAfterMerge);
+    }
+
+    [Fact]
     public async Task ApplyProposalAsync_ValidationFailure_ReturnsValidationBlocked()
     {
         const string workflowId = "wf-test";

@@ -27,12 +27,33 @@ public interface IProposalMergeService
     /// a merged result that fails pure-tier validation → <see cref="ProposalMergeOutcomeValidationBlocked"/>;
     /// otherwise persists a new revision and returns <see cref="ProposalMergeOutcomeMerged"/>.
     /// </summary>
+    [Obsolete("Deprecated in v0.49.0: merges against the newest turn, not the proposal the designer clicked (UI-05). Use ApplyApprovedChangesAsync(workflowId, turnId, baseRevision, approvedChangeIds, designerId, ct). Removed at the next phase boundary.")]
     Task<ProposalMergeOutcome> ApplyApprovedChangesAsync(
         string workflowId,
         IReadOnlyList<string> approvedChangeIds,
         string expectedRevision,
         string designerId,
         CancellationToken ct);
+
+    /// <summary>
+    /// Apply only the approved subset of the proposal carried by turn <paramref name="turnId"/> onto
+    /// the current draft (doc 14 §10, <c>ApplyMergeRequest(workflowId, turnId, baseRevision,
+    /// approvedChangeIds)</c>). <paramref name="turnId"/> is the design turn's document id. A turn that
+    /// is missing, belongs to another workflow or carries no proposal →
+    /// <see cref="ProposalMergeOutcomeValidationBlocked"/>; a stale <paramref name="baseRevision"/>,
+    /// or a draft save that loses its revision guard → <see cref="ProposalMergeOutcomeConflict"/>;
+    /// otherwise persists a new revision and returns <see cref="ProposalMergeOutcomeMerged"/>.
+    /// </summary>
+    /// <remarks>The default implementation throws <see cref="NotSupportedException"/>, so an implementer
+    /// that predates this overload fails loudly instead of merging the wrong proposal.</remarks>
+    Task<ProposalMergeOutcome> ApplyApprovedChangesAsync(
+        string workflowId,
+        string turnId,
+        string baseRevision,
+        IReadOnlyList<string> approvedChangeIds,
+        string designerId,
+        CancellationToken ct) =>
+        throw new NotSupportedException($"{GetType().Name} does not implement the turn-scoped {nameof(ApplyApprovedChangesAsync)}.");
 }
 
 /// <summary>Result of merge attempt (discriminated union over outcome type).</summary>

@@ -7,7 +7,11 @@ using Frontier.Platform.Workflow.Compiler.Storage;
 
 namespace Frontier.Platform.Workflow.Compiler.Tests;
 
-/// <summary>Unit tests for the S9.10 granular merge (<see cref="ProposalMergeService.ApplyApprovedChangesAsync"/>, doc 14 §4.1).</summary>
+/// <summary>
+/// Unit tests for the S9.10 granular merge (doc 14 §4.1). The tests of the newest-turn overload stay
+/// until it is removed, so they call the obsolete member on purpose.
+/// </summary>
+#pragma warning disable CS0618 // the newest-turn overload is obsolete (UI-05) but still shipped
 public sealed class ProposalMergeServiceGranularTests
 {
     [Fact]
@@ -105,6 +109,122 @@ public sealed class ProposalMergeServiceGranularTests
         Assert.IsType<ProposalMergeOutcomeValidationBlocked>(outcome);
     }
 
+    [Fact]
+    public async Task ApplyApprovedChangesAsync_SaveLosesRevisionGuard_ReturnsConflictNotMerged()
+    {
+        // GOV-09: a save that loses the revision guard leaves the draft unchanged, so it is a conflict.
+        var (store, service) = await SetupAsync(passValidation: true);
+        store.NextSaveConflict = SaveConflict("rev-9");
+
+        var outcome = await service.ApplyApprovedChangesAsync("wf", ["node:added:gate-1"], "rev-1", "d", CancellationToken.None);
+
+        Assert.Equal("rev-9", Assert.IsType<ProposalMergeOutcomeConflict>(outcome).DraftRevisionAfterMerge);
+    }
+
+    [Fact]
+    public async Task ApplyApprovedChangesAsync_ForTurn_MergesTheClickedTurnNotTheNewest()
+    {
+        // UI-05 / GOV-10: an older card's Apply must merge that card's proposal.
+        var store = await StoreWithDraftAsync();
+        await store.PersistDesignTurnAsync(TurnWithProposal("wf", 1, Def([Node("scope") with { InstructionsRef = "i-turn-1" }], [])), CancellationToken.None);
+        await store.PersistDesignTurnAsync(TurnWithProposal("wf", 2, Def([Node("scope") with { InstructionsRef = "i-turn-2" }], [])), CancellationToken.None);
+
+        var outcome = await Service(store).ApplyApprovedChangesAsync("wf", "wf:turn:1", "rev-1", ["node:modified:scope"], "d", CancellationToken.None);
+
+        var merged = Assert.IsType<ProposalMergeOutcomeMerged>(outcome);
+        Assert.Equal("i-turn-1", Assert.IsType<AgentTaskNode>(Assert.Single(merged.UpdatedDraft.Definition.Nodes)).InstructionsRef);
+        Assert.Equal("rev-2", merged.DraftRevisionAfterMerge);
+    }
+
+    [Theory]
+    [InlineData("wf:turn:404")] // no such turn
+    [InlineData("other:turn:1")] // a turn of another workflow
+    [InlineData("wf:turn:2")] // a turn without a proposal
+    [InlineData("wf:turn:3")] // a turn whose proposal is unreadable
+    public async Task ApplyApprovedChangesAsync_ForTurnWithoutUsableProposal_ReturnsBlocked(string turnId)
+    {
+        var store = await StoreWithDraftAsync();
+        await store.PersistDesignTurnAsync(TurnWithProposal("other", 1, Def([Node("scope"), Node("gate-1")], [])), CancellationToken.None);
+        await store.PersistDesignTurnAsync(TurnWithProposal("wf", 2, Def([], [])) with { AgentProposalJson = null }, CancellationToken.None);
+        await store.PersistDesignTurnAsync(TurnWithProposal("wf", 3, Def([], [])) with { AgentProposalJson = "{not json" }, CancellationToken.None);
+
+        var outcome = await Service(store).ApplyApprovedChangesAsync("wf", turnId, "rev-1", ["node:added:gate-1"], "d", CancellationToken.None);
+
+        var blocked = Assert.IsType<ProposalMergeOutcomeValidationBlocked>(outcome);
+        Assert.Equal("no-proposal", Assert.Single(blocked.BlockingFindings).RuleId);
+    }
+
+    [Fact]
+    public async Task ApplyApprovedChangesAsync_ForTurnWithStaleBase_ReturnsConflict()
+    {
+        var (_, service) = await SetupAsync(passValidation: true);
+
+        var outcome = await service.ApplyApprovedChangesAsync("wf", "wf:turn:1", "stale-rev", ["node:added:gate-1"], "d", CancellationToken.None);
+
+        Assert.Equal("rev-1", Assert.IsType<ProposalMergeOutcomeConflict>(outcome).DraftRevisionAfterMerge);
+    }
+
+    [Fact]
+    public async Task ApplyApprovedChangesAsync_ForTurnWhenSaveLosesRevisionGuard_ReturnsConflict()
+    {
+        var (store, service) = await SetupAsync(passValidation: true);
+        store.NextSaveConflict = SaveConflict("rev-9");
+
+        var outcome = await service.ApplyApprovedChangesAsync("wf", "wf:turn:1", "rev-1", ["node:added:gate-1"], "d", CancellationToken.None);
+
+        Assert.Equal("rev-9", Assert.IsType<ProposalMergeOutcomeConflict>(outcome).DraftRevisionAfterMerge);
+    }
+
+    [Fact]
+    public async Task ApplyApprovedChangesAsync_ForTurnWhoseMergeFailsValidation_ReturnsBlocked()
+    {
+        var (_, service) = await SetupAsync(passValidation: false);
+
+        var outcome = await service.ApplyApprovedChangesAsync("wf", "wf:turn:1", "rev-1", ["node:added:gate-1"], "d", CancellationToken.None);
+
+        Assert.IsType<ProposalMergeOutcomeValidationBlocked>(outcome);
+    }
+
+    [Fact]
+    public async Task ApplyApprovedChangesAsync_ForTurnWithNoDraft_ReturnsBlocked()
+    {
+        var outcome = await Service(new InMemoryDefinitionStore()).ApplyApprovedChangesAsync(
+            "missing", "missing:turn:1", "rev-1", [], "d", CancellationToken.None);
+
+        Assert.Equal("draft-not-found", Assert.Single(Assert.IsType<ProposalMergeOutcomeValidationBlocked>(outcome).BlockingFindings).RuleId);
+    }
+
+    [Fact]
+    public async Task ApplyApprovedChangesAsync_ForTurnWithEmptyTurnId_Throws()
+    {
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => Service(new InMemoryDefinitionStore()).ApplyApprovedChangesAsync("wf", "", "rev-1", [], "d", CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task ApplyApprovedChangesAsync_ForTurn_DefaultImplementationThrowsNotSupported()
+    {
+        IProposalMergeService legacy = new LegacyMergeService();
+
+        var ex = await Assert.ThrowsAsync<NotSupportedException>(
+            () => legacy.ApplyApprovedChangesAsync("wf", "wf:turn:1", "rev-1", [], "d", CancellationToken.None));
+
+        Assert.Contains(nameof(LegacyMergeService), ex.Message, StringComparison.Ordinal);
+    }
+
+    private static async Task<InMemoryDefinitionStore> StoreWithDraftAsync()
+    {
+        var store = new InMemoryDefinitionStore();
+        await store.SaveDraftAsync("wf", Draft(Def([Node("scope")], [])), "no-etag", CancellationToken.None);
+        return store;
+    }
+
+    private static ProposalMergeService Service(InMemoryDefinitionStore store) =>
+        new(store, Validator(passValidation: true), new NodeDiffService());
+
+    private static SaveDraftResultConflict SaveConflict(string winningRevision) =>
+        new("etag", winningRevision, Draft(Def([Node("scope")], [])) with { DraftRevision = winningRevision });
+
     private static async Task<(InMemoryDefinitionStore Store, ProposalMergeService Service)> SetupAsync(bool passValidation)
     {
         var store = new InMemoryDefinitionStore();
@@ -180,6 +300,16 @@ public sealed class ProposalMergeServiceGranularTests
         ProposalReasoningJson = "r",
     };
 
+    /// <summary>An implementer that predates the turn-scoped overload (only the original members).</summary>
+    private sealed class LegacyMergeService : IProposalMergeService
+    {
+        public Task<ProposalMergeOutcome> ApplyProposalAsync(string workflowId, string proposedDefinitionJson, string agentReasoning, string designerId, CancellationToken ct) =>
+            throw new NotSupportedException();
+
+        public Task<ProposalMergeOutcome> ApplyApprovedChangesAsync(string workflowId, IReadOnlyList<string> approvedChangeIds, string expectedRevision, string designerId, CancellationToken ct) =>
+            throw new NotSupportedException();
+    }
+
     private sealed class AlwaysFailsRule : IDefinitionValidationRule
     {
         public string RuleId => "test.always-fails";
@@ -191,3 +321,4 @@ public sealed class ProposalMergeServiceGranularTests
                 [new ValidationFinding("test.always-fails", ValidationSeverity.Error, "boom")]);
     }
 }
+#pragma warning restore CS0618

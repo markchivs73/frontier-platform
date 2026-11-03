@@ -54,9 +54,22 @@ internal sealed class InMemoryDefinitionStore : IDefinitionStore
         string expectedETag,
         CancellationToken ct)
     {
+        LastExpectedETag = expectedETag;
+        if (NextSaveConflict is { } conflict)
+        {
+            NextSaveConflict = null;
+            return Task.FromResult<SaveDraftResult>(conflict);
+        }
+
         drafts[workflowId] = draft;
         return Task.FromResult<SaveDraftResult>(new SaveDraftResultSuccess(draft));
     }
+
+    /// <summary>When set, the next draft save loses its revision guard and returns this conflict (GOV-09).</summary>
+    public SaveDraftResultConflict? NextSaveConflict { get; set; }
+
+    /// <summary>The revision guard the most recent draft save was called with.</summary>
+    public string? LastExpectedETag { get; private set; }
 
     public Task<DefinitionVersionDocument> PublishVersionAsync(
         DefinitionVersionDocument versionDoc,
