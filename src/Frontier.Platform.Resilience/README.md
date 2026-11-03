@@ -50,6 +50,11 @@ The inner loop absorbs a bad minute at the provider. The outer loop re-runs the 
 after the inner loop is exhausted. `IResiliencePolicyProvider` builds both from the same named
 profile, so they cannot drift apart.
 
+The outer loop sees only the failure's type names, not the exception object. It refuses to
+re-run when any level of the failure chain is a `ContractViolationException` or a
+`BudgetExceededException`. An HTTP 400/401/403 still re-runs there, because the status code
+does not survive into the durable-task failure details.
+
 **`ResiliencePipeline` and `TaskOptions` appear directly on the public interface.** That is
 deliberate: handing callers ready-to-use Polly and durable-task policy objects is this library's
 entire purpose. Wrapping them behind a swappable abstraction would abstract away the thing being
