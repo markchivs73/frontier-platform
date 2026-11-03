@@ -399,21 +399,17 @@ public sealed class DefinitionLifecycleService : IDefinitionLifecycleService
         if (versionDoc.State == "retired")
             throw new InvalidOperationException($"Version {version} is already retired");
 
-        var retired = versionDoc with
+        var retirement = new RetirementInfoDocument
         {
-            State = "retired",
-            Retirement = new RetirementInfoDocument
-            {
-                RetiredAtUtc = DateTime.UtcNow,
-                RetiredBy = adminId,
-                Reason = reason
-            }
+            RetiredAtUtc = DateTime.UtcNow,
+            RetiredBy = adminId,
+            Reason = reason
         };
 
-        // Phase 1: Upsert to mark retired — full Cosmos patch deferred
-        // For now, we re-store the document with updated state
-        // Production would use PATCH to minimize round-trip
-        await _store.PublishVersionAsync(retired, ct);
+        // GOV-01: a dedicated state transition, never PublishVersionAsync — that path always writes
+        // 'published' and returns an existing version unchanged, so the retirement was never stored.
+        if (!await _store.RetireVersionAsync(workflowId, version, retirement, ct))
+            throw new InvalidOperationException($"Failed to retire version {version} — it may have been modified concurrently");
     }
 
     public async Task UnretireAsync(
@@ -434,13 +430,8 @@ public sealed class DefinitionLifecycleService : IDefinitionLifecycleService
         if (versionDoc.State != "retired")
             throw new InvalidOperationException($"Version {version} is not retired");
 
-        var unretired = versionDoc with
-        {
-            State = "published",
-            Retirement = null
-        };
-
-        await _store.PublishVersionAsync(unretired, ct);
+        if (!await _store.UnretireVersionAsync(workflowId, version, ct))
+            throw new InvalidOperationException($"Failed to un-retire version {version} — it may have been modified concurrently");
     }
 
     public async Task<VersionHistory> GetHistoryAsync(

@@ -1,0 +1,5 @@
+#nullable enable
+Frontier.Platform.Workflow.Compiler.Storage.CosmosDefinitionStore.RetireVersionAsync(string! workflowId, int version, Frontier.Platform.Workflow.Compiler.Storage.RetirementInfoDocument! retirement, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<bool>!
+Frontier.Platform.Workflow.Compiler.Storage.CosmosDefinitionStore.UnretireVersionAsync(string! workflowId, int version, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<bool>!
+Frontier.Platform.Workflow.Compiler.Storage.IDefinitionStore.RetireVersionAsync(string! workflowId, int version, Frontier.Platform.Workflow.Compiler.Storage.RetirementInfoDocument! retirement, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<bool>!
+Frontier.Platform.Workflow.Compiler.Storage.IDefinitionStore.UnretireVersionAsync(string! workflowId, int version, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<bool>!

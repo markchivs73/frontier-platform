@@ -714,13 +714,76 @@ public sealed class DefinitionLifecycleServiceTests
             .ReturnsAsync(versionDoc);
 
         _mockStore
-            .Setup(s => s.PublishVersionAsync(It.IsAny<DefinitionVersionDocument>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(versionDoc);
+            .Setup(s => s.RetireVersionAsync(workflowId, version, It.IsAny<RetirementInfoDocument>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
 
         await _service.RetireAsync(workflowId, version, adminId, reason, CancellationToken.None);
 
-        _mockStore.Verify(s => s.PublishVersionAsync(It.IsAny<DefinitionVersionDocument>(), It.IsAny<CancellationToken>()), Times.Once);
+        // GOV-01: the retirement goes through the dedicated state transition, carrying who and why —
+        // never through PublishVersionAsync, which forces 'published' and stores nothing new.
+        _mockStore.Verify(s => s.RetireVersionAsync(
+            workflowId,
+            version,
+            It.Is<RetirementInfoDocument>(r => r.RetiredBy == adminId && r.Reason == reason),
+            It.IsAny<CancellationToken>()), Times.Once);
+        _mockStore.Verify(s => s.PublishVersionAsync(It.IsAny<DefinitionVersionDocument>(), It.IsAny<CancellationToken>()), Times.Never);
     }
+
+    // GOV-01: the store refused the transition (a concurrent retire won the race) — the caller must
+    // not be told it succeeded, or the consumer signs a governance record for a change that never landed.
+    [Fact]
+    public async Task RetireAsync_StoreRefusesTransition_Throws()
+    {
+        const string workflowId = "wf-test";
+        const int version = 1;
+
+        _mockStore
+            .Setup(s => s.GetVersionAsync(workflowId, version, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(VersionDoc(workflowId, version, "published"));
+        _mockStore
+            .Setup(s => s.RetireVersionAsync(workflowId, version, It.IsAny<RetirementInfoDocument>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _service.RetireAsync(workflowId, version, "admin", "reason", CancellationToken.None));
+
+        Assert.Contains("modified concurrently", ex.Message, StringComparison.Ordinal);
+    }
+
+    // GOV-01: as above, for un-retire.
+    [Fact]
+    public async Task UnretireAsync_StoreRefusesTransition_Throws()
+    {
+        const string workflowId = "wf-test";
+        const int version = 1;
+
+        _mockStore
+            .Setup(s => s.GetVersionAsync(workflowId, version, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(VersionDoc(workflowId, version, "retired"));
+        _mockStore
+            .Setup(s => s.UnretireVersionAsync(workflowId, version, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _service.UnretireAsync(workflowId, version, "admin", "reason", CancellationToken.None));
+
+        Assert.Contains("modified concurrently", ex.Message, StringComparison.Ordinal);
+    }
+
+    private static DefinitionVersionDocument VersionDoc(string workflowId, int version, string state) => new()
+    {
+        Id = $"{workflowId}:v{version}",
+        WorkflowId = workflowId,
+        State = state,
+        DefinitionVersion = version,
+        DefinitionHash = "sha256:test",
+        Definition = WorkflowDefinitionFixture.MinimalDefinition(),
+        ProposedBy = "user:sarah",
+        ApprovedBy = "user:mark",
+        ProposedUtc = DateTime.UtcNow,
+        ApprovedUtc = DateTime.UtcNow,
+        ValidationReportRef = "report-ref"
+    };
 
     // versionDoc == null — every other RetireAsync test has an existing version
     // (S9.24 branch-coverage gap: line 365).
@@ -854,14 +917,14 @@ public sealed class DefinitionLifecycleServiceTests
             .Setup(s => s.GetVersionAsync(workflowId, version, It.IsAny<CancellationToken>()))
             .ReturnsAsync(versionDoc);
 
-        var unretiredDoc = versionDoc with { State = "published", Retirement = null };
         _mockStore
-            .Setup(s => s.PublishVersionAsync(It.IsAny<DefinitionVersionDocument>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(unretiredDoc);
+            .Setup(s => s.UnretireVersionAsync(workflowId, version, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
 
         await _service.UnretireAsync(workflowId, version, adminId, reason, CancellationToken.None);
 
-        _mockStore.Verify(s => s.PublishVersionAsync(It.IsAny<DefinitionVersionDocument>(), It.IsAny<CancellationToken>()), Times.Once);
+        _mockStore.Verify(s => s.UnretireVersionAsync(workflowId, version, It.IsAny<CancellationToken>()), Times.Once);
+        _mockStore.Verify(s => s.PublishVersionAsync(It.IsAny<DefinitionVersionDocument>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
