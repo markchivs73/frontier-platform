@@ -54,6 +54,30 @@ public sealed class GraphConcurrentWalkTests
         Assert.All(harness.Snapshots, snapshot => Assert.Equal(ExecutionStatus.Running, snapshot.Status));
     }
 
+    /// <summary>
+    /// Review-01 ENG-02. Two branches complete while the first one's checkpoint write is still in
+    /// flight. Each must write its own sequence number: a counter advanced only after the write
+    /// returns hands both the same one, and the consumer's upsert of <c>{executionId}:{sequence}</c>
+    /// then silently drops one checkpoint.
+    /// </summary>
+    [Fact]
+    public async Task FanOut_BranchesCompleteWhileACheckpointIsInFlight_EachWritesItsOwnSequence()
+    {
+        var harness = new WalkHarness(OrchestrationFixtures.FanOutJoin(), deferred: ["b-booking", "b-ticket"]);
+        var walk = harness.StartWalk();
+        harness.Context.HeldActivities.Add(WorkflowActivityNames.SnapshotStateActivity);
+
+        harness.CompleteNode("b-booking");
+        harness.CompleteNode("b-ticket");
+        Assert.Equal(2, harness.Context.HeldActivityCount);
+        harness.Context.HeldActivities.Clear();
+        harness.Context.ReleaseHeldActivities();
+        await walk;
+
+        Assert.Equal([1, 2, 3, 4], harness.Snapshots.Select(snapshot => snapshot.Sequence));
+        Assert.Equal(["a-entry", "b-booking", "b-ticket", "c-join"], harness.Snapshots.Select(snapshot => snapshot.CurrentNodeId));
+    }
+
     [Fact]
     public async Task FanOut_BranchFails_SiblingFinishesThenWalkPausesAttributed()
     {

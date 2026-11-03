@@ -136,6 +136,40 @@ public sealed class GraphRefreshSignalWalkTests
     }
 
     /// <summary>
+    /// Review-01 ENG-02's sibling, ENG-01. A second signal arrives while the first is still waiting
+    /// for the in-flight nodes to finish. The walk must not spin on the completed wait: it consumes
+    /// the second signal too, keeps waiting for the nodes, and applies both — in arrival order, each
+    /// with its own reason — once the walk quiesces.
+    /// <para>
+    /// The scenario runs inside <see cref="Task.Run(Func{Task})"/> so no xunit synchronisation
+    /// context is current: every await continuation then runs inline on the thread that completed
+    /// it, as in DTF's single-threaded decision loop. The second raise therefore runs the walk's
+    /// next pass on its own thread. A walk that leaves that signal undrained finds the wait already
+    /// complete on every pass, never yields, and never returns to the raiser, so the test fails on
+    /// the timeout. Raising on a dedicated thread keeps the spin off the pool.
+    /// </para>
+    /// </summary>
+    [Fact]
+    public Task SecondSignalWhileTheFirstIsPending_IsConsumed_AndBothApplyAtQuiescence() => Task.Run(async () =>
+    {
+        var harness = new RefreshHarness(OrchestrationFixtures.FanOutJoin(), deferred: ["b-booking", "b-ticket"], raiseSignal: false);
+        var walk = harness.StartWalk();
+        harness.RaiseRefreshSignal();
+
+        await WithTimeout(Task.Factory.StartNew(harness.RaiseRefreshSignal, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default));
+        Assert.Equal(3, harness.Context.ExternalEventSubscriptions[GraphOrchestratorSteps.DynamicContextRefreshEventName]);
+        Assert.Equal(0, harness.RefreshCalls);
+        harness.CompleteNode("b-booking");
+        harness.CompleteNode("b-ticket");
+        await WithTimeout(walk);
+
+        Assert.Equal(2, harness.RefreshCalls);
+        Assert.Equal(2, harness.SignalDeliveries);
+        Assert.Equal(3, harness.Context.ExternalEventSubscriptions[GraphOrchestratorSteps.DynamicContextRefreshEventName]);
+        Assert.Equal(RefreshedEpoch, harness.EpochFor("c-join"));
+    });
+
+    /// <summary>
     /// The refresh request names the engagement the run belongs to and the reason the signal
     /// carried — ADR-CR1's "explicit reason", which <c>DynamicContextRefresher</c> already
     /// requires and tags its OTEL counter with. A refresh that reached the activity with no
@@ -267,6 +301,14 @@ public sealed class GraphRefreshSignalWalkTests
         var completed = await Task.WhenAny(walk, Task.Delay(TimeSpan.FromSeconds(10)));
         Assert.True(ReferenceEquals(completed, walk), "the walk did not terminate — the refresh subscription is being awaited as if it must complete");
         return await walk;
+    }
+
+    /// <summary>Fails the test rather than hanging it when <paramref name="work"/> never finishes — a walk spinning on the thread that raised a signal.</summary>
+    private static async Task WithTimeout(Task work)
+    {
+        var completed = await Task.WhenAny(work, Task.Delay(TimeSpan.FromSeconds(10)));
+        Assert.True(ReferenceEquals(completed, work), "raising the signal did not return — the walk is spinning on an already-completed wait");
+        await work;
     }
 
     /// <summary>
