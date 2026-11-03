@@ -80,6 +80,32 @@ public sealed class ResiliencePolicyProviderTests
     }
 
     [Fact]
+    public void HandleOuterRetryFailure_BudgetExceeded_ReturnsFalse()
+    {
+        var failure = TaskFailureDetails.FromException(new BudgetExceededException("advisory-sow", "invocation budget exhausted"));
+
+        Assert.False(ResiliencePolicyProvider.HandleOuterRetryFailure(failure));
+    }
+
+    [Fact]
+    public void HandleOuterRetryFailure_PermanentCauseWrapped_ReturnsFalse()
+    {
+        var budget = new TaskFailureDetails(typeof(BudgetExceededException).FullName!, "over budget", null, null, null);
+        var wrapped = new TaskFailureDetails("WrapperException", "outer", null, budget, null);
+
+        Assert.False(ResiliencePolicyProvider.HandleOuterRetryFailure(wrapped));
+    }
+
+    [Fact]
+    public void HandleOuterRetryFailure_TransientCauseWrapped_ReturnsTrue()
+    {
+        var inner = new TaskFailureDetails(typeof(TimeoutException).FullName!, "timed out", null, null, null);
+        var wrapped = new TaskFailureDetails("WrapperException", "outer", null, inner, null);
+
+        Assert.True(ResiliencePolicyProvider.HandleOuterRetryFailure(wrapped));
+    }
+
+    [Fact]
     public void HandleOuterRetryFailure_OtherException_ReturnsTrue()
     {
         var failure = TaskFailureDetails.FromException(new InvalidOperationException("transient"));
