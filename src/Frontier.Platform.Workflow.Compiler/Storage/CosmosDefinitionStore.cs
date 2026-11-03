@@ -54,7 +54,17 @@ public sealed class CosmosDefinitionStore : IDefinitionStore
         CancellationToken ct)
     {
         ValidateWorkflowId(workflowId);
+        return (await ReadDraftAsync(workflowId, ct)).Document;
+    }
 
+    /// <summary>
+    /// Reads the draft with the Cosmos <c>_etag</c> it was read at (GOV-03), so a save can replace
+    /// exactly the version it compared. Null document when there is no draft.
+    /// </summary>
+    private async Task<(DefinitionDraftDocument? Document, string? ETag)> ReadDraftAsync(
+        string workflowId,
+        CancellationToken ct)
+    {
         // S13.34: read the raw bytes, not a typed item. The stored schema version has to be probed
         // on the way past — MigratingWorkflowDefinitionConverter stamps the current version onto the
         // definition it returns, so once the document is materialised nothing can tell where the
@@ -66,7 +76,7 @@ public sealed class CosmosDefinitionStore : IDefinitionStore
 
         if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
-            return null;
+            return (null, null);
         }
 
         response.EnsureSuccessStatusCode();
@@ -75,7 +85,7 @@ public sealed class CosmosDefinitionStore : IDefinitionStore
         var json = await reader.ReadToEndAsync(ct);
 
         var document = JsonSerializer.Deserialize<DefinitionDraftDocument>(json, CanonicalProfile.Options)!;
-        return document with { StoredSchemaVersion = ProbeStoredSchemaVersion(json) };
+        return (document with { StoredSchemaVersion = ProbeStoredSchemaVersion(json) }, response.Headers.ETag);
     }
 
     /// <summary>The <c>schema_version</c> the stored <c>definition</c> node declared, before migration (S13.34).</summary>
@@ -98,30 +108,59 @@ public sealed class CosmosDefinitionStore : IDefinitionStore
         ArgumentNullException.ThrowIfNull(draft);
         if (string.IsNullOrEmpty(expectedETag)) throw new ArgumentException("ETag required", nameof(expectedETag));
 
-        // Optimistic concurrency is keyed on DraftRevision (ADR-CD2) — the value the API exposes as
-        // the client ETag — not Cosmos's native _etag. (Feeding DraftRevision into IfMatchEtag always
-        // precondition-fails, since Cosmos compares it against _etag.) Compare the stored revision,
-        // then upsert.
-        var current = await GetDraftAsync(workflowId, ct);
+        // The client-facing check is keyed on DraftRevision (ADR-CD2), the value the API exposes as
+        // the client ETag. The write is then guarded by the Cosmos _etag of the document just
+        // compared (GOV-03), so two saves on one revision cannot both pass the check and both win.
+        var (current, currentETag) = await ReadDraftAsync(workflowId, ct);
         if (current is not null && !string.Equals(current.DraftRevision, expectedETag, StringComparison.Ordinal))
             return new SaveDraftResultConflict("unknown", current.DraftRevision, current);
 
-        var doc = new DefinitionDraftDocument
+        var doc = DraftToStore(workflowId, draft);
+        if (current is null)
         {
-            Id = $"{workflowId}:draft",
-            WorkflowId = workflowId,
-            State = "draft",
-            BaseVersion = draft.BaseVersion,
-            DraftRevision = draft.DraftRevision,
-            Definition = draft.Definition,
-            StoredSchemaVersion = draft.StoredSchemaVersion,
-            LastEditedBy = draft.LastEditedBy,
-            LastEditedUtc = draft.LastEditedUtc
-        };
+            var created = await _container.UpsertItemAsync(doc, new PartitionKey(workflowId), cancellationToken: ct);
+            return new SaveDraftResultSuccess(created.Resource);
+        }
 
-        var response = await _container.UpsertItemAsync(doc, new PartitionKey(workflowId), cancellationToken: ct);
-        return new SaveDraftResultSuccess(response.Resource);
+        return await ReplaceDraftAsync(doc, current, currentETag, ct);
     }
+
+    /// <summary>
+    /// Replaces the draft only if it is still at <paramref name="currentETag"/>. A lost race
+    /// (another save landed after the read) is reported as a conflict with the winner's revision.
+    /// </summary>
+    private async Task<SaveDraftResult> ReplaceDraftAsync(
+        DefinitionDraftDocument doc,
+        DefinitionDraftDocument current,
+        string? currentETag,
+        CancellationToken ct)
+    {
+        try
+        {
+            var response = await _container.ReplaceItemAsync(
+                doc, doc.Id, new PartitionKey(doc.WorkflowId), new ItemRequestOptions { IfMatchEtag = currentETag }, ct);
+            return new SaveDraftResultSuccess(response.Resource);
+        }
+        catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.PreconditionFailed)
+        {
+            var winner = (await ReadDraftAsync(doc.WorkflowId, ct)).Document ?? current;
+            return new SaveDraftResultConflict("unknown", winner.DraftRevision, winner);
+        }
+    }
+
+    /// <summary>The draft document as stored: fixed id and state, caller-supplied content.</summary>
+    private static DefinitionDraftDocument DraftToStore(string workflowId, DefinitionDraftDocument draft) => new()
+    {
+        Id = $"{workflowId}:draft",
+        WorkflowId = workflowId,
+        State = "draft",
+        BaseVersion = draft.BaseVersion,
+        DraftRevision = draft.DraftRevision,
+        Definition = draft.Definition,
+        StoredSchemaVersion = draft.StoredSchemaVersion,
+        LastEditedBy = draft.LastEditedBy,
+        LastEditedUtc = draft.LastEditedUtc
+    };
 
     public async Task<DefinitionVersionDocument> PublishVersionAsync(
         DefinitionVersionDocument versionDoc,
@@ -441,48 +480,54 @@ public sealed class CosmosDefinitionStore : IDefinitionStore
         }
     }
 
-    public async Task<bool> ApproveProposalAsync(
+    public Task<bool> ApproveProposalAsync(
         string proposalId,
         CancellationToken ct)
     {
         if (string.IsNullOrEmpty(proposalId)) throw new ArgumentException("Proposal ID required", nameof(proposalId));
 
-        var proposal = await GetProposalAsync(proposalId, ct);
-        if (proposal == null || !proposal.State.CanTransitionTo(ProposalState.Approved))
-            return false;
-
-        var updated = proposal with { State = ProposalState.Approved };
-        try
-        {
-            await _container.UpsertItemAsync(updated, new PartitionKey(proposal.WorkflowId), cancellationToken: ct);
-            return true;
-        }
-        catch (CosmosException)
-        {
-            return false;
-        }
+        return TransitionProposalAsync(
+            proposalId, ProposalState.Approved, proposal => proposal with { State = ProposalState.Approved }, ct);
     }
 
-    public async Task<bool> RejectProposalAsync(
+    public Task<bool> RejectProposalAsync(
         string proposalId,
         string reason,
         CancellationToken ct)
     {
         if (string.IsNullOrEmpty(proposalId)) throw new ArgumentException("Proposal ID required", nameof(proposalId));
 
-        var proposal = await GetProposalAsync(proposalId, ct);
-        if (proposal == null || !proposal.State.CanTransitionTo(ProposalState.Rejected))
-            return false;
+        return TransitionProposalAsync(
+            proposalId,
+            ProposalState.Rejected,
+            proposal => proposal with { State = ProposalState.Rejected, ApproverNoteOrReason = reason },
+            ct);
+    }
 
-        var updated = proposal with
-        {
-            State = ProposalState.Rejected,
-            ApproverNoteOrReason = reason
-        };
+    /// <summary>
+    /// Moves a proposal to <paramref name="target"/>, replacing it only at the ETag it was read at
+    /// (GOV-04), so two reviewers cannot both decide it. A missing proposal, a disallowed
+    /// transition or a lost race returns false, which the lifecycle reports as a conflict.
+    /// </summary>
+    private async Task<bool> TransitionProposalAsync(
+        string proposalId,
+        ProposalState target,
+        Func<PublishProposalDocument, PublishProposalDocument> apply,
+        CancellationToken ct)
+    {
+        var located = await GetProposalAsync(proposalId, ct);
+        if (located is null)
+            return false;
 
         try
         {
-            await _container.UpsertItemAsync(updated, new PartitionKey(proposal.WorkflowId), cancellationToken: ct);
+            var partitionKey = new PartitionKey(located.WorkflowId);
+            var read = await _container.ReadItemAsync<PublishProposalDocument>(proposalId, partitionKey, cancellationToken: ct);
+            if (!read.Resource.State.CanTransitionTo(target))
+                return false;
+
+            await _container.ReplaceItemAsync(
+                apply(read.Resource), proposalId, partitionKey, new ItemRequestOptions { IfMatchEtag = read.ETag }, ct);
             return true;
         }
         catch (CosmosException)
