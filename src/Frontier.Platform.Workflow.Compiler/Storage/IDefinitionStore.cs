@@ -38,6 +38,36 @@ public interface IDefinitionStore
         DefinitionVersionDocument versionDoc,
         CancellationToken ct);
 
+    /// <summary>
+    /// Marks an existing, not-yet-retired version <c>retired</c> and records who retired it and why.
+    /// Changes only the version's state and retirement fields: the definition and its hash are never
+    /// rewritten (invariant #6). <see cref="PublishVersionAsync"/> cannot do this — it always writes
+    /// <c>published</c> and treats an existing version as an idempotent re-run (GOV-01).
+    /// </summary>
+    /// <returns><see langword="false"/> when the version does not exist or is already retired.</returns>
+    /// <remarks>
+    /// The default implementation throws <see cref="NotSupportedException"/>, so a store that has not
+    /// implemented the transition fails loudly instead of reporting a retirement it never stored.
+    /// </remarks>
+    Task<bool> RetireVersionAsync(
+        string workflowId,
+        int version,
+        RetirementInfoDocument retirement,
+        CancellationToken ct) =>
+        throw new NotSupportedException($"{GetType().Name} does not implement {nameof(RetireVersionAsync)}.");
+
+    /// <summary>
+    /// Returns a <c>retired</c> version to <c>published</c> and clears its retirement record. Changes
+    /// only the state and retirement fields, never the definition or its hash (GOV-01).
+    /// </summary>
+    /// <returns><see langword="false"/> when the version does not exist or is not retired.</returns>
+    /// <remarks>The default implementation throws <see cref="NotSupportedException"/>, as for <see cref="RetireVersionAsync"/>.</remarks>
+    Task<bool> UnretireVersionAsync(
+        string workflowId,
+        int version,
+        CancellationToken ct) =>
+        throw new NotSupportedException($"{GetType().Name} does not implement {nameof(UnretireVersionAsync)}.");
+
     Task<DefinitionVersionDocument?> GetVersionAsync(
         string workflowId,
         int version,

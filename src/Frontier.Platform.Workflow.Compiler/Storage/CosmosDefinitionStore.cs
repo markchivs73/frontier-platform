@@ -165,6 +165,62 @@ public sealed class CosmosDefinitionStore : IDefinitionStore
         }
     }
 
+    /// <inheritdoc />
+    public Task<bool> RetireVersionAsync(
+        string workflowId,
+        int version,
+        RetirementInfoDocument retirement,
+        CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(retirement);
+
+        return PatchVersionStateAsync(
+            workflowId,
+            version,
+            [PatchOperation.Set("/state", "retired"), PatchOperation.Set("/retirement", retirement)],
+            "FROM c WHERE c.state != 'retired'",
+            ct);
+    }
+
+    /// <inheritdoc />
+    public Task<bool> UnretireVersionAsync(
+        string workflowId,
+        int version,
+        CancellationToken ct) =>
+        PatchVersionStateAsync(
+            workflowId,
+            version,
+            [PatchOperation.Set("/state", "published"), PatchOperation.Remove("/retirement")],
+            "FROM c WHERE c.state = 'retired'",
+            ct);
+
+    /// <summary>
+    /// Patches only a version's state fields, guarded by <paramref name="precondition"/> so two racing
+    /// transitions cannot both succeed. Missing version or failed precondition returns false.
+    /// </summary>
+    private async Task<bool> PatchVersionStateAsync(
+        string workflowId,
+        int version,
+        IReadOnlyList<PatchOperation> operations,
+        string precondition,
+        CancellationToken ct)
+    {
+        ValidateWorkflowId(workflowId);
+
+        using var response = await _container.PatchItemStreamAsync(
+            $"{workflowId}:v{version}",
+            new PartitionKey(workflowId),
+            operations,
+            new PatchItemRequestOptions { FilterPredicate = precondition },
+            ct);
+
+        if (response.StatusCode is System.Net.HttpStatusCode.NotFound or System.Net.HttpStatusCode.PreconditionFailed)
+            return false;
+
+        response.EnsureSuccessStatusCode();
+        return true;
+    }
+
     public async Task<DefinitionVersionDocument?> GetVersionAsync(
         string workflowId,
         int version,
