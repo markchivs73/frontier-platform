@@ -12,11 +12,20 @@ namespace Frontier.Platform.ContextAssembly;
 /// </summary>
 internal sealed partial class DynamicContextRefresher : IDynamicContextRefresher, IDisposable
 {
-    /// <summary>The meter name the doc 11 OTEL pipeline collects dynamic context metrics under.</summary>
-    internal const string MeterName = "Frontier.ContextAssembly";
+    /// <summary>
+    /// ADR-O1's one platform meter name, the name the consumer's OTEL pipeline exports. This
+    /// governance library may not reference Observability (ADR-PA5), so it cannot take
+    /// <c>IMetricCatalogue.PlatformMeter</c>; it opens a meter under the same name instead, and
+    /// OTEL collects meters by name.
+    /// </summary>
+    internal const string MeterName = "Frontier.Platform";
+
+    /// <summary>The refresh counter's catalogue name (doc 11 §4.1): <c>context.refresh.events{reason}</c>.</summary>
+    internal const string CounterName = "context.refresh.events";
 
     private readonly IEngagementContextStore contextStore;
     private readonly Meter meter;
+    private readonly Counter<int> refreshCounter;
     private readonly ILogger logger;
 
     /// <summary>
@@ -29,6 +38,7 @@ internal sealed partial class DynamicContextRefresher : IDynamicContextRefresher
         this.contextStore = contextStore ?? throw new ArgumentNullException(nameof(contextStore));
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         this.meter = new(MeterName);
+        this.refreshCounter = meter.CreateCounter<int>(CounterName, unit: "count", description: "Dynamic context refreshes by reason");
     }
 
     /// <inheritdoc />
@@ -102,8 +112,7 @@ internal sealed partial class DynamicContextRefresher : IDynamicContextRefresher
 
     /// <summary>Increments the doc 11 OTEL refresh counter, tagged with ADR-CR1's explicit reason.</summary>
     internal void RecordRefresh(string refreshReason) =>
-        meter.CreateCounter<int>("dynamic_context_refreshed", description: "Dynamic context refreshes by reason")
-            .Add(1, new KeyValuePair<string, object?>("reason", refreshReason));
+        refreshCounter.Add(1, new KeyValuePair<string, object?>("reason", refreshReason));
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Dynamic context refresh no-op for engagement {EngagementId}: hash unchanged (reason: {RefreshReason})")]
     private static partial void LogNoOp(ILogger logger, EngagementId engagementId, string refreshReason);
