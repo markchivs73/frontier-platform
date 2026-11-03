@@ -35,6 +35,22 @@ public sealed class ProposalMergeServiceGranularTests
     }
 
     [Fact]
+    public void ApplyApproved_FieldOnlyEditOfferedByTheChangeSet_IsApplied()
+    {
+        // GOV-02: an edit outside the old key fields (here instructions_ref and output contract)
+        // must surface as node:modified, and approving it must land the agent's node.
+        var current = Def([Node("scope")], []);
+        var proposed = Def([Node("scope") with { InstructionsRef = "i-v2", OutputContractType = "Out2" }], []);
+        var changes = ProposalChangeSetBuilder.Build(new NodeDiffService().Compute(current, proposed), current, proposed);
+
+        var merged = ProposalMergeService.ApplyApproved(current, proposed, Ids([.. changes.Select(c => c.ChangeId)]));
+
+        Assert.Equal(["node:modified:scope"], changes.Select(c => c.ChangeId));
+        var node = Assert.IsType<AgentTaskNode>(Assert.Single(merged.Nodes));
+        Assert.Equal(("i-v2", "Out2"), (node.InstructionsRef, node.OutputContractType));
+    }
+
+    [Fact]
     public async Task ApplyApprovedChangesAsync_HappyPath_AppliesSubsetAndBumpsRevision()
     {
         var (store, service) = await SetupAsync(passValidation: true);
