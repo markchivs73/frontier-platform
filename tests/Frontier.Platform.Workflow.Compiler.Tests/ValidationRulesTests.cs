@@ -75,6 +75,69 @@ public sealed class ValidationRulesTests
             Assert.NotEmpty(findings);
             Assert.All(findings, f => Assert.Equal("structure.unique-node-ids", f.RuleId));
         }
+
+        [Fact]
+        public async Task UniqueNodeIds_EdgeFromUnknownNode_ReturnsErrorOnFromNodeId()
+        {
+            var definition = WithExtraEdge("ghost", "gen-pricing");
+
+            var findings = await new StructureUniqueNodeIdsRule().EvaluateAsync(new DefinitionValidationContext(definition), CancellationToken.None);
+
+            var finding = Assert.Single(findings);
+            Assert.Equal("structure.unique-node-ids", finding.RuleId);
+            Assert.Equal(ValidationSeverity.Error, finding.Severity);
+            Assert.Equal("from_node_id", finding.FieldPath);
+            Assert.Equal("ghost->gen-pricing", finding.EdgeRef);
+            Assert.Contains("'ghost'", finding.Message, StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public async Task UniqueNodeIds_EdgeToUnknownNode_ReturnsErrorOnToNodeId()
+        {
+            var definition = WithExtraEdge("gen-scope", "ghost");
+
+            var findings = await new StructureUniqueNodeIdsRule().EvaluateAsync(new DefinitionValidationContext(definition), CancellationToken.None);
+
+            var finding = Assert.Single(findings);
+            Assert.Equal(ValidationSeverity.Error, finding.Severity);
+            Assert.Equal("to_node_id", finding.FieldPath);
+            Assert.Equal("gen-scope->ghost", finding.EdgeRef);
+            Assert.Contains("'ghost'", finding.Message, StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public async Task UniqueNodeIds_EdgeWithBothEndsUnknown_ReturnsAFindingPerEnd()
+        {
+            var definition = WithExtraEdge("ghost-a", "ghost-b");
+
+            var findings = await new StructureUniqueNodeIdsRule().EvaluateAsync(new DefinitionValidationContext(definition), CancellationToken.None);
+
+            Assert.Collection(
+                findings,
+                f => Assert.Equal("from_node_id", f.FieldPath),
+                f => Assert.Equal("to_node_id", f.FieldPath));
+        }
+
+        [Fact]
+        public async Task UniqueNodeIds_EdgeEndDiffersOnlyByCase_ReturnsFinding()
+        {
+            var definition = WithExtraEdge("gen-scope", "GEN-PRICING");
+
+            var findings = await new StructureUniqueNodeIdsRule().EvaluateAsync(new DefinitionValidationContext(definition), CancellationToken.None);
+
+            Assert.Equal("to_node_id", Assert.Single(findings).FieldPath);
+        }
+
+        private static WorkflowDefinition WithExtraEdge(string fromNodeId, string toNodeId)
+        {
+            var definition = MinimalValidDefinition();
+            return definition with
+            {
+                Edges = definition.Edges
+                    .Append(new WorkflowEdge { FromNodeId = fromNodeId, ToNodeId = toNodeId, Kind = EdgeKind.Control })
+                    .ToArray()
+            };
+        }
     }
 
     public sealed class IsAcyclicRuleTests

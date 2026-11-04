@@ -85,6 +85,16 @@ public sealed class RuleCatalogueSpecCoverageTests
     }
 
     [Fact]
+    public void RegisteredRules_FlagAnEdgeToAMissingNode()
+    {
+        // S13.207 (D13): the rule set publish validates with, as DI registers it, flags a dangling
+        // edge end — the unit tests cover the rule, this covers its registration.
+        var findings = new DefinitionValidator(CurrentlyRegisteredRules).ValidateStructural(DanglingEdgePublishTests.DanglingEdgeDefinition());
+
+        Assert.Contains(findings, f => f.RuleId == "structure.unique-node-ids" && f.FieldPath == "to_node_id" && f.Severity == ValidationSeverity.Error);
+    }
+
+    [Fact]
     public void RegisteredRules_TierDistributionMatchesTheCatalogue()
     {
         // 17 Pure (9 original + 5 at S9.30 + data.single-data-predecessor at S13.7i +
