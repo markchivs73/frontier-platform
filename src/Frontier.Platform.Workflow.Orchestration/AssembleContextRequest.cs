@@ -24,6 +24,15 @@ public sealed record AssembleContextRequest(
     [property: JsonPropertyName("dynamic_provenance"), JsonPropertyOrder(4)]
     DynamicTierProvenance? DynamicProvenance = null)
 {
+    /// <summary>
+    /// The baseline catalogue release and components <see cref="BaselineContent"/> was rendered
+    /// from (S13.218, doc 04 §4 step 2), so the package's baseline tier cites them; or
+    /// <see langword="null"/> when the caller had no stored release to cite.
+    /// </summary>
+    [JsonPropertyName("baseline_provenance")]
+    [JsonPropertyOrder(5)]
+    public BaselineTierProvenance? BaselineProvenance { get; init; }
+
     /// <summary>Validates that all content strings are non-null.</summary>
     public void Validate()
     {

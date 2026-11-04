@@ -59,4 +59,34 @@ public sealed class AssembleContextActivityTests
         Assert.Equal("dynamic-content", assembler.ReceivedDynamicContent);
         Assert.Equal("real-time-content", assembler.ReceivedRealTimeContent);
     }
+
+    [Fact]
+    public async Task RunAsync_RequestCitesBaseline_PackageCarriesItsReleaseAndComponents()
+    {
+        // S13.218 (doc 04 §4 step 2): the request's baseline provenance reaches the package.
+        var assembler = new FakeContextAssembler(Package());
+        var activity = new AssembleContextActivity(assembler);
+        var provenance = new DynamicTierProvenance("eng-1", 2, "eng-1:ctx:e000002");
+        var request = new AssembleContextRequest(Metadata(), "baseline-content", "dynamic-content", "real-time-content", provenance)
+        {
+            BaselineProvenance = new BaselineTierProvenance("2026-q2", ["firm-standards", "playbooks"]),
+        };
+
+        var result = await activity.RunAsync(request);
+
+        Assert.Equal("2026-q2", result.Baseline.BaselineVersion);
+        Assert.Equal(["firm-standards", "playbooks"], result.Baseline.Components);
+        Assert.Equal(provenance, assembler.ReceivedDynamicProvenance);
+    }
+
+    [Fact]
+    public async Task RunAsync_RequestCitesNoBaseline_ReturnsTheAssemblersPackageUnchanged()
+    {
+        var expected = Package();
+        var activity = new AssembleContextActivity(new FakeContextAssembler(expected));
+
+        var result = await activity.RunAsync(new AssembleContextRequest(Metadata(), "b", "d", "r"));
+
+        Assert.Same(expected, result);
+    }
 }

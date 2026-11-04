@@ -33,15 +33,12 @@ internal sealed class AssembleContextActivity
         ArgumentNullException.ThrowIfNull(request);
         request.Validate();
 
-        // Assemble the three tiers (baseline, dynamic, real-time) and apply caching directives.
-        var package = await assembler.AssembleAsync(
-            metadata: request.CachingMetadata,
-            baselineContent: request.BaselineContent,
-            dynamicContent: request.DynamicContent,
-            realTimeContent: request.RealTimeContent,
-            dynamicProvenance: request.DynamicProvenance,
-            ct: ct);
-
-        return package;
+        // Assemble the three tiers (baseline, dynamic, real-time) and apply caching directives;
+        // a request that cites its baseline release stamps it on the package (S13.218).
+        return request.BaselineProvenance is { } baselineProvenance
+            ? await assembler.AssembleWithProvenanceAsync(
+                request.CachingMetadata, request.BaselineContent, request.DynamicContent, request.RealTimeContent, baselineProvenance, request.DynamicProvenance, ct)
+            : await assembler.AssembleAsync(
+                request.CachingMetadata, request.BaselineContent, request.DynamicContent, request.RealTimeContent, request.DynamicProvenance, ct);
     }
 }

@@ -59,6 +59,7 @@ internal sealed class ContextContentComposer : IContextContentComposer
         return new ComposedContext
         {
             BaselineContent = ContextContentFilter.Filter(baselineJson, request.BaselineComponents, "baseline_components"),
+            BaselineProvenance = new BaselineTierProvenance(catalogueId, request.BaselineComponents),
             DynamicContent = ContextContentFilter.Filter(dynamicJson, request.DynamicFields, "dynamic_fields"),
             RealTimeContent = BuildRealTimeContent(request, revisionNote),
             DynamicEpoch = snapshot?.Epoch,

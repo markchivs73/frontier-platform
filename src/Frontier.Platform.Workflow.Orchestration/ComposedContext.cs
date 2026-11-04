@@ -1,4 +1,5 @@
 using Frontier.Platform.Abstractions;
+using Frontier.Platform.ContextAssembly;
 
 namespace Frontier.Platform.Workflow.Orchestration;
 
@@ -12,6 +13,12 @@ internal sealed record ComposedContext
 {
     /// <summary>Canonical-JSON object of the requested baseline catalogue components.</summary>
     internal required string BaselineContent { get; init; }
+
+    /// <summary>
+    /// The baseline catalogue release <see cref="BaselineContent"/> was read from and the
+    /// components it renders, in order (S13.218, doc 04 §4 step 2).
+    /// </summary>
+    internal required BaselineTierProvenance BaselineProvenance { get; init; }
 
     /// <summary>Canonical-JSON object of the requested dynamic engagement-context fields.</summary>
     internal required string DynamicContent { get; init; }

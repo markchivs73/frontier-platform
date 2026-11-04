@@ -178,6 +178,59 @@ public sealed class ContextDebuggerComparisonTests
         Assert.Null(result.RealTimeComparison);
     }
 
+    [Fact]
+    public async Task CompareAsync_UnchangedTiers_AreCachedButRealTimeIsNever()
+    {
+        // S13.218 (doc 04 §7, §11): unchanged prefix tiers are served from cache; real-time carries no directive.
+        var package = SamplePackage(realTimeContent: """{"rt":"same"}""");
+
+        var result = await new ContextDebugger().CompareAsync(package, package, CancellationToken.None);
+
+        Assert.Equal("cached", result.BaselineComparison.CacheVerdict);
+        Assert.Equal("cached", result.DynamicComparison.CacheVerdict);
+        Assert.Equal("not_cached", result.RealTimeComparison!.CacheVerdict);
+    }
+
+    [Fact]
+    public async Task CompareAsync_RealTimeChanged_RealTimeIsStillNotCached()
+    {
+        // S13.218 (doc 04 §7): real-time is never cached, whichever way its change flag points.
+        var previous = SamplePackage(realTimeContent: """{"rt":"old"}""");
+        var current = SamplePackage(realTimeContent: """{"rt":"new"}""");
+
+        var result = await new ContextDebugger().CompareAsync(current, previous, CancellationToken.None);
+
+        Assert.True(result.RealTimeComparison!.ChangedFromPrevious);
+        Assert.Equal("not_cached", result.RealTimeComparison.CacheVerdict);
+    }
+
+    [Fact]
+    public async Task CompareAsync_NoPrevious_EveryTierIsNotCached()
+    {
+        var result = await new ContextDebugger().CompareAsync(SamplePackage(realTimeContent: null), previous: null, CancellationToken.None);
+
+        Assert.Equal("not_cached", result.BaselineComparison.CacheVerdict);
+        Assert.Equal("not_cached", result.DynamicComparison.CacheVerdict);
+    }
+
+    [Fact]
+    public async Task CompareAsync_OnlyDynamicChanged_BaselineCachedDynamicNotCached()
+    {
+        var previous = SamplePackage(realTimeContent: null);
+        var current = previous with { Dynamic = previous.Dynamic with { Content = """{"dynamic":"new"}""" } };
+
+        var result = await new ContextDebugger().CompareAsync(current, previous, CancellationToken.None);
+
+        Assert.Equal("cached", result.BaselineComparison.CacheVerdict);
+        Assert.Equal("not_cached", result.DynamicComparison.CacheVerdict);
+    }
+
+    [Theory]
+    [InlineData(true, "not_cached")]
+    [InlineData(false, "cached")]
+    public void CachedTierVerdict_FollowsTheChangeFlag(bool changed, string expected) =>
+        Assert.Equal(expected, ContextDebugger.CachedTierVerdict(changed));
+
     private static ContextPackage SamplePackage(string? realTimeContent) => new()
     {
         Baseline = new BaselineTier { BaselineVersion = "2026.06.1", Components = ["comp-a"], Content = """{"baseline":"data"}""" },
