@@ -574,6 +574,100 @@ public sealed class ChatDesignerServiceTests
     public sealed class StructuredProposalTests
     {
         [Fact]
+        public void ResultOf_LengthStop_ReturnsTooLargeMessageAndNoProposal()
+        {
+            var defJson = JsonSerializer.Serialize(CreateMinimalDraft("wf-x").Definition, CanonicalProfile.Options);
+            // Even text that happens to parse is not trusted once the model stopped at its ceiling.
+            var response = new ChatResponse(new ChatMessage(ChatRole.Assistant, $$"""{"reason":"r","definition":{{defJson}}}"""))
+            {
+                FinishReason = ChatFinishReason.Length,
+            };
+
+            var result = ChatDesignerService.ResultOf(response);
+
+            Assert.True(result.ReplyTruncated);
+            Assert.Equal(ChatDesignerService.TruncatedReplyMessage, result.Reasoning);
+            Assert.Equal(string.Empty, result.ProposalDefinitionJson);
+        }
+
+        [Fact]
+        public void ResultOf_StopFinish_ParsesTheReplyAsBefore()
+        {
+            var response = new ChatResponse(new ChatMessage(ChatRole.Assistant, "plain advice")) { FinishReason = ChatFinishReason.Stop };
+
+            var result = ChatDesignerService.ResultOf(response);
+
+            Assert.False(result.ReplyTruncated);
+            Assert.Equal("plain advice", result.Reasoning);
+        }
+
+        [Fact]
+        public void ResultOf_NoTextAndNoFinishReason_FallsBackToEmptyReasoning()
+        {
+            var result = ChatDesignerService.ResultOf(new ChatResponse());
+
+            Assert.False(result.ReplyTruncated);
+            Assert.Equal(string.Empty, result.Reasoning);
+        }
+
+        [Fact]
+        public async Task SubmitDesignTurn_ReplyCutOffAtCeiling_FlagsTheTurnAndTellsTheDesigner()
+        {
+            var store = new InMemoryDefinitionStore();
+            var mergeMock = new Mock<IProposalMergeService>(MockBehavior.Strict);
+            var clientMock = new Mock<IChatClient>();
+            clientMock
+                .Setup(c => c.GetStreamingResponseAsync(It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<ChatOptions?>(), It.IsAny<CancellationToken>()))
+                .Returns(TruncatedStreamingResponse("""{"reason":"r","definition":{"workflow_id":"wf-x","nodes":["""));
+            var service = new ChatDesignerService(
+                store, mergeMock.Object, clientMock.Object, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance),
+                new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), new NodeDiffService(),
+                new DefinitionValidator(Array.Empty<IDefinitionValidationRule>()), new FakeDesignerModelProvider(), new FakeInstructionCatalog(),
+                new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog());
+            await store.SaveDraftAsync("wf-x", CreateMinimalDraft("wf-x"), "no-etag", CancellationToken.None);
+            var before = await store.GetDraftAsync("wf-x", CancellationToken.None);
+
+            // AutoMerge on with a strict merge mock: a truncated turn must never reach the merge.
+            var turn = await service.SubmitDesignTurnAsync("wf-x",
+                new DesignTurnRequest { DesignerId = "d", Message = "add a step", AutoMergeProposal = true }, CancellationToken.None);
+
+            Assert.True(turn.ReplyTruncated);
+            Assert.Equal(ChatDesignerService.TruncatedReplyMessage, turn.ProposalReasoningJson);
+            Assert.True(string.IsNullOrEmpty(turn.AgentProposalJson));
+            Assert.Null(turn.MergeOutcome);
+            // One model call only: a truncated turn has no proposal, so the repair pass never re-prompts.
+            clientMock.Verify(c => c.GetStreamingResponseAsync(
+                It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<ChatOptions?>(), It.IsAny<CancellationToken>()), Times.Once);
+            // "Nothing in the draft has changed": the stored draft is the one saved before the turn.
+            var after = await store.GetDraftAsync("wf-x", CancellationToken.None);
+            Assert.Equal(before!.DraftRevision, after!.DraftRevision);
+            Assert.Equal(
+                JsonSerializer.Serialize(before.Definition, CanonicalProfile.Options),
+                JsonSerializer.Serialize(after.Definition, CanonicalProfile.Options));
+        }
+
+        [Fact]
+        public async Task SubmitDesignTurn_CompleteReply_LeavesTruncationFlagUnset()
+        {
+            var store = new InMemoryDefinitionStore();
+            var service = CreateService(store, new Mock<IProposalMergeService>(MockBehavior.Strict).Object);
+            await store.SaveDraftAsync("wf-x", CreateMinimalDraft("wf-x"), "no-etag", CancellationToken.None);
+
+            var turn = await service.SubmitDesignTurnAsync("wf-x",
+                new DesignTurnRequest { DesignerId = "d", Message = "hi", AutoMergeProposal = false }, CancellationToken.None);
+
+            Assert.Null(turn.ReplyTruncated);
+        }
+
+        /// <summary>Streams a partial reply whose final update carries the length stop, as a provider does at its ceiling.</summary>
+        private static async IAsyncEnumerable<ChatResponseUpdate> TruncatedStreamingResponse(string partial)
+        {
+            await Task.Yield();
+            yield return new ChatResponseUpdate(ChatRole.Assistant, partial);
+            yield return new ChatResponseUpdate { FinishReason = ChatFinishReason.Length };
+        }
+
+        [Fact]
         public void BuildResult_ValidProposalJson_ReturnsDefinitionAndReason()
         {
             var def = CreateMinimalDraft("wf-x").Definition;
