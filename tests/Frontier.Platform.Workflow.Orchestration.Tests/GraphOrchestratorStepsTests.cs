@@ -523,6 +523,43 @@ public sealed class GraphOrchestratorStepsTests
         Assert.Equal(["pricing-agent"], state.CompletedSteps.Select(step => step.NodeId));
     }
 
+    /// <summary>S13.199: why structure.unique-artifact-keys exists — a second node on the same key overwrites the first's section.</summary>
+    [Fact]
+    public async Task RunNodeAsync_TwoNodesSharingAKey_LaterWriteReplacesTheEarlierSection()
+    {
+        var context = new FakeTaskOrchestrationContext();
+        RegisterAgentTaskActivity(context);
+        RegisterSnapshotStateActivity(context);
+        RegisterArtifactStateActivity(context);
+        var definition = SharedScopeKeyChain();
+        var input = OrchestrationFixtures.Input(definition);
+        var state = new GraphExecutionState { StartedAtUtc = OrchestrationFixtures.StartedAtUtc };
+
+        await GraphOrchestratorSteps.RunNodeAsync(context, input, (AgentTaskNode)definition.Nodes[0], state, PolicyProvider);
+        await GraphOrchestratorSteps.RunNodeAsync(context, input, (AgentTaskNode)definition.Nodes[1], state, PolicyProvider);
+
+        Assert.Equal(2, state.ArtifactVersions["scope"]);
+        Assert.Equal($"{context.InstanceId}:scope:v2", Assert.Single(state.SectionRefs, pair => pair.Key == "scope").Value);
+        Assert.DoesNotContain("approach", state.SectionRefs.Keys);
+    }
+
+    /// <summary>S13.199: an unvalidated definition with two agent_task nodes on one key makes the cascade's lookup throw.</summary>
+    [Fact]
+    public async Task RegenerateDownstreamAsync_TwoAgentNodesSharingAKey_Throws()
+    {
+        var context = new FakeTaskOrchestrationContext();
+        var input = OrchestrationFixtures.Input(SharedScopeKeyChain());
+        var state = new GraphExecutionState { StartedAtUtc = OrchestrationFixtures.StartedAtUtc };
+
+        await Assert.ThrowsAsync<ArgumentException>(() => GraphOrchestratorSteps.RegenerateDownstreamAsync(context, input, state, ["scope"], PolicyProvider));
+    }
+
+    private static WorkflowDefinition SharedScopeKeyChain()
+    {
+        var chain = OrchestrationFixtures.ThreeArtifactChain();
+        return chain with { Nodes = [chain.Nodes[0], chain.Nodes[1] with { ArtifactKey = "scope" }, chain.Nodes[2]] };
+    }
+
     [Fact]
     public async Task RunCascadeWalkAsync_NoArtifactUpdatedEvent_LeavesStateUnchanged()
     {

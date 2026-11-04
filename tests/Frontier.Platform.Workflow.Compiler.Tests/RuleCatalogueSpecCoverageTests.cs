@@ -70,6 +70,9 @@ public sealed class RuleCatalogueSpecCoverageTests
         "model-role.contracts-match",
         "mcp.server-not-drifted",
         "data.projection-compatible",
+        // S13.199: two nodes sharing an artifact_key overwrite each other's section. The doc 13
+        // §4.2 row lands in the consumer repo (read-only from here), as S13.34's did.
+        "structure.unique-artifact-keys",
     ];
 
     [Fact]
@@ -97,7 +100,8 @@ public sealed class RuleCatalogueSpecCoverageTests
         // S13.117 (ADR-E27): +1 Pure (data.no-edge-from-gate reads the definition alone) and +3
         // +4 Resourced (schema-ref-resolves, contracts-match, server-not-drifted and
         // projection-compatible read the registry).
-        Assert.Equal(19, CurrentlyRegisteredRules.Count(r => r.Tier == RuleTier.Pure));
+        // S13.199: +1 Pure (structure.unique-artifact-keys reads the definition alone).
+        Assert.Equal(20, CurrentlyRegisteredRules.Count(r => r.Tier == RuleTier.Pure));
         Assert.Equal(17, CurrentlyRegisteredRules.Count(r => r.Tier == RuleTier.Resourced));
         Assert.Equal(0, CurrentlyRegisteredRules.Count(r => r.Tier == RuleTier.Runtime));
     }
