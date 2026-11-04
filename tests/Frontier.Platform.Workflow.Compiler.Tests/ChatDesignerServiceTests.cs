@@ -30,7 +30,6 @@ public sealed class ChatDesignerServiceTests
     /// structured JSON to exercise the proposal path).</summary>
     internal static ChatDesignerService CreateService(
         IDefinitionStore store,
-        IProposalMergeService mergeService,
         string agentResponse = "mock agent response")
     {
         var chatClientMock = new Mock<IChatClient>();
@@ -41,7 +40,7 @@ public sealed class ChatDesignerServiceTests
                 It.IsAny<CancellationToken>()))
             .Returns(StreamingResponse(agentResponse));
         return new ChatDesignerService(
-            store, mergeService, chatClientMock.Object, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(),
+            store, chatClientMock.Object, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(),
             new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), new NodeDiffService(),
             new DefinitionValidator(Array.Empty<IDefinitionValidationRule>()), new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog());
     }
@@ -204,7 +203,6 @@ public sealed class ChatDesignerServiceTests
                 It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<ChatOptions?>(), It.IsAny<CancellationToken>()));
             foreach (var r in responses) seq = seq.Returns(StreamingResponse(r));
             var service = new ChatDesignerService(store,
-                new ProposalMergeService(store, new DefinitionValidator(Array.Empty<IDefinitionValidationRule>()), new NodeDiffService()),
                 clientMock.Object, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(),
                 new FakeAgentRoleCatalog(), new NodeDiffService(), compiler, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog());
             return (service, clientMock, store);
@@ -220,7 +218,7 @@ public sealed class ChatDesignerServiceTests
         {
             await store.SaveDraftAsync("wf-x", CreateMinimalDraft("wf-x"), "no-etag", CancellationToken.None);
             return await service.SubmitDesignTurnAsync("wf-x",
-                new DesignTurnRequest { DesignerId = "d", Message = "build it", AutoMergeProposal = false }, CancellationToken.None);
+                new DesignTurnRequest { DesignerId = "d", Message = "build it" }, CancellationToken.None);
         }
 
         private static void VerifyCalls(Mock<IChatClient> client, Times times) =>
@@ -285,9 +283,7 @@ public sealed class ChatDesignerServiceTests
         public async Task SubmitDesignTurn_FirstTurn_CreatesTurnAndHistory()
         {
             var store = new InMemoryDefinitionStore();
-            var validator = new DefinitionValidator(Array.Empty<IDefinitionValidationRule>());
-            var mergeService = new ProposalMergeService(store, validator, new NodeDiffService());
-            var service = CreateService(store, mergeService);
+            var service = CreateService(store);
 
             var workflowId = "wf-test";
             var draft = CreateMinimalDraft(workflowId);
@@ -296,8 +292,7 @@ public sealed class ChatDesignerServiceTests
             var request = new DesignTurnRequest
             {
                 DesignerId = "designer-1",
-                Message = "Add a validation step",
-                AutoMergeProposal = false
+                Message = "Add a validation step"
             };
 
             var result = await service.SubmitDesignTurnAsync(workflowId, request, CancellationToken.None);
@@ -313,9 +308,7 @@ public sealed class ChatDesignerServiceTests
         public async Task SubmitDesignTurn_MultipleTurns_IncrementsSequence()
         {
             var store = new InMemoryDefinitionStore();
-            var validator = new DefinitionValidator(Array.Empty<IDefinitionValidationRule>());
-            var mergeService = new ProposalMergeService(store, validator, new NodeDiffService());
-            var service = CreateService(store, mergeService);
+            var service = CreateService(store);
 
             var workflowId = "wf-test";
             var draft = CreateMinimalDraft(workflowId);
@@ -324,14 +317,12 @@ public sealed class ChatDesignerServiceTests
             var request1 = new DesignTurnRequest
             {
                 DesignerId = "designer-1",
-                Message = "Turn 1",
-                AutoMergeProposal = false
+                Message = "Turn 1"
             };
             var request2 = new DesignTurnRequest
             {
                 DesignerId = "designer-1",
-                Message = "Turn 2",
-                AutoMergeProposal = false
+                Message = "Turn 2"
             };
 
             var turn1 = await service.SubmitDesignTurnAsync(workflowId, request1, CancellationToken.None);
@@ -339,31 +330,6 @@ public sealed class ChatDesignerServiceTests
 
             Assert.Equal(1, turn1.TurnNumber);
             Assert.Equal(2, turn2.TurnNumber);
-        }
-
-        [Fact]
-        public async Task SubmitDesignTurn_NoProposalWithAutoMerge_DoesNotMerge()
-        {
-            var store = new InMemoryDefinitionStore();
-            var validator = new DefinitionValidator(Array.Empty<IDefinitionValidationRule>());
-            var mergeService = new ProposalMergeService(store, validator, new NodeDiffService());
-            var service = CreateService(store, mergeService);
-
-            var workflowId = "wf-test";
-            var draft = CreateMinimalDraft(workflowId);
-            await store.SaveDraftAsync(workflowId, draft, "no-etag", CancellationToken.None);
-
-            var request = new DesignTurnRequest
-            {
-                DesignerId = "designer-1",
-                Message = "Test message",
-                AutoMergeProposal = true // Phase 1 stub agent returns empty proposal
-            };
-
-            var result = await service.SubmitDesignTurnAsync(workflowId, request, CancellationToken.None);
-
-            // Phase 1: no proposal is generated, so merge is skipped
-            Assert.Null(result.MergeOutcome);
         }
     }
 
@@ -374,8 +340,7 @@ public sealed class ChatDesignerServiceTests
         public async Task ValidateMentionsAsync_ResolvesEachKindAgainstItsOwnCatalogue()
         {
             var store = new InMemoryDefinitionStore();
-            var mergeService = new ProposalMergeService(store, new DefinitionValidator(Array.Empty<IDefinitionValidationRule>()), new NodeDiffService());
-            var service = CreateService(store, mergeService);
+            var service = CreateService(store);
 
             var validated = await service.ValidateMentionsAsync(
                 [
@@ -392,8 +357,7 @@ public sealed class ChatDesignerServiceTests
         public async Task ValidateMentionsAsync_UnknownRefPerKind_IsUnresolved()
         {
             var store = new InMemoryDefinitionStore();
-            var mergeService = new ProposalMergeService(store, new DefinitionValidator(Array.Empty<IDefinitionValidationRule>()), new NodeDiffService());
-            var service = CreateService(store, mergeService);
+            var service = CreateService(store);
 
             var validated = await service.ValidateMentionsAsync(
                 [
@@ -410,8 +374,7 @@ public sealed class ChatDesignerServiceTests
         public async Task ValidateMentionsAsync_UnrecognisedKind_IsUnresolved()
         {
             var store = new InMemoryDefinitionStore();
-            var mergeService = new ProposalMergeService(store, new DefinitionValidator(Array.Empty<IDefinitionValidationRule>()), new NodeDiffService());
-            var service = CreateService(store, mergeService);
+            var service = CreateService(store);
 
             var validated = await service.ValidateMentionsAsync(
                 [new ResourceMention { Kind = "not-a-kind", Ref = "deep-reasoning" }], CancellationToken.None);
@@ -423,8 +386,7 @@ public sealed class ChatDesignerServiceTests
         public async Task ValidateMentionsAsync_EmptyList_ReturnsEmptyWithoutCallingCatalogues()
         {
             var store = new InMemoryDefinitionStore();
-            var mergeService = new ProposalMergeService(store, new DefinitionValidator(Array.Empty<IDefinitionValidationRule>()), new NodeDiffService());
-            var service = CreateService(store, mergeService);
+            var service = CreateService(store);
 
             Assert.Empty(await service.ValidateMentionsAsync([], CancellationToken.None));
         }
@@ -458,8 +420,7 @@ public sealed class ChatDesignerServiceTests
         public async Task SubmitDesignTurn_WithMentions_PersistsValidatedMentionsOnTheTurn()
         {
             var store = new InMemoryDefinitionStore();
-            var mergeService = new ProposalMergeService(store, new DefinitionValidator(Array.Empty<IDefinitionValidationRule>()), new NodeDiffService());
-            var service = CreateService(store, mergeService);
+            var service = CreateService(store);
             var draft = CreateMinimalDraft("wf-test");
             await store.SaveDraftAsync("wf-test", draft, "no-etag", CancellationToken.None);
 
@@ -467,7 +428,6 @@ public sealed class ChatDesignerServiceTests
             {
                 DesignerId = "designer-1",
                 Message = "use @deep-reasoning",
-                AutoMergeProposal = false,
                 Mentions = [new ResourceMention { Kind = MentionKind.AgentRole, Ref = "deep-reasoning" }],
             }, CancellationToken.None);
 
@@ -481,14 +441,13 @@ public sealed class ChatDesignerServiceTests
         public async Task SubmitDesignTurn_NoMentions_LeavesMentionsNull()
         {
             var store = new InMemoryDefinitionStore();
-            var mergeService = new ProposalMergeService(store, new DefinitionValidator(Array.Empty<IDefinitionValidationRule>()), new NodeDiffService());
-            var service = CreateService(store, mergeService);
+            var service = CreateService(store);
             var draft = CreateMinimalDraft("wf-test");
             await store.SaveDraftAsync("wf-test", draft, "no-etag", CancellationToken.None);
 
             var result = await service.SubmitDesignTurnAsync("wf-test", new DesignTurnRequest
             {
-                DesignerId = "designer-1", Message = "plain message", AutoMergeProposal = false,
+                DesignerId = "designer-1", Message = "plain message",
             }, CancellationToken.None);
 
             Assert.Null(result.Mentions);
@@ -501,9 +460,7 @@ public sealed class ChatDesignerServiceTests
         public async Task GetHistory_NoHistory_ReturnsNull()
         {
             var store = new InMemoryDefinitionStore();
-            var validator = new DefinitionValidator(Array.Empty<IDefinitionValidationRule>());
-            var mergeService = new ProposalMergeService(store, validator, new NodeDiffService());
-            var service = CreateService(store, mergeService);
+            var service = CreateService(store);
 
             var result = await service.GetHistoryAsync("wf-nonexistent", CancellationToken.None);
 
@@ -514,16 +471,14 @@ public sealed class ChatDesignerServiceTests
         public async Task GetHistory_AfterSubmittingTurns_ReturnsHistoryWithTurns()
         {
             var store = new InMemoryDefinitionStore();
-            var validator = new DefinitionValidator(Array.Empty<IDefinitionValidationRule>());
-            var mergeService = new ProposalMergeService(store, validator, new NodeDiffService());
-            var service = CreateService(store, mergeService);
+            var service = CreateService(store);
 
             var workflowId = "wf-test";
             var draft = CreateMinimalDraft(workflowId);
             await store.SaveDraftAsync(workflowId, draft, "no-etag", CancellationToken.None);
 
-            var request1 = new DesignTurnRequest { DesignerId = "designer-1", Message = "Turn 1", AutoMergeProposal = false };
-            var request2 = new DesignTurnRequest { DesignerId = "designer-1", Message = "Turn 2", AutoMergeProposal = false };
+            var request1 = new DesignTurnRequest { DesignerId = "designer-1", Message = "Turn 1" };
+            var request2 = new DesignTurnRequest { DesignerId = "designer-1", Message = "Turn 2" };
 
             await service.SubmitDesignTurnAsync(workflowId, request1, CancellationToken.None);
             await service.SubmitDesignTurnAsync(workflowId, request2, CancellationToken.None);
@@ -543,9 +498,7 @@ public sealed class ChatDesignerServiceTests
         public async Task GetAllTurns_ReturnsAllTurnsInOrder()
         {
             var store = new InMemoryDefinitionStore();
-            var validator = new DefinitionValidator(Array.Empty<IDefinitionValidationRule>());
-            var mergeService = new ProposalMergeService(store, validator, new NodeDiffService());
-            var service = CreateService(store, mergeService);
+            var service = CreateService(store);
 
             var workflowId = "wf-test";
             var draft = CreateMinimalDraft(workflowId);
@@ -556,8 +509,7 @@ public sealed class ChatDesignerServiceTests
                 var request = new DesignTurnRequest
                 {
                     DesignerId = "designer-1",
-                    Message = $"Message {i}",
-                    AutoMergeProposal = false
+                    Message = $"Message {i}"
                 };
                 await service.SubmitDesignTurnAsync(workflowId, request, CancellationToken.None);
             }
@@ -614,22 +566,20 @@ public sealed class ChatDesignerServiceTests
         public async Task SubmitDesignTurn_ReplyCutOffAtCeiling_FlagsTheTurnAndTellsTheDesigner()
         {
             var store = new InMemoryDefinitionStore();
-            var mergeMock = new Mock<IProposalMergeService>(MockBehavior.Strict);
             var clientMock = new Mock<IChatClient>();
             clientMock
                 .Setup(c => c.GetStreamingResponseAsync(It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<ChatOptions?>(), It.IsAny<CancellationToken>()))
                 .Returns(TruncatedStreamingResponse("""{"reason":"r","definition":{"workflow_id":"wf-x","nodes":["""));
             var service = new ChatDesignerService(
-                store, mergeMock.Object, clientMock.Object, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance),
+                store, clientMock.Object, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance),
                 new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), new NodeDiffService(),
                 new DefinitionValidator(Array.Empty<IDefinitionValidationRule>()), new FakeDesignerModelProvider(), new FakeInstructionCatalog(),
                 new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog());
             await store.SaveDraftAsync("wf-x", CreateMinimalDraft("wf-x"), "no-etag", CancellationToken.None);
             var before = await store.GetDraftAsync("wf-x", CancellationToken.None);
 
-            // AutoMerge on with a strict merge mock: a truncated turn must never reach the merge.
             var turn = await service.SubmitDesignTurnAsync("wf-x",
-                new DesignTurnRequest { DesignerId = "d", Message = "add a step", AutoMergeProposal = true }, CancellationToken.None);
+                new DesignTurnRequest { DesignerId = "d", Message = "add a step" }, CancellationToken.None);
 
             Assert.True(turn.ReplyTruncated);
             Assert.Equal(ChatDesignerService.TruncatedReplyMessage, turn.ProposalReasoningJson);
@@ -650,11 +600,11 @@ public sealed class ChatDesignerServiceTests
         public async Task SubmitDesignTurn_CompleteReply_LeavesTruncationFlagUnset()
         {
             var store = new InMemoryDefinitionStore();
-            var service = CreateService(store, new Mock<IProposalMergeService>(MockBehavior.Strict).Object);
+            var service = CreateService(store);
             await store.SaveDraftAsync("wf-x", CreateMinimalDraft("wf-x"), "no-etag", CancellationToken.None);
 
             var turn = await service.SubmitDesignTurnAsync("wf-x",
-                new DesignTurnRequest { DesignerId = "d", Message = "hi", AutoMergeProposal = false }, CancellationToken.None);
+                new DesignTurnRequest { DesignerId = "d", Message = "hi" }, CancellationToken.None);
 
             Assert.Null(turn.ReplyTruncated);
         }
@@ -744,7 +694,7 @@ public sealed class ChatDesignerServiceTests
         public async Task BuildChatOptions_AdaptiveSelection_SetsModelCeilingAndThinkingFlag()
         {
             // S9.9a (doc 14 §3): the model comes from the deep-reasoning role resolution, not a hardcoded id.
-            var service = CreateService(new InMemoryDefinitionStore(), BuildMergeService(out _));
+            var service = CreateService(new InMemoryDefinitionStore());
 
             var (_, options) = await service.ResolveDesignerCallAsync("wf-x", CancellationToken.None);
 
@@ -758,10 +708,9 @@ public sealed class ChatDesignerServiceTests
         public async Task BuildChatOptions_NonAdaptiveSelection_OmitsThinkingFlag()
         {
             var store = new InMemoryDefinitionStore();
-            var merge = BuildMergeService(store);
             var provider = new NonAdaptiveModelProvider();
             var service = new ChatDesignerService(
-                store, merge, new Mock<IChatClient>().Object, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance),
+                store, new Mock<IChatClient>().Object, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance),
                 new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(),
                 new NodeDiffService(), new DefinitionValidator(Array.Empty<IDefinitionValidationRule>()), provider, new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog());
 
@@ -781,7 +730,7 @@ public sealed class ChatDesignerServiceTests
         [Fact]
         public async Task BuildSystemPrompt_IncludesSchemaRolesAndEngagementType()
         {
-            var service = CreateService(new InMemoryDefinitionStore(), BuildMergeService(out _));
+            var service = CreateService(new InMemoryDefinitionStore());
 
             var prompt = await service.BuildSystemPromptAsync(CreateMinimalDraft("wf-x"), CancellationToken.None);
 
@@ -794,7 +743,7 @@ public sealed class ChatDesignerServiceTests
         public async Task BuildSystemPrompt_IncludesGranularityGuidance()
         {
             // E7/S13.6: the coarse-granularity design guidance rides in every design turn.
-            var service = CreateService(new InMemoryDefinitionStore(), BuildMergeService(out _));
+            var service = CreateService(new InMemoryDefinitionStore());
 
             var prompt = await service.BuildSystemPromptAsync(CreateMinimalDraft("wf-x"), CancellationToken.None);
 
@@ -805,7 +754,7 @@ public sealed class ChatDesignerServiceTests
         [Fact]
         public async Task BuildSystemPrompt_IncludesAvailableMcpTools()
         {
-            var service = CreateService(new InMemoryDefinitionStore(), BuildMergeService(out _));
+            var service = CreateService(new InMemoryDefinitionStore());
 
             var prompt = await service.BuildSystemPromptAsync(CreateMinimalDraft("wf-x"), CancellationToken.None);
 
@@ -821,7 +770,7 @@ public sealed class ChatDesignerServiceTests
             // control-edge rule). S13.7h generalised the mcp_tool-specific ban to every node type
             // the runtime cannot execute, after a designed workflow shipped a `parallel` node that
             // validated clean and then failed permanently on its first run.
-            var service = CreateService(new InMemoryDefinitionStore(), BuildMergeService(out _));
+            var service = CreateService(new InMemoryDefinitionStore());
 
             var prompt = await service.BuildSystemPromptAsync(CreateMinimalDraft("wf-x"), CancellationToken.None);
 
@@ -857,7 +806,7 @@ public sealed class ChatDesignerServiceTests
         {
             // S9.72: the agent was blind to contracts (input/output_contract_type were free strings
             // with no catalogue and no edge-match rule), so it emitted data.edge-type-match mismatches.
-            var service = CreateService(new InMemoryDefinitionStore(), BuildMergeService(out _));
+            var service = CreateService(new InMemoryDefinitionStore());
 
             var prompt = await service.BuildSystemPromptAsync(CreateMinimalDraft("wf-x"), CancellationToken.None);
 
@@ -871,7 +820,7 @@ public sealed class ChatDesignerServiceTests
         {
             // S9.82: the agent was blind to instructions_ref (no catalogue, no rule), so it invented
             // role-based refs like "instructions/structured-extraction" that fail to resolve.
-            var service = CreateService(new InMemoryDefinitionStore(), BuildMergeService(out _));
+            var service = CreateService(new InMemoryDefinitionStore());
 
             var prompt = await service.BuildSystemPromptAsync(CreateMinimalDraft("wf-x"), CancellationToken.None);
 
@@ -885,7 +834,7 @@ public sealed class ChatDesignerServiceTests
         [Fact]
         public async Task BuildSystemPrompt_SaysAnAgentBackedRoleMayOmitInstructionsRef()
         {
-            var service = CreateService(new InMemoryDefinitionStore(), BuildMergeService(out _));
+            var service = CreateService(new InMemoryDefinitionStore());
 
             var prompt = Flatten(await service.BuildSystemPromptAsync(CreateMinimalDraft("wf-x"), CancellationToken.None));
 
@@ -900,7 +849,7 @@ public sealed class ChatDesignerServiceTests
         [Fact]
         public async Task BuildSystemPrompt_ExplainsStakes_AndOmitsThemWhenTheCatalogueGivesNone()
         {
-            var service = CreateService(new InMemoryDefinitionStore(), BuildMergeService(out _));
+            var service = CreateService(new InMemoryDefinitionStore());
 
             var prompt = Flatten(await service.BuildSystemPromptAsync(CreateMinimalDraft("wf-x"), CancellationToken.None));
 
@@ -918,7 +867,7 @@ public sealed class ChatDesignerServiceTests
             // S9.83: the entry node is handed the engagement brief at runtime; the agent used to set
             // its input to FetchTicketOutput with empty dynamic_fields, so the test-run failed at the
             // first node. Ground the EngagementBriefSection + engagement_brief entry convention.
-            var service = CreateService(new InMemoryDefinitionStore(), BuildMergeService(out _));
+            var service = CreateService(new InMemoryDefinitionStore());
 
             var prompt = await service.BuildSystemPromptAsync(CreateMinimalDraft("wf-x"), CancellationToken.None);
 
@@ -932,7 +881,7 @@ public sealed class ChatDesignerServiceTests
         {
             // S9.83: the agent set context_request.baseline_components to [] which ContextRequest
             // rejects at runtime (baseline_components must not be empty). Ground the catalogue + rule.
-            var service = CreateService(new InMemoryDefinitionStore(), BuildMergeService(out _));
+            var service = CreateService(new InMemoryDefinitionStore());
 
             var prompt = await service.BuildSystemPromptAsync(CreateMinimalDraft("wf-x"), CancellationToken.None);
 
@@ -946,7 +895,7 @@ public sealed class ChatDesignerServiceTests
         {
             // S9.90: the agent omitted/duplicated artifact_key, so a node's output wasn't stored
             // (test-run "No stored output") and gate rollback targets had no snapshot to restore.
-            var service = CreateService(new InMemoryDefinitionStore(), BuildMergeService(out _));
+            var service = CreateService(new InMemoryDefinitionStore());
 
             var prompt = await service.BuildSystemPromptAsync(CreateMinimalDraft("wf-x"), CancellationToken.None);
 
@@ -961,7 +910,7 @@ public sealed class ChatDesignerServiceTests
         {
             // S9.27: without a catalogue the agent invented agent_task.role values that
             // Model-Role Config could not resolve at execution time.
-            var service = CreateService(new InMemoryDefinitionStore(), BuildMergeService(out _));
+            var service = CreateService(new InMemoryDefinitionStore());
 
             var prompt = await service.BuildSystemPromptAsync(CreateMinimalDraft("wf-x"), CancellationToken.None);
 
@@ -978,15 +927,14 @@ public sealed class ChatDesignerServiceTests
             // compiler moved this branch sat uncovered inside a 7,700-line assembly; a smaller
             // denominator is what made it visible.
             var store = new InMemoryDefinitionStore();
-            var mergeService = BuildMergeService(store);
             await store.SaveDraftAsync("wf-null", CreateMinimalDraft("wf-null"), "no-etag", CancellationToken.None);
 
             var proposal = """{"reason":"cleared it","definition":null,"changed_node_ids":[]}""";
-            var service = CreateService(store, mergeService, proposal);
+            var service = CreateService(store, proposal);
 
             var turn = await service.SubmitDesignTurnAsync(
                 "wf-null",
-                new DesignTurnRequest { DesignerId = "designer-1", Message = "clear it", AutoMergeProposal = false },
+                new DesignTurnRequest { DesignerId = "designer-1", Message = "clear it" },
                 CancellationToken.None);
 
             Assert.NotNull(turn);
@@ -996,112 +944,67 @@ public sealed class ChatDesignerServiceTests
         public async Task SubmitDesignTurn_ValidProposal_PersistsProposalAndReason()
         {
             var store = new InMemoryDefinitionStore();
-            var mergeService = BuildMergeService(store);
             var draft = CreateMinimalDraft("wf-x");
             await store.SaveDraftAsync("wf-x", draft, "no-etag", CancellationToken.None);
 
             var defJson = JsonSerializer.Serialize(draft.Definition, CanonicalProfile.Options);
             var proposal = $$"""{"reason":"keep as is","definition":{{defJson}},"changed_node_ids":[]}""";
-            var service = CreateService(store, mergeService, proposal);
+            var service = CreateService(store, proposal);
 
             var turn = await service.SubmitDesignTurnAsync(
                 "wf-x",
-                new DesignTurnRequest { DesignerId = "designer-1", Message = "tidy up", AutoMergeProposal = false },
+                new DesignTurnRequest { DesignerId = "designer-1", Message = "tidy up" },
                 CancellationToken.None);
 
             Assert.False(string.IsNullOrEmpty(turn.AgentProposalJson));
             Assert.Equal("keep as is", turn.ProposalReasoningJson);
         }
 
+        /// <summary>
+        /// S13.203: the deprecated AutoMergeProposal flag is ignored. A turn records its proposal for
+        /// the designer to approve and never merges it, so the draft is untouched and no outcome is set.
+        /// </summary>
         [Fact]
-        public async Task SubmitDesignTurn_AutoMergeWithValidProposal_RecordsMergeOutcome()
-        {
-            var store = new InMemoryDefinitionStore();
-            var mergeService = BuildMergeService(store);
-            var draft = CreateMinimalDraft("wf-x");
-            await store.SaveDraftAsync("wf-x", draft, "no-etag", CancellationToken.None);
-
-            var defJson = JsonSerializer.Serialize(draft.Definition, CanonicalProfile.Options);
-            var proposal = $$"""{"reason":"no change","definition":{{defJson}},"changed_node_ids":[]}""";
-            var service = CreateService(store, mergeService, proposal);
-
-            var turn = await service.SubmitDesignTurnAsync(
-                "wf-x",
-                new DesignTurnRequest { DesignerId = "designer-1", Message = "apply", AutoMergeProposal = true },
-                CancellationToken.None);
-
-            // The auto-merge branch ran and recorded an outcome (merged / conflict / blocked).
-            Assert.NotNull(turn.MergeOutcome);
-        }
-
-        [Theory]
-        [InlineData("conflict")]
-        [InlineData("blocked")]
-        public async Task SubmitDesignTurn_AutoMerge_RecordsNonMergedOutcomes(string kind)
+        public async Task SubmitDesignTurn_DeprecatedAutoMergeFlagSet_NeverMergesTheProposal()
         {
             var store = new InMemoryDefinitionStore();
             var draft = CreateMinimalDraft("wf-x");
             await store.SaveDraftAsync("wf-x", draft, "no-etag", CancellationToken.None);
-
-            ProposalMergeOutcome outcome = kind == "conflict"
-                ? new ProposalMergeOutcomeConflict
-                {
-                    DraftRevisionAfterMerge = "r",
-                    Conflicts = [],
-                    DesignerEdit = draft.Definition,
-                    AgentProposal = draft.Definition,
-                }
-                : new ProposalMergeOutcomeValidationBlocked { DraftRevisionAfterMerge = "r", BlockingFindings = [] };
-
+            var before = await store.GetDraftAsync("wf-x", CancellationToken.None);
             var defJson = JsonSerializer.Serialize(draft.Definition, CanonicalProfile.Options);
-            var proposal = $$"""{"reason":"x","definition":{{defJson}},"changed_node_ids":[]}""";
-            var service = CreateService(store, new StubMergeService(outcome), proposal);
+            var service = CreateService(store, $$"""{"reason":"apply it","definition":{{defJson}},"changed_node_ids":[]}""");
 
-            var turn = await service.SubmitDesignTurnAsync(
-                "wf-x",
-                new DesignTurnRequest { DesignerId = "designer-1", Message = "apply", AutoMergeProposal = true },
-                CancellationToken.None);
+#pragma warning disable CS0618 // the flag under test is obsolete (S13.203)
+            var request = new DesignTurnRequest { DesignerId = "designer-1", Message = "apply", AutoMergeProposal = true };
+#pragma warning restore CS0618
+            var turn = await service.SubmitDesignTurnAsync("wf-x", request, CancellationToken.None);
 
-            Assert.StartsWith($"{kind}:", turn.MergeOutcome!, StringComparison.Ordinal);
-        }
-
-        // switch (mergeOutcome) { ... _ => "unknown" } — every other test supplies Merged/Conflict/
-        // ValidationBlocked; ProposalMergeOutcome is abstract (not sealed), so this stub type falls
-        // through to the default arm on both switches (S9.24 branch-coverage gap).
-        [Fact]
-        public async Task SubmitDesignTurn_AutoMerge_UnrecognisedOutcomeType_RecordsUnknown()
-        {
-            var store = new InMemoryDefinitionStore();
-            var draft = CreateMinimalDraft("wf-x");
-            await store.SaveDraftAsync("wf-x", draft, "no-etag", CancellationToken.None);
-
-            var defJson = JsonSerializer.Serialize(draft.Definition, CanonicalProfile.Options);
-            var proposal = $$"""{"reason":"x","definition":{{defJson}},"changed_node_ids":[]}""";
-            var service = CreateService(store, new StubMergeService(new UnrecognisedOutcome { DraftRevisionAfterMerge = "r" }), proposal);
-
-            var turn = await service.SubmitDesignTurnAsync(
-                "wf-x",
-                new DesignTurnRequest { DesignerId = "designer-1", Message = "apply", AutoMergeProposal = true },
-                CancellationToken.None);
-
-            Assert.Equal("unknown", turn.MergeOutcome);
+            Assert.False(string.IsNullOrEmpty(turn.AgentProposalJson));
+            Assert.Null(turn.MergeOutcome);
             Assert.Null(turn.ConflictSummary);
+            var after = await store.GetDraftAsync("wf-x", CancellationToken.None);
+            Assert.Equal(before!.DraftRevision, after!.DraftRevision);
         }
 
-        /// <summary>A <see cref="ProposalMergeOutcome"/> subtype no switch arm recognises (the type is
-        /// abstract, not a closed union), used to force the default arm of both outcome switches.</summary>
-        private sealed record UnrecognisedOutcome : ProposalMergeOutcome;
+        [Fact]
+        public void Constructor_TakesNoMergeService()
+        {
+            // S13.203: a turn never merges, so the service must not be handed the means to.
+            var parameters = typeof(ChatDesignerService).GetConstructors().SelectMany(c => c.GetParameters());
+
+            Assert.DoesNotContain(parameters, p => p.ParameterType == typeof(IProposalMergeService));
+        }
 
         [Fact]
         public async Task SubmitDesignTurn_NoDraft_Throws()
         {
             var store = new InMemoryDefinitionStore();
-            var service = CreateService(store, BuildMergeService(store));
+            var service = CreateService(store);
 
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 service.SubmitDesignTurnAsync(
                     "missing",
-                    new DesignTurnRequest { DesignerId = "d", Message = "m", AutoMergeProposal = false },
+                    new DesignTurnRequest { DesignerId = "d", Message = "m" },
                     CancellationToken.None));
         }
 
@@ -1109,56 +1012,32 @@ public sealed class ChatDesignerServiceTests
         public void Constructor_NullSchemaProviderOrRoleCatalog_Throws()
         {
             var store = new InMemoryDefinitionStore();
-            var mergeService = BuildMergeService(out var chat);
+            var chat = new Mock<IChatClient>().Object;
 
             var diff = new NodeDiffService();
             var compiler = new DefinitionValidator(Array.Empty<IDefinitionValidationRule>());
             Assert.Throws<ArgumentNullException>(() =>
-                new ChatDesignerService(store, mergeService, chat, null!, new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), diff, compiler, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog()));
+                new ChatDesignerService(store, chat, null!, new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), diff, compiler, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog()));
             Assert.Throws<ArgumentNullException>(() =>
-                new ChatDesignerService(store, mergeService, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), null!, new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), diff, compiler, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog()));
+                new ChatDesignerService(store, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), null!, new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), diff, compiler, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog()));
             Assert.Throws<ArgumentNullException>(() =>
-                new ChatDesignerService(store, mergeService, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), null!, new FakeAgentRoleCatalog(), diff, compiler, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog()));
+                new ChatDesignerService(store, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), null!, new FakeAgentRoleCatalog(), diff, compiler, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog()));
             Assert.Throws<ArgumentNullException>(() =>
-                new ChatDesignerService(store, mergeService, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), null!, diff, compiler, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog()));
+                new ChatDesignerService(store, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), null!, diff, compiler, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog()));
             Assert.Throws<ArgumentNullException>(() =>
-                new ChatDesignerService(store, mergeService, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), null!, compiler, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog()));
+                new ChatDesignerService(store, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), null!, compiler, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog()));
             Assert.Throws<ArgumentNullException>(() =>
-                new ChatDesignerService(store, mergeService, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), diff, null!, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog()));
+                new ChatDesignerService(store, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), diff, null!, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog()));
             Assert.Throws<ArgumentNullException>(() =>
-                new ChatDesignerService(store, mergeService, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), diff, compiler, null!, new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog()));
+                new ChatDesignerService(store, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), diff, compiler, null!, new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog()));
             Assert.Throws<ArgumentNullException>(() =>
-                new ChatDesignerService(store, mergeService, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), diff, compiler, new FakeDesignerModelProvider(), null!, new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog()));
+                new ChatDesignerService(store, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), diff, compiler, new FakeDesignerModelProvider(), null!, new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog()));
             Assert.Throws<ArgumentNullException>(() =>
-                new ChatDesignerService(store, mergeService, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), diff, compiler, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), null!, new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog()));
+                new ChatDesignerService(store, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), diff, compiler, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), null!, new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog()));
             Assert.Throws<ArgumentNullException>(() =>
-                new ChatDesignerService(store, mergeService, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), diff, compiler, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), null!, new FakeContractSnapshotCatalog()));
+                new ChatDesignerService(store, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), diff, compiler, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), null!, new FakeContractSnapshotCatalog()));
             Assert.Throws<ArgumentNullException>(() =>
-                new ChatDesignerService(store, mergeService, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), diff, compiler, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), null!));
-        }
-
-        /// <summary>Merge-service double returning a fixed outcome, to exercise outcome recording.</summary>
-        private sealed class StubMergeService(ProposalMergeOutcome outcome) : IProposalMergeService
-        {
-            public Task<ProposalMergeOutcome> ApplyProposalAsync(
-                string workflowId, string proposedDefinitionJson, string agentReasoning, string designerId, CancellationToken ct) =>
-                Task.FromResult(outcome);
-
-            public Task<ProposalMergeOutcome> ApplyApprovedChangesAsync(
-                string workflowId, IReadOnlyList<string> approvedChangeIds, string expectedRevision, string designerId, CancellationToken ct) =>
-                Task.FromResult(outcome);
-        }
-
-        private static ProposalMergeService BuildMergeService(IDefinitionStore store)
-        {
-            var validator = new DefinitionValidator(Array.Empty<IDefinitionValidationRule>());
-            return new ProposalMergeService(store, validator, new NodeDiffService());
-        }
-
-        private static ProposalMergeService BuildMergeService(out IChatClient chat)
-        {
-            chat = new Mock<IChatClient>().Object;
-            return BuildMergeService(new InMemoryDefinitionStore());
+                new ChatDesignerService(store, chat, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), diff, compiler, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), null!));
         }
     }
 
@@ -1226,6 +1105,9 @@ public sealed class ChatDesignerServiceTests
             Assert.Equal(0, welcome.TurnNumber);
             Assert.Equal("system", welcome.DesignerId);
             Assert.Contains("advisory-sow", welcome.DesignerMessage, StringComparison.Ordinal);
+            // S13.203: no turn, the welcome turn included, carries a merge result.
+            Assert.Null(welcome.MergeOutcome);
+            Assert.Null(welcome.ConflictSummary);
         }
 
         [Fact]
@@ -1278,9 +1160,8 @@ public sealed class ChatDesignerServiceTests
             IDefinitionCompiler validator = passValidation
                 ? new DefinitionValidator(Array.Empty<IDefinitionValidationRule>())
                 : new DefinitionValidator([new FailingRule()]);
-            var merge = new ProposalMergeService(store, validator, new NodeDiffService());
             var service = new ChatDesignerService(
-                store, merge, new Mock<IChatClient>().Object, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance),
+                store, new Mock<IChatClient>().Object, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance),
                 new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), new NodeDiffService(), validator, new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog());
             return (store, service);
         }

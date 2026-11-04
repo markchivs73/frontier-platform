@@ -11,7 +11,9 @@ namespace Frontier.Platform.Workflow.Compiler;
 
 /// <summary>
 /// Chat designer service: manages persistent design conversation over drafts.
-/// Doc 14 §1–2: fetch draft, submit message to agent, record turn, optionally merge proposal.
+/// Doc 14 §1–2: fetch draft, submit message to agent, record turn. A turn never merges its
+/// proposal: the designer approves changes through
+/// <see cref="IProposalMergeService.ApplyApprovedChangesAsync(string, string, string, IReadOnlyList{string}, string, CancellationToken)"/> (S13.203).
 /// Phase 1: real LLM call via IChatClient; the model is resolved through the
 /// <c>deep-reasoning</c> role with adaptive thinking (doc 14 §3, S9.9a) via
 /// <see cref="IDesignerModelProvider"/>. Phase 2 will replace this with MAF agents.
@@ -19,7 +21,6 @@ namespace Frontier.Platform.Workflow.Compiler;
 internal sealed class ChatDesignerService : IChatDesignerService
 {
     private readonly IDefinitionStore _store;
-    private readonly IProposalMergeService _mergeService;
     private readonly IChatClient _chatClient;
     private readonly IWorkflowSchemaProvider _schemaProvider;
     private readonly IApproverRoleCatalog _roleCatalog;
@@ -33,9 +34,13 @@ internal sealed class ChatDesignerService : IChatDesignerService
     private readonly IEntryContractCatalog _entryContractCatalog;
     private readonly IContractSnapshotCatalog _contractCatalog;
 
+    /// <summary>
+    /// Creates the service over its stores and catalogues. It takes no <see cref="IProposalMergeService"/>:
+    /// a turn only records its proposal (S13.203). Every argument is required.
+    /// </summary>
+    /// <exception cref="ArgumentNullException">Any argument is <see langword="null"/>.</exception>
     public ChatDesignerService(
         IDefinitionStore store,
-        IProposalMergeService mergeService,
         IChatClient chatClient,
         IWorkflowSchemaProvider schemaProvider,
         IApproverRoleCatalog roleCatalog,
@@ -50,7 +55,6 @@ internal sealed class ChatDesignerService : IChatDesignerService
         IContractSnapshotCatalog contractCatalog)
     {
         ArgumentNullException.ThrowIfNull(store);
-        ArgumentNullException.ThrowIfNull(mergeService);
         ArgumentNullException.ThrowIfNull(chatClient);
         ArgumentNullException.ThrowIfNull(schemaProvider);
         ArgumentNullException.ThrowIfNull(roleCatalog);
@@ -64,7 +68,6 @@ internal sealed class ChatDesignerService : IChatDesignerService
         ArgumentNullException.ThrowIfNull(entryContractCatalog);
         ArgumentNullException.ThrowIfNull(contractCatalog);
         _store = store;
-        _mergeService = mergeService;
         _chatClient = chatClient;
         _schemaProvider = schemaProvider;
         _roleCatalog = roleCatalog;
@@ -148,41 +151,6 @@ internal sealed class ChatDesignerService : IChatDesignerService
 
         // Persist turn
         var persistedTurn = await _store.PersistDesignTurnAsync(turn, ct);
-
-        // Optionally merge proposal (if provided and no errors)
-        if (request.AutoMergeProposal && !string.IsNullOrEmpty(agentProposalJson))
-        {
-            var mergeOutcome = await _mergeService.ApplyProposalAsync(
-                workflowId,
-                agentProposalJson,
-                agentReasoning,
-                request.DesignerId,
-                ct);
-
-            // Record merge outcome in turn
-            var outcomeStr = mergeOutcome switch
-            {
-                ProposalMergeOutcomeMerged => "merged",
-                ProposalMergeOutcomeConflict conflict => $"conflict:{conflict.Conflicts.Count}",
-                ProposalMergeOutcomeValidationBlocked blocked => $"blocked:{blocked.BlockingFindings.Count}",
-                _ => "unknown"
-            };
-
-            var conflictSummary = mergeOutcome switch
-            {
-                ProposalMergeOutcomeConflict conflict => string.Join("; ", conflict.Conflicts.Select(c => $"{c.NodeId} (designer vs. agent)")),
-                ProposalMergeOutcomeValidationBlocked blocked => string.Join("; ", blocked.BlockingFindings.Select(f => $"{f.RuleId}: {f.Message}")),
-                _ => null
-            };
-
-            persistedTurn = persistedTurn with
-            {
-                MergeOutcome = outcomeStr,
-                ConflictSummary = conflictSummary
-            };
-
-            persistedTurn = await _store.PersistDesignTurnAsync(persistedTurn, ct);
-        }
 
         // Update chat history
         var newTurnIds = new List<string>(history.TurnDocumentIds) { turnId };

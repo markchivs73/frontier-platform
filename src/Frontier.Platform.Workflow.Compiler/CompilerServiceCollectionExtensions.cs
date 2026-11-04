@@ -193,7 +193,6 @@ public static class CompilerServiceCollectionExtensions
         services.AddScoped<IChatDesignerService>(sp =>
         {
             var store = sp.GetRequiredService<IDefinitionStore>();
-            var mergeService = sp.GetRequiredService<IProposalMergeService>();
             var chatClient = sp.GetRequiredService<IChatClient>();
             var schemaProvider = sp.GetRequiredService<IWorkflowSchemaProvider>();
             var roleCatalog = sp.GetRequiredService<IApproverRoleCatalog>();
@@ -206,7 +205,7 @@ public static class CompilerServiceCollectionExtensions
             var componentCatalog = sp.GetRequiredService<IContextComponentCatalog>();
             var entryContractCatalog = sp.GetRequiredService<IEntryContractCatalog>();
             var contractCatalog = sp.GetRequiredService<IContractSnapshotCatalog>();
-            return new ChatDesignerService(store, mergeService, chatClient, schemaProvider, roleCatalog, toolCatalog, agentRoleCatalog, diffService, compiler, modelProvider, instructionCatalog, componentCatalog, entryContractCatalog, contractCatalog);
+            return new ChatDesignerService(store, chatClient, schemaProvider, roleCatalog, toolCatalog, agentRoleCatalog, diffService, compiler, modelProvider, instructionCatalog, componentCatalog, entryContractCatalog, contractCatalog);
         });
 
         return services;

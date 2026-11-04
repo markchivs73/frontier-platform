@@ -212,7 +212,7 @@ public sealed class DesignerContractGroundingTests
         {
             var store = new InMemoryDefinitionStore();
             var compiler = new DefinitionValidator(Array.Empty<IDefinitionValidationRule>());
-            var service = new ChatDesignerService(store, new ProposalMergeService(store, compiler, new NodeDiffService()), Mock.Of<IChatClient>(),
+            var service = new ChatDesignerService(store, Mock.Of<IChatClient>(),
                 new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance),
                 new ChatDesignerServiceTests.FakeApproverRoleCatalog(), tools, new ChatDesignerServiceTests.FakeAgentRoleCatalog(),
                 new NodeDiffService(), compiler, new ChatDesignerServiceTests.FakeDesignerModelProvider(), new ChatDesignerServiceTests.FakeInstructionCatalog(),
