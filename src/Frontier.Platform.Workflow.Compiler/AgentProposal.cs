@@ -36,14 +36,25 @@ public sealed record AgentProposal
 public static class AgentProposalParser
 {
     /// <summary>Attempts to parse a structured proposal; returns <c>false</c> if absent or malformed.</summary>
-    public static bool TryParse(string? raw, out AgentProposal? proposal)
+    public static bool TryParse(string? raw, out AgentProposal? proposal) => TryParse(raw, out proposal, out _);
+
+    /// <summary>
+    /// Attempts to parse a structured proposal, also reporting every key the proposal carries that the
+    /// schema does not define (S13.210). The serializer drops such a key silently, so the proposal
+    /// still parses; <paramref name="unknownKeys"/> is how the caller learns the model invented or
+    /// misspelled a field and can send it back for repair.
+    /// </summary>
+    internal static bool TryParse(string? raw, out AgentProposal? proposal, out IReadOnlyList<string> unknownKeys)
     {
         proposal = null;
+        unknownKeys = [];
         if (string.IsNullOrWhiteSpace(raw)) return false;
 
         try
         {
-            proposal = JsonSerializer.Deserialize<AgentProposal>(StripFences(raw), CanonicalProfile.Options);
+            using var document = JsonDocument.Parse(StripFences(raw));
+            proposal = JsonSerializer.Deserialize<AgentProposal>(document.RootElement, CanonicalProfile.Options);
+            unknownKeys = UnknownJsonKeys.Find(document.RootElement, typeof(AgentProposal), CanonicalProfile.Options);
             return proposal?.Definition is not null;
         }
         catch (Exception ex) when (ex is JsonException or NotSupportedException)

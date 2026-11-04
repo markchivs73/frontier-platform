@@ -264,6 +264,62 @@ public sealed class ChatDesignerServiceTests
             VerifyCalls(client, Times.Exactly(2));
         }
 
+        /// <summary>A proposal whose top level carries a key the schema does not define.</summary>
+        private static string ProposalWithInventedKey(string reason) =>
+            Proposal(reason).Replace("\"changed_node_ids\"", "\"confidence\":0.9,\"changed_node_ids\"", StringComparison.Ordinal);
+
+        // S13.210: a key the model invented is dropped by the parse, so it is reported as a
+        // repairable error — it alone triggers the repair pass even when the validator is clean.
+        [Fact]
+        public async Task InventedKey_TriggersOneRepairPass_AndTheCleanRepairIsNotBlocked()
+        {
+            var (service, client, store) = Build(new RepairCompiler { AsyncFindings = [] },
+                ProposalWithInventedKey("first"), Proposal("second"));
+
+            var result = await RunTurnAsync(service, store);
+
+            VerifyCalls(client, Times.Exactly(2));
+            Assert.Equal("second", result.ProposalReasoningJson);
+            Assert.Null(result.ProposalBlockReason);
+        }
+
+        [Fact]
+        public async Task InventedKey_SurvivingTheRepair_BlocksTheProposalAndNamesTheKey()
+        {
+            var (service, client, store) = Build(new RepairCompiler { AsyncFindings = [] },
+                ProposalWithInventedKey("first"), ProposalWithInventedKey("second"));
+
+            var result = await RunTurnAsync(service, store);
+
+            VerifyCalls(client, Times.Exactly(2));
+            Assert.Contains(ChatDesignerService.UnknownKeyRuleId, result.ProposalBlockReason, StringComparison.Ordinal);
+            Assert.Contains("$.confidence", result.ProposalBlockReason, StringComparison.Ordinal);
+        }
+
+        // S13.210: each invented key is an Error finding (so every severity filter keeps it) that
+        // carries the key's path, and none come back when there are no keys.
+        [Fact]
+        public void UnknownKeyFindings_AreErrors_CarryingTheKeyPath()
+        {
+            var finding = Assert.Single(ChatDesignerService.UnknownKeyFindings(["$.definition.nodes[0].timout"]));
+
+            Assert.Equal(ChatDesignerService.UnknownKeyRuleId, finding.RuleId);
+            Assert.Equal(ValidationSeverity.Error, finding.Severity);
+            Assert.Equal("$.definition.nodes[0].timout", finding.FieldPath);
+            Assert.Empty(ChatDesignerService.UnknownKeyFindings(null));
+        }
+
+        // The prior proposal shown in the repair prompt is re-serialized, so the invented key is no
+        // longer in it: the finding text itself must name the key and say it was dropped.
+        [Fact]
+        public void BuildRepairMessage_UnknownKey_NamesTheDroppedKey()
+        {
+            var msg = ChatDesignerService.BuildRepairMessage("ask", new DesignerAgentResult("r", "{}"),
+                ChatDesignerService.UnknownKeyFindings(["$.confidence"]));
+
+            Assert.Contains("'$.confidence' is not a field the schema defines, so it was dropped", msg, StringComparison.Ordinal);
+        }
+
         [Fact]
         public void BuildRepairMessage_CarriesTheFindingsAndThePriorProposal()
         {
@@ -690,6 +746,19 @@ public sealed class ChatDesignerServiceTests
             Assert.False(string.IsNullOrEmpty(result.ProposalDefinitionJson));
         }
 
+        // S13.210: the keys the parse dropped ride on the result; a clean proposal carries none.
+        [Fact]
+        public void BuildResult_ProposalWithInventedKey_CarriesTheKey()
+        {
+            var defJson = JsonSerializer.Serialize(CreateMinimalDraft("wf-x").Definition, CanonicalProfile.Options);
+            var raw = $$"""{"reason":"r","definition":{{defJson}},"notes":"x"}""";
+
+            var result = ChatDesignerService.BuildResult(raw);
+
+            Assert.Equal(["$.notes"], result.UnknownKeys);
+            Assert.Null(ChatDesignerService.BuildResult($$"""{"reason":"r","definition":{{defJson}}}""").UnknownKeys);
+        }
+
         [Fact]
         public async Task BuildChatOptions_AdaptiveSelection_SetsModelCeilingAndThinkingFlag()
         {
@@ -1048,7 +1117,7 @@ public sealed class ChatDesignerServiceTests
         {
             var (_, service) = Build(passValidation: true);
 
-            var (changes, block) = service.BuildProposalReview(CreateMinimalDraft("wf-test"), string.Empty);
+            var (changes, block) = service.BuildProposalReview(CreateMinimalDraft("wf-test"), string.Empty, unknownKeys: null);
 
             Assert.Null(changes);
             Assert.Null(block);
@@ -1062,7 +1131,7 @@ public sealed class ChatDesignerServiceTests
             var proposed = draft.Definition with { Nodes = AddNode(draft.Definition.Nodes, "gate-1") };
             var json = JsonSerializer.Serialize(proposed, CanonicalProfile.Options);
 
-            var (changes, block) = service.BuildProposalReview(draft, json);
+            var (changes, block) = service.BuildProposalReview(draft, json, unknownKeys: null);
 
             Assert.NotNull(changes);
             Assert.Contains(changes!, c => c.ChangeId == "node:added:gate-1");
@@ -1076,7 +1145,7 @@ public sealed class ChatDesignerServiceTests
         {
             var (_, service) = Build(passValidation: true);
 
-            var (changes, block) = service.BuildProposalReview(CreateMinimalDraft("wf-test"), "null");
+            var (changes, block) = service.BuildProposalReview(CreateMinimalDraft("wf-test"), "null", unknownKeys: null);
 
             Assert.Null(changes);
             Assert.Null(block);
@@ -1089,7 +1158,7 @@ public sealed class ChatDesignerServiceTests
             var draft = CreateMinimalDraft("wf-test");
             var json = JsonSerializer.Serialize(draft.Definition, CanonicalProfile.Options);
 
-            var (_, block) = service.BuildProposalReview(draft, json);
+            var (_, block) = service.BuildProposalReview(draft, json, unknownKeys: null);
 
             Assert.False(string.IsNullOrEmpty(block));
         }
