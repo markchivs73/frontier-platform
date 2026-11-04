@@ -1,0 +1,5 @@
+#nullable enable
+Frontier.Platform.Workflow.Orchestration.HostBuildStamp
+Frontier.Platform.Workflow.Orchestration.IHostBuildStamp
+Frontier.Platform.Workflow.Orchestration.IHostBuildStamp.Version.get -> string!
+static Frontier.Platform.Workflow.Orchestration.HostBuildStamp.FromAssembly(System.Reflection.Assembly! assembly) -> Frontier.Platform.Workflow.Orchestration.IHostBuildStamp!

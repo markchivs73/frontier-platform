@@ -33,6 +33,7 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
     private readonly IAuditTelemetryStaging telemetryStaging;
     private readonly IEntryPayloadBuilder entryPayloads;
     private readonly IContractValidator contractValidator;
+    private readonly IHostBuildStamp hostBuild;
 
     /// <summary>Constructs the pipeline over its per-step collaborators.</summary>
     public AgentTaskActivityPipeline(
@@ -46,7 +47,8 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
         AgentInvocationDispatcher dispatcher,
         IAuditTelemetryStaging telemetryStaging,
         IEntryPayloadBuilder entryPayloads,
-        IContractValidator contractValidator)
+        IContractValidator contractValidator,
+        IHostBuildStamp hostBuild)
     {
         ArgumentNullException.ThrowIfNull(composer);
         ArgumentNullException.ThrowIfNull(assembleContext);
@@ -59,6 +61,7 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
         ArgumentNullException.ThrowIfNull(telemetryStaging);
         ArgumentNullException.ThrowIfNull(entryPayloads);
         ArgumentNullException.ThrowIfNull(contractValidator);
+        ArgumentNullException.ThrowIfNull(hostBuild);
 
         this.composer = composer;
         this.assembleContext = assembleContext;
@@ -71,6 +74,7 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
         this.telemetryStaging = telemetryStaging;
         this.entryPayloads = entryPayloads;
         this.contractValidator = contractValidator;
+        this.hostBuild = hostBuild;
     }
 
     /// <inheritdoc />
@@ -88,7 +92,7 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
         var telemetry = BuildTelemetryRecord(input, resolved, invocation, inputPayload, invocation.Hash);
         await telemetryStaging.RecordInvocationAsync(telemetry, ct).ConfigureAwait(false);
 
-        return BuildResult(input, resolved, invocation.Payload, invocation.Hash, invocation.CardHash, invocation.RemoteTaskId);
+        return BuildResult(input, resolved, hostBuild.Version, invocation.Payload, invocation.Hash, invocation.CardHash, invocation.RemoteTaskId);
     }
 
     /// <summary>
@@ -230,8 +234,8 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
     /// <summary>A model's context window for caching metadata; <c>0</c> for an agent, which resolves no platform caching strategy.</summary>
     internal static int ContextWindowOf(ChainEntry entry) => entry is ModelEntry model ? model.ContextWindow : 0;
 
-    /// <summary>Builds the activity's result, projecting <paramref name="resolved"/> into the audit-facing <see cref="ResolvedModelSummary"/> (doc 08 §6).</summary>
-    internal static AgentTaskActivityResult BuildResult(AgentTaskActivityInput input, ResolvedModel resolved, string payload, string hash, string? cardHash = null, string? remoteTaskId = null) => new()
+    /// <summary>Builds the activity's result, projecting <paramref name="resolved"/> into the audit-facing <see cref="ResolvedModelSummary"/> (doc 08 §6), stamped with <paramref name="hostBuild"/>, the <see cref="IHostBuildStamp"/> value.</summary>
+    internal static AgentTaskActivityResult BuildResult(AgentTaskActivityInput input, ResolvedModel resolved, string hostBuild, string payload, string hash, string? cardHash = null, string? remoteTaskId = null) => new()
     {
         NodeId = input.NodeId,
         ArtifactKey = input.ArtifactKey,
@@ -239,7 +243,7 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
         OutputPayload = payload,
         OutputHash = hash,
         ResolvedModel = ToSummary(resolved, cardHash, remoteTaskId),
-        HostBuild = HostBuildInfo.Version,
+        HostBuild = hostBuild,
         InputContractHash = input.InputContract?.Hash,
         OutputContractHash = input.OutputContract?.Hash,
     };

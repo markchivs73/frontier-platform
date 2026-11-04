@@ -41,6 +41,7 @@ There is no reference here to a model provider or a tool transport — no Anthro
 | `IInstructionsResolver` | Where agent instructions come from (called only when a node names a ref; an agent-backed node may name none — ADR-PA40) |
 | `IMcpWriteClassifier` | Whether a tool mutates state, for a node whose definition does not pin `writes` (ADR-PA41) |
 | `IExecutionSnapshotReader` | Reading the execution projection |
+| `IHostBuildStamp` | The worker's own build identity, stamped on every agent and tool result (ADR-E15 D1). Register `HostBuildStamp.FromAssembly(typeof(Program).Assembly)` and build the worker with `ContinuousIntegrationBuild` so the version carries the commit (S13.182) |
 | `IContractTypeSet` (from `…Workflow.Model`) | This deployment's contract types |
 | `IDynamicContextContentProducer` | Rendering an engagement's dynamic-context components on a refresh |
 | `IDispatcherVersionResolver` | Which definition version a dispatcher's next generation runs |

@@ -146,6 +146,31 @@ public sealed class OrchestratorPurityTests
         Assert.Empty(refusals);
     }
 
+    /// <summary>
+    /// <b>S13.182: an orchestrator body never reads the worker's build stamp.</b> The stamp is a
+    /// deployment fact that changes between deploys; read in a body, a replay after a deploy would
+    /// see a different value from the one its history recorded. It is read activity-side, and a
+    /// recorded result replays the value it recorded.
+    /// </summary>
+    [Fact]
+    public void OrchestratorBodiesNeverReadTheHostBuildStamp()
+    {
+        var closure = OrchestratorClosure.Reachable(
+            OrchestratorClosure.OrchestratorTypes(EngineAssemblies), EngineAssemblies.ToHashSet());
+
+        var readers = closure.Where(ReadsHostBuildStamp).Select(Describe).Distinct(StringComparer.Ordinal).ToList();
+
+        Assert.True(readers.Count == 0, $"Orchestrator bodies must not read IHostBuildStamp:{Environment.NewLine}{string.Join(Environment.NewLine, readers)}");
+    }
+
+    /// <summary>The stamp check must be able to fire: a planted body that reads the stamp is caught.</summary>
+    [Fact]
+    public void TheHostBuildStampCheckFiresOnABodyThatReadsIt() =>
+        Assert.Contains(OrchestratorClosure.DeclaredMethods(typeof(DeliberatelyStampReadingBody)), ReadsHostBuildStamp);
+
+    internal static bool ReadsHostBuildStamp(MethodBase method) =>
+        IlCallScanner.CalledMethods(method).Any(called => called.DeclaringType == typeof(Frontier.Platform.Workflow.Orchestration.IHostBuildStamp));
+
     internal static string Describe(MethodBase method) => $"{method.DeclaringType?.FullName}.{method.Name}";
 
     /// <summary>A stand-in orchestrator body that takes both its clock and its identity from the durable context — the sanctioned forms.</summary>
@@ -153,6 +178,12 @@ public sealed class OrchestratorPurityTests
     {
         internal static string Run(Microsoft.DurableTask.TaskOrchestrationContext context) =>
             $"{context.CurrentUtcDateTime:O}-{context.NewGuid()}";
+    }
+
+    /// <summary>A stand-in orchestrator body that reads the build stamp, present only so the stamp check can be shown to reject one.</summary>
+    internal static class DeliberatelyStampReadingBody
+    {
+        internal static string Run(Frontier.Platform.Workflow.Orchestration.IHostBuildStamp stamp) => stamp.Version;
     }
 
     /// <summary>A stand-in orchestrator body, present only so the guard can be shown to reject one.</summary>
