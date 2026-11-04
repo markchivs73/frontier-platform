@@ -101,6 +101,7 @@ public sealed class DefinitionCompilerPhaseC_IntegrationTests : IAsyncLifetime, 
         services.AddSingleton<IInstructionCatalog>(new PermissiveInstructionCatalog());
         services.AddSingleton<IRetryProfileCatalog>(new EmptyRetryProfileCatalog());
         services.AddSingleton<ICascadeGraphChecker>(new EmptyCascadeGraphChecker());
+        services.AddSingleton<IEntryContractCatalog>(new ChatDesignerServiceTests.FakeEntryContractCatalog()); // S13.209: structure.entry-input-contract
         services.AddSingleton(Moq.Mock.Of<IContractSnapshotCatalog>()); // ADR-E27: data.schema-ref-resolves and publish pinning
         Frontier.Platform.Contracts.ContractsServiceCollectionExtensions.AddFrontierContracts(services, new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build()); // data.projection-compatible checks literals
         _services = services.BuildServiceProvider();

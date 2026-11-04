@@ -121,6 +121,9 @@ public static class CompilerServiceCollectionExtensions
         services.AddScoped<IDefinitionValidationRule, TimeoutsNestingRule>();
         services.AddScoped<IDefinitionValidationRule, RetentionFitsWindowRule>();
         services.AddScoped<IDefinitionValidationRule, DeterminismPredicatesCompileRule>();
+        // S13.209: the entry agent_task takes the entry contract the design agent is told about —
+        // both the designer prompt and this rule read the consumer-owned IEntryContractCatalog.
+        services.AddScoped<IDefinitionValidationRule, StructureEntryInputContractRule>();
 
         // S9.30: Runtime-tier catalogue row — executes only in the sandbox test-run channel
         // (S9.38 wires it); ValidateAsync filters to Pure + Resourced.
