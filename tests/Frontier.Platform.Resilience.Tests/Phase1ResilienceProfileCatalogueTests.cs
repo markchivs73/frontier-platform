@@ -113,4 +113,15 @@ public sealed class Phase1ResilienceProfileCatalogueTests
         Assert.True(profile.CircuitBreaker.MinThroughput >= 1_000_000);
         Assert.True(profile.Bulkhead.MaxConcurrent >= 1_000);
     }
+
+    /// <summary>S13.217: v2's per-attempt timeout keeps the 3× total under the 10-minute activity timeout (doc 10 §7).</summary>
+    [Fact]
+    public void None_V2_TotalTimeoutStaysUnderTheActivityTimeout()
+    {
+        var profile = Phase1ResilienceProfileCatalogue.None;
+
+        Assert.Equal(2, profile.Version);
+        Assert.Equal(180_000, profile.TimeoutMs);
+        Assert.True(ResiliencePolicyProvider.TotalTimeoutMs(profile) < TimeoutHierarchyCheck.DtfActivityTimeoutMs);
+    }
 }

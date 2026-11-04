@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using System.Threading.RateLimiting;
 using Frontier.Platform.Abstractions;
 using Microsoft.DurableTask;
 using Polly;
@@ -18,25 +20,71 @@ namespace Frontier.Platform.Resilience;
 /// <see cref="BudgetExceededException"/> anywhere in the failure chain, via
 /// <see cref="TaskFailureDetails.IsCausedBy{T}"/> — the classifications the outer loop
 /// can enforce without a live exception instance (doc 10 §3, hard invariant 7).
+/// Pipelines are built once and cached — per profile, and per <c>(profile, provider, modelId)</c>
+/// endpoint — so breaker and bulkhead state accumulate across calls (doc 10 §6: in-process per worker).
 /// </summary>
-internal sealed class ResiliencePolicyProvider(IFailureClassifier classifier) : IResiliencePolicyProvider
+internal sealed class ResiliencePolicyProvider(IFailureClassifier classifier, CircuitStateProvider circuits, TimeProvider timeProvider) : IResiliencePolicyProvider
 {
     /// <summary>Total pipeline timeout as a multiple of the per-attempt timeout (doc 10 §7: "total pipeline timeout (~3x attempt)").</summary>
     internal const int TotalTimeoutMultiplier = 3;
 
-    /// <inheritdoc />
+    private readonly ConcurrentDictionary<string, Lazy<ResiliencePipeline>> profilePipelines = new();
+    private readonly ConcurrentDictionary<(string Profile, string Provider, string ModelId), Lazy<ResiliencePipeline>> endpointPipelines = new();
+    private readonly ConcurrentDictionary<(string Profile, string Provider), Lazy<RateLimiter>> bulkheads = new();
+
+    /// <summary>
+    /// The pipeline for <paramref name="profileName"/> with no endpoint: built once and cached, so
+    /// its breaker and bulkhead state accumulate across calls, but its breaker is not reported
+    /// through <see cref="ICircuitStateProvider"/> because it is not keyed to a model.
+    /// </summary>
     public ResiliencePipeline GetPipeline(string profileName)
     {
         var profile = ResolveProfile(profileName);
+        return profilePipelines.GetOrAdd(profileName, _ => new(() => Compose(profile, NewBulkhead(profile.Bulkhead), BuildCircuitBreakerOptions(profile.CircuitBreaker)))).Value;
+    }
 
-        return new ResiliencePipelineBuilder()
-            .AddTimeout(TimeSpan.FromMilliseconds(profile.TimeoutMs * TotalTimeoutMultiplier))
-            .AddConcurrencyLimiter(profile.Bulkhead.MaxConcurrent, profile.Bulkhead.MaxQueue)
-            .AddCircuitBreaker(BuildCircuitBreakerOptions(profile.CircuitBreaker))
+    /// <inheritdoc />
+    public ResiliencePipeline GetPipeline(string profileName, string provider, string modelId)
+    {
+        ArgumentNullException.ThrowIfNull(provider);
+        ArgumentNullException.ThrowIfNull(modelId);
+
+        var profile = ResolveProfile(profileName);
+        return endpointPipelines.GetOrAdd((profileName, provider, modelId), key => new(() => BuildEndpointPipeline(profile, key.Provider, key.ModelId))).Value;
+    }
+
+    /// <summary>
+    /// Builds <paramref name="provider"/>/<paramref name="modelId"/>'s pipeline under <paramref name="profile"/>:
+    /// its breaker is tracked by <see cref="CircuitStateProvider"/> (granularity (provider, modelId)), and
+    /// its bulkhead is the one every model of <paramref name="provider"/> shares under that profile
+    /// (granularity provider, doc 10 §6).
+    /// </summary>
+    internal ResiliencePipeline BuildEndpointPipeline(ResilienceProfile profile, string provider, string modelId)
+    {
+        var bulkhead = bulkheads.GetOrAdd((profile.ProfileId, provider), _ => new(() => NewBulkhead(profile.Bulkhead))).Value;
+        var breaker = circuits.Track(provider, modelId, BuildCircuitBreakerOptions(profile.CircuitBreaker));
+        return Compose(profile, bulkhead, breaker);
+    }
+
+    /// <summary>Composes doc 10 §4's order over the given bulkhead and breaker, timed by the provider's <see cref="TimeProvider"/>.</summary>
+    internal ResiliencePipeline Compose(ResilienceProfile profile, RateLimiter bulkhead, CircuitBreakerStrategyOptions breaker) =>
+        new ResiliencePipelineBuilder { TimeProvider = timeProvider }
+            .AddTimeout(TimeSpan.FromMilliseconds(TotalTimeoutMs(profile)))
+            .AddRateLimiter(bulkhead)
+            .AddCircuitBreaker(breaker)
             .AddRetry(BuildRetryOptions(profile.InnerRetry, classifier))
             .AddTimeout(TimeSpan.FromMilliseconds(profile.TimeoutMs))
             .Build();
-    }
+
+    /// <summary>The total pipeline timeout <see cref="Compose"/> applies: <see cref="TotalTimeoutMultiplier"/> per-attempt timeouts (doc 10 §7). <see cref="TimeoutHierarchyCheck"/> validates this value.</summary>
+    internal static int TotalTimeoutMs(ResilienceProfile profile) => profile.TimeoutMs * TotalTimeoutMultiplier;
+
+    /// <summary>A new bulkhead for <paramref name="spec"/>: at most <see cref="BulkheadSpec.MaxConcurrent"/> calls in flight, <see cref="BulkheadSpec.MaxQueue"/> waiting.</summary>
+    internal static ConcurrencyLimiter NewBulkhead(BulkheadSpec spec) => new(new ConcurrencyLimiterOptions
+    {
+        PermitLimit = spec.MaxConcurrent,
+        QueueLimit = spec.MaxQueue,
+    });
 
     /// <inheritdoc />
     public TaskOptions GetTaskOptions(string profileName)

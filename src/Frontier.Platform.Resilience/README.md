@@ -38,7 +38,7 @@ that needs a healthy database to tell you how to survive an unhealthy one is not
 ```
 Orchestrator ──GetTaskOptions(profile)──► outer: durable-task activity retry
                                               │
-Activity ──────GetPipeline(profile)──────► inner: Timeout(total)
+Activity ──GetPipeline(profile, provider, modelId)──► inner: Timeout(total)
                                                   → Bulkhead
                                                   → CircuitBreaker
                                                   → Retry
@@ -49,6 +49,15 @@ Activity ──────GetPipeline(profile)──────► inner: Time
 The inner loop absorbs a bad minute at the provider. The outer loop re-runs the whole activity
 after the inner loop is exhausted. `IResiliencePolicyProvider` builds both from the same named
 profile, so they cannot drift apart.
+
+Inner pipelines are built once and kept for the worker's lifetime: one per profile, and one per
+`(profile, provider, modelId)` endpoint. A pipeline built per call would start every call with a
+fresh breaker and an empty bulkhead, so neither could ever trip. Each endpoint has its own breaker
+(granularity `(provider, modelId)`), and every model of a provider shares one bulkhead under a
+profile (granularity `provider`). The workflow engine runs each agent invocation through the
+endpoint pipeline of the target it resolved to. Only the provider call runs inside it: the engine
+binds the reply afterwards, so a reply that fails its contract never counts toward the breaker.
+Every exception the invoker itself throws does count, permanent ones included.
 
 The outer loop sees only the failure's type names, not the exception object. It refuses to
 re-run when any level of the failure chain is a `ContractViolationException` or a
@@ -88,9 +97,13 @@ sampling window, break duration), `BulkheadSpec` (scope, max concurrent, max que
 
 **Circuit state**
 
-`ICircuitStateProvider` reports breaker state per `(provider, modelId)` and publishes
-`CircuitTransition`s to subscribers. Model-Role Config consults it to skip a chain entry whose
-circuit is open; observability and alerting subscribe to the transitions.
+`ICircuitStateProvider` reports the state of the endpoint pipelines' breakers per
+`(provider, modelId)` and publishes their `CircuitTransition`s to subscribers. A pair no call has
+reached yet reports `Closed`; a pair called under two profiles has two breakers and reports the
+more severe. Model-Role Config consults it to skip a chain entry whose circuit is open;
+observability and alerting subscribe to the transitions. `Isolated` (a manual stop) lets no
+traffic through either, so a query that skips open circuits should skip it too. State is
+in-process per worker.
 
 **The amplification guard**
 
@@ -107,7 +120,8 @@ per-attempt provider timeout  <  total pipeline timeout  <  durable activity tim
 
 Get this inverted and the outer layer kills the call before the inner layer can retry it — the
 retries are configured, they simply never happen. `TimeoutHierarchyCheck` validates the ordering
-for every compiled-in profile at startup and refuses to boot if one is wrong. Human-gate
+for every compiled-in profile at startup and refuses to boot if one is wrong. It checks the total
+timeout the pipeline actually applies — three per-attempt timeouts — not an estimate of it. Human-gate
 escalation sits above all of it by construction: gate timeouts are orchestrator timers, not
 activity calls.
 

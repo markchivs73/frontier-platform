@@ -46,7 +46,7 @@ public sealed class RegistryContractValidationTests
         var invoker = new FakeAgentInvoker(null, output: GoodTicket);
         var dispatcher = Dispatcher(invoker);
 
-        var result = await dispatcher.InvokeAsync("acme/ticket/1.0", RegistryContractFixtures.Ticket, null, Request(ModelTarget()), CancellationToken.None);
+        var result = await dispatcher.InvokeAsync("llm-default", "acme/ticket/1.0", RegistryContractFixtures.Ticket, null, Request(ModelTarget()), CancellationToken.None);
 
         Assert.Equal(GoodTicket, result.Payload);
         Assert.Equal(JsonCanonicalizer.Hash("""{"id":"T-1","priority":2}"""u8), result.Hash);
@@ -59,17 +59,20 @@ public sealed class RegistryContractValidationTests
         var dispatcher = Dispatcher(new FakeAgentInvoker(null, output: """{"id":"T-1"}"""));
 
         await Assert.ThrowsAsync<ContractViolationException>(() =>
-            dispatcher.InvokeAsync("acme/ticket/1.0", RegistryContractFixtures.Ticket, null, Request(ModelTarget()), CancellationToken.None));
+            dispatcher.InvokeAsync("llm-default", "acme/ticket/1.0", RegistryContractFixtures.Ticket, null, Request(ModelTarget()), CancellationToken.None));
     }
 
     [Fact]
     public async Task Dispatcher_AsksAnAgentTargetForNoFormat_EvenForARegistryContract()
     {
         var invoker = new FakeAgentInvoker(null, output: GoodTicket);
+        var policy = new FakeResiliencePolicyProvider();
+        var target = AgentTarget();
 
-        await Dispatcher(invoker).InvokeAsync("acme/ticket/1.0", RegistryContractFixtures.Ticket, null, Request(AgentTarget()), CancellationToken.None);
+        await Dispatcher(invoker, policy).InvokeAsync("llm-default", "acme/ticket/1.0", RegistryContractFixtures.Ticket, null, Request(target), CancellationToken.None);
 
         Assert.Null(invoker.ReceivedRequest!.ResponseFormat);
+        Assert.Equal([("llm-default", target.Provider, target.TargetId)], policy.RequestedEndpoints);
     }
 
     [Fact]
@@ -137,8 +140,8 @@ public sealed class RegistryContractValidationTests
         Assert.Equal("com_example_crm_ticket-v_1_0", RegistryOutputSchema.SchemaName("com.example.crm/ticket-v/1.0"));
     }
 
-    private static AgentInvocationDispatcher Dispatcher(IAgentInvoker invoker) =>
-        new(invoker, new ContractTypeRegistry(TestContractSet.Instance), TestContractValidator.Instance);
+    private static AgentInvocationDispatcher Dispatcher(IAgentInvoker invoker, FakeResiliencePolicyProvider? policy = null) =>
+        new(invoker, new ContractTypeRegistry(TestContractSet.Instance), TestContractValidator.Instance, policy ?? new FakeResiliencePolicyProvider());
 
     private static AgentInvocationRequest Request(ChainEntry target) => new()
     {

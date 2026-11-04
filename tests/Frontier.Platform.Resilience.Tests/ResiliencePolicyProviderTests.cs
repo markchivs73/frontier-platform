@@ -8,7 +8,7 @@ namespace Frontier.Platform.Resilience.Tests;
 /// <summary>S4.4 tests for <see cref="ResiliencePolicyProvider"/> (doc 10 §2, §4, §5).</summary>
 public sealed class ResiliencePolicyProviderTests
 {
-    private readonly ResiliencePolicyProvider provider = new(new FailureClassifier());
+    private readonly ResiliencePolicyProvider provider = new(new FailureClassifier(), new CircuitStateProvider(TimeProvider.System), TimeProvider.System);
 
     [Theory]
     [InlineData("llm-default")]
@@ -34,6 +34,98 @@ public sealed class ResiliencePolicyProviderTests
         var pipeline = provider.GetPipeline(profileName);
 
         Assert.NotNull(pipeline);
+    }
+
+    /// <summary>S13.217: a pipeline is built once per profile, so its breaker and bulkhead state accumulate.</summary>
+    [Fact]
+    public void GetPipeline_SameProfileTwice_ReturnsTheSamePipeline()
+    {
+        Assert.Same(provider.GetPipeline("llm-default"), provider.GetPipeline("llm-default"));
+    }
+
+    /// <summary>S13.217: one pipeline per (profile, provider, modelId) endpoint, kept for the worker's lifetime.</summary>
+    [Fact]
+    public void GetPipeline_Endpoint_IsCachedPerProfileProviderAndModel()
+    {
+        var first = provider.GetPipeline("llm-default", "anthropic", "claude-fable-5");
+
+        Assert.Same(first, provider.GetPipeline("llm-default", "anthropic", "claude-fable-5"));
+        Assert.NotSame(first, provider.GetPipeline("llm-default", "anthropic", "claude-haiku-5"));
+        Assert.NotSame(first, provider.GetPipeline("llm-interactive", "anthropic", "claude-fable-5"));
+        Assert.NotSame(first, provider.GetPipeline("llm-default"));
+    }
+
+    [Fact]
+    public void GetPipeline_EndpointUnknownProfile_Throws()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => provider.GetPipeline("does-not-exist", "anthropic", "claude-fable-5"));
+    }
+
+    [Fact]
+    public void GetPipeline_EndpointNullProviderOrModel_Throws()
+    {
+        Assert.Throws<ArgumentNullException>(() => provider.GetPipeline("llm-default", null!, "claude-fable-5"));
+        Assert.Throws<ArgumentNullException>(() => provider.GetPipeline("llm-default", "anthropic", null!));
+    }
+
+    /// <summary>S13.217: the endpoint pipeline retries a transient provider failure inside the call (doc 10 §5 inner loop).</summary>
+    [Fact]
+    public async Task GetPipeline_Endpoint_RetriesATransientFailure()
+    {
+        var pipeline = provider.BuildEndpointPipeline(FastProfile("fast", maxConcurrent: 4), "anthropic", "claude-fable-5");
+        var calls = 0;
+
+        var result = await pipeline.ExecuteAsync(_ => ++calls == 1 ? throw new TimeoutException() : ValueTask.FromResult("ok"), CancellationToken.None);
+
+        Assert.Equal("ok", result);
+        Assert.Equal(2, calls);
+    }
+
+    /// <summary>S13.217, doc 10 §6: the bulkhead is per provider, so a saturated provider rejects calls to any of its models but not to another provider's.</summary>
+    [Fact]
+    public async Task BuildEndpointPipeline_SharesOneBulkheadPerProvider()
+    {
+        var profile = FastProfile("bulkhead", maxConcurrent: 1);
+        var release = new TaskCompletionSource();
+        var holding = provider.BuildEndpointPipeline(profile, "anthropic", "claude-fable-5").ExecuteAsync(async _ => await release.Task, CancellationToken.None);
+
+        await Assert.ThrowsAsync<Polly.RateLimiting.RateLimiterRejectedException>(async () =>
+            await provider.BuildEndpointPipeline(profile, "anthropic", "claude-haiku-5").ExecuteAsync(_ => ValueTask.CompletedTask, CancellationToken.None));
+        await provider.BuildEndpointPipeline(profile, "openai", "gpt-5").ExecuteAsync(_ => ValueTask.CompletedTask, CancellationToken.None);
+
+        release.SetResult();
+        await holding;
+    }
+
+    /// <summary>S13.217: the bulkhead is per profile too, so a provider saturated under one profile still serves calls under another.</summary>
+    [Fact]
+    public async Task BuildEndpointPipeline_KeepsASeparateBulkheadPerProfile()
+    {
+        var release = new TaskCompletionSource();
+        var saturated = FastProfile("bulkhead-a", maxConcurrent: 1);
+        var holding = provider.BuildEndpointPipeline(saturated, "anthropic", "claude-fable-5").ExecuteAsync(async _ => await release.Task, CancellationToken.None);
+
+        await Assert.ThrowsAsync<Polly.RateLimiting.RateLimiterRejectedException>(async () =>
+            await provider.BuildEndpointPipeline(saturated, "anthropic", "claude-haiku-5").ExecuteAsync(_ => ValueTask.CompletedTask, CancellationToken.None));
+        await provider.BuildEndpointPipeline(FastProfile("bulkhead-b", maxConcurrent: 1), "anthropic", "claude-haiku-5").ExecuteAsync(_ => ValueTask.CompletedTask, CancellationToken.None);
+
+        release.SetResult();
+        await holding;
+    }
+
+    /// <summary>S13.217: an implementation that keys no endpoint serves its profile pipeline for an endpoint request.</summary>
+    [Fact]
+    public void GetPipeline_EndpointDefaultImplementation_FallsBackToTheProfilePipeline()
+    {
+        IResiliencePolicyProvider profileOnly = new ProfileOnlyPolicyProvider();
+
+        Assert.Same(ResiliencePipeline.Empty, profileOnly.GetPipeline("llm-default", "anthropic", "claude-fable-5"));
+    }
+
+    [Fact]
+    public void TotalTimeoutMs_IsThreePerAttemptTimeouts()
+    {
+        Assert.Equal(270_000, ResiliencePolicyProvider.TotalTimeoutMs(Phase1ResilienceProfileCatalogue.LlmDefault));
     }
 
     [Fact]
@@ -157,6 +249,14 @@ public sealed class ResiliencePolicyProviderTests
         Assert.False(await options.ShouldHandle!(args));
     }
 
+    /// <summary>A profile with no backoff delay, so retry tests run instantly.</summary>
+    internal static ResilienceProfile FastProfile(string profileId, int maxConcurrent) =>
+        TimeoutHierarchyCheckTests.BuildProfile(profileId, timeoutMs: 5_000, maxAttempts: 3) with
+        {
+            InnerRetry = new InnerRetrySpec { MaxAttempts = 3, Backoff = "decorrelated-jitter", BaseDelayMs = 0, MaxDelayMs = 0 },
+            Bulkhead = new BulkheadSpec { Scope = "provider", MaxConcurrent = maxConcurrent, MaxQueue = 0 },
+        };
+
     [Fact]
     public void BuildCircuitBreakerOptions_MapsCircuitBreakerSpec()
     {
@@ -168,5 +268,13 @@ public sealed class ResiliencePolicyProviderTests
         Assert.Equal(spec.MinThroughput, options.MinimumThroughput);
         Assert.Equal(TimeSpan.FromSeconds(spec.SamplingWindowSeconds), options.SamplingDuration);
         Assert.Equal(TimeSpan.FromSeconds(spec.BreakDurationSeconds), options.BreakDuration);
+    }
+
+    /// <summary>An <see cref="IResiliencePolicyProvider"/> that implements only the profile-keyed members.</summary>
+    private sealed class ProfileOnlyPolicyProvider : IResiliencePolicyProvider
+    {
+        public ResiliencePipeline GetPipeline(string profileName) => ResiliencePipeline.Empty;
+
+        public TaskOptions GetTaskOptions(string profileName) => new();
     }
 }

@@ -160,7 +160,7 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
             Tools = tools,
         };
 
-        return await dispatcher.InvokeAsync(input.OutputContractType, input.OutputContract, input.ContractBudgets, request, ct).ConfigureAwait(false);
+        return await dispatcher.InvokeAsync(input.RetryProfile ?? GraphOrchestratorSteps.LlmDefaultProfile, input.OutputContractType, input.OutputContract, input.ContractBudgets, request, ct).ConfigureAwait(false);
     }
 
     /// <summary>

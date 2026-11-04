@@ -145,4 +145,14 @@ public sealed record AgentTaskActivityInput
     [JsonPropertyOrder(18)]
     [JsonPropertyName("contract_budgets")]
     public ContractBudgets? ContractBudgets { get; init; }
+
+    /// <summary>
+    /// The node's resilience profile (<see cref="Frontier.Platform.Workflow.Model.RetryPolicySpec.ProfileName"/>), which the
+    /// model call's inner Polly pipeline runs under (doc 10 §5) — the same profile the orchestrator's outer retry uses.
+    /// <b>Additive and optional</b> per the ADR-E15 floor: <see langword="null"/> when the node names none, and on
+    /// every input recorded before this field; both run under <c>llm-default</c>.
+    /// </summary>
+    [JsonPropertyOrder(19)]
+    [JsonPropertyName("retry_profile")]
+    public string? RetryProfile { get; init; }
 }

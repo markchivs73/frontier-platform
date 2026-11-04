@@ -31,10 +31,9 @@ public sealed class TimeoutHierarchyCheckTests
     }
 
     [Fact]
-    public void Evaluate_SingleAttemptProfile_SkipsPerAttemptCheck_ReturnsPass()
+    public void Evaluate_SingleAttemptProfile_ReturnsPass()
     {
-        // For MaxAttempts==1, PipelineTimeoutMs == TimeoutMs by definition — the two timeouts
-        // are identical, not a hierarchy violation (doc 10 §7).
+        // The pipeline timeout is 3× the per-attempt timeout whatever MaxAttempts is (doc 10 §7).
         var profile = BuildProfile("single-attempt", timeoutMs: 1_000, maxAttempts: 1);
 
         var result = TimeoutHierarchyCheck.Evaluate([profile]);
@@ -45,7 +44,7 @@ public sealed class TimeoutHierarchyCheckTests
     [Fact]
     public void Evaluate_PipelineTimeoutNotLessThanDtfActivityTimeout_ReturnsFail()
     {
-        var profile = BuildProfile("bad-pipeline", timeoutMs: 100_000, maxAttempts: 10);
+        var profile = BuildProfile("bad-pipeline", timeoutMs: 200_000, maxAttempts: 1);
 
         var result = TimeoutHierarchyCheck.Evaluate([profile]);
 
@@ -53,12 +52,19 @@ public sealed class TimeoutHierarchyCheckTests
         Assert.Contains("pipeline timeout", result.FailureReason, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// S13.217: the check validates the total timeout the pipeline applies (3× per attempt), not
+    /// <c>TimeoutMs × MaxAttempts</c> — a profile whose attempts would overrun the activity timeout
+    /// still passes when its total timeout does not, because the total timeout cuts the retries off.
+    /// </summary>
     [Fact]
-    public void PipelineTimeoutMs_MultipliesTimeoutByMaxAttempts()
+    public void PipelineTimeoutMs_IsTheTotalTimeoutThePipelineApplies()
     {
-        var profile = BuildProfile("p", timeoutMs: 90_000, maxAttempts: 5);
+        var profile = BuildProfile("p", timeoutMs: 90_000, maxAttempts: 10);
 
-        Assert.Equal(450_000, TimeoutHierarchyCheck.PipelineTimeoutMs(profile));
+        Assert.Equal(ResiliencePolicyProvider.TotalTimeoutMs(profile), TimeoutHierarchyCheck.PipelineTimeoutMs(profile));
+        Assert.Equal(270_000, TimeoutHierarchyCheck.PipelineTimeoutMs(profile));
+        Assert.True(TimeoutHierarchyCheck.Evaluate([profile]).Passed);
     }
 
     internal static ResilienceProfile BuildProfile(string profileId, int timeoutMs, int maxAttempts) => new()

@@ -237,13 +237,16 @@ public static class Phase1ResilienceProfileCatalogue
 
     /// <summary>
     /// No-retry profile (doc 10 §4: "pure activities: cascade evaluation gets none"):
-    /// single attempt, effectively-unlimited timeout, very loose breaker and bulkhead —
-    /// for in-process deterministic work that cannot be retried or timed out externally.
+    /// single attempt, the longest timeout doc 10 §7's hierarchy allows, very loose breaker and
+    /// bulkhead — for in-process deterministic work that cannot be retried or timed out externally.
+    /// v2 (S13.217): the per-attempt timeout fell from 300s to 180s, because the pipeline's total
+    /// timeout is 3× that and must stay under the 10-minute activity timeout; v1's 900s total
+    /// failed <see cref="TimeoutHierarchyCheck"/> once the check measured what the pipeline applies.
     /// </summary>
     public static readonly ResilienceProfile None = new()
     {
         ProfileId = "none",
-        Version = 1,
+        Version = 2,
         InnerRetry = new InnerRetrySpec
         {
             MaxAttempts = 1,
@@ -251,7 +254,7 @@ public static class Phase1ResilienceProfileCatalogue
             BaseDelayMs = 100,
             MaxDelayMs = 100,
         },
-        TimeoutMs = 300_000,
+        TimeoutMs = 180_000,
         CircuitBreaker = new CircuitBreakerSpec
         {
             FailureRatio = 1.0,
