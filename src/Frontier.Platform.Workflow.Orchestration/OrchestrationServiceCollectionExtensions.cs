@@ -23,7 +23,7 @@ public static class OrchestrationServiceCollectionExtensions
     /// supply for itself — <see cref="IAgentInvoker"/>, <see cref="IInstructionsResolver"/>,
     /// <see cref="IMcpToolCatalog"/>, <see cref="IMcpEndpointResolver"/>,
     /// <see cref="IMcpWriteClassifier"/>, <see cref="IExecutionSnapshotReader"/>,
-    /// <see cref="IEntryPayloadBuilder"/> and <see cref="IContractTypeSet"/>. Each of those names
+    /// <see cref="IEntryPayloadBuilder"/>, <see cref="IHostBuildStamp"/> and <see cref="IContractTypeSet"/>. Each of those names
     /// a vendor or a deployment fact; the engine asks and does not decide. The same is true of
     /// <see cref="IDynamicContextContentProducer"/> and <see cref="IDispatcherVersionResolver"/>:
     /// their activities are registered here, the ports behind them deliberately are not.</para>

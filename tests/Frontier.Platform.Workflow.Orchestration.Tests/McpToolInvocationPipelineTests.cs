@@ -66,7 +66,7 @@ public sealed class McpToolInvocationPipelineTests
     {
         var pipeline = new McpToolInvocationPipeline(
             new StubCatalog(new StubTool(_ => JsonDocument.Parse("""{"updated":true}""").RootElement.Clone())),
-            TestContractValidator.Instance);
+            TestContractValidator.Instance, TestHostBuildStamp.Instance);
 
         var result = await pipeline.RunAsync(Input() with { InputPayload = """{"b":1,"a":"x"}""", IdempotencyKey = "k-1" }, CancellationToken.None);
 
@@ -82,7 +82,7 @@ public sealed class McpToolInvocationPipelineTests
         {
             seen = arguments;
             return JsonDocument.Parse("""{"updated":true}""").RootElement.Clone();
-        })), TestContractValidator.Instance);
+        })), TestContractValidator.Instance, TestHostBuildStamp.Instance);
 
         var result = await pipeline.RunAsync(Input() with
         {
@@ -97,7 +97,7 @@ public sealed class McpToolInvocationPipelineTests
         Assert.False(result.Simulated);
         Assert.Equal("t-update", result.NodeId);
         Assert.Equal("com.example.crm/tickets/update_ticket", result.ToolRef);
-        Assert.NotNull(result.HostBuild);
+        Assert.Equal(TestHostBuildStamp.Value, result.HostBuild);   // S13.182: the worker build the port supplies
     }
 
     [Fact]
@@ -115,7 +115,7 @@ public sealed class McpToolInvocationPipelineTests
     public async Task RunAsync_SimulatedAck_IsFlagged()
     {
         var pipeline = new McpToolInvocationPipeline(new StubCatalog(new StubTool(_ =>
-            new SimulatedAck(true, "com.example.crm/tickets/update_ticket"))), TestContractValidator.Instance);
+            new SimulatedAck(true, "com.example.crm/tickets/update_ticket"))), TestContractValidator.Instance, TestHostBuildStamp.Instance);
 
         var result = await pipeline.RunAsync(Input(), CancellationToken.None);
 
@@ -130,7 +130,7 @@ public sealed class McpToolInvocationPipelineTests
     public async Task RunAsync_ResolvesTheToolOnTheNodesPins(bool? writes)
     {
         var catalog = new StubCatalog(new StubTool(_ => JsonDocument.Parse("""{"updated":true}""").RootElement.Clone()));
-        var pipeline = new McpToolInvocationPipeline(catalog, TestContractValidator.Instance);
+        var pipeline = new McpToolInvocationPipeline(catalog, TestContractValidator.Instance, TestHostBuildStamp.Instance);
 
         await pipeline.RunAsync(Input() with { InputPayload = """{"id":"T-1","priority":1}""", Writes = writes, InputContract = RegistryContractFixtures.Ticket }, CancellationToken.None);
 
@@ -158,7 +158,7 @@ public sealed class McpToolInvocationPipelineTests
     [Fact]
     public async Task RunAsync_UnresolvableTool_Throws()
     {
-        var pipeline = new McpToolInvocationPipeline(new StubCatalog(tool: null), TestContractValidator.Instance);
+        var pipeline = new McpToolInvocationPipeline(new StubCatalog(tool: null), TestContractValidator.Instance, TestHostBuildStamp.Instance);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => pipeline.RunAsync(Input(), CancellationToken.None));
     }
@@ -315,7 +315,13 @@ public sealed class McpToolInvocationPipelineTests
     [Fact]
     public void Constructor_NullContractValidator_Throws()
     {
-        Assert.Throws<ArgumentNullException>(() => new McpToolInvocationPipeline(new StubCatalog(tool: null), null!));
+        Assert.Throws<ArgumentNullException>(() => new McpToolInvocationPipeline(new StubCatalog(tool: null), null!, TestHostBuildStamp.Instance));
+    }
+
+    [Fact]
+    public void Constructor_NullHostBuild_Throws()
+    {
+        Assert.Throws<ArgumentNullException>(() => new McpToolInvocationPipeline(new StubCatalog(tool: null), TestContractValidator.Instance, null!));
     }
 
     [Fact]
@@ -333,10 +339,10 @@ public sealed class McpToolInvocationPipelineTests
     private static JsonElement Reply(string json) => JsonDocument.Parse(json).RootElement.Clone();
 
     private static McpToolInvocationPipeline Pipeline(Func<AIFunctionArguments, object?> tool) =>
-        new(new StubCatalog(new StubTool(tool)), TestContractValidator.Instance);
+        new(new StubCatalog(new StubTool(tool)), TestContractValidator.Instance, TestHostBuildStamp.Instance);
 
     private static Task<McpToolActivityResult> RunReturningAsync(string json) =>
-        new McpToolInvocationPipeline(new StubCatalog(new StubTool(_ => JsonDocument.Parse(json).RootElement.Clone())), TestContractValidator.Instance)
+        new McpToolInvocationPipeline(new StubCatalog(new StubTool(_ => JsonDocument.Parse(json).RootElement.Clone())), TestContractValidator.Instance, TestHostBuildStamp.Instance)
             .RunAsync(Input(), CancellationToken.None);
 
     private static McpToolActivityInput Input() => new()

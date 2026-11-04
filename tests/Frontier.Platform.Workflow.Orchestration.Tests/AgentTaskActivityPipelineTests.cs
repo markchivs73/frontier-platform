@@ -49,7 +49,7 @@ public sealed class AgentTaskActivityPipelineTests
         Assert.Equal(expectedHash, result.OutputHash);
         Assert.Equal("deep-reasoning", result.ResolvedModel.RoleId);
         Assert.Equal("claude-fable-5", result.ResolvedModel.ModelId);
-        Assert.Equal(HostBuildInfo.Version, result.HostBuild);   // ADR-E15 D1: every activity result carries the executing build
+        Assert.Equal(TestHostBuildStamp.Value, result.HostBuild);   // ADR-E15 D1, S13.182: every activity result carries the worker build the port supplies
         Assert.Contains("\"narrative\":\"Design a product scope.\"", invoker.ReceivedRequest!.Prompt, StringComparison.Ordinal);
     }
 
@@ -89,7 +89,7 @@ public sealed class AgentTaskActivityPipelineTests
         var scope = ScopeSectionFixture();
         var usage = new UsageDetails { InputTokenCount = 120, OutputTokenCount = 45, CachedInputTokenCount = 80 };
         var d = Dependencies(scope, dynamicContent: """{"engagement_brief":"Design a product scope."}""", usage: usage);
-        var pipeline = new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance);
+        var pipeline = new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance, TestHostBuildStamp.Instance);
         var input = BuildInput(nameof(BriefArtifact), nameof(SummaryArtifact), upstreamPayload: null);
 
         var result = await pipeline.RunAsync(input, CancellationToken.None);
@@ -118,7 +118,7 @@ public sealed class AgentTaskActivityPipelineTests
         var scope = ScopeSectionFixture();
         var toolCalls = new[] { new ToolCall { Name = "com.example.crm/tickets/get_new_ticket", InvokedAtUtc = DateTime.UtcNow } };
         var d = Dependencies(scope, dynamicContent: """{"engagement_brief":"Design a product scope."}""", toolCalls: toolCalls);
-        var pipeline = new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance);
+        var pipeline = new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance, TestHostBuildStamp.Instance);
         var input = BuildInput(nameof(BriefArtifact), nameof(SummaryArtifact), upstreamPayload: null);
 
         await pipeline.RunAsync(input, CancellationToken.None);
@@ -132,7 +132,7 @@ public sealed class AgentTaskActivityPipelineTests
     {
         var scope = ScopeSectionFixture();
         var d = Dependencies(scope, dynamicContent: """{"engagement_brief":"Design a product scope."}""");
-        var pipeline = new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance);
+        var pipeline = new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance, TestHostBuildStamp.Instance);
         var input = BuildInput(nameof(BriefArtifact), nameof(SummaryArtifact), upstreamPayload: null);
 
         await pipeline.RunAsync(input, CancellationToken.None);
@@ -153,7 +153,7 @@ public sealed class AgentTaskActivityPipelineTests
             AdditionalCounts = new AdditionalPropertiesDictionary<long> { ["cache_creation_input_tokens"] = 25 },
         };
         var d = Dependencies(scope, dynamicContent: """{"engagement_brief":"Design a product scope."}""", usage: usage);
-        var pipeline = new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance);
+        var pipeline = new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance, TestHostBuildStamp.Instance);
         var input = BuildInput(nameof(BriefArtifact), nameof(SummaryArtifact), upstreamPayload: null);
 
         await pipeline.RunAsync(input, CancellationToken.None);
@@ -168,7 +168,7 @@ public sealed class AgentTaskActivityPipelineTests
         // S13.60: the activity reads the epoch the run is pinned to, never ":current".
         var d = Dependencies();
         var composer = (FakeContextContentComposer)d.Composer;
-        var pipeline = new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance);
+        var pipeline = new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance, TestHostBuildStamp.Instance);
         var input = BuildInput(nameof(BriefArtifact), nameof(SummaryArtifact), upstreamPayload: null) with { DynamicContextEpoch = 3 };
         var resolved = ResolvedModelFixture();
         await pipeline.AssembleAsync(input, resolved, CancellationToken.None);
@@ -185,7 +185,7 @@ public sealed class AgentTaskActivityPipelineTests
             Composer = new FakeContextContentComposer(new ComposedContext { BaselineContent = "{}", DynamicContent = "{}", RealTimeContent = "{}", DynamicEpoch = 3, DynamicRef = "eng-1:ctx:e000003", DynamicContentHash = "h" }),
             AssembleContext = new AssembleContextActivity(assembler),
         };
-        var pipeline = new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance);
+        var pipeline = new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance, TestHostBuildStamp.Instance);
         var input = BuildInput(nameof(BriefArtifact), nameof(SummaryArtifact), upstreamPayload: null);
         await pipeline.AssembleAsync(input, ResolvedModelFixture(), CancellationToken.None);
         Assert.Equal(new DynamicTierProvenance(input.EngagementId, 3, "eng-1:ctx:e000003"), assembler.ReceivedDynamicProvenance);
@@ -196,7 +196,7 @@ public sealed class AgentTaskActivityPipelineTests
     {
         var d = Dependencies();
         var composer = (FakeContextContentComposer)d.Composer;
-        var pipeline = new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance);
+        var pipeline = new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance, TestHostBuildStamp.Instance);
         var input = BuildInput(nameof(BriefArtifact), nameof(SummaryArtifact), upstreamPayload: null) with { RevisionNote = "redo scope" };
         var resolved = ResolvedModelFixture();
 
@@ -214,7 +214,7 @@ public sealed class AgentTaskActivityPipelineTests
         var tool = AIFunctionFactory.Create(() => "ticket", "get_new_ticket");
         var toolCatalog = new FakeMcpToolCatalog([tool]);
         var d = Dependencies(scope) with { ToolCatalog = toolCatalog, Dispatcher = new AgentInvocationDispatcher(invoker, registry, TestContractValidator.Instance), ContractTypes = registry };
-        var pipeline = new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance);
+        var pipeline = new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance, TestHostBuildStamp.Instance);
         IReadOnlyList<McpToolPin> pins = [new McpToolPin { ToolRef = "com.example.crm/tickets/get_new_ticket", InputContract = RegistryContractFixtures.Ticket, Writes = false }];
         var input = BuildInput(nameof(BriefArtifact), nameof(SummaryArtifact), upstreamPayload: null) with { ToolRefs = ["com.example.crm/tickets/get_new_ticket"], ToolPins = pins };
         var resolved = ResolvedModelFixture();
@@ -404,7 +404,7 @@ public sealed class AgentTaskActivityPipelineTests
     {
         var d = Dependencies();
 
-        Assert.Throws<ArgumentNullException>(() => new AgentTaskActivityPipeline(null!, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance));
+        Assert.Throws<ArgumentNullException>(() => new AgentTaskActivityPipeline(null!, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance, TestHostBuildStamp.Instance));
     }
 
     [Fact]
@@ -412,7 +412,7 @@ public sealed class AgentTaskActivityPipelineTests
     {
         var d = Dependencies();
 
-        Assert.Throws<ArgumentNullException>(() => new AgentTaskActivityPipeline(d.Composer, null!, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance));
+        Assert.Throws<ArgumentNullException>(() => new AgentTaskActivityPipeline(d.Composer, null!, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance, TestHostBuildStamp.Instance));
     }
 
     [Fact]
@@ -420,7 +420,7 @@ public sealed class AgentTaskActivityPipelineTests
     {
         var d = Dependencies();
 
-        Assert.Throws<ArgumentNullException>(() => new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, null!, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance));
+        Assert.Throws<ArgumentNullException>(() => new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, null!, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance, TestHostBuildStamp.Instance));
     }
 
     [Fact]
@@ -428,7 +428,7 @@ public sealed class AgentTaskActivityPipelineTests
     {
         var d = Dependencies();
 
-        Assert.Throws<ArgumentNullException>(() => new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, null!, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance));
+        Assert.Throws<ArgumentNullException>(() => new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, null!, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance, TestHostBuildStamp.Instance));
     }
 
     [Fact]
@@ -436,7 +436,7 @@ public sealed class AgentTaskActivityPipelineTests
     {
         var d = Dependencies();
 
-        Assert.Throws<ArgumentNullException>(() => new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, null!, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance));
+        Assert.Throws<ArgumentNullException>(() => new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, null!, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance, TestHostBuildStamp.Instance));
     }
 
     [Fact]
@@ -444,7 +444,7 @@ public sealed class AgentTaskActivityPipelineTests
     {
         var d = Dependencies();
 
-        Assert.Throws<ArgumentNullException>(() => new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, null!, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance));
+        Assert.Throws<ArgumentNullException>(() => new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, null!, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance, TestHostBuildStamp.Instance));
     }
 
     [Fact]
@@ -452,7 +452,7 @@ public sealed class AgentTaskActivityPipelineTests
     {
         var d = Dependencies();
 
-        Assert.Throws<ArgumentNullException>(() => new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, null!, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance));
+        Assert.Throws<ArgumentNullException>(() => new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, null!, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance, TestHostBuildStamp.Instance));
     }
 
     [Fact]
@@ -460,7 +460,7 @@ public sealed class AgentTaskActivityPipelineTests
     {
         var d = Dependencies();
 
-        Assert.Throws<ArgumentNullException>(() => new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, null!, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance));
+        Assert.Throws<ArgumentNullException>(() => new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, null!, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance, TestHostBuildStamp.Instance));
     }
 
     [Fact]
@@ -468,7 +468,7 @@ public sealed class AgentTaskActivityPipelineTests
     {
         var d = Dependencies();
 
-        Assert.Throws<ArgumentNullException>(() => new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, null!, new FakeEntryPayloadBuilder(), TestContractValidator.Instance));
+        Assert.Throws<ArgumentNullException>(() => new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, null!, new FakeEntryPayloadBuilder(), TestContractValidator.Instance, TestHostBuildStamp.Instance));
     }
 
     private static SummaryArtifact ScopeSectionFixture() => new() { Title = "Scope", Objectives = ["objective"] };
@@ -556,7 +556,15 @@ public sealed class AgentTaskActivityPipelineTests
     {
         var d = Dependencies();
 
-        Assert.Throws<ArgumentNullException>(() => new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), null!));
+        Assert.Throws<ArgumentNullException>(() => new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), null!, TestHostBuildStamp.Instance));
+    }
+
+    [Fact]
+    public void Constructor_NullHostBuild_Throws()
+    {
+        var d = Dependencies();
+
+        Assert.Throws<ArgumentNullException>(() => new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance, null!));
     }
 
     private static PipelineDependencies RegistryDependencies(string reply)
@@ -567,7 +575,7 @@ public sealed class AgentTaskActivityPipelineTests
     }
 
     private static AgentTaskActivityPipeline Pipeline(PipelineDependencies d) =>
-        new(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance);
+        new(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance, TestHostBuildStamp.Instance);
 
     private static AgentTaskActivityInput BuildInput(string inputContractType, string outputContractType, string? upstreamPayload) => new()
     {
@@ -601,7 +609,7 @@ public sealed class AgentTaskActivityPipelineTests
         invoker = d.Invoker;
         admission = d.AdmissionControllerDouble;
 
-        return new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance);
+        return new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance, TestHostBuildStamp.Instance);
     }
 
     private static PipelineDependencies Dependencies(

@@ -3302,3 +3302,28 @@ dispatcher tests that carry the record, the pipeline tests that validate under i
 validator and registration tests: one compilation across two budgets, the iteration budget and
 violation cap per call, no ceiling at run time, an unbounded rule still refused, and the ceiling and
 iteration budget applied at registration.
+
+## ADR-PA44 — the host build stamp is the worker's, through a port the consumer must register
+
+ADR-E15 D1/D3 (the consumer's record of which code ran each step) stamps every agent and tool
+activity result with a host build. The platform read it from its own assembly,
+`Frontier.Platform.Workflow.Orchestration`, so two worker deploys on one platform version stamped
+the same value and could not be told apart (consumer S13.182).
+
+**The stamp comes from `IHostBuildStamp`, a consumer-owned port the engine does not register.**
+Only the worker's composition root knows the worker's build, and a platform default would bring the
+silent wrong answer back. `HostBuildStamp.FromAssembly` builds one from the assembly the consumer
+names (its informational version, else its assembly version, else `"unknown"`), resolved once.
+- *Read activity-side only.* The two pipelines read it when they build a result; an orchestrator
+  body never does, so a recorded result replays the value it recorded. Pinned by
+  `OrchestratorBodiesNeverReadTheHostBuildStamp`.
+- *"Never a platform assembly" is documented, not enforced.* A name check cannot tell a platform
+  package from a worker: this repository's own sample worker is `Frontier.Platform.SmokeConsumer`.
+
+**Consumers must register an `IHostBuildStamp`: that is the one adoption step this release
+requires.** The public API change is additive (one interface, one static class), so the commit is
+not scoped `!`, following the ADR-PA32 precedent for a newly required port (`IMappingDecisionRecorder`). Without the
+registration, resolving either pipeline fails naming the port (`HostBuildStampRegistrationTests`);
+with `ValidateOnBuild` building the provider fails, and otherwise the first agent or tool activity
+fails. No recorded shape changes: `host_build` was already on both results, no golden file changes
+and no schema version moves.

@@ -61,6 +61,7 @@ public sealed class OrchestrationServiceCollectionExtensionsTests
         Assert.DoesNotContain(typeof(IExecutionSnapshotReader), registered);
         Assert.DoesNotContain(typeof(IEntryPayloadBuilder), registered);
         Assert.DoesNotContain(typeof(IContractTypeSet), registered);
+        Assert.DoesNotContain(typeof(IHostBuildStamp), registered);   // S13.182: a platform default stamped the platform's build, not the worker's
     }
 
     [Fact]

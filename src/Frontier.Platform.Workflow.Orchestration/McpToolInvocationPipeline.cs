@@ -32,14 +32,17 @@ internal sealed class McpToolInvocationPipeline : IMcpToolInvocationPipeline
 
     private readonly IMcpToolCatalog toolCatalog;
     private readonly IContractValidator contractValidator;
+    private readonly IHostBuildStamp hostBuild;
 
-    /// <summary>Constructs the pipeline over the runtime tool catalog and the contract validator.</summary>
-    public McpToolInvocationPipeline(IMcpToolCatalog toolCatalog, IContractValidator contractValidator)
+    /// <summary>Constructs the pipeline over the runtime tool catalog, the contract validator and the worker's build stamp.</summary>
+    public McpToolInvocationPipeline(IMcpToolCatalog toolCatalog, IContractValidator contractValidator, IHostBuildStamp hostBuild)
     {
         ArgumentNullException.ThrowIfNull(toolCatalog);
         ArgumentNullException.ThrowIfNull(contractValidator);
+        ArgumentNullException.ThrowIfNull(hostBuild);
         this.toolCatalog = toolCatalog;
         this.contractValidator = contractValidator;
+        this.hostBuild = hostBuild;
     }
 
     /// <inheritdoc />
@@ -79,7 +82,7 @@ internal sealed class McpToolInvocationPipeline : IMcpToolInvocationPipeline
             OutputPayload = payload,
             OutputHash = JsonCanonicalizer.Hash(Encoding.UTF8.GetBytes(payload)),
             Simulated = simulated,
-            HostBuild = HostBuildInfo.Version,
+            HostBuild = hostBuild.Version,
             InputContractHash = input.InputContract?.Hash,
             OutputContractHash = outputContract?.Hash,
             InputHash = JsonCanonicalizer.Hash(Encoding.UTF8.GetBytes(argumentsJson)),

@@ -164,6 +164,8 @@ engineServices.AddSingleton<IMcpWriteClassifier, SmokeWriteClassifier>();
 engineServices.AddSingleton<IExecutionSnapshotReader, SmokeSnapshotReader>();
 engineServices.AddSingleton<IEntryPayloadBuilder, SmokeEntryPayloadBuilder>();
 engineServices.AddSingleton<IContractTypeSet>(new ContractTypeSet([typeof(WorkflowDefinition)]));
+// S13.182: the stamp names the worker's own build, so the consumer passes its entry assembly.
+engineServices.AddSingleton(HostBuildStamp.FromAssembly(typeof(SmokeAgentInvoker).Assembly));
 
 using var engineProvider = engineServices.BuildServiceProvider();
 var orchestrator = engineProvider.GetRequiredService<GraphOrchestrator>();
