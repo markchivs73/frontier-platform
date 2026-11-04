@@ -42,12 +42,18 @@ public interface IChatDesignerService
         CancellationToken ct);
 }
 
-/// <summary>Designer's turn submission request (message + optional explicit merge decision).</summary>
+/// <summary>Designer's turn submission request: the message and the resources it mentions.</summary>
 public sealed record DesignTurnRequest
 {
     public required string DesignerId { get; init; }
     public required string Message { get; init; }
-    public required bool AutoMergeProposal { get; init; } // If true and no conflicts, auto-merge
+    /// <summary>
+    /// Ignored. A turn never merges its proposal; the designer approves changes through
+    /// <see cref="IProposalMergeService.ApplyApprovedChangesAsync(string, string, string, IReadOnlyList{string}, string, CancellationToken)"/>.
+    /// No longer required, so a caller can stop setting it.
+    /// </summary>
+    [Obsolete("Deprecated in v0.50.0: ignored, a turn never merges its proposal (S13.203). Stop setting it; approve changes with IProposalMergeService.ApplyApprovedChangesAsync(workflowId, turnId, baseRevision, approvedChangeIds, designerId, ct). Removed at the next phase boundary.")]
+    public bool AutoMergeProposal { get; init; }
 
     /// <summary>
     /// Resource mentions the composer's `@`/`.` grammar inserted (doc 14 §8a, S9.33). Additive
