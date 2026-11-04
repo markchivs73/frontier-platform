@@ -522,6 +522,21 @@ public sealed class AgentTaskActivityPipelineTests
         Assert.Equal(RegistryContractFixtures.Ticket.Hash, record.OutputContractHash);
     }
 
+    /// <summary>S13.183 (ADR-E15 D3): the staged telemetry carries the same worker build as the result, so the signed audit can name it.</summary>
+    [Fact]
+    public async Task RunAsync_StagesTheWorkerBuildOnTheTelemetry()
+    {
+        var d = RegistryDependencies("""{"id":"T-2","priority":1}""");
+        var input = BuildInput("acme/ticket/1.0", "acme/ticket/1.0", upstreamPayload: """{"id":"T-1","priority":3}""")
+            with { InputContract = RegistryContractFixtures.Ticket, OutputContract = RegistryContractFixtures.Ticket };
+
+        var result = await Pipeline(d).RunAsync(input, CancellationToken.None);
+
+        var record = Assert.Single(d.TelemetryStaging.Records);
+        Assert.Equal(TestHostBuildStamp.Value, record.HostBuild);
+        Assert.Equal(result.HostBuild, record.HostBuild);
+    }
+
     [Fact]
     public async Task RunAsync_AnInputThatFailsItsRegistryContract_IsRefusedBeforeTheAgentRuns()
     {

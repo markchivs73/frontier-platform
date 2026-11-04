@@ -137,4 +137,13 @@ public sealed record AuditTelemetryRecord
     [JsonPropertyOrder(22)]
     [JsonPropertyName("output_contract_hash")]
     public string? OutputContractHash { get; init; }
+
+    /// <summary>
+    /// The build of the worker that ran this invocation (ADR-E15 D3, S13.183): the consumer's
+    /// <c>IHostBuildStamp</c> value, read activity-side. <see langword="null"/> (omitted on the wire)
+    /// on records staged before the stamp reached the audit, so their golden and signed bytes are unaffected.
+    /// </summary>
+    [JsonPropertyOrder(23)]
+    [JsonPropertyName("host_build")]
+    public string? HostBuild { get; init; }
 }

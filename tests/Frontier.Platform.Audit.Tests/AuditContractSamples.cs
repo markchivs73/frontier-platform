@@ -213,6 +213,21 @@ internal static class AuditContractSamples
     /// <summary>ADR-PA41: the signed shape of <see cref="AuditRecordWithMcpToolInvocations"/>.</summary>
     public static SignedAuditRecord SignedAuditRecordWithMcpToolInvocations() => SignedAuditRecord() with { McpToolInvocations = AuditRecordWithMcpToolInvocations().McpToolInvocations };
 
+    /// <summary>S13.183 (ADR-E15 D3): a record naming the run's generation and the worker build of each invocation and MCP step.</summary>
+    public static AuditRecord AuditRecordWithHostBuildAndGeneration() => AuditRecord() with
+    {
+        AgentInvocations = [AgentInvocation() with { HostBuild = "1.4.0+0123abc" }],
+        McpToolInvocations = [McpToolInvocation() with { HostBuild = "1.4.0+0123abc" }],
+        Generation = 1,
+    };
+
+    /// <summary>S13.183: the signed shape of <see cref="AuditRecordWithHostBuildAndGeneration"/>.</summary>
+    public static SignedAuditRecord SignedAuditRecordWithHostBuildAndGeneration()
+    {
+        var unsigned = AuditRecordWithHostBuildAndGeneration();
+        return SignedAuditRecord() with { AgentInvocations = unsigned.AgentInvocations, McpToolInvocations = unsigned.McpToolInvocations, Generation = unsigned.Generation };
+    }
+
     public static AuditRecord AuditRecordWithContextPin() => AuditRecord() with { DynamicContextEpoch = 3, DynamicContextHash = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" };
 
     /// <summary>A well-formed <see cref="SignedAuditRecord"/> (doc 05 §3, all 18 fields).</summary>

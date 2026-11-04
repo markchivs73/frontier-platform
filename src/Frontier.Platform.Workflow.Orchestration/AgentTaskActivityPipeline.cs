@@ -89,7 +89,7 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
 
         var invocation = await InvokeAgentAsync(input, resolved, context, inputPayload, ct).ConfigureAwait(false);
 
-        var telemetry = BuildTelemetryRecord(input, resolved, invocation, inputPayload, invocation.Hash);
+        var telemetry = BuildTelemetryRecord(input, resolved, invocation, inputPayload, invocation.Hash, hostBuild.Version);
         await telemetryStaging.RecordInvocationAsync(telemetry, ct).ConfigureAwait(false);
 
         return BuildResult(input, resolved, hostBuild.Version, invocation.Payload, invocation.Hash, invocation.CardHash, invocation.RemoteTaskId);
@@ -274,9 +274,11 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
     /// <see cref="AuditTelemetryRecord.ToolCalls"/> is <paramref name="invocation"/>'s MCP
     /// tool calls (ADR-CD6, S9.25 — <c>[]</c> when the node declared no tools or none were
     /// called), and the per-tier cache-changed flags use C-15's S5.3 placeholder (baseline
-    /// unchanged, dynamic/real-time changed) pending the QG-5 verdict.
+    /// unchanged, dynamic/real-time changed) pending the QG-5 verdict. <paramref name="hostBuild"/>
+    /// is the <see cref="IHostBuildStamp"/> value the result carries too, so the signed audit names the
+    /// worker build (S13.183).
     /// </summary>
-    internal static AuditTelemetryRecord BuildTelemetryRecord(AgentTaskActivityInput input, ResolvedModel resolved, AgentInvocationResult invocation, string inputPayload, string outputHash) => new()
+    internal static AuditTelemetryRecord BuildTelemetryRecord(AgentTaskActivityInput input, ResolvedModel resolved, AgentInvocationResult invocation, string inputPayload, string outputHash, string hostBuild) => new()
     {
         ExecutionId = input.ExecutionId,
         CorrelationId = input.CorrelationId,
@@ -301,6 +303,7 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
         InvokedAtUtc = DateTime.UtcNow,
         InputContractHash = input.InputContract?.Hash,
         OutputContractHash = input.OutputContract?.Hash,
+        HostBuild = hostBuild,
     };
 
     /// <summary>

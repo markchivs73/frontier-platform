@@ -37,5 +37,6 @@ internal static class AgentInvocationProjector
         InvokedAtUtc = record.InvokedAtUtc,
         InputContractHash = record.InputContractHash,
         OutputContractHash = record.OutputContractHash,
+        HostBuild = record.HostBuild,
     };
 }

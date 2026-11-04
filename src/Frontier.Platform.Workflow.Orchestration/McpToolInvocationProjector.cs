@@ -41,5 +41,6 @@ internal static class McpToolInvocationProjector
         OutputContractHash = step.OutputContractHash,
         Simulated = step.Simulated,
         CompletedAtUtc = step.CompletedAtUtc,
+        HostBuild = step.HostBuild,
     };
 }

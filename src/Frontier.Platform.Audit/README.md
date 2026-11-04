@@ -202,6 +202,13 @@ migrated. Git history holds the 1.0 bytes if they are ever needed.
   covered by `record_hash` like every other content field. It is omitted when the execution ran no
   MCP step, and absent on every record signed before it existed, so those records recompute to
   their stored bytes and verify unchanged; no schema version moved, per the minor-change rule above.
+- **The record names the worker build and the run's generation** (ADR-PA45). Each agent invocation
+  and MCP step carries `host_build`, the worker's `IHostBuildStamp` value (ADR-PA44), and the record
+  carries `generation`, the compatibility generation the run started on. All three are omit-null
+  and covered by `record_hash`; records signed before them recompute to their stored bytes. Nothing
+  writes `generation` yet: it arrives with the generation stamping on the execution snapshot.
+  A verifier on an older platform version reads a new record without the three members and fails
+  its signature, so move verifiers and workers to this release together.
 - **Sandbox runs are marked, not mixed.** `AuditRecord.Sandbox` is `true` for a `SANDBOX-`-prefixed
   engagement and omitted entirely otherwise, so existing golden bytes are unaffected and the
   aggregation layer can filter test runs out of empirical evidence with a one-line predicate.

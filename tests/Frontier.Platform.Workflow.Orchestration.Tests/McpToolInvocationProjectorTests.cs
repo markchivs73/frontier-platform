@@ -26,6 +26,7 @@ public sealed class McpToolInvocationProjectorTests
         InputContractType = "acme/ticket-update/1.0",
         InputHash = "args-hash",
         Simulated = true,
+        HostBuild = "9.8.7+worker1234",
     };
 
     [Fact]
@@ -49,6 +50,7 @@ public sealed class McpToolInvocationProjectorTests
             OutputContractHash = OutputContractHash,
             Simulated = true,
             CompletedAtUtc = step.CompletedAtUtc,
+            HostBuild = "9.8.7+worker1234",   // S13.183: the worker build the step recorded
         }, invocation);
     }
 
