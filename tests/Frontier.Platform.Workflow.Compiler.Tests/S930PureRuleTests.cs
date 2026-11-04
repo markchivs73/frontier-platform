@@ -271,6 +271,57 @@ public sealed class S930PureRuleTests
             Assert.Equal("context.baseline-scoped", finding.RuleId);
             Assert.Equal("agent-1", finding.NodeId);
         }
+
+        [Fact]
+        public async Task EmptyList_ReturnsFinding()
+        {
+            var ctx = Ctx(S930Fixtures.Build([S930Fixtures.Agent("agent-1", baselineComponents: [])]));
+
+            var finding = Assert.Single(await new ContextBaselineScopedRule().EvaluateAsync(ctx, CancellationToken.None));
+            Assert.Equal("context.baseline-scoped", finding.RuleId);
+            Assert.Equal(ValidationSeverity.Error, finding.Severity);
+            Assert.Equal("agent-1", finding.NodeId);
+            Assert.Equal("context_request.baseline_components", finding.FieldPath);
+            Assert.Contains("empty", finding.Message, StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public async Task EmptyListOnEveryAgentTask_ReturnsOneFindingPerNode()
+        {
+            var ctx = Ctx(S930Fixtures.Build(
+            [
+                S930Fixtures.Agent("agent-1", baselineComponents: []),
+                S930Fixtures.Agent("agent-2", baselineComponents: ["firm-standards"]),
+                S930Fixtures.Agent("agent-3", baselineComponents: []),
+            ]));
+
+            var findings = await new ContextBaselineScopedRule().EvaluateAsync(ctx, CancellationToken.None);
+
+            Assert.Equal(["agent-1", "agent-3"], findings.Select(f => f.NodeId));
+        }
+
+        /// <summary>
+        /// Publish-time and run-time parity, by example: each case is a baseline list that
+        /// <see cref="Frontier.Platform.Abstractions.ContextRequest.Validate"/> refuses at run time (its two
+        /// baseline predicates: empty, and containing <c>"*"</c>), and each must also be flagged at publish
+        /// time. The cases are hard-coded, so a new baseline refusal added to <c>Validate</c> needs a new case
+        /// here — this theory does not detect that drift on its own.
+        /// </summary>
+        [Theory]
+        [InlineData("")]
+        [InlineData("*")]
+        [InlineData("firm-standards,*")]
+        public async Task ListRefusedByRunTimeValidate_IsFlaggedAtPublish(string csv)
+        {
+            ArgumentNullException.ThrowIfNull(csv);
+            var components = csv.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            var agent = S930Fixtures.Agent("agent-1", baselineComponents: components);
+            Assert.Throws<Frontier.Platform.Abstractions.ContractViolationException>(agent.ContextRequest.Validate);
+
+            var findings = await new ContextBaselineScopedRule().EvaluateAsync(Ctx(S930Fixtures.Build([agent])), CancellationToken.None);
+
+            Assert.Contains(findings, f => f.NodeId == "agent-1" && f.Severity == ValidationSeverity.Error);
+        }
     }
 
     public sealed class McpWriteIdempotencyRuleTests
