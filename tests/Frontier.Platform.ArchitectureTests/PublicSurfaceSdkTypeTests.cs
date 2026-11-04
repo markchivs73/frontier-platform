@@ -62,6 +62,8 @@ public sealed partial class PublicSurfaceSdkTypeTests
             "IResiliencePolicyProvider turns a named retry profile into the DTF activity retry options.",
         ["Frontier.Platform.Workflow.Compiler|Microsoft.Azure.Cosmos.Container"] =
             "The Cosmos adapters (CosmosDefinitionStore, RetirementMonitor) take their container from the composition root.",
+        ["Frontier.Platform.Workflow.Compiler|Microsoft.Extensions.AI.IChatClient"] =
+            "DesignerModelSelection carries the chat client the consumer's model entry resolves, so the designer call reaches that provider (S13.202).",
         ["Frontier.Platform.Guardrails|Microsoft.Azure.Cosmos.Container"] =
             "AddFrontierGuardrails takes the guard-rail ledger container from the composition root.",
     };
