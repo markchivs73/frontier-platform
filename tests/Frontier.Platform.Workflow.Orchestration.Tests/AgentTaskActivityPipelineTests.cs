@@ -196,7 +196,7 @@ public sealed class AgentTaskActivityPipelineTests
     {
         // S13.218 (doc 04 §4 step 2): the baseline tier cites the catalogue release and components the composer read.
         var d = Dependencies();
-        var pipeline = new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance);
+        var pipeline = new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance, TestHostBuildStamp.Instance);
         var input = BuildInput(nameof(BriefArtifact), nameof(SummaryArtifact), upstreamPayload: null);
 
         var package = await pipeline.AssembleAsync(input, ResolvedModelFixture(), CancellationToken.None);
