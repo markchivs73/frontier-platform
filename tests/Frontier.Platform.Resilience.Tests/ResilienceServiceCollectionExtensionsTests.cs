@@ -18,6 +18,26 @@ public sealed class ResilienceServiceCollectionExtensionsTests
         Assert.IsType<RetryBudget>(provider.GetRequiredService<IRetryBudget>());
     }
 
+    /// <summary>S13.217: the circuit-state provider callers read is the one the policy provider's breakers report to.</summary>
+    [Fact]
+    public void AddFrontierResilience_CircuitStateProviderIsTheTrackingInstance()
+    {
+        var provider = new ServiceCollection().AddFrontierResilience().BuildServiceProvider();
+
+        Assert.Same(provider.GetRequiredService<CircuitStateProvider>(), provider.GetRequiredService<ICircuitStateProvider>());
+        Assert.Same(TimeProvider.System, provider.GetRequiredService<TimeProvider>());
+    }
+
+    [Fact]
+    public void AddFrontierResilience_KeepsAnExistingTimeProvider()
+    {
+        var clock = new ManualTimeProvider();
+
+        var provider = new ServiceCollection().AddSingleton<TimeProvider>(clock).AddFrontierResilience().BuildServiceProvider();
+
+        Assert.Same(clock, provider.GetRequiredService<TimeProvider>());
+    }
+
     [Fact]
     public void AddFrontierResilience_RegistersTimeoutHierarchyCheckAsStartupCheck()
     {

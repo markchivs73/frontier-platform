@@ -542,6 +542,7 @@ internal static class GraphOrchestratorSteps
         OutputContract = PinnedContract(input.Definition, node.OutputContractType),
         ToolPins = ToolPins(input.Definition, node),
         ContractBudgets = input.ContractBudgets,
+        RetryProfile = node.Retry?.ProfileName,
     };
 
     /// <summary>

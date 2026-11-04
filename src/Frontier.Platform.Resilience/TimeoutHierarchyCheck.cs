@@ -28,8 +28,7 @@ internal sealed class TimeoutHierarchyCheck : IStartupCheck
     /// Checks each profile's pipeline timeout (<see cref="PipelineTimeoutMs"/>) against
     /// <see cref="DtfActivityTimeoutMs"/>, per doc 10 §7's nesting rule. The per-attempt
     /// &lt; pipeline relationship is guaranteed by construction (<c>PipelineTimeoutMs =
-    /// TimeoutMs * MaxAttempts</c> ≥ TimeoutMs for any positive MaxAttempts) and needs
-    /// no separate check.
+    /// TimeoutMs * TotalTimeoutMultiplier</c>, a multiplier above 1) and needs no separate check.
     /// </summary>
     internal static StartupCheckResult Evaluate(IEnumerable<ResilienceProfile> profiles)
     {
@@ -49,9 +48,10 @@ internal sealed class TimeoutHierarchyCheck : IStartupCheck
     }
 
     /// <summary>
-    /// The total attempt-time budget for a profile's inner retry loop, ignoring
-    /// backoff delay (doc 10 §7): <c>TimeoutMs * InnerRetry.MaxAttempts</c>.
+    /// The total pipeline timeout the inner pipeline actually applies (doc 10 §7: "~3× attempt"),
+    /// read from <see cref="ResiliencePolicyProvider.TotalTimeoutMs"/> so the check and the pipeline
+    /// cannot disagree.
     /// </summary>
     internal static int PipelineTimeoutMs(ResilienceProfile profile) =>
-        profile.TimeoutMs * profile.InnerRetry.MaxAttempts;
+        ResiliencePolicyProvider.TotalTimeoutMs(profile);
 }

@@ -1,3 +1,5 @@
+using Polly;
+using Polly.Retry;
 using Microsoft.Extensions.AI;
 using Frontier.Platform.Workflow.Model;
 
@@ -11,7 +13,7 @@ public sealed class AgentInvocationDispatcherTests
     {
         var scope = new SummaryArtifact { Title = "Scope", Objectives = ["objective"] };
         var invoker = new FakeAgentInvoker(scope);
-        var dispatcher = new AgentInvocationDispatcher(invoker, new ContractTypeRegistry(TestContractSet.Instance), TestContractValidator.Instance);
+        var dispatcher = new AgentInvocationDispatcher(invoker, new ContractTypeRegistry(TestContractSet.Instance), TestContractValidator.Instance, new FakeResiliencePolicyProvider());
         var request = new AgentInvocationRequest
         {
             Instructions = "instructions",
@@ -21,7 +23,7 @@ public sealed class AgentInvocationDispatcherTests
             MaxOutputTokens = 100,
         };
 
-        var result = await dispatcher.InvokeAsync(nameof(SummaryArtifact), null, null, request, CancellationToken.None);
+        var result = await dispatcher.InvokeAsync("llm-default", nameof(SummaryArtifact), null, null, request, CancellationToken.None);
 
         var (payload, hash) = OutputPayloadBuilder.Build(scope, typeof(SummaryArtifact));
         Assert.Equal(payload, result.Payload);
@@ -37,7 +39,7 @@ public sealed class AgentInvocationDispatcherTests
         // ADR-PA27: only the invoker knows the pinned card it called; the dispatcher must carry it to the pipeline.
         var scope = new SummaryArtifact { Title = "Scope", Objectives = ["objective"] };
         var invoker = new CardHashReportingInvoker(scope, "sha256:pinned-card");
-        var dispatcher = new AgentInvocationDispatcher(invoker, new ContractTypeRegistry(TestContractSet.Instance), TestContractValidator.Instance);
+        var dispatcher = new AgentInvocationDispatcher(invoker, new ContractTypeRegistry(TestContractSet.Instance), TestContractValidator.Instance, new FakeResiliencePolicyProvider());
         var request = new AgentInvocationRequest
         {
             Instructions = "instructions",
@@ -54,7 +56,7 @@ public sealed class AgentInvocationDispatcherTests
             MaxOutputTokens = 0,
         };
 
-        var result = await dispatcher.InvokeAsync(nameof(SummaryArtifact), null, null, request, CancellationToken.None);
+        var result = await dispatcher.InvokeAsync("llm-default", nameof(SummaryArtifact), null, null, request, CancellationToken.None);
 
         Assert.Equal("sha256:pinned-card", result.CardHash);
         Assert.Equal("resp_0139", result.RemoteTaskId);
@@ -65,10 +67,10 @@ public sealed class AgentInvocationDispatcherTests
     [Fact]
     public async Task InvokeAsync_AReplyThatIsNotJson_IsAContractViolation()
     {
-        var dispatcher = new AgentInvocationDispatcher(new FakeAgentInvoker(null, output: "Here is your summary!"), new ContractTypeRegistry(TestContractSet.Instance), TestContractValidator.Instance);
+        var dispatcher = new AgentInvocationDispatcher(new FakeAgentInvoker(null, output: "Here is your summary!"), new ContractTypeRegistry(TestContractSet.Instance), TestContractValidator.Instance, new FakeResiliencePolicyProvider());
 
         await Assert.ThrowsAsync<Frontier.Platform.Abstractions.ContractViolationException>(
-            () => dispatcher.InvokeAsync(nameof(SummaryArtifact), null, null, ModelRequest(), CancellationToken.None));
+            () => dispatcher.InvokeAsync("llm-default", nameof(SummaryArtifact), null, null, ModelRequest(), CancellationToken.None));
     }
 
     /// <summary>ADR-E27 D8: the engine validates the bound reply; the invoker no longer does.</summary>
@@ -76,10 +78,10 @@ public sealed class AgentInvocationDispatcherTests
     public async Task InvokeAsync_AReplyThatFailsItsContract_IsAContractViolation()
     {
         var invalid = new SummaryArtifact { Title = "", Objectives = [] };
-        var dispatcher = new AgentInvocationDispatcher(new FakeAgentInvoker(invalid), new ContractTypeRegistry(TestContractSet.Instance), TestContractValidator.Instance);
+        var dispatcher = new AgentInvocationDispatcher(new FakeAgentInvoker(invalid), new ContractTypeRegistry(TestContractSet.Instance), TestContractValidator.Instance, new FakeResiliencePolicyProvider());
 
         await Assert.ThrowsAsync<Frontier.Platform.Abstractions.ContractViolationException>(
-            () => dispatcher.InvokeAsync(nameof(SummaryArtifact), null, null, ModelRequest(), CancellationToken.None));
+            () => dispatcher.InvokeAsync("llm-default", nameof(SummaryArtifact), null, null, ModelRequest(), CancellationToken.None));
     }
 
     private static AgentInvocationRequest ModelRequest() => new()
@@ -91,10 +93,45 @@ public sealed class AgentInvocationDispatcherTests
         MaxOutputTokens = 100,
     };
 
+    /// <summary>S13.217: the invoker call runs through the endpoint pipeline for the target's (provider, modelId), under the node's profile.</summary>
+    [Fact]
+    public async Task InvokeAsync_RunsTheCallThroughTheTargetsEndpointPipeline()
+    {
+        var policy = new FakeResiliencePolicyProvider();
+        var dispatcher = new AgentInvocationDispatcher(new FakeAgentInvoker(new SummaryArtifact { Title = "Scope", Objectives = ["objective"] }), new ContractTypeRegistry(TestContractSet.Instance), TestContractValidator.Instance, policy);
+        var request = ModelRequest();
+
+        await dispatcher.InvokeAsync("llm-interactive", nameof(SummaryArtifact), null, null, request, CancellationToken.None);
+
+        Assert.Equal([("llm-interactive", request.Target.Provider, request.Target.TargetId)], policy.RequestedEndpoints);
+    }
+
+    /// <summary>S13.217: a failure the pipeline handles is retried inside the activity, so the reply still binds.</summary>
+    [Fact]
+    public async Task InvokeAsync_APipelineThatRetries_RetriesAFailedCall()
+    {
+        var retrying = new ResiliencePipelineBuilder().AddRetry(new RetryStrategyOptions { MaxRetryAttempts = 1, Delay = TimeSpan.Zero }).Build();
+        var invoker = new FailOnceInvoker(new FakeAgentInvoker(new SummaryArtifact { Title = "Scope", Objectives = ["objective"] }));
+        var dispatcher = new AgentInvocationDispatcher(invoker, new ContractTypeRegistry(TestContractSet.Instance), TestContractValidator.Instance, new FakeResiliencePolicyProvider(retrying));
+
+        var result = await dispatcher.InvokeAsync("llm-default", nameof(SummaryArtifact), null, null, ModelRequest(), CancellationToken.None);
+
+        Assert.Equal(2, invoker.Calls);
+        Assert.Contains("\"title\":\"Scope\"", result.Payload, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Constructor_NullPolicyProvider_Throws()
+    {
+        var invoker = new FakeAgentInvoker(new SummaryArtifact { Title = "Scope", Objectives = ["objective"] });
+
+        Assert.Throws<ArgumentNullException>(() => new AgentInvocationDispatcher(invoker, new ContractTypeRegistry(TestContractSet.Instance), TestContractValidator.Instance, null!));
+    }
+
     [Fact]
     public void Constructor_NullInvoker_Throws()
     {
-        Assert.Throws<ArgumentNullException>(() => new AgentInvocationDispatcher(null!, new ContractTypeRegistry(TestContractSet.Instance), TestContractValidator.Instance));
+        Assert.Throws<ArgumentNullException>(() => new AgentInvocationDispatcher(null!, new ContractTypeRegistry(TestContractSet.Instance), TestContractValidator.Instance, new FakeResiliencePolicyProvider()));
     }
 
     [Fact]
@@ -102,7 +139,7 @@ public sealed class AgentInvocationDispatcherTests
     {
         var invoker = new FakeAgentInvoker(new SummaryArtifact { Title = "Scope", Objectives = ["objective"] });
 
-        Assert.Throws<ArgumentNullException>(() => new AgentInvocationDispatcher(invoker, new ContractTypeRegistry(TestContractSet.Instance), null!));
+        Assert.Throws<ArgumentNullException>(() => new AgentInvocationDispatcher(invoker, new ContractTypeRegistry(TestContractSet.Instance), null!, new FakeResiliencePolicyProvider()));
     }
 
     [Fact]
@@ -110,7 +147,16 @@ public sealed class AgentInvocationDispatcherTests
     {
         var invoker = new FakeAgentInvoker(new SummaryArtifact { Title = "Scope", Objectives = ["objective"] });
 
-        Assert.Throws<ArgumentNullException>(() => new AgentInvocationDispatcher(invoker, null!, TestContractValidator.Instance));
+        Assert.Throws<ArgumentNullException>(() => new AgentInvocationDispatcher(invoker, null!, TestContractValidator.Instance, new FakeResiliencePolicyProvider()));
+    }
+
+    /// <summary>An invoker whose first call fails with a provider 503, then delegates to <paramref name="inner"/>.</summary>
+    private sealed class FailOnceInvoker(IAgentInvoker inner) : IAgentInvoker
+    {
+        internal int Calls { get; private set; }
+
+        public Task<AgentInvocationOutcome> InvokeAsync(AgentInvocationRequest request, CancellationToken ct) =>
+            ++Calls == 1 ? throw new HttpRequestException("unavailable", null, System.Net.HttpStatusCode.ServiceUnavailable) : inner.InvokeAsync(request, ct);
     }
 
     /// <summary>An invoker standing in for an agent path: it reports the pinned card hash it called against.</summary>

@@ -213,7 +213,7 @@ public sealed class AgentTaskActivityPipelineTests
         var invoker = new FakeAgentInvoker(scope);
         var tool = AIFunctionFactory.Create(() => "ticket", "get_new_ticket");
         var toolCatalog = new FakeMcpToolCatalog([tool]);
-        var d = Dependencies(scope) with { ToolCatalog = toolCatalog, Dispatcher = new AgentInvocationDispatcher(invoker, registry, TestContractValidator.Instance), ContractTypes = registry };
+        var d = Dependencies(scope) with { ToolCatalog = toolCatalog, Dispatcher = new AgentInvocationDispatcher(invoker, registry, TestContractValidator.Instance, new FakeResiliencePolicyProvider()), ContractTypes = registry };
         var pipeline = new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance, TestHostBuildStamp.Instance);
         IReadOnlyList<McpToolPin> pins = [new McpToolPin { ToolRef = "com.example.crm/tickets/get_new_ticket", InputContract = RegistryContractFixtures.Ticket, Writes = false }];
         var input = BuildInput(nameof(BriefArtifact), nameof(SummaryArtifact), upstreamPayload: null) with { ToolRefs = ["com.example.crm/tickets/get_new_ticket"], ToolPins = pins };
@@ -566,6 +566,22 @@ public sealed class AgentTaskActivityPipelineTests
         Assert.Single(pinned.Violations);
     }
 
+    /// <summary>S13.217: the model call runs under the node's resilience profile, and under <c>llm-default</c> when it names none.</summary>
+    [Theory]
+    [InlineData("llm-interactive", "llm-interactive")]
+    [InlineData(null, "llm-default")]
+    public async Task RunAsync_RunsTheModelCallUnderTheNodesProfile(string? retryProfile, string expected)
+    {
+        var policy = new FakeResiliencePolicyProvider();
+        var d = Dependencies(ScopeSectionFixture(), dynamicContent: """{"engagement_brief":"Design a product scope."}""");
+        d = d with { Dispatcher = new AgentInvocationDispatcher(d.Invoker, d.ContractTypes, TestContractValidator.Instance, policy) };
+        var input = BuildInput(nameof(BriefArtifact), nameof(SummaryArtifact), upstreamPayload: null) with { RetryProfile = retryProfile };
+
+        await Pipeline(d).RunAsync(input, CancellationToken.None);
+
+        Assert.Equal(expected, Assert.Single(policy.RequestedEndpoints).Profile);
+    }
+
     [Fact]
     public void Constructor_NullContractValidator_Throws()
     {
@@ -586,7 +602,7 @@ public sealed class AgentTaskActivityPipelineTests
     {
         var d = Dependencies();
         var invoker = new FakeAgentInvoker(null, output: reply);
-        return d with { Invoker = invoker, Dispatcher = new AgentInvocationDispatcher(invoker, d.ContractTypes, TestContractValidator.Instance) };
+        return d with { Invoker = invoker, Dispatcher = new AgentInvocationDispatcher(invoker, d.ContractTypes, TestContractValidator.Instance, new FakeResiliencePolicyProvider()) };
     }
 
     private static AgentTaskActivityPipeline Pipeline(PipelineDependencies d) =>
@@ -646,7 +662,7 @@ public sealed class AgentTaskActivityPipelineTests
             AdmissionController: admission,
             InstructionsResolver: new FakeInstructionsResolver("instructions"),
             ToolCatalog: new FakeMcpToolCatalog(),
-            Dispatcher: new AgentInvocationDispatcher(invoker, registry, TestContractValidator.Instance),
+            Dispatcher: new AgentInvocationDispatcher(invoker, registry, TestContractValidator.Instance, new FakeResiliencePolicyProvider()),
             Invoker: invoker,
             AdmissionControllerDouble: admission,
             TelemetryStaging: new FakeAuditTelemetryStaging());

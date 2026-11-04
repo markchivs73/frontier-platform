@@ -114,6 +114,19 @@ public sealed class GraphOrchestratorStepsTests
         Assert.Null(activityInput.InstructionsRef);
     }
 
+    /// <summary>S13.217: the node's resilience profile rides to the activity, so its inner pipeline runs under the same profile as the outer retry.</summary>
+    [Fact]
+    public void BuildActivityInput_CarriesTheNodesRetryProfile()
+    {
+        var definition = OrchestrationFixtures.ThreeArtifactChain();
+        var node = (AgentTaskNode)definition.Nodes[0] with { Retry = new RetryPolicySpec { ProfileName = "llm-interactive" } };
+        var state = new GraphExecutionState { StartedAtUtc = OrchestrationFixtures.StartedAtUtc };
+
+        var activityInput = GraphOrchestratorSteps.BuildActivityInput(OrchestrationFixtures.Input(definition), node, "correlation-1", "eng-1::wf-chain", state);
+
+        Assert.Equal("llm-interactive", activityInput.RetryProfile);
+    }
+
     [Fact]
     public void BuildActivityInput_MapsNodeFieldsAndCorrelationId()
     {
@@ -139,6 +152,7 @@ public sealed class GraphOrchestratorStepsTests
         // value equality still holds.
         Assert.Equal(node.ContextRequest with { EngagementId = activityInput.ContextRequest.EngagementId }, activityInput.ContextRequest);
         Assert.Null(activityInput.UpstreamPayload);
+        Assert.Null(activityInput.RetryProfile);
     }
 
     [Fact]

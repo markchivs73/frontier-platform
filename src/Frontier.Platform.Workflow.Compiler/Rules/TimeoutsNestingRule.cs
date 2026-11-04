@@ -6,8 +6,10 @@ namespace Frontier.Platform.Workflow.Compiler.Rules;
 /// <summary>
 /// timeouts.nesting (doc 13 §4.2 R3, doc 10 §7, S9.30): per-attempt timeout × attempts (the
 /// retry pipeline) must fit inside the DTF activity timeout, so every layer times out before
-/// the layer above kills it mid-cleanup — a definition can't ship what the Host's boot-time
-/// <c>TimeoutHierarchyCheck</c> would reject. Phase 1 scope is the machine-timeout tiers only:
+/// the layer above kills it mid-cleanup. This is the attempts' summed per-attempt timeouts, not the
+/// inner pipeline's total-timeout ceiling (3× per-attempt), which the Host's boot-time
+/// <c>TimeoutHierarchyCheck</c> validates for every catalogue profile; the two measures can
+/// disagree, and this rule does not stand in for that check. Phase 1 scope is the machine-timeout tiers only:
 /// the HITL escalation tier (gate <c>timeout_minutes</c>) is an advisory notify, not a kill,
 /// and is not compared — recorded in docs/state/SPEC-TRACEABILITY.md.
 /// </summary>

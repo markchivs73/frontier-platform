@@ -22,6 +22,15 @@ public interface IResiliencePolicyProvider
     /// <summary>The inner-loop Polly pipeline for <paramref name="profileName"/>, composed per doc 10 §4's order: <c>Timeout(total) → Bulkhead → CircuitBreaker → Retry → Timeout(per-attempt)</c>.</summary>
     ResiliencePipeline GetPipeline(string profileName);
 
+    /// <summary>
+    /// The inner-loop pipeline a call to <paramref name="provider"/>/<paramref name="modelId"/> runs
+    /// through under <paramref name="profileName"/> (doc 10 §6): one pipeline per endpoint, kept for the
+    /// worker's lifetime, so its circuit breaker (granularity (provider, modelId)) and bulkhead
+    /// (granularity provider) see every call and <see cref="ICircuitStateProvider"/> reports its state.
+    /// The default falls back to <see cref="GetPipeline(string)"/>, for implementations that key no endpoint.
+    /// </summary>
+    ResiliencePipeline GetPipeline(string profileName, string provider, string modelId) => GetPipeline(profileName);
+
     /// <summary>The outer-loop DTF retry handler for <paramref name="profileName"/>: <see cref="FailureClass.Permanent"/> failures (per <see cref="IFailureClassifier"/>) are never retried.</summary>
     TaskOptions GetTaskOptions(string profileName);
 }
