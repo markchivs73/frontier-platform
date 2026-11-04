@@ -51,6 +51,9 @@ jobs:
       - name: Run pr-verifier
         id: verify
         if: steps.filter.outputs.code == 'true'
+        # A crashed or over-cap run leaves no verdict; the Fail step below still blocks on that
+        # when PR_VERIFIER_BLOCKING is on, so advisory mode never turns the check red by itself.
+        continue-on-error: true
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -69,7 +72,7 @@ jobs:
             - `unverified` and `contradicted`: the counts on the VERDICT line (0 for PASS).
           claude_args: |
             --model best
-            --max-turns 60
+            --max-turns 100
             --allowedTools "Read,Grep,Glob,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(git log:*),Bash(git show:*),Bash(git diff:*),Bash(git grep:*),Bash(git blame:*)"
             --disallowedTools "Edit,Write,NotebookEdit,WebFetch,WebSearch"
             --json-schema '{"type":"object","properties":{"verdict":{"type":"string","enum":["PASS","FAIL"]},"unverified":{"type":"integer","minimum":0},"contradicted":{"type":"integer","minimum":0},"report":{"type":"string"}},"required":["verdict","unverified","contradicted","report"]}'
