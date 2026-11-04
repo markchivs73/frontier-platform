@@ -102,6 +102,31 @@ public sealed class StructureEntryInputContractRuleTests
         Assert.Empty(await EvaluateAsync(definition));
     }
 
+    /// <summary>
+    /// A chain linked by Data edges alone (frontier-workflow's seeded advisory SOW) has one entry: each
+    /// later node is handed its predecessor's payload, so its own input contract is correct.
+    /// </summary>
+    [Fact]
+    public async Task AgentsFedOnlyByDataEdges_AreNotEntries()
+    {
+        var definition = S930Fixtures.Build(
+            [CompliantEntry("a"), S930Fixtures.Agent("b", inputContract: "SummaryArtifact"), S930Fixtures.Agent("c", inputContract: "BriefArtifact")],
+            [S930Fixtures.Data("a", "b", "SummaryArtifact"), S930Fixtures.Data("b", "c", "BriefArtifact")]);
+
+        Assert.Empty(await EvaluateAsync(definition));
+    }
+
+    /// <summary>The control for the test above: the head of that chain is still checked.</summary>
+    [Fact]
+    public async Task TheHeadOfADataChain_IsStillChecked()
+    {
+        var definition = S930Fixtures.Build(
+            [S930Fixtures.Agent("a", inputContract: "BriefArtifact", dynamicFields: ["case_summary"]), S930Fixtures.Agent("b", inputContract: "SummaryArtifact")],
+            [S930Fixtures.Data("a", "b", "SummaryArtifact")]);
+
+        Assert.Equal("a", Assert.Single(await EvaluateAsync(definition)).NodeId);
+    }
+
     [Fact]
     public async Task EntryThatIsNotAnAgentTask_IsNotChecked()
     {
