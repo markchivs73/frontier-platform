@@ -73,6 +73,9 @@ public sealed class RuleCatalogueSpecCoverageTests
         // S13.199: two nodes sharing an artifact_key overwrite each other's section. The doc 13
         // §4.2 row lands in the consumer repo (read-only from here), as S13.34's did.
         "structure.unique-artifact-keys",
+        // S13.209: the one-shot entry agent_task takes the deployment's entry contract. The doc 13
+        // §4.2 row lands in the consumer repo (read-only from here), as S13.199's did.
+        "structure.entry-input-contract",
     ];
 
     [Fact]
@@ -111,8 +114,9 @@ public sealed class RuleCatalogueSpecCoverageTests
         // +4 Resourced (schema-ref-resolves, contracts-match, server-not-drifted and
         // projection-compatible read the registry).
         // S13.199: +1 Pure (structure.unique-artifact-keys reads the definition alone).
+        // S13.209: +1 Resourced (structure.entry-input-contract reads IEntryContractCatalog).
         Assert.Equal(20, CurrentlyRegisteredRules.Count(r => r.Tier == RuleTier.Pure));
-        Assert.Equal(17, CurrentlyRegisteredRules.Count(r => r.Tier == RuleTier.Resourced));
+        Assert.Equal(18, CurrentlyRegisteredRules.Count(r => r.Tier == RuleTier.Resourced));
         Assert.Equal(0, CurrentlyRegisteredRules.Count(r => r.Tier == RuleTier.Runtime));
     }
 
@@ -151,7 +155,26 @@ public sealed class RuleCatalogueSpecCoverageTests
             + "Either build the Runtime executor or register into a tier that runs.");
     }
 
+    [Fact]
+    public void Compiler_DoesNotResolveWithoutTheEntryContractCatalog()
+    {
+        // S13.209: structure.entry-input-contract takes IEntryContractCatalog, so a composition that
+        // registers the compiler without it now fails at resolve rather than validating unchecked.
+        using var provider = RegisterCompiler(registerEntryCatalog: false).BuildServiceProvider();
+        using var scope = provider.CreateScope();
+
+        var thrown = Assert.Throws<InvalidOperationException>(() => scope.ServiceProvider.GetRequiredService<IDefinitionCompiler>());
+        Assert.Contains(nameof(IEntryContractCatalog), thrown.Message, StringComparison.Ordinal);
+    }
+
     private static List<IDefinitionValidationRule> ResolveRegisteredRules()
+    {
+        using var provider = RegisterCompiler(registerEntryCatalog: true).BuildServiceProvider();
+        using var scope = provider.CreateScope();
+        return [.. scope.ServiceProvider.GetServices<IDefinitionValidationRule>()];
+    }
+
+    private static ServiceCollection RegisterCompiler(bool registerEntryCatalog)
     {
         var services = new ServiceCollection();
         // S13.12c (E16): the contract set is a composition-root registration — supply it here
@@ -165,12 +188,14 @@ public sealed class RuleCatalogueSpecCoverageTests
         services.AddSingleton<IInstructionCatalog>(new EmptyInstructionCatalog());
         services.AddSingleton<IRetryProfileCatalog>(new EmptyProfileCatalog());
         services.AddSingleton<ICascadeGraphChecker>(new EmptyCascadeChecker());
+        if (registerEntryCatalog)
+        {
+            services.AddSingleton<IEntryContractCatalog>(new ChatDesignerServiceTests.FakeEntryContractCatalog()); // S13.209: structure.entry-input-contract
+        }
+
         services.AddSingleton(Moq.Mock.Of<IContractSnapshotCatalog>()); // ADR-E27: data.schema-ref-resolves and publish pinning
         Frontier.Platform.Contracts.ContractsServiceCollectionExtensions.AddFrontierContracts(services, new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build()); // data.projection-compatible checks literals
-
-        using var provider = services.BuildServiceProvider();
-        using var scope = provider.CreateScope();
-        return [.. scope.ServiceProvider.GetServices<IDefinitionValidationRule>()];
+        return services;
     }
 
     private sealed class EmptyToolCatalog : IDesignerToolCatalog

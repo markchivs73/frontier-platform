@@ -197,6 +197,9 @@ engineServices.AddSingleton<IRetryProfileCatalog, SmokeCatalogues>();
 engineServices.AddSingleton<IDesignerToolCatalog, SmokeCatalogues>();
 engineServices.AddSingleton<ICascadeGraphChecker, SmokeCatalogues>();
 engineServices.AddSingleton<IContractSnapshotCatalog, SmokeCatalogues>();
+// The structure.entry-input-contract rule (S13.209) reads the entry convention, so the compiler
+// needs it as well as the design agent below.
+engineServices.AddSingleton<IEntryContractCatalog, SmokeEntryContract>();
 
 using var compilerProvider = engineServices.BuildServiceProvider();
 var compiler = compilerProvider.GetRequiredService<IDefinitionCompiler>();
@@ -237,8 +240,7 @@ Console.WriteLine("  designer host   : proposal parser + change-set builder reac
 // 10. The design agent itself now lives here, so a consumer must be able to resolve it with the
 //     entry convention supplied from outside. IEntryContractCatalog is the port that made this
 //     possible: the prompt used to name one workload's contract in a string literal, where no
-//     type-level guard could see it.
-engineServices.AddSingleton<IEntryContractCatalog, SmokeEntryContract>();
+//     type-level guard could see it. It is registered with the compiler in step 8.
 engineServices.AddSingleton<IChatClient, SmokeChatClient>();
 engineServices.AddSingleton<IDesignerModelProvider, SmokeDesignerModel>();
 
