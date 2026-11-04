@@ -301,6 +301,12 @@ public sealed record DesignTurnDocument
     public IReadOnlyList<ProposalChangeItem>? ProposalChanges { get; init; } // S9.10: server-computed diff (doc 14 §4.1)
     [JsonPropertyName("proposalBlockReason")]
     public string? ProposalBlockReason { get; init; } // S9.10: pure-tier validation failure on the proposal; null = mergeable
+    /// <summary>
+    /// True when the designer model's reply stopped at its output-token ceiling, so no proposal could be
+    /// parsed and the turn carries the "too large for one reply" message (S13.200); null otherwise.
+    /// </summary>
+    [JsonPropertyName("replyTruncated")]
+    public bool? ReplyTruncated { get; init; }
     [JsonPropertyName("mergeOutcome")]
     public string? MergeOutcome { get; init; } // "merged" | "conflict" | "rejected"
     [JsonPropertyName("conflictSummary")]

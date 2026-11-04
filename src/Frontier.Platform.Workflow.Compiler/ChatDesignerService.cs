@@ -140,6 +140,7 @@ internal sealed class ChatDesignerService : IChatDesignerService
             ProposalReasoningJson = agentReasoning,
             ProposalChanges = proposalChanges,
             ProposalBlockReason = blockReason,
+            ReplyTruncated = agentResult.ReplyTruncated ? true : null,
             MergeOutcome = null,
             ConflictSummary = null,
             Mentions = validatedMentions.Count > 0 ? validatedMentions : null
@@ -353,7 +354,7 @@ internal sealed class ChatDesignerService : IChatDesignerService
         // user-visible behaviour change.
         var response = await client.GetStreamingResponseAsync(messages, options, ct)
             .ToChatResponseAsync(ct).ConfigureAwait(false);
-        return await StampProposalAsync(BuildResult(response.Text ?? string.Empty), ct).ConfigureAwait(false);
+        return await StampProposalAsync(ResultOf(response), ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -507,6 +508,22 @@ internal sealed class ChatDesignerService : IChatDesignerService
 
         return (changes, blockReason);
     }
+
+    /// <summary>
+    /// S13.200: classifies a completed model response. A reply the model stopped at its output
+    /// ceiling (<see cref="ChatFinishReason.Length"/>) is cut off mid-definition, so it is never
+    /// parsed: the turn says plainly that the workflow is too large for one reply and is flagged
+    /// <see cref="DesignerAgentResult.ReplyTruncated"/>. Every other reply goes to <see cref="BuildResult"/>.
+    /// </summary>
+    internal static DesignerAgentResult ResultOf(ChatResponse response) =>
+        response.FinishReason == ChatFinishReason.Length
+            ? new DesignerAgentResult(TruncatedReplyMessage, string.Empty, ReplyTruncated: true)
+            : BuildResult(response.Text);
+
+    /// <summary>Text shown when the model's reply hit its output-token ceiling before the definition was complete.</summary>
+    internal const string TruncatedReplyMessage =
+        "This workflow is too large for me to return in a single reply, so I couldn't propose this change. " +
+        "Nothing in the draft has changed. Until I can return partial edits, make this change in the editor instead.";
 
     /// <summary>Parses the raw agent text into a proposal; falls back to plain reasoning when unparseable.</summary>
     internal static DesignerAgentResult BuildResult(string raw)
@@ -715,5 +732,6 @@ internal sealed class ChatDesignerService : IChatDesignerService
 }
 
 /// <summary>Outcome of one design-agent turn: the prose reasoning and, when a proposal was parsed,
-/// the complete proposed <see cref="WorkflowDefinition"/> as canonical JSON (empty when none).</summary>
-internal sealed record DesignerAgentResult(string Reasoning, string ProposalDefinitionJson);
+/// the complete proposed <see cref="WorkflowDefinition"/> as canonical JSON (empty when none).
+/// <paramref name="ReplyTruncated"/> is true when the model stopped at its output-token ceiling (S13.200).</summary>
+internal sealed record DesignerAgentResult(string Reasoning, string ProposalDefinitionJson, bool ReplyTruncated = false);

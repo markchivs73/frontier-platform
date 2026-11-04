@@ -5,3 +5,5 @@ Frontier.Platform.Workflow.Compiler.Rules.StructureUniqueArtifactKeysRule
 Frontier.Platform.Workflow.Compiler.Rules.StructureUniqueArtifactKeysRule.StructureUniqueArtifactKeysRule() -> void
 override Frontier.Platform.Workflow.Compiler.Rules.StructureUniqueArtifactKeysRule.DefaultSeverity.get -> Frontier.Platform.Workflow.Compiler.ValidationSeverity
 override Frontier.Platform.Workflow.Compiler.Rules.StructureUniqueArtifactKeysRule.RuleId.get -> string!
+Frontier.Platform.Workflow.Compiler.Storage.DesignTurnDocument.ReplyTruncated.get -> bool?
+Frontier.Platform.Workflow.Compiler.Storage.DesignTurnDocument.ReplyTruncated.init -> void

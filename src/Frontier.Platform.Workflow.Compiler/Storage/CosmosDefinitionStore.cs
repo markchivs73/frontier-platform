@@ -785,6 +785,7 @@ public sealed class CosmosDefinitionStore : IDefinitionStore
             ProposalReasoningJson = turn.ProposalReasoningJson,
             ProposalChanges = turn.ProposalChanges,
             ProposalBlockReason = turn.ProposalBlockReason,
+            ReplyTruncated = turn.ReplyTruncated,
             MergeOutcome = turn.MergeOutcome,
             ConflictSummary = turn.ConflictSummary
         };
