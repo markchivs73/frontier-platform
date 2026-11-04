@@ -54,6 +54,7 @@ Frontier.Platform.Resilience.IFailureClassifier
 Frontier.Platform.Resilience.IFailureClassifier.Classify(System.Exception! exception) -> Frontier.Platform.Resilience.FailureClassification!
 Frontier.Platform.Resilience.IResiliencePolicyProvider
 Frontier.Platform.Resilience.IResiliencePolicyProvider.GetPipeline(string! profileName) -> Polly.ResiliencePipeline!
+Frontier.Platform.Resilience.IResiliencePolicyProvider.GetPipeline(string! profileName, string! provider, string! modelId) -> Polly.ResiliencePipeline!
 Frontier.Platform.Resilience.IResiliencePolicyProvider.GetTaskOptions(string! profileName) -> Microsoft.DurableTask.TaskOptions!
 Frontier.Platform.Resilience.IRetryBudget
 Frontier.Platform.Resilience.IRetryBudget.GetSnapshot(string! executionId) -> Frontier.Platform.Resilience.RetryBudgetSnapshot!

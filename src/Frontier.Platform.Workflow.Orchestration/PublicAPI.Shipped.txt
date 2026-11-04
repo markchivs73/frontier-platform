@@ -83,6 +83,8 @@ Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.OutputContractTy
 Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.OutputContractType.init -> void
 Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.PinnedMapping.get -> Frontier.Platform.ModelRoleConfig.ModelRolePin?
 Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.PinnedMapping.init -> void
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.RetryProfile.get -> string?
+Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.RetryProfile.init -> void
 Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.RevisionNote.get -> string?
 Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.RevisionNote.init -> void
 Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput.Role.get -> string!
@@ -154,6 +156,8 @@ Frontier.Platform.Workflow.Orchestration.AssembleContextRequest.<Clone>$() -> Fr
 Frontier.Platform.Workflow.Orchestration.AssembleContextRequest.AssembleContextRequest(Frontier.Platform.ContextAssembly.CachingMetadata! CachingMetadata, string! BaselineContent, string! DynamicContent, string! RealTimeContent, Frontier.Platform.ContextAssembly.DynamicTierProvenance? DynamicProvenance = null) -> void
 Frontier.Platform.Workflow.Orchestration.AssembleContextRequest.BaselineContent.get -> string!
 Frontier.Platform.Workflow.Orchestration.AssembleContextRequest.BaselineContent.init -> void
+Frontier.Platform.Workflow.Orchestration.AssembleContextRequest.BaselineProvenance.get -> Frontier.Platform.ContextAssembly.BaselineTierProvenance?
+Frontier.Platform.Workflow.Orchestration.AssembleContextRequest.BaselineProvenance.init -> void
 Frontier.Platform.Workflow.Orchestration.AssembleContextRequest.CachingMetadata.get -> Frontier.Platform.ContextAssembly.CachingMetadata!
 Frontier.Platform.Workflow.Orchestration.AssembleContextRequest.CachingMetadata.init -> void
 Frontier.Platform.Workflow.Orchestration.AssembleContextRequest.Deconstruct(out Frontier.Platform.ContextAssembly.CachingMetadata! CachingMetadata, out string! BaselineContent, out string! DynamicContent, out string! RealTimeContent, out Frontier.Platform.ContextAssembly.DynamicTierProvenance? DynamicProvenance) -> void
@@ -234,6 +238,7 @@ Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult.CompletedSteps.
 Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult.CompletedSteps.init -> void
 Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult.Equals(Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult? other) -> bool
 Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult.GraphOrchestratorResult() -> void
+Frontier.Platform.Workflow.Orchestration.HostBuildStamp
 Frontier.Platform.Workflow.Orchestration.IAgentInvoker
 Frontier.Platform.Workflow.Orchestration.IAgentInvoker.InvokeAsync(Frontier.Platform.Workflow.Orchestration.AgentInvocationRequest! request, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Orchestration.AgentInvocationOutcome!>!
 Frontier.Platform.Workflow.Orchestration.IAgentTaskActivityPipeline
@@ -248,6 +253,8 @@ Frontier.Platform.Workflow.Orchestration.IEntryPayloadBuilder
 Frontier.Platform.Workflow.Orchestration.IEntryPayloadBuilder.BuildEntryPayload(string! dynamicContentJson) -> string!
 Frontier.Platform.Workflow.Orchestration.IExecutionSnapshotReader
 Frontier.Platform.Workflow.Orchestration.IExecutionSnapshotReader.GetLatestAsync(string! executionId, string! engagementId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Model.ExecutionSnapshot?>!
+Frontier.Platform.Workflow.Orchestration.IHostBuildStamp
+Frontier.Platform.Workflow.Orchestration.IHostBuildStamp.Version.get -> string!
 Frontier.Platform.Workflow.Orchestration.IInstructionsResolver
 Frontier.Platform.Workflow.Orchestration.IInstructionsResolver.ResolveAsync(string! instructionsRef, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<string!>!
 Frontier.Platform.Workflow.Orchestration.IMcpEndpointResolver
@@ -502,6 +509,7 @@ static Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.operator 
 static Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.operator ==(Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput? left, Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput? right) -> bool
 static Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult.operator !=(Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult? left, Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult? right) -> bool
 static Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult.operator ==(Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult? left, Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.HostBuildStamp.FromAssembly(System.Reflection.Assembly! assembly) -> Frontier.Platform.Workflow.Orchestration.IHostBuildStamp!
 static Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.operator !=(Frontier.Platform.Workflow.Orchestration.McpToolActivityInput? left, Frontier.Platform.Workflow.Orchestration.McpToolActivityInput? right) -> bool
 static Frontier.Platform.Workflow.Orchestration.McpToolActivityInput.operator ==(Frontier.Platform.Workflow.Orchestration.McpToolActivityInput? left, Frontier.Platform.Workflow.Orchestration.McpToolActivityInput? right) -> bool
 static Frontier.Platform.Workflow.Orchestration.McpToolActivityResult.operator !=(Frontier.Platform.Workflow.Orchestration.McpToolActivityResult? left, Frontier.Platform.Workflow.Orchestration.McpToolActivityResult? right) -> bool

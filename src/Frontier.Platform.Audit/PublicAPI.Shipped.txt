@@ -13,6 +13,8 @@ Frontier.Platform.Audit.AgentInvocation.CacheWriteTokens.init -> void
 Frontier.Platform.Audit.AgentInvocation.CorrelationId.get -> string!
 Frontier.Platform.Audit.AgentInvocation.CorrelationId.init -> void
 Frontier.Platform.Audit.AgentInvocation.Equals(Frontier.Platform.Audit.AgentInvocation? other) -> bool
+Frontier.Platform.Audit.AgentInvocation.HostBuild.get -> string?
+Frontier.Platform.Audit.AgentInvocation.HostBuild.init -> void
 Frontier.Platform.Audit.AgentInvocation.InputContractHash.get -> string?
 Frontier.Platform.Audit.AgentInvocation.InputContractHash.init -> void
 Frontier.Platform.Audit.AgentInvocation.InputContractType.get -> string!
@@ -98,6 +100,8 @@ Frontier.Platform.Audit.AuditRecord.ExecutionId.get -> string!
 Frontier.Platform.Audit.AuditRecord.ExecutionId.init -> void
 Frontier.Platform.Audit.AuditRecord.FinalStatus.get -> Frontier.Platform.Abstractions.ExecutionStatus!
 Frontier.Platform.Audit.AuditRecord.FinalStatus.init -> void
+Frontier.Platform.Audit.AuditRecord.Generation.get -> int?
+Frontier.Platform.Audit.AuditRecord.Generation.init -> void
 Frontier.Platform.Audit.AuditRecord.HumanDecisions.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.HumanDecisionRecord!>!
 Frontier.Platform.Audit.AuditRecord.HumanDecisions.init -> void
 Frontier.Platform.Audit.AuditRecord.McpToolInvocations.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.McpToolInvocation!>?
@@ -170,6 +174,8 @@ Frontier.Platform.Audit.AuditTelemetryRecord.DynamicCacheChanged.init -> void
 Frontier.Platform.Audit.AuditTelemetryRecord.Equals(Frontier.Platform.Audit.AuditTelemetryRecord? other) -> bool
 Frontier.Platform.Audit.AuditTelemetryRecord.ExecutionId.get -> string!
 Frontier.Platform.Audit.AuditTelemetryRecord.ExecutionId.init -> void
+Frontier.Platform.Audit.AuditTelemetryRecord.HostBuild.get -> string?
+Frontier.Platform.Audit.AuditTelemetryRecord.HostBuild.init -> void
 Frontier.Platform.Audit.AuditTelemetryRecord.InputContractHash.get -> string?
 Frontier.Platform.Audit.AuditTelemetryRecord.InputContractHash.init -> void
 Frontier.Platform.Audit.AuditTelemetryRecord.InputContractType.get -> string!
@@ -411,6 +417,8 @@ Frontier.Platform.Audit.McpToolInvocation.CompletedAtUtc.init -> void
 Frontier.Platform.Audit.McpToolInvocation.CorrelationId.get -> string!
 Frontier.Platform.Audit.McpToolInvocation.CorrelationId.init -> void
 Frontier.Platform.Audit.McpToolInvocation.Equals(Frontier.Platform.Audit.McpToolInvocation? other) -> bool
+Frontier.Platform.Audit.McpToolInvocation.HostBuild.get -> string?
+Frontier.Platform.Audit.McpToolInvocation.HostBuild.init -> void
 Frontier.Platform.Audit.McpToolInvocation.InputContractHash.get -> string?
 Frontier.Platform.Audit.McpToolInvocation.InputContractHash.init -> void
 Frontier.Platform.Audit.McpToolInvocation.InputContractType.get -> string?
@@ -453,6 +461,8 @@ Frontier.Platform.Audit.SignedAuditRecord.ExecutionId.get -> string!
 Frontier.Platform.Audit.SignedAuditRecord.ExecutionId.init -> void
 Frontier.Platform.Audit.SignedAuditRecord.FinalStatus.get -> Frontier.Platform.Abstractions.ExecutionStatus!
 Frontier.Platform.Audit.SignedAuditRecord.FinalStatus.init -> void
+Frontier.Platform.Audit.SignedAuditRecord.Generation.get -> int?
+Frontier.Platform.Audit.SignedAuditRecord.Generation.init -> void
 Frontier.Platform.Audit.SignedAuditRecord.HumanDecisions.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.HumanDecisionRecord!>!
 Frontier.Platform.Audit.SignedAuditRecord.HumanDecisions.init -> void
 Frontier.Platform.Audit.SignedAuditRecord.McpToolInvocations.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.McpToolInvocation!>?
