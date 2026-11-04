@@ -30,6 +30,21 @@ public sealed class ContextContentComposerTests
     }
 
     [Fact]
+    public async Task ComposeAsync_ValidRequest_CitesTheCatalogueReadAndTheRequestedComponents()
+    {
+        // S13.218 (doc 04 §4 step 2): BaselineTier(catalogue.Version, orderedNames, content) — the
+        // version is the configured catalogue the store served, the components are those rendered.
+        var baseline = new FakeBaselineCatalogueStore("""{"firm-standards":"s","playbooks":"p"}""");
+        var composer = new ContextContentComposer(baseline, new FakeEngagementContextStore(null), BuildOptions());
+        var request = new ContextRequest { EngagementId = "eng-1", AgentRole = "deep-reasoning", BaselineComponents = ["playbooks", "firm-standards"], DynamicFields = [] };
+
+        var composed = await composer.ComposeAsync(request, null, null, CancellationToken.None);
+
+        Assert.Equal("2026-q2", composed.BaselineProvenance.BaselineVersion);
+        Assert.Equal(["playbooks", "firm-standards"], composed.BaselineProvenance.Components);
+    }
+
+    [Fact]
     public async Task ComposeAsync_PinnedEpoch_ReadsThatEpochAndReportsProvenance()
     {
         var dynamic = new FakeEngagementContextStore("""{"engagement_brief":"narrative"}""") { CurrentEpoch = 3 };

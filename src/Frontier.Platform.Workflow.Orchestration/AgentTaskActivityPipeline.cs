@@ -127,7 +127,10 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
         var provenance = composed.DynamicEpoch is { } epoch
             ? new DynamicTierProvenance(input.EngagementId, epoch, composed.DynamicRef!)
             : null;
-        var request = new AssembleContextRequest(metadata, composed.BaselineContent, composed.DynamicContent, composed.RealTimeContent, provenance);
+        var request = new AssembleContextRequest(metadata, composed.BaselineContent, composed.DynamicContent, composed.RealTimeContent, provenance)
+        {
+            BaselineProvenance = composed.BaselineProvenance,
+        };
 
         return await assembleContext.RunAsync(request, ct).ConfigureAwait(false);
     }

@@ -58,10 +58,10 @@ is hashed. This library produces them.
 
 | Interface | What it does |
 |---|---|
-| `IContextAssembler` | Composes the three tiers plus caching metadata into a `ContextPackage` |
+| `IContextAssembler` | Composes the three tiers plus caching metadata into a `ContextPackage`; `AssembleWithProvenanceAsync` takes a `BaselineTierProvenance` (catalogue release + components read) so the baseline tier cites them, alongside `DynamicTierProvenance` for the dynamic tier |
 | `IDynamicContextRefresher` | Writes a new dynamic-context epoch for an engagement and reports what changed |
 | `IContextValidator` | Checks a `ContextRequest` against the baseline catalogue — an unknown component is caught here, not at the provider |
-| `IContextDebugger` | Dumps an assembled package and its provider layout, and structurally diffs two packages |
+| `IContextDebugger` | Dumps an assembled package and its provider layout, and structurally diffs two packages; an unchanged baseline or dynamic tier reads `cached`, a changed one (or no previous package) `not_cached`, and real-time is always `not_cached` |
 
 **Provider caching** — `ICachingStrategy` and `ICachingStrategyRegistry` turn an assembled package
 into a `ProviderMessageLayout` with that provider's cache directives applied, and read cache

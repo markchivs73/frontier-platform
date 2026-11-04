@@ -128,6 +128,42 @@ public sealed class ContextAssemblerSimpleTests
     }
 
     [Fact]
+    public async Task AssembleWithProvenanceAsync_CitesTheStoredReleaseAndRequestedComponents()
+    {
+        // S13.218 (doc 04 §4 step 2): BaselineTier(catalogue.Version, orderedNames, content) — no placeholders.
+        var assembler = new ContextAssemblerSimple(new FakeCachingStrategyRegistry(NoCachingStrategy.Instance));
+        var baseline = new BaselineTierProvenance("firm-standards-v1", ["playbooks", "firm-standards"]);
+        var dynamic = new DynamicTierProvenance("eng-1", 4, "eng-1:ctx:e000004");
+
+        var package = await assembler.AssembleWithProvenanceAsync(ContextAssemblyTestData.Metadata(), "baseline", "dynamic", "", baseline, dynamic, CancellationToken.None);
+
+        Assert.Equal("firm-standards-v1", package.Baseline.BaselineVersion);
+        Assert.Equal(["playbooks", "firm-standards"], package.Baseline.Components);
+        Assert.Equal("baseline", package.Baseline.Content);
+        Assert.Equal(4, package.Dynamic.DynamicEpoch);
+    }
+
+    [Fact]
+    public async Task AssembleWithProvenanceAsync_NullBaselineProvenance_Throws()
+    {
+        var assembler = new ContextAssemblerSimple(new FakeCachingStrategyRegistry(NoCachingStrategy.Instance));
+
+        await Assert.ThrowsAsync<ArgumentNullException>(() =>
+            assembler.AssembleWithProvenanceAsync(ContextAssemblyTestData.Metadata(), "b", "d", "", null!, null, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task AssembleAsync_WithoutBaselineProvenance_KeepsTheUncitedPlaceholders()
+    {
+        var assembler = new ContextAssemblerSimple(new FakeCachingStrategyRegistry(NoCachingStrategy.Instance));
+
+        var package = await assembler.AssembleAsync(ContextAssemblyTestData.Metadata(), "baseline", "dynamic", "");
+
+        Assert.Equal(ContextAssemblerSimple.UncitedBaselineVersion, package.Baseline.BaselineVersion);
+        Assert.Equal(ContextAssemblerSimple.UncitedBaselineComponents, package.Baseline.Components);
+    }
+
+    [Fact]
     public async Task AssembleAsync_WithNonEmptyRealTimeContent_SetsRealTimeTier()
     {
         var assembler = new ContextAssemblerSimple(new FakeCachingStrategyRegistry(NoCachingStrategy.Instance));

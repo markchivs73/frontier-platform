@@ -182,7 +182,7 @@ public sealed class AgentTaskActivityPipelineTests
         var assembler = new FakeContextAssembler(Package("{}"));
         var d = Dependencies() with
         {
-            Composer = new FakeContextContentComposer(new ComposedContext { BaselineContent = "{}", DynamicContent = "{}", RealTimeContent = "{}", DynamicEpoch = 3, DynamicRef = "eng-1:ctx:e000003", DynamicContentHash = "h" }),
+            Composer = new FakeContextContentComposer(new ComposedContext { BaselineContent = "{}", BaselineProvenance = BaselineProvenanceFixture, DynamicContent = "{}", RealTimeContent = "{}", DynamicEpoch = 3, DynamicRef = "eng-1:ctx:e000003", DynamicContentHash = "h" }),
             AssembleContext = new AssembleContextActivity(assembler),
         };
         var pipeline = new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance, TestHostBuildStamp.Instance);
@@ -190,6 +190,22 @@ public sealed class AgentTaskActivityPipelineTests
         await pipeline.AssembleAsync(input, ResolvedModelFixture(), CancellationToken.None);
         Assert.Equal(new DynamicTierProvenance(input.EngagementId, 3, "eng-1:ctx:e000003"), assembler.ReceivedDynamicProvenance);
     }
+
+    [Fact]
+    public async Task AssembleAsync_ComposerReportsBaselineRelease_PackageCitesIt()
+    {
+        // S13.218 (doc 04 §4 step 2): the baseline tier cites the catalogue release and components the composer read.
+        var d = Dependencies();
+        var pipeline = new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, d.AdmissionController, d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance);
+        var input = BuildInput(nameof(BriefArtifact), nameof(SummaryArtifact), upstreamPayload: null);
+
+        var package = await pipeline.AssembleAsync(input, ResolvedModelFixture(), CancellationToken.None);
+
+        Assert.Equal(BaselineProvenanceFixture.BaselineVersion, package.Baseline.BaselineVersion);
+        Assert.Equal(BaselineProvenanceFixture.Components, package.Baseline.Components);
+    }
+
+    private static readonly BaselineTierProvenance BaselineProvenanceFixture = new("firm-standards-v1", ["firm-standards", "playbooks"]);
 
     [Fact]
     public async Task AssembleAsync_RevisionNoteProvided_PassedToComposer()
@@ -655,7 +671,7 @@ public sealed class AgentTaskActivityPipelineTests
         var admission = new FakeAdmissionController(admissionDecision ?? new AdmissionDecision(AdmissionResult.Proceed, null, null, null));
 
         return new PipelineDependencies(
-            Composer: new FakeContextContentComposer(new ComposedContext { BaselineContent = "{}", DynamicContent = dynamicContent, RealTimeContent = "{}" }),
+            Composer: new FakeContextContentComposer(new ComposedContext { BaselineContent = "{}", BaselineProvenance = BaselineProvenanceFixture, DynamicContent = dynamicContent, RealTimeContent = "{}" }),
             AssembleContext: new AssembleContextActivity(new FakeContextAssembler(Package(dynamicContent))),
             ContractTypes: registry,
             ModelResolver: new FakeModelResolver(ResolvedModelFixture()),

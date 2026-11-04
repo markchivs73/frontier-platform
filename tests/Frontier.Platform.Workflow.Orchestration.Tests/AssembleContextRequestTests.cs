@@ -1,4 +1,6 @@
+using System.Text;
 using Frontier.Platform.ContextAssembly;
+using Frontier.Platform.Serialization;
 
 namespace Frontier.Platform.Workflow.Orchestration.Tests;
 
@@ -50,5 +52,31 @@ public sealed class AssembleContextRequestTests
         var request = new AssembleContextRequest(Metadata(), "baseline", "dynamic", null!);
 
         Assert.Throws<ArgumentNullException>(request.Validate);
+    }
+
+    [Fact]
+    public void SerializeCanonical_BaselineProvenanceCited_WritesItLastInSnakeCase()
+    {
+        // S13.218: baseline_provenance is order 5 and its nested fields follow the canonical profile.
+        var request = new AssembleContextRequest(Metadata(), "b", "d", "r")
+        {
+            BaselineProvenance = new BaselineTierProvenance("2026-q2", ["playbooks", "firm-standards"]),
+        };
+
+        var json = Encoding.UTF8.GetString(CanonicalProfile.SerializeCanonical(request));
+
+        Assert.EndsWith(
+            "\"real_time_content\":\"r\",\"baseline_provenance\":{\"baseline_version\":\"2026-q2\",\"components\":[\"playbooks\",\"firm-standards\"]}}",
+            json, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SerializeCanonical_NoBaselineProvenance_OmitsTheField()
+    {
+        var json = Encoding.UTF8.GetString(CanonicalProfile.SerializeCanonical(
+            new AssembleContextRequest(Metadata(), "b", "d", "r")));
+
+        Assert.DoesNotContain("baseline_provenance", json, StringComparison.Ordinal);
+        Assert.EndsWith("\"real_time_content\":\"r\"}", json, StringComparison.Ordinal);
     }
 }
