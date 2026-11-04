@@ -1,3 +1,5 @@
+using Microsoft.Extensions.AI;
+
 namespace Frontier.Platform.Workflow.Compiler;
 
 /// <summary>
@@ -29,4 +31,13 @@ public sealed record DesignerModelSelection
 
     /// <summary>Whether to request the provider's adaptive-thinking mode (doc 14 §3).</summary>
     public required bool AdaptiveThinking { get; init; }
+
+    /// <summary>
+    /// The chat client the designer call goes to (S13.202, K7). When set, the designer calls this
+    /// client with <see cref="ModelId"/>, so a provider that resolves an <c>azure-openai</c> entry can
+    /// hand back its Azure client and the deployment id reaches Azure. When null, the designer calls
+    /// the deployment's registered <see cref="IChatClient"/>; the platform cannot tell which provider
+    /// that client serves, so the consumer must set this whenever the entry's provider differs.
+    /// </summary>
+    public IChatClient? ChatClient { get; init; }
 }

@@ -1,1 +1,3 @@
 #nullable enable
+Frontier.Platform.Workflow.Compiler.DesignerModelSelection.ChatClient.get -> Microsoft.Extensions.AI.IChatClient?
+Frontier.Platform.Workflow.Compiler.DesignerModelSelection.ChatClient.init -> void

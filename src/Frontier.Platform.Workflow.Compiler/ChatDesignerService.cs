@@ -344,14 +344,14 @@ internal sealed class ChatDesignerService : IChatDesignerService
         // directly targets the hallucinated-tool/role class the S9.27 walkthrough exposed.
         messages.Add(new ChatMessage(ChatRole.User, WithMentionNote(userMessage, mentions)));
 
-        var options = await BuildChatOptionsAsync(draft.WorkflowId, ct).ConfigureAwait(false);
+        var (client, options) = await ResolveDesignerCallAsync(draft.WorkflowId, ct).ConfigureAwait(false);
 
         // S9.12 is Option A (reveal-on-completion): the UI shows a "designing" indicator and reveals
         // the parsed result via the ChatTurnCompleted SignalR event, so streaming here is a
         // server-side resilience measure (S9.9a, doc 14 §3) — a long proposal arrives as it
         // generates instead of one blocking read holding the whole response in flight — not a
         // user-visible behaviour change.
-        var response = await _chatClient.GetStreamingResponseAsync(messages, options, ct)
+        var response = await client.GetStreamingResponseAsync(messages, options, ct)
             .ToChatResponseAsync(ct).ConfigureAwait(false);
         return await StampProposalAsync(BuildResult(response.Text ?? string.Empty), ct).ConfigureAwait(false);
     }
@@ -371,15 +371,25 @@ internal sealed class ChatDesignerService : IChatDesignerService
     }
 
     /// <summary>
+    /// S13.202 (K7): resolves the designer model once per turn and returns the selection's
+    /// <see cref="DesignerModelSelection.ChatClient"/>, else the registered client, with the call's
+    /// options, so the model id and the client come from the same selection.
+    /// </summary>
+    internal async Task<(IChatClient Client, ChatOptions Options)> ResolveDesignerCallAsync(string workflowId, CancellationToken ct)
+    {
+        var selection = await _modelProvider.GetAsync(workflowId, ct).ConfigureAwait(false);
+        return (selection.ChatClient ?? _chatClient, BuildChatOptions(selection));
+    }
+
+    /// <summary>
     /// S9.9a (doc 14 §3): builds the designer call's <see cref="ChatOptions"/> from the
     /// <see cref="IDesignerModelProvider"/> resolution — model and output ceiling from the
     /// <c>deep-reasoning</c> role's active mapping instead of a hardcoded id, plus the
     /// provider-neutral <see cref="ChatClientOptionKeys.AdaptiveThinking"/> flag the
     /// provider adapter translates into its own thinking request shape.
     /// </summary>
-    internal async Task<ChatOptions> BuildChatOptionsAsync(string workflowId, CancellationToken ct)
+    internal static ChatOptions BuildChatOptions(DesignerModelSelection selection)
     {
-        var selection = await _modelProvider.GetAsync(workflowId, ct).ConfigureAwait(false);
         var options = new ChatOptions { ModelId = selection.ModelId, MaxOutputTokens = selection.MaxOutputTokens };
         if (selection.AdaptiveThinking)
         {
