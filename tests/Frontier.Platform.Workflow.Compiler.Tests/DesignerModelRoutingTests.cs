@@ -74,7 +74,7 @@ public sealed class DesignerModelRoutingTests
     {
         var store = new InMemoryDefinitionStore();
         var validator = new DefinitionValidator(Array.Empty<IDefinitionValidationRule>());
-        var service = new ChatDesignerService(store, new ProposalMergeService(store, validator, new NodeDiffService()),
+        var service = new ChatDesignerService(store,
             registered, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance), new FakeApproverRoleCatalog(),
             new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), new NodeDiffService(), validator, provider,
             new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog());
@@ -85,7 +85,7 @@ public sealed class DesignerModelRoutingTests
     {
         await store.SaveDraftAsync("wf-x", CreateMinimalDraft("wf-x"), "no-etag", CancellationToken.None);
         await service.SubmitDesignTurnAsync("wf-x",
-            new DesignTurnRequest { DesignerId = "d", Message = "build it", AutoMergeProposal = false }, CancellationToken.None);
+            new DesignTurnRequest { DesignerId = "d", Message = "build it" }, CancellationToken.None);
     }
 
     /// <summary>A consumer provider whose designer role maps to an <c>azure-openai</c> entry: it hands back that entry's client.</summary>
