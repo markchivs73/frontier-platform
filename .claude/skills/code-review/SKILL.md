@@ -76,6 +76,9 @@ ending in `VERDICT: PASS` or `VERDICT: FAIL unverified=N contradicted=M`.
   and `pr-verifier` added to the `main` branch ruleset's required checks. Until then a `FAIL`
   verdict does not fail the job. Plan to switch after five advisory `src/` PRs, once their false
   positives have been recorded and the brief adjusted.
+- **Where false positives go:** the consumer repo's S15.15 entry in frontier-workflow's
+  `docs/state/IMPLEMENTATION-PLAN.md`. Both repos share one table there, with a `repo` column.
+  This repo keeps no separate record.
 - To run it before asking for review, start the `pr-verifier` agent locally with the PR number.
 
 ## Review conduct
