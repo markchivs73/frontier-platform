@@ -652,7 +652,7 @@ public sealed class ChatDesignerServiceTests
             // S9.9a (doc 14 §3): the model comes from the deep-reasoning role resolution, not a hardcoded id.
             var service = CreateService(new InMemoryDefinitionStore(), BuildMergeService(out _));
 
-            var options = await service.BuildChatOptionsAsync("wf-x", CancellationToken.None);
+            var (_, options) = await service.ResolveDesignerCallAsync("wf-x", CancellationToken.None);
 
             Assert.Equal("resolved-deep-reasoning-model", options.ModelId);
             Assert.Equal(16_000, options.MaxOutputTokens);
@@ -671,7 +671,7 @@ public sealed class ChatDesignerServiceTests
                 new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(),
                 new NodeDiffService(), new DefinitionValidator(Array.Empty<IDefinitionValidationRule>()), provider, new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog());
 
-            var options = await service.BuildChatOptionsAsync("wf-x", CancellationToken.None);
+            var (_, options) = await service.ResolveDesignerCallAsync("wf-x", CancellationToken.None);
 
             Assert.Equal("plain-model", options.ModelId);
             Assert.Null(options.AdditionalProperties);

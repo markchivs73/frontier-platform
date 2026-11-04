@@ -54,7 +54,7 @@ is a statement about a particular deployment.
 | `ICascadeGraphChecker` | Cascade-graph checks at publish |
 | `ITestRunExecutor` and friends | How a test run is executed and read back |
 | `IEntryContractCatalog` | What the entry node is handed, and from which dynamic field |
-| `IChatClient` / `IDesignerModelProvider` | Which model the design agent runs on, and how to call it |
+| `IChatClient` / `IDesignerModelProvider` | Which model the design agent runs on, and how to call it. A selection that sets `ChatClient` is called on that client; otherwise the registered `IChatClient` is used, so set it whenever the resolved entry's provider is not the one the registered client serves |
 
 **Workload rule packs register alongside the structural set.** A rule is just an
 `IDefinitionValidationRule` registration, so a deployment adds its own policy without forking
