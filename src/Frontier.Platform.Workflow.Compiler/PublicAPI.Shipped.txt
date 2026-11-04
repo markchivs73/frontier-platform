@@ -125,6 +125,8 @@ Frontier.Platform.Workflow.Compiler.DesignerModelSelection
 Frontier.Platform.Workflow.Compiler.DesignerModelSelection.<Clone>$() -> Frontier.Platform.Workflow.Compiler.DesignerModelSelection!
 Frontier.Platform.Workflow.Compiler.DesignerModelSelection.AdaptiveThinking.get -> bool
 Frontier.Platform.Workflow.Compiler.DesignerModelSelection.AdaptiveThinking.init -> void
+Frontier.Platform.Workflow.Compiler.DesignerModelSelection.ChatClient.get -> Microsoft.Extensions.AI.IChatClient?
+Frontier.Platform.Workflow.Compiler.DesignerModelSelection.ChatClient.init -> void
 Frontier.Platform.Workflow.Compiler.DesignerModelSelection.DesignerModelSelection() -> void
 Frontier.Platform.Workflow.Compiler.DesignerModelSelection.Equals(Frontier.Platform.Workflow.Compiler.DesignerModelSelection? other) -> bool
 Frontier.Platform.Workflow.Compiler.DesignerModelSelection.MaxOutputTokens.get -> int
@@ -615,8 +617,16 @@ Frontier.Platform.Workflow.Compiler.Rules.SchemaVersionSupportedRule
 Frontier.Platform.Workflow.Compiler.Rules.SchemaVersionSupportedRule.SchemaVersionSupportedRule() -> void
 Frontier.Platform.Workflow.Compiler.Rules.StructureDispatcherInputRule
 Frontier.Platform.Workflow.Compiler.Rules.StructureDispatcherInputRule.StructureDispatcherInputRule() -> void
+Frontier.Platform.Workflow.Compiler.Rules.StructureEntryInputContractRule
+Frontier.Platform.Workflow.Compiler.Rules.StructureEntryInputContractRule.DefaultSeverity.get -> Frontier.Platform.Workflow.Compiler.ValidationSeverity
+Frontier.Platform.Workflow.Compiler.Rules.StructureEntryInputContractRule.EvaluateAsync(Frontier.Platform.Workflow.Compiler.DefinitionValidationContext! ctx, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Frontier.Platform.Workflow.Compiler.ValidationFinding!>!>!
+Frontier.Platform.Workflow.Compiler.Rules.StructureEntryInputContractRule.RuleId.get -> string!
+Frontier.Platform.Workflow.Compiler.Rules.StructureEntryInputContractRule.StructureEntryInputContractRule(Frontier.Platform.Workflow.Compiler.IEntryContractCatalog! entryContracts) -> void
+Frontier.Platform.Workflow.Compiler.Rules.StructureEntryInputContractRule.Tier.get -> Frontier.Platform.Workflow.Compiler.RuleTier
 Frontier.Platform.Workflow.Compiler.Rules.StructureRequiredFieldsRule
 Frontier.Platform.Workflow.Compiler.Rules.StructureRequiredFieldsRule.StructureRequiredFieldsRule() -> void
+Frontier.Platform.Workflow.Compiler.Rules.StructureUniqueArtifactKeysRule
+Frontier.Platform.Workflow.Compiler.Rules.StructureUniqueArtifactKeysRule.StructureUniqueArtifactKeysRule() -> void
 Frontier.Platform.Workflow.Compiler.Rules.StructureUniqueNodeIdsRule
 Frontier.Platform.Workflow.Compiler.Rules.StructureUniqueNodeIdsRule.StructureUniqueNodeIdsRule() -> void
 Frontier.Platform.Workflow.Compiler.Rules.TimeoutsNestingRule
@@ -861,6 +871,8 @@ Frontier.Platform.Workflow.Compiler.Storage.DesignTurnDocument.ProposalChanges.g
 Frontier.Platform.Workflow.Compiler.Storage.DesignTurnDocument.ProposalChanges.init -> void
 Frontier.Platform.Workflow.Compiler.Storage.DesignTurnDocument.ProposalReasoningJson.get -> string?
 Frontier.Platform.Workflow.Compiler.Storage.DesignTurnDocument.ProposalReasoningJson.init -> void
+Frontier.Platform.Workflow.Compiler.Storage.DesignTurnDocument.ReplyTruncated.get -> bool?
+Frontier.Platform.Workflow.Compiler.Storage.DesignTurnDocument.ReplyTruncated.init -> void
 Frontier.Platform.Workflow.Compiler.Storage.DesignTurnDocument.TurnNumber.get -> int
 Frontier.Platform.Workflow.Compiler.Storage.DesignTurnDocument.TurnNumber.init -> void
 Frontier.Platform.Workflow.Compiler.Storage.DesignTurnDocument.WorkflowId.get -> string!
@@ -1468,6 +1480,8 @@ override Frontier.Platform.Workflow.Compiler.Rules.StructureDispatcherInputRule.
 override Frontier.Platform.Workflow.Compiler.Rules.StructureDispatcherInputRule.RuleId.get -> string!
 override Frontier.Platform.Workflow.Compiler.Rules.StructureRequiredFieldsRule.DefaultSeverity.get -> Frontier.Platform.Workflow.Compiler.ValidationSeverity
 override Frontier.Platform.Workflow.Compiler.Rules.StructureRequiredFieldsRule.RuleId.get -> string!
+override Frontier.Platform.Workflow.Compiler.Rules.StructureUniqueArtifactKeysRule.DefaultSeverity.get -> Frontier.Platform.Workflow.Compiler.ValidationSeverity
+override Frontier.Platform.Workflow.Compiler.Rules.StructureUniqueArtifactKeysRule.RuleId.get -> string!
 override Frontier.Platform.Workflow.Compiler.Rules.StructureUniqueNodeIdsRule.DefaultSeverity.get -> Frontier.Platform.Workflow.Compiler.ValidationSeverity
 override Frontier.Platform.Workflow.Compiler.Rules.StructureUniqueNodeIdsRule.RuleId.get -> string!
 override Frontier.Platform.Workflow.Compiler.Rules.VersioningNoClashRule.DefaultSeverity.get -> Frontier.Platform.Workflow.Compiler.ValidationSeverity
