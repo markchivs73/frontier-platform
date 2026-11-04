@@ -1,3 +1,7 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using Frontier.Platform.Serialization;
+
 
 namespace Frontier.Platform.Audit.Tests;
 
@@ -73,6 +77,40 @@ public sealed class AuditChainVerifierTests
         Assert.True(valid.ChainValid);
         Assert.False(broken.SignatureValid);
         Assert.Equal(tampered.ExecutionId, broken.BrokenLinkAt);
+    }
+
+    /// <summary>S13.183 (ADR-PA45): the worker build (agent and MCP) and the generation sit inside the hashed bytes, so editing any of them is caught.</summary>
+    [Fact]
+    public void Verify_RecordWithHostBuildAndGeneration_VerifiesAndAnEditOfAnyIsCaught()
+    {
+        var record = SignedWithHostBuildAndGeneration();
+        var forgedAgentBuild = record with { AgentInvocations = [record.AgentInvocations[0] with { HostBuild = "0.0.0+forged" }] };
+        var forgedMcpBuild = record with { McpToolInvocations = [record.McpToolInvocations![0] with { HostBuild = "0.0.0+forged" }] };
+        var forgedGeneration = record with { Generation = 2 };
+
+        Assert.True(AuditChainVerifier.Verify([record], record.ExecutionId, "eng-1", Keys(V1)).SignatureValid);
+        Assert.False(AuditChainVerifier.Verify([forgedAgentBuild], forgedAgentBuild.ExecutionId, "eng-1", Keys(V1)).SignatureValid);
+        Assert.False(AuditChainVerifier.Verify([forgedMcpBuild], forgedMcpBuild.ExecutionId, "eng-1", Keys(V1)).SignatureValid);
+        Assert.False(AuditChainVerifier.Verify([forgedGeneration], forgedGeneration.ExecutionId, "eng-1", Keys(V1)).SignatureValid);
+    }
+
+    /// <summary>
+    /// S13.183 (ADR-PA45): the canonical profile skips a member its contract does not declare, so a reader whose
+    /// contract predates the three members reads a new record without them. Stripping them from the stored bytes
+    /// reproduces that read, and the recomputed signature fails: verifiers must not lag the workers that write them.
+    /// </summary>
+    [Fact]
+    public void Verify_RecordReadWithoutTheNewMembers_FailsTheSignature()
+    {
+        var record = SignedWithHostBuildAndGeneration();
+        var stored = JsonNode.Parse(CanonicalProfile.SerializeCanonical(record))!.AsObject();
+        stored["unknown_member"] = "skipped";
+        StripHostBuildAndGeneration(stored);
+
+        var asOlderReaderSeesIt = stored.Deserialize<SignedAuditRecord>(CanonicalProfile.Options)!;
+
+        Assert.Null(asOlderReaderSeesIt.Generation);
+        Assert.False(AuditChainVerifier.Verify([asOlderReaderSeesIt], record.ExecutionId, "eng-1", Keys(V1)).SignatureValid);
     }
 
     [Fact]
@@ -376,6 +414,22 @@ public sealed class AuditChainVerifierTests
     }
 
     /// <summary>Two records both chained from genesis — the fork the unguarded append produced.</summary>
+    private static SignedAuditRecord SignedWithHostBuildAndGeneration()
+    {
+        var sample = AuditContractSamples.AuditRecordWithHostBuildAndGeneration();
+        var unsigned = AuditRecordHasherTests.Sample() with { AgentInvocations = sample.AgentInvocations, McpToolInvocations = sample.McpToolInvocations, Generation = sample.Generation };
+        return Sign(unsigned, AuditRecordHasher.ComputeGenesisHash("eng-1"), V1);
+    }
+
+    private static void StripHostBuildAndGeneration(JsonObject stored)
+    {
+        stored.Remove("generation");
+        foreach (var invocation in stored["agent_invocations"]!.AsArray().Concat(stored["mcp_tool_invocations"]!.AsArray()))
+        {
+            invocation!.AsObject().Remove("host_build");
+        }
+    }
+
     private static (SignedAuditRecord First, SignedAuditRecord Second) Fork()
     {
         var genesis = AuditRecordHasher.ComputeGenesisHash("eng-1");

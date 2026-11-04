@@ -129,6 +129,11 @@ public sealed record SignedAuditRecord : IVersionedContract
     [JsonPropertyName("mcp_tool_invocations")]
     public IReadOnlyList<McpToolInvocation>? McpToolInvocations { get; init; }
 
+    /// <summary><see cref="AuditRecord.Generation"/>, carried through and covered by <see cref="RecordHash"/> (S13.183); omitted when null.</summary>
+    [JsonPropertyOrder(22)]
+    [JsonPropertyName("generation")]
+    public int? Generation { get; init; }
+
     /// <inheritdoc />
     public void Validate()
     {

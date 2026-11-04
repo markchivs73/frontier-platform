@@ -114,4 +114,13 @@ public sealed record AgentInvocation
     [JsonPropertyOrder(18)]
     [JsonPropertyName("output_contract_hash")]
     public string? OutputContractHash { get; init; }
+
+    /// <summary>
+    /// The build of the worker that ran this invocation (ADR-E15 D3, S13.183): the consumer's
+    /// <c>IHostBuildStamp</c> value, read activity-side. <see langword="null"/> (omitted on the wire)
+    /// on records written before the stamp reached the audit, so their golden and signed bytes are unaffected.
+    /// </summary>
+    [JsonPropertyOrder(19)]
+    [JsonPropertyName("host_build")]
+    public string? HostBuild { get; init; }
 }

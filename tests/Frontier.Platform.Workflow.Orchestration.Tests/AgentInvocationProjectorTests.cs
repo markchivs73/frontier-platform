@@ -42,6 +42,15 @@ public sealed class AgentInvocationProjectorTests
         Assert.Equal("sha256:out", invocation.OutputContractHash);
     }
 
+    /// <summary>S13.183 (ADR-E15 D3): the staged worker build reaches the signed audit's invocation.</summary>
+    [Fact]
+    public void ToAgentInvocation_CopiesTheHostBuild()
+    {
+        var invocation = AgentInvocationProjector.ToAgentInvocation(TelemetrySamples.Record() with { HostBuild = "9.8.7+worker1234" });
+
+        Assert.Equal("9.8.7+worker1234", invocation.HostBuild);
+    }
+
     [Fact]
     public void Project_MapsEveryRecord()
     {

@@ -41,6 +41,15 @@ public sealed class AuditGoldenFileTests
     public void SignedAuditRecordWithMcpToolInvocations_IsByteStableAndRoundTrips() =>
         ContractRoundTripAssertions.AssertStableAndRoundTrips(AuditContractSamples.SignedAuditRecordWithMcpToolInvocations(), "signed_audit_record_mcp_tool_invocations.json");
 
+    /// <summary>S13.183 (ADR-E15 D3): the worker build per invocation and the run's generation. New goldens; every older audit golden is unchanged.</summary>
+    [Fact]
+    public void AuditRecordWithHostBuildAndGeneration_IsByteStableAndRoundTrips() =>
+        ContractRoundTripAssertions.AssertStableAndRoundTrips(AuditContractSamples.AuditRecordWithHostBuildAndGeneration(), "audit_record_host_build_generation.json");
+
+    [Fact]
+    public void SignedAuditRecordWithHostBuildAndGeneration_IsByteStableAndRoundTrips() =>
+        ContractRoundTripAssertions.AssertStableAndRoundTrips(AuditContractSamples.SignedAuditRecordWithHostBuildAndGeneration(), "signed_audit_record_host_build_generation.json");
+
     /// <summary>
     /// ADR-PA41: verification rehydrates a stored record and re-serializes it. A record signed before MCP
     /// steps were audited must come back to exactly its stored bytes through both copies the hasher makes,
@@ -57,6 +66,26 @@ public sealed class AuditGoldenFileTests
         var recomputed = AuditRecordHasher.ToSignedShape(AuditRecordHasher.ToAuditRecord(record), record.PreviousRecordHash, record.RecordHash, record.Signature, record.SigningKeyId);
 
         Assert.Null(record.McpToolInvocations);
+        Assert.Equal(stored, CanonicalProfile.SerializeCanonical(recomputed));
+    }
+
+    /// <summary>
+    /// S13.183: a record signed before the worker build and the generation reached the audit must recompute
+    /// to exactly its stored bytes, or verification would read the new members as tampering.
+    /// </summary>
+    [Theory]
+    [InlineData("signed_audit_record.json")]
+    [InlineData("signed_audit_record_optional_fields.json")]
+    [InlineData("signed_audit_record_mcp_tool_invocations.json")]
+    public void RecordSignedBeforeHostBuildAndGeneration_RecomputesToItsStoredBytes(string goldenFileName)
+    {
+        var stored = File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "GoldenFiles", goldenFileName));
+        var record = JsonSerializer.Deserialize<SignedAuditRecord>(stored, CanonicalProfile.Options)!;
+
+        var recomputed = AuditRecordHasher.ToSignedShape(AuditRecordHasher.ToAuditRecord(record), record.PreviousRecordHash, record.RecordHash, record.Signature, record.SigningKeyId);
+
+        Assert.Null(record.Generation);
+        Assert.All(record.AgentInvocations, invocation => Assert.Null(invocation.HostBuild));
         Assert.Equal(stored, CanonicalProfile.SerializeCanonical(recomputed));
     }
 }

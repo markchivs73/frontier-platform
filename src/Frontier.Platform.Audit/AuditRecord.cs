@@ -119,6 +119,15 @@ public sealed record AuditRecord : IVersionedContract
     [JsonPropertyName("mcp_tool_invocations")]
     public IReadOnlyList<McpToolInvocation>? McpToolInvocations { get; init; }
 
+    /// <summary>
+    /// The compatibility generation the execution started on (ADR-E15 amendment 2026-11-03, Decision 3's
+    /// pin set; S13.183). <see langword="null"/> (omitted on the wire) until the run's generation is
+    /// recorded (S13.184), and on records written before then, so existing golden and signed bytes are unaffected.
+    /// </summary>
+    [JsonPropertyOrder(18)]
+    [JsonPropertyName("generation")]
+    public int? Generation { get; init; }
+
     /// <inheritdoc />
     public void Validate()
     {

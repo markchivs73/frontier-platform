@@ -80,4 +80,12 @@ public sealed record McpToolInvocation
     [JsonPropertyOrder(11)]
     [JsonPropertyName("completed_at_utc")]
     public required DateTime CompletedAtUtc { get; init; }
+
+    /// <summary>
+    /// The build of the worker that ran this step (ADR-E15 D3, S13.183), copied from the step's recorded
+    /// completion. <see langword="null"/> (omitted on the wire) for a step recorded without one.
+    /// </summary>
+    [JsonPropertyOrder(12)]
+    [JsonPropertyName("host_build")]
+    public string? HostBuild { get; init; }
 }

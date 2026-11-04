@@ -3327,3 +3327,36 @@ registration, resolving either pipeline fails naming the port (`HostBuildStampRe
 with `ValidateOnBuild` building the provider fails, and otherwise the first agent or tool activity
 fails. No recorded shape changes: `host_build` was already on both results, no golden file changes
 and no schema version moves.
+
+## ADR-PA45 — the signed audit record names the worker build and the run's generation
+
+ADR-E15 D3 (the consumer's pin set) promises that "what exactly was this execution running?" can be
+answered from the signed audit record alone. The record could not answer it: `host_build` was on
+the activity results and the snapshot's steps, but `AgentInvocation` and `AuditRecord` had no such
+member (consumer S13.183).
+
+**Three additive, omit-null members, all covered by `record_hash`.**
+- `AgentInvocation.host_build` (order 19), staged on `AuditTelemetryRecord.host_build` (order 23) by
+  the agent pipeline from the same `IHostBuildStamp` value its result carries, and copied by the
+  consolidator's projection.
+- `McpToolInvocation.host_build` (order 12), copied from the step's recorded `StepCompletion.HostBuild`.
+- `AuditRecord.generation` / `SignedAuditRecord.generation` (orders 18 and 22, after every existing
+  member), the integer compatibility generation the run started on (ADR-E15 amendment, Decision 1).
+  *Nothing writes it yet.* Its source, the generation recorded on the execution snapshot, is consumer
+  S13.184; the consolidator copies it when that lands. Carrying the member now keeps S13.184 to
+  wiring, not a second audit-shape change.
+
+No schema version moves, per the minor-change rule: records signed before these members recompute to
+their stored bytes (`RecordSignedBeforeHostBuildAndGeneration_RecomputesToItsStoredBytes`), and every
+older golden file is unchanged. Pinned by the new `audit_record_host_build_generation.json` and
+`signed_audit_record_host_build_generation.json`, and the verifier test edits each of the three
+members (agent `host_build`, MCP `host_build`, `generation`) and sees the signature fail.
+
+**Verifiers adopt this release no later than the workers that write it.** The canonical profile skips
+a member its contract does not declare, so a reader built against an older platform version reads a
+new record without the three members, recomputes different bytes and reports the signature invalid
+(`Verify_RecordReadWithoutTheNewMembers_FailsTheSignature` reproduces that read by stripping them).
+The rule is a deployment ordering, and no check in this repo can enforce it: the stale reader is an
+already-shipped package that never sees this code, and nothing in the platform knows which versions a
+consumer runs side by side. The consumer meets it by moving every process that verifies and every
+worker to the same `FrontierPlatformVersion` in one bump, which its lockstep pin already does.
