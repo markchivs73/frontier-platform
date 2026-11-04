@@ -4,13 +4,15 @@ namespace Frontier.Platform.Workflow.Compiler.Rules;
 
 /// <summary>
 /// structure.entry-input-contract (doc 13 §4.2, doc 14 §3, S13.209): a one-shot definition's entry
-/// <c>agent_task</c> (no incoming control edge) is handed the deployment's entry payload at runtime,
+/// <c>agent_task</c> (no incoming edge of either kind) is handed the deployment's entry payload at runtime,
 /// not an upstream data payload, so it must declare the entry contract from
 /// <see cref="IEntryContractCatalog"/> as its <c>input_contract_type</c> and request the entry
 /// dynamic field in <c>context_request.dynamic_fields</c>. The design agent is told this from the
 /// same catalogue; until this rule, nothing checked the proposal obeyed it. Dispatcher-mode entry
 /// nodes take the work-item contract instead and stay under <c>structure.dispatcher-input</c>;
-/// an entry that is not an <c>agent_task</c> is outside this rule.
+/// an entry that is not an <c>agent_task</c> is outside this rule. A node fed by a Data edge is not an
+/// entry even with no control edge into it: the runtime hands it that edge's payload, so a chain built
+/// from Data edges alone has one entry, not one per node.
 /// </summary>
 public sealed class StructureEntryInputContractRule : IDefinitionValidationRule
 {
@@ -39,9 +41,9 @@ public sealed class StructureEntryInputContractRule : IDefinitionValidationRule
         if (ctx.Definition.Mode != ExecutionMode.OneShot) return [];
 
         var entry = await _entryContracts.GetEntryContractAsync(ct);
-        var entryIds = ControlGraphWalker.FindEntryNodeIds(ctx.Definition).ToHashSet(StringComparer.Ordinal);
+        var fed = ctx.Definition.Edges.Select(e => e.ToNodeId).ToHashSet(StringComparer.Ordinal);
         return ctx.Definition.Nodes.OfType<AgentTaskNode>()
-            .Where(agent => entryIds.Contains(agent.NodeId))
+            .Where(agent => !fed.Contains(agent.NodeId))
             .SelectMany(agent => EntryFindings(agent, entry))
             .ToList();
     }
