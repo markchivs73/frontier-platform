@@ -58,6 +58,36 @@ public sealed class AgentProposalParserTests
         Assert.Null(proposal);
     }
 
+    // S13.210: the profile drops a key the schema does not define without a word, so the parser
+    // reports it — the proposal still parses, and the caller decides what to do about the key.
+    [Fact]
+    public void TryParse_InventedKeys_StillParses_AndReportsEveryKeyWithItsPath()
+    {
+        var definition = DefinitionJsonWithNodeMissingDiscriminator()
+            .Replace("\"node_id\":", "\"node_type\":\"agent_task\",\"timout\":30,\"node_id\":", StringComparison.Ordinal);
+        var raw = $$"""{"reason":"r","confidence":0.9,"definition":{{definition}}}""";
+
+        Assert.True(AgentProposalParser.TryParse(raw, out var proposal, out var unknownKeys));
+        Assert.NotNull(proposal!.Definition);
+        Assert.Equal(["$.confidence", "$.definition.nodes[0].timout"], unknownKeys);
+    }
+
+    [Fact]
+    public void TryParse_OnlyDefinedKeys_ReportsNoUnknownKeys()
+    {
+        var raw = $$"""{"reason":"r","definition":{{MinimalDefinitionJson()}},"changed_node_ids":["n1"]}""";
+
+        Assert.True(AgentProposalParser.TryParse(raw, out _, out var unknownKeys));
+        Assert.Empty(unknownKeys);
+    }
+
+    [Fact]
+    public void TryParse_Malformed_ReportsNoUnknownKeys()
+    {
+        Assert.False(AgentProposalParser.TryParse("{\"reason\":", out _, out var unknownKeys));
+        Assert.Empty(unknownKeys);
+    }
+
     [Fact]
     public void StripFences_NoFence_ReturnsTrimmedInput() =>
         Assert.Equal("{\"a\":1}", AgentProposalParser.StripFences("  {\"a\":1}  "));

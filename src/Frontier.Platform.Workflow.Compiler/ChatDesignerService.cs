@@ -126,7 +126,7 @@ internal sealed class ChatDesignerService : IChatDesignerService
         var agentProposalJson = agentResult.ProposalDefinitionJson;
 
         // Compute the authoritative diff + pure-tier validation over the proposal (doc 14 §4.1).
-        var (proposalChanges, blockReason) = BuildProposalReview(draft, agentProposalJson);
+        var (proposalChanges, blockReason) = BuildProposalReview(draft, agentProposalJson, agentResult.UnknownKeys);
 
         // Create turn document
         var turn = new DesignTurnDocument
@@ -433,8 +433,21 @@ internal sealed class ChatDesignerService : IChatDesignerService
         // The proposal is a fresh definition, not the stored draft, so it carries no stored schema
         // version: passing the draft's would pin an old-schema finding on a brand-new proposal.
         var report = await _compiler.ValidateAsync(proposed, draft.DraftRevision, storedSchemaVersion: null, ct);
-        return report.Findings.Where(f => f.Severity == ValidationSeverity.Error).ToList();
+        return [.. UnknownKeyFindings(result.UnknownKeys), .. report.Findings.Where(f => f.Severity == ValidationSeverity.Error)];
     }
+
+    /// <summary>Rule id for a proposal key the schema does not define (S13.210).</summary>
+    internal const string UnknownKeyRuleId = "proposal.unknown-key";
+
+    /// <summary>
+    /// S13.210: one Error finding per key the model put in its proposal that the schema does not
+    /// define. The parse dropped each one silently, so without these the designer never learns the
+    /// model got a field wrong; as Error findings they drive the repair pass and block Apply.
+    /// </summary>
+    internal static IReadOnlyList<ValidationFinding> UnknownKeyFindings(IReadOnlyList<string>? unknownKeys) =>
+        (unknownKeys ?? []).Select(key => new ValidationFinding(UnknownKeyRuleId, ValidationSeverity.Error,
+            $"'{key}' is not a field the schema defines, so it was dropped. Use only the schema's field names.",
+            FieldPath: key)).ToList();
 
     /// <summary>The one-shot repair prompt: the original ask + the failing findings + the prior proposal to correct.</summary>
     internal static string BuildRepairMessage(string userMessage, DesignerAgentResult firstAttempt, IReadOnlyList<ValidationFinding> errors)
@@ -456,10 +469,13 @@ internal sealed class ChatDesignerService : IChatDesignerService
     /// Computes the authoritative change set and pure-tier validation for a proposal (doc 14 §4.1).
     /// Returns (null, null) when there is no proposal; a non-null block reason means the proposal
     /// failed validation and the diff card should disable Apply (the merge re-validates regardless).
+    /// Keys the model invented that survived the repair pass (<paramref name="unknownKeys"/>, S13.210)
+    /// block too, so the designer is told rather than shown a proposal missing what the model meant.
     /// </summary>
     internal (IReadOnlyList<ProposalChangeItem>? Changes, string? BlockReason) BuildProposalReview(
         DefinitionDraftDocument draft,
-        string proposalDefinitionJson)
+        string proposalDefinitionJson,
+        IReadOnlyList<string>? unknownKeys)
     {
         if (string.IsNullOrEmpty(proposalDefinitionJson)) return (null, null);
 
@@ -467,9 +483,8 @@ internal sealed class ChatDesignerService : IChatDesignerService
         if (proposed is null) return (null, null);
 
         var changes = ProposalChangeSetBuilder.Build(_diffService.Compute(draft.Definition, proposed), draft.Definition, proposed);
-        var blocking = _compiler.ValidateStructural(proposed)
-            .Where(f => f.Severity == ValidationSeverity.Error)
-            .ToList();
+        List<ValidationFinding> blocking =
+            [.. UnknownKeyFindings(unknownKeys), .. _compiler.ValidateStructural(proposed).Where(f => f.Severity == ValidationSeverity.Error)];
         var blockReason = blocking.Count == 0
             ? null
             : string.Join("; ", blocking.Select(f => $"{f.RuleId}: {f.Message}"));
@@ -496,10 +511,11 @@ internal sealed class ChatDesignerService : IChatDesignerService
     /// <summary>Parses the raw agent text into a proposal; falls back to plain reasoning when unparseable.</summary>
     internal static DesignerAgentResult BuildResult(string raw)
     {
-        if (AgentProposalParser.TryParse(raw, out var proposal) && proposal!.Definition is not null)
+        if (AgentProposalParser.TryParse(raw, out var proposal, out var unknownKeys) && proposal!.Definition is not null)
         {
             var definitionJson = JsonSerializer.Serialize(proposal.Definition, CanonicalProfile.Options);
-            return new DesignerAgentResult(proposal.Reason ?? string.Empty, definitionJson);
+            return new DesignerAgentResult(proposal.Reason ?? string.Empty, definitionJson,
+                UnknownKeys: unknownKeys.Count > 0 ? unknownKeys : null);
         }
 
         // Parse failed. If the model clearly attempted a proposal (JSON-ish), don't dump the raw blob
@@ -701,5 +717,8 @@ internal sealed class ChatDesignerService : IChatDesignerService
 
 /// <summary>Outcome of one design-agent turn: the prose reasoning and, when a proposal was parsed,
 /// the complete proposed <see cref="WorkflowDefinition"/> as canonical JSON (empty when none).
-/// <paramref name="ReplyTruncated"/> is true when the model stopped at its output-token ceiling (S13.200).</summary>
-internal sealed record DesignerAgentResult(string Reasoning, string ProposalDefinitionJson, bool ReplyTruncated = false);
+/// <paramref name="ReplyTruncated"/> is true when the model stopped at its output-token ceiling (S13.200).
+/// <paramref name="UnknownKeys"/> lists the keys the proposal carried that the schema does not define,
+/// which the parse dropped (S13.210); null when there were none.</summary>
+internal sealed record DesignerAgentResult(
+    string Reasoning, string ProposalDefinitionJson, bool ReplyTruncated = false, IReadOnlyList<string>? UnknownKeys = null);

@@ -77,6 +77,18 @@ field the runtime then reads; if they ever name different things, every workflow
 designs will validate and then fail live. Derive both from one constant rather than stating it
 twice.
 
+## A key the agent invents is an error, not a silent drop
+
+The canonical profile ignores a JSON key the target type does not define, so a field the design
+agent misspelled or made up would vanish on parse. The chat designer instead reports every such key
+(`proposal.unknown-key`, with the key's path such as `$.definition.nodes[0].timout`) as an Error
+finding. The finding sends the proposal through the one repair pass like any other error, and if the
+key is still there after the repair, the turn's `ProposalBlockReason` names it. Disabling Apply on a
+non-null block reason is the consumer's job (its diff card does). The merge path cannot catch this:
+it re-validates the re-serialized definition, which no longer holds the key. The repair prompt shows
+that re-serialized proposal too, so the finding text itself names the key and says it was dropped.
+The check reads the profile's own type metadata, so the profile itself is unchanged (K10).
+
 ## The designer copies what the registry holds for an MCP tool
 
 An `mcp_tool` node's `input_contract_type`, `output_contract_type` and `writes` are the registry's
