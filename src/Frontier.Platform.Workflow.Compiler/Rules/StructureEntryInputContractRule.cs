@@ -1,3 +1,4 @@
+using Frontier.Platform.Contracts;
 using Frontier.Platform.Workflow.Model;
 
 namespace Frontier.Platform.Workflow.Compiler.Rules;
@@ -13,6 +14,11 @@ namespace Frontier.Platform.Workflow.Compiler.Rules;
 /// an entry that is not an <c>agent_task</c> is outside this rule. A node fed by a Data edge is not an
 /// entry even with no control edge into it: the runtime hands it that edge's payload, so a chain built
 /// from Data edges alone has one entry, not one per node.
+/// <para>An entry whose <c>input_contract_type</c> is a registry contract ref (ADR-E2 grammar) is not held
+/// to the catalogue's CLR name: an agent-backed role must declare a registry contract and the node must
+/// name it (ADR-PA40, <c>model-role.contracts-match</c>), and <c>data.schema-ref-resolves</c> checks the
+/// ref exists. Its dynamic field is still checked. Whether that contract accepts the entry payload is not
+/// checked here yet.</para>
 /// </summary>
 public sealed class StructureEntryInputContractRule : IDefinitionValidationRule
 {
@@ -50,7 +56,8 @@ public sealed class StructureEntryInputContractRule : IDefinitionValidationRule
 
     private IEnumerable<ValidationFinding> EntryFindings(AgentTaskNode agent, EntryContractDescriptor entry)
     {
-        if (!string.Equals(agent.InputContractType, entry.ContractTypeName, StringComparison.Ordinal))
+        if (!ContractRef.TryParse(agent.InputContractType, out _)
+            && !string.Equals(agent.InputContractType, entry.ContractTypeName, StringComparison.Ordinal))
         {
             yield return new(RuleId, DefaultSeverity,
                 $"The entry node is handed {entry.Description} at runtime, so input_contract_type must be '{entry.ContractTypeName}', not '{agent.InputContractType}'.",

@@ -127,6 +127,27 @@ public sealed class StructureEntryInputContractRuleTests
         Assert.Equal("a", Assert.Single(await EvaluateAsync(definition)).NodeId);
     }
 
+    /// <summary>
+    /// An agent-backed entry role must name its registry contract (ADR-PA40), so a registry ref at the
+    /// entry is not held to the catalogue's CLR name — frontier-workflow's contracts-as-data E2E runs this.
+    /// </summary>
+    [Fact]
+    public async Task EntryNamingARegistryContractRef_IsNotHeldToTheClrName()
+    {
+        var definition = S930Fixtures.Build([S930Fixtures.Agent("a", inputContract: "frontier-test/case-summary/1.0", dynamicFields: ["case_summary"])]);
+
+        Assert.Empty(await EvaluateAsync(definition));
+    }
+
+    /// <summary>The control: the entry's dynamic field is still required when it names a registry ref.</summary>
+    [Fact]
+    public async Task EntryNamingARegistryContractRef_StillNeedsTheEntryField()
+    {
+        var definition = S930Fixtures.Build([S930Fixtures.Agent("a", inputContract: "frontier-test/case-summary/1.0", dynamicFields: ["other_field"])]);
+
+        Assert.Equal("context_request.dynamic_fields", Assert.Single(await EvaluateAsync(definition)).FieldPath);
+    }
+
     [Fact]
     public async Task EntryThatIsNotAnAgentTask_IsNotChecked()
     {
