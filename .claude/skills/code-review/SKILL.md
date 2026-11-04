@@ -63,6 +63,21 @@ artifact somebody else resolves.** A mistake does not stay inside one solution.
       consumer inherits**
 - [ ] Vulnerability scan clean
 
+## The `pr-verifier` check
+
+`.github/workflows/claude-code-review.yml` runs the `pr-verifier` agent
+(`.claude/agents/pr-verifier.md`) on every non-draft PR that touches `src/` or `tests/`; other
+PRs pass at once. It replaces the generic code-review plugin. It extracts each claim from the PR
+description, the ticked boxes, added ADR-PA entries and the `PublicAPI.Unshipped.txt` diff,
+looks for the test assertion that proves each one, and posts one comment (updated on each push)
+ending in `VERDICT: PASS` or `VERDICT: FAIL unverified=N contradicted=M`.
+
+- **Advisory until both switches are on:** the repository variable `PR_VERIFIER_BLOCKING=true`,
+  and `pr-verifier` added to the `main` branch ruleset's required checks. Until then a `FAIL`
+  verdict does not fail the job. Plan to switch after five advisory `src/` PRs, once their false
+  positives have been recorded and the brief adjusted.
+- To run it before asking for review, start the `pr-verifier` agent locally with the PR number.
+
 ## Review conduct
 
 - Review for drift as much as for bugs: the failure mode here is a boundary quietly eroding.

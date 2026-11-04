@@ -1,27 +1,25 @@
-name: Claude Code Review
+name: PR Verifier
 
+# A fresh-context adversarial reviewer, briefed by .claude/agents/pr-verifier.md, replaces the
+# generic code-review plugin (ported from frontier-workflow S15.15, P3 delivery verification).
+# Advisory until vars.PR_VERIFIER_BLOCKING is 'true'; see .claude/skills/code-review/SKILL.md.
+# The job reports on every non-draft PR so it can be a required check: a PR with no
+# src/ or tests/ change passes at once with nothing to verify.
 on:
   pull_request:
     types: [opened, synchronize, ready_for_review, reopened]
-    # Optional: Only run on specific file changes
-    # paths:
-    #   - "src/**/*.ts"
-    #   - "src/**/*.tsx"
-    #   - "src/**/*.js"
-    #   - "src/**/*.jsx"
+
+concurrency:
+  group: pr-verifier-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
-  claude-review:
-    # Optional: Filter by PR author
-    # if: |
-    #   github.event.pull_request.user.login == 'external-contributor' ||
-    #   github.event.pull_request.user.login == 'new-developer' ||
-    #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
-
+  pr-verifier:
+    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: read
+      pull-requests: write # the verdict comment is posted by this workflow, not the agent
       issues: read
       id-token: write
 
@@ -29,16 +27,97 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0 # the filter diffs base..head; the agent reads git log/show/blame
 
-      - name: Run Claude Code Review
-        id: claude-review
+      # Same mechanism as ci.yml's `changes` job (git diff of base..head), narrowed to the
+      # library and test code this reviewer verifies.
+      - name: Detect src/tests changes
+        id: filter
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.sha }}
+        run: |
+          changed=$(git diff --name-only "$BASE" "$HEAD" || true)
+          if echo "$changed" | grep -qE '^(src|tests)/'; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "no src/tests changes; nothing to verify"
+            echo "code=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Inputs and outputs per anthropics/claude-code-action@v1 docs/usage.md:
+      # `prompt` + `claude_args` (--model, --max-turns, --allowedTools, --disallowedTools,
+      # --json-schema); --json-schema surfaces the result as the `structured_output` output.
+      - name: Run pr-verifier
+        id: verify
+        if: steps.filter.outputs.code == 'true'
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
-          plugins: 'code-review@claude-code-plugins'
-          prompt: '/code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }} --comment'
-          # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
-          # or https://code.claude.com/docs/en/cli-reference for available options
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
 
+            You are the pr-verifier. Read `.claude/agents/pr-verifier.md` first and follow its
+            brief exactly, for this PR. The PR branch is already checked out in the working
+            directory. Do not post comments, reviews or approvals; this workflow posts your report.
+
+            Return your result as the structured output:
+            - `report`: the full report in the brief's Output format (Markdown), ending with the
+              VERDICT line.
+            - `verdict`: "PASS" or "FAIL", matching the VERDICT line.
+            - `unverified` and `contradicted`: the counts on the VERDICT line (0 for PASS).
+          claude_args: |
+            --model best
+            --max-turns 60
+            --allowedTools "Read,Grep,Glob,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(git log:*),Bash(git show:*),Bash(git diff:*),Bash(git grep:*),Bash(git blame:*)"
+            --disallowedTools "Edit,Write,NotebookEdit,WebFetch,WebSearch"
+            --json-schema '{"type":"object","properties":{"verdict":{"type":"string","enum":["PASS","FAIL"]},"unverified":{"type":"integer","minimum":0},"contradicted":{"type":"integer","minimum":0},"report":{"type":"string"}},"required":["verdict","unverified","contradicted","report"]}'
+
+      - name: Post verdict comment
+        if: always() && steps.filter.outputs.code == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          RESULT: ${{ steps.verify.outputs.structured_output }}
+          BLOCKING: ${{ vars.PR_VERIFIER_BLOCKING }}
+        run: |
+          body="$RUNNER_TEMP/pr-verifier-comment.md"
+          {
+            echo "<!-- pr-verifier -->"
+            echo "## pr-verifier"
+            if [ "$BLOCKING" = "true" ]; then
+              echo "_Mode: blocking._"
+            else
+              echo "_Mode: advisory (rollout) — this verdict does not fail the check._"
+            fi
+            echo
+            if [ -n "$RESULT" ] && printf '%s' "$RESULT" | jq -e '.report' > /dev/null; then
+              printf '%s' "$RESULT" | jq -r '.report'
+            else
+              echo "No verdict produced (the run failed or hit its turn cap)."
+              echo
+              echo "VERDICT: FAIL unverified=0 contradicted=0"
+            fi
+          } > "$body"
+          # One comment per PR, found by its marker and updated in place on each push.
+          existing="$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate \
+            --jq '.[] | select(.body | startswith("<!-- pr-verifier -->")) | .id' | tail -n 1)"
+          if [ -n "$existing" ]; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$existing" -F "body=@$body" > /dev/null
+          else
+            gh pr comment "$PR" --body-file "$body"
+          fi
+
+      - name: Fail on FAIL verdict
+        if: always() && steps.filter.outputs.code == 'true' && vars.PR_VERIFIER_BLOCKING == 'true'
+        env:
+          RESULT: ${{ steps.verify.outputs.structured_output }}
+        run: |
+          verdict="$(printf '%s' "$RESULT" | jq -r '.verdict // empty' 2> /dev/null || true)"
+          if [ "$verdict" != "PASS" ]; then
+            echo "::error::pr-verifier verdict: ${verdict:-none}"
+            printf '%s' "$RESULT" | jq -r '"unverified=\(.unverified) contradicted=\(.contradicted)"' 2> /dev/null || true
+            exit 1
+          fi
+          echo "pr-verifier verdict: PASS"
