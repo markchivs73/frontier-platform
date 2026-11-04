@@ -53,6 +53,7 @@ public static class CompilerServiceCollectionExtensions
         services.AddSingleton<IDefinitionValidationRule, StructureRequiredFieldsRule>();
         services.AddSingleton<IDefinitionValidationRule, StructureDispatcherInputRule>();
         services.AddSingleton<IDefinitionValidationRule, StructureUniqueNodeIdsRule>();
+        services.AddSingleton<IDefinitionValidationRule, StructureUniqueArtifactKeysRule>(); // S13.199: two nodes sharing a section overwrite each other
         services.AddSingleton<IDefinitionValidationRule, GraphSingleEntryReachableRule>();
         services.AddSingleton<IDefinitionValidationRule, GraphIsAcyclicRule>();
         services.AddSingleton<IDefinitionValidationRule, GraphFanOutFanInRule>();

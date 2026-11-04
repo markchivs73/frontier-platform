@@ -34,6 +34,7 @@ public sealed class GraphMcpToolWalkTests
         Assert.Equal(CanonicalProfile.Hash("""{"updated":true}"""), step.OutputHash);
         Assert.Equal("""{"updated":true}""", state.NodeOutputPayloads["t-tool"]);
         Assert.Equal(ArtifactStatus.Draft, state.ArtifactStatuses["ticket-update"]);
+        Assert.EndsWith(":ticket-update:v1", state.SectionRefs["ticket-update"], StringComparison.Ordinal);
     }
 
     /// <summary>ADR-PA43: an MCP node's activity input carries the run's pinned validator budgets, and none when the run pinned none.</summary>
