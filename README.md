@@ -120,6 +120,20 @@ dotnet test FrontierPlatform.slnx -c Release --filter "Category=Integration"
 
 Set `COSMOS_EMULATOR_ENDPOINT` if the emulator is not on `http://localhost:8081`.
 
+The orchestration replay suite (`GraphOrchestratorReplayTests`) also needs the Durable Task
+Scheduler emulator, at the digest CI pins:
+
+```bash
+docker run -d --name dts-emulator -p 8080:8080 -p 8082:8082 \
+  -e Database__TaskHubNames__0=frontier-platform-replay \
+  mcr.microsoft.com/dts/dts-emulator@sha256:361323065a608d605f9d3ae56b854eb11f1c47fcc16845a37f948f03ca9c5fac
+```
+
+`DTS_EMULATOR_ENDPOINT` (default `http://localhost:8080`) and `DTS_EMULATOR_TASKHUB` (default
+`frontier-platform-replay`) override. The frontier-workflow dev stack's emulator also listens on
+8080 but serves the `frontier` hub; pointing `DTS_EMULATOR_TASKHUB` at it works only while no dev
+Host is attached, because DTS hands a run to any worker on its hub.
+
 To check the packages from a consumer's point of view — restoring the real `.nupkg` files
 rather than project references:
 

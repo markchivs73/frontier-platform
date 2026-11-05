@@ -89,13 +89,18 @@ jobs:
 
       - uses: ./.github/actions/build-and-test
 
-  # Integration tests ([Trait("Category","Integration")]) against a bare Cosmos emulator.
+  # Integration tests ([Trait("Category","Integration")]) against a bare Cosmos emulator and,
+  # for the orchestration replay suite, the Durable Task Scheduler emulator (S13.192).
   # No provisioning step: every integration fixture calls CreateDatabaseIfNotExistsAsync and
   # tears its own database down, so there is no cosmos-init equivalent to run here.
   integration:
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
+    # S13.192: the one hub the DTS emulator serves and the replay suite connects to, named once so
+    # the container and the tests cannot drift apart.
+    env:
+      DTS_EMULATOR_TASKHUB: frontier-platform-replay
     steps:
       - uses: actions/checkout@v7
 
@@ -148,15 +153,53 @@ jobs:
           docker logs cosmos-emulator
           exit 1
 
+      # S13.192: the Durable Task Scheduler emulator, for the orchestration replay suite
+      # (GraphOrchestratorReplayTests), which runs GraphOrchestrator on a real worker so history is
+      # actually replayed. Pinned by DIGEST, never a floating tag: the same digest frontier-workflow
+      # pins in its ci.yml, AppHost and START_DEV.md (its DtsEmulatorDigestParityTests keeps those
+      # equal), so both repos replay against one scheduler build. Bump deliberately, in both repos.
+      # Database__TaskHubNames__0 configures exactly ONE hub (a second sends this image into a crash
+      # loop), and neither worker nor client creates a missing hub, so it is the job-level
+      # DTS_EMULATOR_TASKHUB the tests also read.
+      - name: Start Durable Task Scheduler emulator (pinned by digest)
+        run: |
+          docker run -d --name dts-emulator -p 8080:8080 -p 8082:8082 \
+            -e Database__TaskHubNames__0="$DTS_EMULATOR_TASKHUB" \
+            mcr.microsoft.com/dts/dts-emulator@sha256:361323065a608d605f9d3ae56b854eb11f1c47fcc16845a37f948f03ca9c5fac
+
+      # Readiness from the dashboard's /health on 8082, not the gRPC port: 8080 answers plain HTTP
+      # with 400 as soon as the listener binds, the same false positive the Cosmos gate above
+      # describes. `|| true` and ${code:-000} as in that gate.
+      - name: Wait for Durable Task Scheduler emulator
+        run: |
+          for i in $(seq 1 36); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8082/health 2>/dev/null || true)
+            code="${code:-000}"
+            if [ "$code" = "200" ]; then
+              echo "Durable Task Scheduler emulator is up (HTTP $code)"
+              exit 0
+            fi
+            echo "Waiting for DTS emulator... ($i/36, last status: $code)"
+            sleep 5
+          done
+          echo "::error::Durable Task Scheduler emulator did not become ready in time"
+          docker logs dts-emulator
+          exit 1
+
       # Solution-wide, deliberately: no coverage is collected here, so the per-project rule
       # does not apply, and a hardcoded project list is what silently stops covering a new
       # suite when someone adds one.
       - name: Run integration tests
         env:
           COSMOS_EMULATOR_ENDPOINT: http://localhost:8081
+          DTS_EMULATOR_ENDPOINT: http://localhost:8080
         run: >-
           dotnet test FrontierPlatform.slnx -c Release --no-build
           --filter "Category=Integration&Category!=RequiresAzureKeyVault"
+
+      - name: Dump DTS emulator logs on failure
+        if: failure()
+        run: docker logs --tail 200 dts-emulator || true
 
       # "Connection refused" partway through the suite suggests the emulator container died
       # mid-run (e.g. OOM on a 2-CPU runner). Capture exit state, logs and kernel OOM activity.
