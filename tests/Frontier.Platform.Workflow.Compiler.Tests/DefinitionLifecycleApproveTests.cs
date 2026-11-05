@@ -289,4 +289,87 @@ public sealed class DefinitionLifecycleApproveTests
     {
         await Assert.ThrowsAsync<ArgumentException>(() => _service.ApproveAsync(proposalId!, approverId!, CancellationToken.None));
     }
+
+    /// <summary>
+    /// S13.223 (GOV-14): publishing v3 supersedes the versions it replaces, after the pointer moves,
+    /// and leaves the draft open for the next edit.
+    /// </summary>
+    [Fact]
+    public async Task ApproveAsync_SupersedesThePredecessors_AfterMovingThePointer_AndKeepsTheDraft()
+    {
+        ArrangeHappyPath(currentVersion: 2);
+        var calls = new List<string>();
+        _store.Setup(s => s.SetCurrentVersionAsync(WorkflowId, 3, It.IsAny<CancellationToken>()))
+            .Callback(() => calls.Add("pointer")).Returns(Task.CompletedTask);
+        _store.Setup(s => s.SupersedeVersionAsync(WorkflowId, It.IsAny<int>(), 3, It.IsAny<CancellationToken>()))
+            .Callback((string _, int v, int _, CancellationToken _) => calls.Add($"supersede v{v}")).ReturnsAsync(true);
+
+        await _service.ApproveAsync(ProposalId, "user:approver", CancellationToken.None);
+
+        Assert.Equal(["pointer", "supersede v1", "supersede v2"], calls);
+        _store.Verify(s => s.DeleteDraftAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>A version that changed state concurrently (the store answers false) does not fail the publish.</summary>
+    [Fact]
+    public async Task ApproveAsync_APredecessorThatCannotBeSuperseded_StillPublishes()
+    {
+        ArrangeHappyPath(currentVersion: 1);
+        _store.Setup(s => s.SupersedeVersionAsync(WorkflowId, 1, 2, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+
+        var published = await _service.ApproveAsync(ProposalId, "user:approver", CancellationToken.None);
+
+        Assert.Equal(2, published.DefinitionVersion);
+        _store.Verify(s => s.SupersedeVersionAsync(WorkflowId, 1, 2, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// A store failure while superseding surfaces to the caller, but only after the new version is
+    /// stored and current: the old versions stay published, never the new one left unreachable.
+    /// </summary>
+    [Fact]
+    public async Task ApproveAsync_SupersedeFails_AfterTheNewVersionIsCurrent()
+    {
+        ArrangeHappyPath(currentVersion: 1);
+        _store.Setup(s => s.SupersedeVersionAsync(WorkflowId, 1, 2, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("store down"));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _service.ApproveAsync(ProposalId, "user:approver", CancellationToken.None));
+
+        _store.Verify(s => s.PublishVersionAsync(It.Is<DefinitionVersionDocument>(d => d.DefinitionVersion == 2), It.IsAny<CancellationToken>()), Times.Once);
+        _store.Verify(s => s.SetCurrentVersionAsync(WorkflowId, 2, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ApproveAsync_FirstEverPublish_SupersedesNothing()
+    {
+        ArrangeHappyPath(currentVersion: null);
+
+        await _service.ApproveAsync(ProposalId, "user:approver", CancellationToken.None);
+
+        _store.Verify(s => s.SupersedeVersionAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    /// Published and retired versions without a successor are targets, oldest first; a superseded
+    /// version (with or without a recorded successor), one that already names a successor, and the
+    /// successor itself are not.
+    /// </summary>
+    [Fact]
+    public void SupersessionTargets_NamesOlderPublishedAndRetiredVersionsWithoutASuccessor()
+    {
+        IReadOnlyList<DefinitionVersionDocument> versions =
+        [
+            VersionDoc(6) with { State = "published" },
+            VersionDoc(5) with { State = "published" },
+            VersionDoc(4) with { State = "retired" },
+            VersionDoc(3) with { State = "retired", SupersededByVersion = 4 },
+            VersionDoc(2) with { State = "superseded", SupersededByVersion = 3 },
+            VersionDoc(1) with { State = "published" },
+            VersionDoc(0) with { State = "superseded" },
+        ];
+
+        Assert.Equal([1, 4, 5], DefinitionLifecycleService.SupersessionTargets(versions, successor: 6));
+    }
 }

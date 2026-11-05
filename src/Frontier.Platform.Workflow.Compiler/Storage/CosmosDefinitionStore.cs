@@ -222,15 +222,40 @@ public sealed class CosmosDefinitionStore : IDefinitionStore
     }
 
     /// <inheritdoc />
-    public Task<bool> UnretireVersionAsync(
+    public async Task<bool> UnretireVersionAsync(
         string workflowId,
         int version,
         CancellationToken ct) =>
-        PatchVersionStateAsync(
+        await PatchVersionStateAsync(
+            workflowId,
+            version,
+            [PatchOperation.Set("/state", "superseded"), PatchOperation.Remove("/retirement")],
+            "FROM c WHERE c.state = 'retired' AND IS_NUMBER(c.supersededByVersion)",
+            ct)
+        || await PatchVersionStateAsync(
             workflowId,
             version,
             [PatchOperation.Set("/state", "published"), PatchOperation.Remove("/retirement")],
-            "FROM c WHERE c.state = 'retired'",
+            "FROM c WHERE c.state = 'retired' AND NOT IS_NUMBER(c.supersededByVersion)",
+            ct);
+
+    /// <inheritdoc />
+    public async Task<bool> SupersedeVersionAsync(
+        string workflowId,
+        int version,
+        int supersededByVersion,
+        CancellationToken ct) =>
+        await PatchVersionStateAsync(
+            workflowId,
+            version,
+            [PatchOperation.Set("/state", "superseded"), PatchOperation.Set("/supersededByVersion", supersededByVersion)],
+            "FROM c WHERE c.state = 'published' AND NOT IS_NUMBER(c.supersededByVersion)",
+            ct)
+        || await PatchVersionStateAsync(
+            workflowId,
+            version,
+            [PatchOperation.Set("/supersededByVersion", supersededByVersion)],
+            "FROM c WHERE c.state = 'retired' AND NOT IS_NUMBER(c.supersededByVersion)",
             ct);
 
     /// <summary>

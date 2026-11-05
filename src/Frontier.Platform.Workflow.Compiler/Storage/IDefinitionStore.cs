@@ -57,8 +57,10 @@ public interface IDefinitionStore
         throw new NotSupportedException($"{GetType().Name} does not implement {nameof(RetireVersionAsync)}.");
 
     /// <summary>
-    /// Returns a <c>retired</c> version to <c>published</c> and clears its retirement record. Changes
-    /// only the state and retirement fields, never the definition or its hash (GOV-01).
+    /// Returns a <c>retired</c> version to the state it would hold had it never been retired, and
+    /// clears its retirement record: <c>superseded</c> when it records a successor
+    /// (<see cref="DefinitionVersionDocument.SupersededByVersion"/>), otherwise <c>published</c>.
+    /// Changes only the state and retirement fields, never the definition or its hash (GOV-01).
     /// </summary>
     /// <returns><see langword="false"/> when the version does not exist or is not retired.</returns>
     /// <remarks>The default implementation throws <see cref="NotSupportedException"/>, as for <see cref="RetireVersionAsync"/>.</remarks>
@@ -67,6 +69,31 @@ public interface IDefinitionStore
         int version,
         CancellationToken ct) =>
         throw new NotSupportedException($"{GetType().Name} does not implement {nameof(UnretireVersionAsync)}.");
+
+    /// <summary>
+    /// Records <paramref name="supersededByVersion"/> as the successor of an older version that has
+    /// none yet (GOV-14). A <c>published</c> version becomes <c>superseded</c>; a <c>retired</c> one
+    /// stays retired but keeps the successor, so un-retiring it returns it to <c>superseded</c>
+    /// rather than to a second <c>published</c>. Changes only the state and successor fields, never
+    /// the definition or its hash (invariant #6).
+    /// </summary>
+    /// <returns>
+    /// <see langword="false"/> when the version does not exist, is already superseded, or already
+    /// records a successor.
+    /// </returns>
+    /// <remarks>
+    /// The default implementation throws <see cref="NotSupportedException"/>, as for
+    /// <see cref="RetireVersionAsync"/>. Unlike the retirement transitions it is on the publish path:
+    /// <see cref="DefinitionLifecycleService.ApproveAsync"/> calls it whenever older versions exist,
+    /// so a store that does not override it fails every publish after the first, once the new
+    /// version is already current.
+    /// </remarks>
+    Task<bool> SupersedeVersionAsync(
+        string workflowId,
+        int version,
+        int supersededByVersion,
+        CancellationToken ct) =>
+        throw new NotSupportedException($"{GetType().Name} does not implement {nameof(SupersedeVersionAsync)}.");
 
     Task<DefinitionVersionDocument?> GetVersionAsync(
         string workflowId,

@@ -12,7 +12,11 @@ Three things live here:
   own types and their XML documentation, so the thing the agent designs against cannot drift
   from the thing the interpreter executes.
 - **The publish lifecycle.** Draft → validate → propose → approve → publish, with version
-  pinning, proposal merge and diff, test runs and retirement monitoring, over Cosmos.
+  pinning, proposal merge and diff, and test runs, over Cosmos. Publishing a version marks the
+  versions it replaces `superseded` and leaves the draft open for the next edit. Retirement is a
+  `workflow-admin` decision; ADR-DC4's evidence-based candidate query is **not built** (deferred at
+  S13.223): since v0.51.0 the obsolete `IRetirementMonitor` is no longer registered, so resolving
+  it fails, and calling it throws.
 - **The design agent.** The conversational protocol that turns a designer's plain-language
   request into a proposed definition, validates it, and repairs it when validation fails.
 
@@ -30,7 +34,7 @@ services.AddFrontierWorkflowCompiler(configuration);
 ```
 
 Since v0.48.0 the compiler binds `CosmosOptions` from the `Cosmos` section, so the definition store
-and the retirement monitor use `Cosmos:Database` (default `frontier-workflow`). Before that the name
+uses `Cosmos:Database` (default `frontier-workflow`). Before that the name
 was hard-coded, so a consumer or test that set a different database still read and wrote definitions
 in `frontier-workflow`. The parameterless overload is obsolete: it keeps the default database whatever
 the configuration says, and goes at the next phase boundary.

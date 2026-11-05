@@ -176,12 +176,8 @@ public static class CompilerServiceCollectionExtensions
             return new TestRunService(store, compiler, executor, telemetry, sections, sp.GetRequiredService<IDefinitionContractEmbedder>());
         });
 
-        // Phase D: Register retirement monitor (evidence-based candidate detection)
-        services.AddScoped<IRetirementMonitor>(sp =>
-        {
-            var container = CompilerContainers.Snapshots(sp.GetRequiredService<CosmosClient>(), sp.GetRequiredService<IOptions<CosmosOptions>>());
-            return new RetirementMonitor(container);
-        });
+        // No IRetirementMonitor: ADR-DC4's candidate query is deferred (S13.223), so registering the
+        // stub would offer evidence that does not exist.
 
         // S8.4: Register chat designer services (persistent draft-scoped conversation)
         services.AddScoped<INodeDiffService, NodeDiffService>();
