@@ -130,9 +130,13 @@ internal sealed class FakeTaskOrchestrationContext : TaskOrchestrationContext
     /// <inheritdoc />
     public override T GetInput<T>() => throw new NotSupportedException("Input is supplied directly to RunAsync in these tests.");
 
+    /// <summary>Every <see cref="CallActivityAsync{TResult}"/> call, in order: the name, the input's runtime type and the result type asked for (S13.185).</summary>
+    public List<ActivityCall> ActivityCalls { get; } = [];
+
     /// <inheritdoc />
     public override async Task<TResult> CallActivityAsync<TResult>(TaskName name, object? input = null, TaskOptions? options = null)
     {
+        ActivityCalls.Add(new(name.Name, input?.GetType(), typeof(TResult)));
         if (AsyncActivityHandlers.TryGetValue(name.Name, out var asyncHandler))
         {
             return (TResult)await asyncHandler(input);
@@ -360,3 +364,6 @@ internal sealed class PendingExternalEvent
 /// S4.6 gate escalation), and every call thereafter returns <see cref="Value"/>.
 /// </summary>
 internal sealed record DecisionAfterTimeout(object Value);
+
+/// <summary>One activity call a <see cref="FakeTaskOrchestrationContext"/> saw: what the call site passed and the result type it awaited.</summary>
+internal sealed record ActivityCall(string Name, Type? Input, Type Output);

@@ -31,4 +31,9 @@
     <Compile Include="..\Shared\TelemetrySamples.cs" Link="TelemetrySamples.cs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- S13.185: the committed activity-shape snapshot the generation test compares against. -->
+    <None Include="ActivityShapes\activity-shapes.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

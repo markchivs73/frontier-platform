@@ -38,6 +38,24 @@ runs:
       shell: bash
       run: bash .github/scripts/check-vulnerabilities.sh
 
+    # S13.185: on a pull request, hand the activity-shape test the BASE branch's snapshot, so a PR
+    # that edits the committed snapshot incompatibly within a generation still fails (the test
+    # compares code with the committed file, and the committed file with this baseline). Skipped
+    # when the base has no snapshot yet, and on tag builds, where there is no base to compare.
+    - name: Export the activity-shape baseline (pull requests)
+      if: github.event_name == 'pull_request'
+      shell: bash
+      env:
+        BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      run: |
+        snapshot=tests/Frontier.Platform.Workflow.Orchestration.Tests/ActivityShapes/activity-shapes.json
+        if git cat-file -e "$BASE_SHA:$snapshot" 2>/dev/null; then
+          git show "$BASE_SHA:$snapshot" > "$RUNNER_TEMP/activity-shapes-baseline.json"
+          echo "FRONTIER_ACTIVITY_SHAPES_BASELINE=$RUNNER_TEMP/activity-shapes-baseline.json" >> "$GITHUB_ENV"
+        else
+          echo "No activity-shape snapshot at the base commit; the baseline comparison is skipped."
+        fi
+
     # Coverage is collected PER TEST PROJECT, not solution-wide: parallel solution-wide runs
     # corrupt coverlet's per-assembly AssemblyLoadContext attribution (duplicate "Assembly N"
     # modules with near-zero hits), silently deflating the gate.
