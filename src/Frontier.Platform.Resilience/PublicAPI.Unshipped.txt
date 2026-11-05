@@ -1,0 +1,1 @@
+Frontier.Platform.Resilience.ICircuitStateProvider.AdmitsCalls(string! provider, string! modelId) -> bool

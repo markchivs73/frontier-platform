@@ -25,6 +25,18 @@ internal sealed class CircuitStateProvider(TimeProvider timeProvider) : ICircuit
             : CircuitState.Closed;
 
     /// <inheritdoc />
+    /// <remarks>
+    /// Every breaker tracked for the pair must admit. A pair no call has reached admits. Between the break elapsing and
+    /// the probe entering its pipeline, concurrent resolves may all be routed to the pair; the first becomes the probe
+    /// and Polly rejects the rest with a transient <c>BrokenCircuitException</c>, after which they fall back.
+    /// </remarks>
+    public bool AdmitsCalls(string provider, string modelId)
+    {
+        var now = timeProvider.GetUtcNow();
+        return !breakers.TryGetValue((provider, modelId), out var tracked) || tracked.All(breaker => breaker.Admits(now));
+    }
+
+    /// <inheritdoc />
     public IDisposable Subscribe(Action<CircuitTransition> onTransition)
     {
         ArgumentNullException.ThrowIfNull(onTransition);
@@ -40,7 +52,16 @@ internal sealed class CircuitStateProvider(TimeProvider timeProvider) : ICircuit
     {
         var tracked = new TrackedBreaker(new CircuitBreakerStateProvider());
         options.StateProvider = tracked.StateProvider;
-        options.OnOpened = args => Transition(tracked, provider, modelId, args.IsManual ? CircuitState.Isolated : CircuitState.Open);
+        options.OnOpened = args =>
+        {
+            // A manual isolation reports an unbounded break and never admits, so only an automatic open has an end.
+            if (!args.IsManual)
+            {
+                tracked.Opened(timeProvider.GetUtcNow() + args.BreakDuration);
+            }
+
+            return Transition(tracked, provider, modelId, args.IsManual ? CircuitState.Isolated : CircuitState.Open);
+        };
         options.OnHalfOpened = _ => Transition(tracked, provider, modelId, CircuitState.HalfOpen);
         options.OnClosed = _ => Transition(tracked, provider, modelId, CircuitState.Closed);
         breakers.AddOrUpdate((provider, modelId), _ => [tracked], (_, list) => list.Add(tracked));
@@ -84,9 +105,23 @@ internal sealed class CircuitStateProvider(TimeProvider timeProvider) : ICircuit
     internal sealed class TrackedBreaker(CircuitBreakerStateProvider stateProvider)
     {
         private int last = (int)CircuitState.Closed;
+        private long admitsFromUtcTicks = DateTimeOffset.MinValue.UtcTicks;
 
         /// <summary>Polly's view of the breaker's current state.</summary>
         public CircuitBreakerStateProvider StateProvider { get; } = stateProvider;
+
+        /// <summary>
+        /// Records when the break that just started ends: from then, an open breaker admits its probe. Called before the
+        /// transition is published, so a published <see cref="CircuitState.Open"/> always carries its own break end.
+        /// </summary>
+        public void Opened(DateTimeOffset breakEndsAt) => Interlocked.Exchange(ref admitsFromUtcTicks, breakEndsAt.UtcTicks);
+
+        /// <summary>
+        /// Whether a call now would be let through: always when closed, when open only once the break has ended (that
+        /// call is the probe), never while the probe runs (half-open) or while isolated.
+        /// </summary>
+        public bool Admits(DateTimeOffset now) =>
+            CircuitAdmission.Admits(StateProvider.CircuitState, (CircuitState)Volatile.Read(ref last), new DateTimeOffset(Interlocked.Read(ref admitsFromUtcTicks), TimeSpan.Zero), now);
 
         /// <summary>Records <paramref name="to"/> as the last published state and returns the one it replaces.</summary>
         public CircuitState Exchange(CircuitState to) => (CircuitState)Interlocked.Exchange(ref last, (int)to);
