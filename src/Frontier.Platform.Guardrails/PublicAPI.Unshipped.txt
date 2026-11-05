@@ -1,1 +1,6 @@
 #nullable enable
+Frontier.Platform.Guardrails.CosmosOptions
+Frontier.Platform.Guardrails.CosmosOptions.CosmosOptions() -> void
+Frontier.Platform.Guardrails.CosmosOptions.Database.get -> string!
+Frontier.Platform.Guardrails.CosmosOptions.Database.init -> void
+static Frontier.Platform.Guardrails.GuardrailsServiceCollectionExtensions.AddFrontierGuardrails(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Microsoft.Extensions.Configuration.IConfiguration! configuration, System.TimeSpan killSwitchCacheDuration) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!

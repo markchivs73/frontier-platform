@@ -1,5 +1,7 @@
 using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -58,11 +60,37 @@ public static class GuardrailsServiceCollectionExtensions
     public static IServiceCollection AddFrontierGuardrails(this IServiceCollection services, Container guardRailLedgerContainer, Container platformConfigContainer, TimeSpan killSwitchCacheDuration)
     {
         ArgumentNullException.ThrowIfNull(platformConfigContainer);
+        return services.AddSharedGuardrails(_ => guardRailLedgerContainer, _ => platformConfigContainer, killSwitchCacheDuration);
+    }
+
+    /// <summary>
+    /// The same shared variant, composed the way the other platform libraries compose their Cosmos stores: binds and
+    /// validates <see cref="CosmosOptions"/> from the <c>Cosmos</c> section of <paramref name="configuration"/>, and
+    /// resolves the <c>guardrail-ledger</c> and <c>platform-config</c> containers from the <see cref="CosmosClient"/>
+    /// the composition root registers, when the ledger and the kill switch are first resolved. Nothing reaches Cosmos
+    /// at registration, so a head composes without a client until it resolves a guardrail.
+    /// </summary>
+    public static IServiceCollection AddFrontierGuardrails(this IServiceCollection services, IConfiguration configuration, TimeSpan killSwitchCacheDuration)
+    {
+        ArgumentNullException.ThrowIfNull(configuration);
+        services.AddOptions<CosmosOptions>()
+            .Bind(configuration.GetSection("Cosmos"))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        return services.AddSharedGuardrails(
+            sp => GuardrailsContainers.Ledger(sp.GetRequiredService<CosmosClient>(), sp.GetRequiredService<IOptions<CosmosOptions>>()),
+            sp => GuardrailsContainers.PlatformConfig(sp.GetRequiredService<CosmosClient>(), sp.GetRequiredService<IOptions<CosmosOptions>>()),
+            killSwitchCacheDuration);
+    }
+
+    /// <summary>The Cosmos ledger and the shared kill switch over containers resolved when first needed.</summary>
+    internal static IServiceCollection AddSharedGuardrails(this IServiceCollection services, Func<IServiceProvider, Container> ledger, Func<IServiceProvider, Container> platformConfig, TimeSpan killSwitchCacheDuration)
+    {
         ArgumentOutOfRangeException.ThrowIfLessThan(killSwitchCacheDuration, TimeSpan.Zero);
 
         return services
-            .AddSingleton<IBudgetLedger>(sp => new CosmosBudgetLedger(guardRailLedgerContainer))
-            .AddSingleton<IKillSwitch>(sp => new CosmosKillSwitch(platformConfigContainer, TimeProvider.System))
+            .AddSingleton<IBudgetLedger>(sp => new CosmosBudgetLedger(ledger(sp)))
+            .AddSingleton<IKillSwitch>(sp => new CosmosKillSwitch(platformConfig(sp), TimeProvider.System))
             .AddKillSwitchGate(killSwitchCacheDuration)
             .AddAdmissionAndHierarchy();
     }
