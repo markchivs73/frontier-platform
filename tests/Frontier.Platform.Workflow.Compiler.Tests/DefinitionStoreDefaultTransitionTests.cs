@@ -4,8 +4,8 @@ using Xunit;
 namespace Frontier.Platform.Workflow.Compiler.Tests;
 
 /// <summary>
-/// GOV-01: a store that has not implemented the retirement transitions must fail loudly, never
-/// report a retirement it did not store.
+/// GOV-01, GOV-14: a store that has not implemented the retirement or supersession transitions
+/// must fail loudly, never report a transition it did not store.
 /// </summary>
 public sealed class DefinitionStoreDefaultTransitionTests
 {
@@ -29,5 +29,14 @@ public sealed class DefinitionStoreDefaultTransitionTests
             () => _store.UnretireVersionAsync("wf", 1, CancellationToken.None));
 
         Assert.Contains(nameof(IDefinitionStore.UnretireVersionAsync), ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task SupersedeVersionAsync_DefaultImplementation_ThrowsNotSupported()
+    {
+        var ex = await Assert.ThrowsAsync<NotSupportedException>(
+            () => _store.SupersedeVersionAsync("wf", 1, 2, CancellationToken.None));
+
+        Assert.Contains(nameof(IDefinitionStore.SupersedeVersionAsync), ex.Message, StringComparison.Ordinal);
     }
 }

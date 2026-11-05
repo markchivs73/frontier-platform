@@ -1,1 +1,3 @@
 #nullable enable
+Frontier.Platform.Workflow.Compiler.Storage.CosmosDefinitionStore.SupersedeVersionAsync(string! workflowId, int version, int supersededByVersion, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<bool>!
+Frontier.Platform.Workflow.Compiler.Storage.IDefinitionStore.SupersedeVersionAsync(string! workflowId, int version, int supersededByVersion, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<bool>!

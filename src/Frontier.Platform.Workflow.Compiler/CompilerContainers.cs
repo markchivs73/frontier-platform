@@ -13,10 +13,6 @@ internal static class CompilerContainers
     internal static Container Definitions(CosmosClient client, IOptions<CosmosOptions> options) =>
         In(client, options, "workflow-definitions");
 
-    /// <summary>The <c>execution-snapshots</c> container the retirement monitor reads.</summary>
-    internal static Container Snapshots(CosmosClient client, IOptions<CosmosOptions> options) =>
-        In(client, options, "execution-snapshots");
-
     private static Container In(CosmosClient client, IOptions<CosmosOptions> options, string container)
     {
         ArgumentNullException.ThrowIfNull(client);

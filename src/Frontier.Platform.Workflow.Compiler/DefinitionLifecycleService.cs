@@ -332,8 +332,11 @@ public sealed class DefinitionLifecycleService : IDefinitionLifecycleService
         // Update current pointer
         await _store.SetCurrentVersionAsync(proposal.WorkflowId, nextVersion, ct);
 
-        // Delete draft (it's superseded)
-        // Phase 1: keep draft visible in UI; full cleanup deferred
+        // GOV-14: the versions this one replaces become superseded. After the pointer moves, so a
+        // failure here leaves the new version current and the old ones published, never the reverse.
+        await SupersedePredecessorsAsync(proposal.WorkflowId, existingVersions, nextVersion, ct);
+
+        // The draft stays open for the next edit; publish does not retire it (Mark, 2026-11-05).
 
         return new PublishedVersion(
             WorkflowId: proposal.WorkflowId,
@@ -358,6 +361,38 @@ public sealed class DefinitionLifecycleService : IDefinitionLifecycleService
         int pointerVersion = pointer?.CurrentVersion ?? 0;
         return Math.Max(pointerVersion, highestExisting) + 1;
     }
+
+    /// <summary>
+    /// Records <paramref name="successor"/> on each version <see cref="SupersessionTargets"/> names.
+    /// A <see langword="false"/> from the store means the version changed state concurrently (for
+    /// example an admin retired it), which leaves nothing to supersede.
+    /// </summary>
+    private async Task SupersedePredecessorsAsync(
+        string workflowId,
+        IReadOnlyList<DefinitionVersionDocument> existingVersions,
+        int successor,
+        CancellationToken ct)
+    {
+        foreach (var version in SupersessionTargets(existingVersions, successor))
+            await _store.SupersedeVersionAsync(workflowId, version, successor, ct);
+    }
+
+    /// <summary>
+    /// The versions a newly published <paramref name="successor"/> replaces: every older version that
+    /// records no successor yet and is <c>published</c> or <c>retired</c>. A retired one stays retired
+    /// but keeps the successor, so un-retiring it cannot leave two published versions (GOV-14). Every
+    /// older version qualifies, not only the current one, so versions published before supersession
+    /// existed are healed by the next publish.
+    /// </summary>
+    internal static IReadOnlyList<int> SupersessionTargets(
+        IReadOnlyList<DefinitionVersionDocument> existingVersions,
+        int successor) =>
+        [.. existingVersions
+            .Where(v => v.DefinitionVersion < successor
+                && v.SupersededByVersion is null
+                && v.State is "published" or "retired")
+            .Select(v => v.DefinitionVersion)
+            .Order()];
 
     public async Task RejectAsync(
         string proposalId,

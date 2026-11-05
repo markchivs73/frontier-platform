@@ -4,17 +4,22 @@ using System.Diagnostics.CodeAnalysis;
 namespace Frontier.Platform.Workflow.Compiler;
 
 /// <summary>
-/// Evidence-based retirement monitoring: detects workflow versions with zero executions in an observation window.
-/// Doc 13 §8: ADR-DC4 (retirement by evidence, not timers); Guardrails recommendation thresholds.
+/// The evidence supplier doc 13 §8 designs for ADR-DC4 (retirement by evidence, not timers): versions
+/// with zero executions in an observation window. <b>Not built.</b> The query is deferred (S13.223,
+/// Mark's decision 2026-11-05) and the platform registers no implementation. <i>Trigger:</i> build it
+/// when the governance dashboard's retirement-candidate surface (doc 13 §8 step 2) is scheduled;
+/// until then retirement is a <c>workflow-admin</c> decision taken without candidate evidence.
 /// </summary>
+[Obsolete(RetirementMonitorDeferral.Message)]
 public interface IRetirementMonitor
 {
-    /// <summary>Get retirement candidates: versions with zero executions in the observation window.</summary>
+    /// <summary>The designed contract: versions with zero executions in the observation window. Not implemented.</summary>
     Task<IReadOnlyList<RetirementCandidate>> GetCandidatesAsync(CancellationToken ct);
 }
 
-/// <summary>Workflow version eligible for retirement (zero executions in observation window).</summary>
+/// <summary>Workflow version eligible for retirement (zero executions in observation window). Nothing produces one: see <see cref="IRetirementMonitor"/>.</summary>
 [ExcludeFromCodeCoverage(Justification = "POCO record with compiler-generated equality")]
+[Obsolete(RetirementMonitorDeferral.Message)]
 public sealed record RetirementCandidate
 {
     /// <summary>Workflow ID.</summary>

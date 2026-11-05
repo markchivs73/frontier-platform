@@ -25,19 +25,10 @@ public sealed class CompilerContainersTests
     }
 
     [Fact]
-    public void Snapshots_IsTheExecutionSnapshotsContainer_InTheConfiguredDatabase()
-    {
-        var container = CompilerContainers.Snapshots(Client, Options.Create(new CosmosOptions { Database = "tenant-a" }));
-
-        Assert.Equal("tenant-a", container.Database.Id);
-        Assert.Equal("execution-snapshots", container.Id);
-    }
-
-    [Fact]
     public void Containers_RefuseANullClientOrOptions()
     {
         Assert.Throws<ArgumentNullException>(() => CompilerContainers.Definitions(null!, Options.Create(new CosmosOptions())));
-        Assert.Throws<ArgumentNullException>(() => CompilerContainers.Snapshots(Client, null!));
+        Assert.Throws<ArgumentNullException>(() => CompilerContainers.Definitions(Client, null!));
     }
 
     [Fact]
@@ -66,6 +57,16 @@ public sealed class CompilerContainersTests
         using var provider = new ServiceCollection().AddFrontierWorkflowCompiler(configuration).BuildServiceProvider();
 
         Assert.Throws<OptionsValidationException>(() => provider.GetRequiredService<IOptions<CosmosOptions>>().Value);
+    }
+
+    /// <summary>S13.223: ADR-DC4's candidate query is deferred, so the compiler registers no retirement monitor.</summary>
+    [Fact]
+    [Obsolete("Asserts the absence of the deferred IRetirementMonitor.")]
+    public void AddFrontierWorkflowCompiler_RegistersNoRetirementMonitor()
+    {
+        var services = new ServiceCollection().AddFrontierWorkflowCompiler(new ConfigurationBuilder().Build());
+
+        Assert.DoesNotContain(services, d => d.ServiceType == typeof(IRetirementMonitor));
     }
 
     [Fact]

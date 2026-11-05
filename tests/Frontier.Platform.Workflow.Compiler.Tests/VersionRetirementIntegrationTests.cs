@@ -99,6 +99,79 @@ public sealed class VersionRetirementIntegrationTests : IAsyncLifetime, IDisposa
         Assert.False(await store.UnretireVersionAsync("wf-gov01-c", 9, CancellationToken.None));
     }
 
+    /// <summary>
+    /// S13.223 (GOV-14): publishing through the lifecycle supersedes the version it replaces and
+    /// records the successor, leaves the definition untouched, and keeps the draft open.
+    /// </summary>
+    [Fact]
+    public async Task ApproveThroughLifecycle_SupersedesThePreviousVersion_AndKeepsTheDraft()
+    {
+        var store = _store!;
+        await store.PublishVersionAsync(VersionDoc("wf-gov14-a", 1), CancellationToken.None);
+        await store.SetCurrentVersionAsync("wf-gov14-a", 1, CancellationToken.None);
+        var definitionBefore = await RawDefinitionAsync("wf-gov14-a", 1);
+        var proposalId = await ProposeAsync(store, "wf-gov14-a");
+        var compiler = new Mock<IDefinitionCompiler>();
+        compiler.Setup(c => c.ComputeDefinitionHash(It.IsAny<Frontier.Platform.Workflow.Model.WorkflowDefinition>())).Returns("sha256:v2");
+        var embedder = new Mock<IDefinitionContractEmbedder>();
+        embedder.Setup(e => e.EmbedAsync(It.IsAny<Frontier.Platform.Workflow.Model.WorkflowDefinition>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Frontier.Platform.Workflow.Model.WorkflowDefinition d, CancellationToken _) => d);
+        var lifecycle = new DefinitionLifecycleService(store, compiler.Object, embedder.Object);
+
+        await lifecycle.ApproveAsync(proposalId, "user:sarah", CancellationToken.None);
+
+        var previous = await store.GetVersionAsync("wf-gov14-a", 1, CancellationToken.None);
+        Assert.Equal("superseded", previous!.State);
+        Assert.Equal(2, previous.SupersededByVersion);
+        Assert.Equal("published", (await store.GetVersionAsync("wf-gov14-a", 2, CancellationToken.None))!.State);
+        Assert.Equal(definitionBefore, await RawDefinitionAsync("wf-gov14-a", 1));
+        Assert.NotNull(await store.GetDraftAsync("wf-gov14-a", CancellationToken.None));
+    }
+
+    /// <summary>
+    /// A retired version keeps its state but records its successor, so un-retiring it returns it to
+    /// <c>superseded</c>, never to a second <c>published</c>; each transition refuses a second attempt.
+    /// </summary>
+    [Fact]
+    public async Task Supersede_RecordsTheSuccessorOnARetiredVersion_SoUnretireRestoresSuperseded()
+    {
+        var store = _store!;
+        var retirement = new RetirementInfoDocument { RetiredAtUtc = DateTime.UtcNow, RetiredBy = "user:admin", Reason = "r" };
+        await store.PublishVersionAsync(VersionDoc("wf-gov14-b", 1), CancellationToken.None);
+        await store.PublishVersionAsync(VersionDoc("wf-gov14-b", 2), CancellationToken.None);
+        Assert.True(await store.RetireVersionAsync("wf-gov14-b", 1, retirement, CancellationToken.None));
+
+        Assert.True(await store.SupersedeVersionAsync("wf-gov14-b", 1, 3, CancellationToken.None));
+        Assert.True(await store.SupersedeVersionAsync("wf-gov14-b", 2, 3, CancellationToken.None));
+        Assert.False(await store.SupersedeVersionAsync("wf-gov14-b", 1, 4, CancellationToken.None));
+        Assert.False(await store.SupersedeVersionAsync("wf-gov14-b", 2, 4, CancellationToken.None));
+        Assert.False(await store.SupersedeVersionAsync("wf-gov14-b", 9, 4, CancellationToken.None));
+
+        var retired = await store.GetVersionAsync("wf-gov14-b", 1, CancellationToken.None);
+        Assert.Equal(("retired", 3), (retired!.State, retired.SupersededByVersion));
+        Assert.True(await store.UnretireVersionAsync("wf-gov14-b", 1, CancellationToken.None));
+        var restored = await store.GetVersionAsync("wf-gov14-b", 1, CancellationToken.None);
+        Assert.Equal(("superseded", 3), (restored!.State, restored.SupersededByVersion));
+        Assert.Null(restored.Retirement);
+        var second = await store.GetVersionAsync("wf-gov14-b", 2, CancellationToken.None);
+        Assert.Equal(("superseded", 3), (second!.State, second.SupersededByVersion));
+    }
+
+    private static async Task<string> ProposeAsync(CosmosDefinitionStore store, string workflowId)
+    {
+        var lifecycle = new DefinitionLifecycleService(store, Mock.Of<IDefinitionCompiler>(), Mock.Of<IDefinitionContractEmbedder>());
+        var draft = await lifecycle.CreateDraftAsync(workflowId, 1, "user:mark", CancellationToken.None);
+        var report = new ValidationReport(
+            WorkflowId: workflowId,
+            DraftRevision: draft.DraftRevision,
+            ValidatedAtUtc: DateTime.UtcNow,
+            Outcome: ValidationOutcome.Pass,
+            Findings: [],
+            ResourceVersions: new Dictionary<string, string>());
+        var proposal = await lifecycle.ProposePublishAsync(workflowId, draft.DraftRevision, report, "user:mark", CancellationToken.None);
+        return proposal.ProposalId;
+    }
+
     private async Task<string> RawDefinitionAsync(string workflowId, int version)
     {
         var raw = await _container!.ReadItemAsync<JsonObject>($"{workflowId}:v{version}", new PartitionKey(workflowId));

@@ -1,13 +1,14 @@
+using Moq;
 using Xunit;
 
 namespace Frontier.Platform.Workflow.Compiler.Tests;
 
 /// <summary>
-/// Unit tests for RetirementMonitor (Phase 1 stub implementation).
-/// Tests constructor validation, return types, and Phase 1 behavior.
-/// Full functional testing is covered by DefinitionCompilerPhaseC_IntegrationTests.
-/// Doc 13 §8: ADR-DC4 (evidence-based retirement).
+/// S13.223 (GOV-15): ADR-DC4's retirement candidate query is deferred. The shipped types stay until
+/// the next phase boundary, obsolete, and the monitor refuses to answer rather than report that no
+/// version is a candidate. The class is obsolete because every member names the obsolete types.
 /// </summary>
+[Obsolete("Exercises the deferred retirement monitor.")]
 public sealed class RetirementMonitorTests
 {
     [Fact]
@@ -25,21 +26,13 @@ public sealed class RetirementMonitorTests
     }
 
     [Fact]
-    public async Task GetCandidatesAsync_Phase1_AlwaysReturnsEmptyList()
+    public async Task GetCandidatesAsync_Throws_NamingTheDeferral()
     {
-        // Phase 1: RetirementMonitor queries Cosmos but stub-returns empty list
-        // Phase 2 will implement full candidate detection:
-        // - Load all published versions from store
-        // - Filter to those NOT found in execution snapshots (zero executions in 180-day window)
-        // - Check in-flight counts from running/paused_at_gate status
-        // - Compute RecommendationSeverity based on in-flight count
-        //
-        // Full integration: DefinitionCompilerPhaseC_IntegrationTests against Cosmos emulator
+        var monitor = new RetirementMonitor(Mock.Of<Microsoft.Azure.Cosmos.Container>());
 
-        var result = new List<RetirementCandidate>();
+        var ex = await Assert.ThrowsAsync<NotSupportedException>(() => monitor.GetCandidatesAsync(CancellationToken.None));
 
-        Assert.NotNull(result);
-        Assert.Empty(result);
+        Assert.Contains("deferred at S13.223", ex.Message, StringComparison.Ordinal);
     }
 
     [Fact]
