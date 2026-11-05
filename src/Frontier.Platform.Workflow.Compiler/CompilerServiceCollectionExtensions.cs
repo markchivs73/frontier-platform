@@ -97,7 +97,7 @@ public static class CompilerServiceCollectionExtensions
         services.AddScoped<IDefinitionValidationRule, DataProjectionCompatibleRule>();
 
         // S9.30: remaining resourced-tier catalogue rows (doc 13 §4.2). Compiler-owned catalogs
-        // (reflection contract registry, retention default) register here; consumer-owned
+        // (reflection contract registry) register here; consumer-owned
         // catalogs (IContextComponentCatalog, IInstructionCatalog, IRetryProfileCatalog) are
         // adapted and wired by the Host composition root, S9.27c pattern.
         services.AddSingleton<IContractTypeCatalog, ReflectionContractTypeCatalog>();
@@ -106,7 +106,8 @@ public static class CompilerServiceCollectionExtensions
         // S13.25: fail closed. The default is what the interpreter actually executes, not
         // everything — a missed registration must not silently reopen the S13.7h hole.
         services.AddSingleton<IExecutableNodeTypeCatalog, OrchestratorExecutableNodeTypeCatalog>();
-        services.TryAddSingleton(new RetentionWindowConfig());
+        // S13.139: retention.fits-window and its RetentionWindowConfig default are retired, not
+        // registered — DTS purges only finished runs, so a definition's duration never meets retention.
 
         // S9.43 (doc 19 §A4-R2/C-31): A4 "Expected shape" panel + "Use example" prefill.
         // Stateless over the singleton contract catalog above.
@@ -119,7 +120,6 @@ public static class CompilerServiceCollectionExtensions
         services.AddScoped<IDefinitionValidationRule, HitlApproverRolesExistRule>();
         services.AddScoped<IDefinitionValidationRule, ResilienceProfileExistsRule>();
         services.AddScoped<IDefinitionValidationRule, TimeoutsNestingRule>();
-        services.AddScoped<IDefinitionValidationRule, RetentionFitsWindowRule>();
         services.AddScoped<IDefinitionValidationRule, DeterminismPredicatesCompileRule>();
         // S13.209: the entry agent_task takes the entry contract the design agent is told about —
         // both the designer prompt and this rule read the consumer-owned IEntryContractCatalog.

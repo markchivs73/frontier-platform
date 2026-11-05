@@ -58,7 +58,9 @@ public sealed class RuleCatalogueSpecCoverageTests
         "resilience.profile-exists",
         "resilience.overrides-tighten-only",
         "timeouts.nesting",
-        "retention.fits-window",
+        // S13.139: retention.fits-window is retired — DTS purges only finished runs, so a
+        // definition's duration never meets retention. The doc 13 §4.2 row's removal lands in the
+        // consumer repo (read-only from here).
         "versioning.no-clash",
         // S13.34: a draft stored below the current schema major must say so rather than emitting
         // rule errors about the keys the silent drop nulled. The doc 13 §4.2 row lands in the
@@ -115,8 +117,9 @@ public sealed class RuleCatalogueSpecCoverageTests
         // projection-compatible read the registry).
         // S13.199: +1 Pure (structure.unique-artifact-keys reads the definition alone).
         // S13.209: +1 Resourced (structure.entry-input-contract reads IEntryContractCatalog).
+        // S13.139: -1 Resourced (retention.fits-window retired).
         Assert.Equal(20, CurrentlyRegisteredRules.Count(r => r.Tier == RuleTier.Pure));
-        Assert.Equal(18, CurrentlyRegisteredRules.Count(r => r.Tier == RuleTier.Resourced));
+        Assert.Equal(17, CurrentlyRegisteredRules.Count(r => r.Tier == RuleTier.Resourced));
         Assert.Equal(0, CurrentlyRegisteredRules.Count(r => r.Tier == RuleTier.Runtime));
     }
 
@@ -135,10 +138,34 @@ public sealed class RuleCatalogueSpecCoverageTests
     public void RegisteredRules_DeclareAValidDefaultSeverity()
     {
         // Severities are data a deployment may override (ADR-DC2) — every rule must declare a
-        // well-formed default. Only retention.fits-window is non-Error by doc 13 §4.2 among the
-        // registered set (determinism.sample-eval was the other, retired at S13.23).
+        // well-formed default.
         Assert.All(CurrentlyRegisteredRules, rule => Assert.True(Enum.IsDefined(rule.DefaultSeverity)));
-        Assert.Equal(ValidationSeverity.Warning, CurrentlyRegisteredRules.Single(r => r.RuleId == "retention.fits-window").DefaultSeverity);
+    }
+
+    [Fact]
+    public async Task RegisteredRules_DoNotWarnALongGatedWorkflowAboutRetention()
+    {
+        // S13.139: a gate that waits longer than the 30-day DTS default retention used to draw a
+        // retention.fits-window warning. DTS purges only finished runs, so the run is never at risk.
+        var definition = S930Fixtures.Build([S930Fixtures.Gate("gate-1", timeoutMinutes: 60 * 24 * 60)]);
+
+        var report = await new DefinitionValidator(CurrentlyRegisteredRules).ValidateAsync(definition, "rev-1", null, CancellationToken.None);
+
+        Assert.DoesNotContain(report.Findings, f => f.RuleId.StartsWith("retention.", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    [Obsolete("Names the retired RetentionWindowConfig to assert the compiler no longer registers it.")]
+    public void Compiler_NoLongerRegistersTheRetentionWindowDefault()
+    {
+        // S13.139: the default went with the rule. A composition that resolved RetentionWindowConfig
+        // through the compiler alone now gets nothing — the one consumer-visible change of the retirement.
+        var services = RegisterCompiler(registerEntryCatalog: true);
+        using var provider = services.BuildServiceProvider();
+
+        Assert.DoesNotContain(services, d => d.ServiceType == typeof(RetentionWindowConfig));
+        Assert.Null(provider.GetService<RetentionWindowConfig>());
+        Assert.Throws<InvalidOperationException>(() => provider.GetRequiredService<RetentionWindowConfig>());
     }
 
     [Fact]

@@ -6,8 +6,12 @@ design language the agent works from, and runs the publish lifecycle that follow
 Three things live here:
 
 - **Structural validation.** A rule set — graph shape, data-edge contract agreement, HITL
-  rollback targets, determinism of predicates, resilience overrides, versioning, retention —
-  evaluated in tiers, from pure structural checks to ones that need a catalogue lookup.
+  rollback targets, determinism of predicates, resilience overrides, versioning — evaluated in
+  tiers, from pure structural checks to ones that need a catalogue lookup. Since v0.51.0 the
+  set has no retention rule: `retention.fits-window` and `RetentionWindowConfig` are obsolete and
+  unregistered (S13.139). The Durable Task Scheduler purges only finished runs, so no
+  definition can outlast retention; whether retention outlasts the recovery sweep is a
+  deployment check for your host.
 - **The design language.** The schema handed to the design agent, generated from the model's
   own types and their XML documentation, so the thing the agent designs against cannot drift
   from the thing the interpreter executes.

@@ -4,10 +4,10 @@ using Frontier.Platform.Workflow.Model;
 namespace Frontier.Platform.Workflow.Compiler.Rules;
 
 /// <summary>
-/// The deployment's DTF history retention window the <c>retention.fits-window</c> rule compares
-/// against. The 30-day default is the S9.30 decision (DESIGN-DECISIONS.md); real per-deployment
-/// values are ADR-A1 configuration landing at S10.1 (C-11).
+/// The deployment's DTF history retention window the retired <c>retention.fits-window</c> rule
+/// compared against. Nothing in the compiler reads it any more: see <see cref="RetentionFitsWindowRule"/>.
 /// </summary>
+[Obsolete(RetentionFitsWindowRetirement.Message)]
 public sealed record RetentionWindowConfig
 {
     /// <summary>DTF history retention in days; estimated workflow duration must fit inside it.</summary>
@@ -15,11 +15,15 @@ public sealed record RetentionWindowConfig
 }
 
 /// <summary>
-/// retention.fits-window (doc 13 §4.2, ADR-A1, S9.30 — Warning): the definition's estimated
-/// duration (gate escalation timeouts plus a DTF-activity-ceiling allowance per non-gate node)
-/// must fit the deployment's DTF retention window, or a slow execution's history could be
-/// purged mid-run. The estimate is deliberately coarse — gates dominate real durations.
+/// retention.fits-window (doc 13 §4.2, ADR-A1, S9.30 — Warning), retired at S13.139: it compared
+/// a definition's estimated duration (gate timeouts plus an allowance per non-gate node) with the
+/// DTF retention window, on the premise that a slow run's history could be purged mid-run. The
+/// Durable Task Scheduler's autopurge removes only runs in a terminal state, and its retention
+/// clock starts when a run finishes, so a run's length is never compared with retention and the
+/// rule's only output was a false warning on long-gated workflows. <c>AddFrontierWorkflowCompiler</c>
+/// no longer registers it; the class still evaluates as it did for a caller that constructs it.
 /// </summary>
+[Obsolete(RetentionFitsWindowRetirement.Message)]
 public sealed class RetentionFitsWindowRule : IDefinitionValidationRule
 {
     private readonly RetentionWindowConfig _config;
@@ -51,4 +55,16 @@ public sealed class RetentionFitsWindowRule : IDefinitionValidationRule
 
         return Task.FromResult(findings);
     }
+}
+
+/// <summary>The deprecation text shared by the retired retention rule and its configuration.</summary>
+internal static class RetentionFitsWindowRetirement
+{
+    /// <summary>Why the rule is obsolete, what replaces it, and when it goes.</summary>
+    internal const string Message =
+        "Deprecated in v0.51.0: retention.fits-window warned about a risk that does not exist (S13.139). Durable Task "
+        + "Scheduler autopurge removes only terminal runs and starts its clock when a run finishes, so no definition's "
+        + "duration can outrun retention. No compiler replacement: the check that matters (retention outlasts the "
+        + "recovery sweep interval plus the consolidation settle window, ADR-A1) is a deployment boot check in the "
+        + "consumer's host, which owns both values. Removed at the next phase boundary.";
 }
