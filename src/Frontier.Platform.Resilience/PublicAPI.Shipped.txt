@@ -48,6 +48,7 @@ Frontier.Platform.Resilience.FailureClassification.ReasonCode.init -> void
 Frontier.Platform.Resilience.FailureClassification.RetryAfter.get -> System.TimeSpan?
 Frontier.Platform.Resilience.FailureClassification.RetryAfter.init -> void
 Frontier.Platform.Resilience.ICircuitStateProvider
+Frontier.Platform.Resilience.ICircuitStateProvider.AdmitsCalls(string! provider, string! modelId) -> bool
 Frontier.Platform.Resilience.ICircuitStateProvider.GetState(string! provider, string! modelId) -> Polly.CircuitBreaker.CircuitState
 Frontier.Platform.Resilience.ICircuitStateProvider.Subscribe(System.Action<Frontier.Platform.Resilience.CircuitTransition!>! onTransition) -> System.IDisposable!
 Frontier.Platform.Resilience.IFailureClassifier
