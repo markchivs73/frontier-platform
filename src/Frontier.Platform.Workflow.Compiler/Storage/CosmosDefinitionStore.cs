@@ -771,26 +771,8 @@ public sealed class CosmosDefinitionStore : IDefinitionStore
         ArgumentNullException.ThrowIfNull(turn);
         ValidateWorkflowId(turn.WorkflowId);
 
-        var doc = new DesignTurnDocument
-        {
-            Id = turn.Id,
-            WorkflowId = turn.WorkflowId,
-            DraftId = turn.DraftId,
-            TurnNumber = turn.TurnNumber,
-            DesignerId = turn.DesignerId,
-            CreatedAtUtc = turn.CreatedAtUtc,
-            DesignerMessage = turn.DesignerMessage,
-            DraftRevisionAtTurn = turn.DraftRevisionAtTurn,
-            AgentProposalJson = turn.AgentProposalJson,
-            ProposalReasoningJson = turn.ProposalReasoningJson,
-            ProposalChanges = turn.ProposalChanges,
-            ProposalBlockReason = turn.ProposalBlockReason,
-            ReplyTruncated = turn.ReplyTruncated,
-            MergeOutcome = turn.MergeOutcome,
-            ConflictSummary = turn.ConflictSummary
-        };
-
-        var response = await _container.UpsertItemAsync(doc, new PartitionKey(turn.WorkflowId), cancellationToken: ct);
+        // Upsert the turn as given: a field-by-field copy here once dropped Mentions (S13.224).
+        var response = await _container.UpsertItemAsync(turn, new PartitionKey(turn.WorkflowId), cancellationToken: ct);
         return response.Resource;
     }
 
