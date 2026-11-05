@@ -390,7 +390,7 @@ internal static class GraphOrchestratorSteps
     internal static string ClassifyFailure(Exception exception) => exception switch
     {
         ContractViolationException => "contract_violation",
-        BudgetExceededException => "guardrail",
+        BudgetExceededException or GuardrailsSuspendedException => "guardrail",
         TaskFailedException failed => ClassifyFailureDetails(failed.FailureDetails),
         _ => "unclassified",
     };
@@ -400,7 +400,7 @@ internal static class GraphOrchestratorSteps
     {
         null => "unclassified",
         { } d when d.IsCausedBy<ContractViolationException>() => "contract_violation",
-        { } d when d.IsCausedBy<BudgetExceededException>() => "guardrail",
+        { } d when d.IsCausedBy<BudgetExceededException>() || d.IsCausedBy<GuardrailsSuspendedException>() => "guardrail",
         _ => ClassifyFailureDetails(details.InnerFailure),
     };
 

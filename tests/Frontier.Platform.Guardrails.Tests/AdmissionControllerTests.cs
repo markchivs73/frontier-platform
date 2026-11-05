@@ -1,14 +1,70 @@
+using Frontier.Platform.Abstractions;
+using Microsoft.Extensions.Logging.Abstractions;
+
 namespace Frontier.Platform.Guardrails.Tests;
 
-/// <summary>S4.5 tests for <see cref="AdmissionController"/> against doc 07 §4's admission rules.</summary>
+/// <summary>S4.5 tests for <see cref="AdmissionController"/> against doc 07 §4's admission rules, and S13.187's kill switch check (doc 07 §5a).</summary>
 public sealed class AdmissionControllerTests
 {
-    private readonly AdmissionController controller = new();
+    private readonly KillSwitch killSwitch = new();
+    private readonly AdmissionController controller;
+
+    public AdmissionControllerTests() =>
+        controller = new AdmissionController(new KillSwitchGate(killSwitch, TimeSpan.Zero, TimeProvider.System, NullLogger<KillSwitchGate>.Instance));
+
+    [Fact]
+    public void Constructor_NullGate_Throws()
+    {
+        Assert.Throws<ArgumentNullException>(() => new AdmissionController(null!));
+    }
 
     [Fact]
     public async Task AdmitAsync_NullEstimate_Throws()
     {
         await Assert.ThrowsAsync<ArgumentNullException>(() => controller.AdmitAsync(null!, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task AdmitAsync_KillSwitchThrown_DeniesEvenWithinBudget()
+    {
+        await killSwitch.ActivateAsync("cost runaway", CancellationToken.None);
+
+        await Assert.ThrowsAsync<GuardrailsSuspendedException>(() => controller.AdmitAsync(Estimate(promptTokens: 1, maxOutputTokens: 1), CancellationToken.None));
+    }
+
+    /// <summary>The switch is checked before the budget rules: an estimate the budget alone would <see cref="AdmissionResult.Deny"/> is suspended instead.</summary>
+    [Fact]
+    public async Task AdmitAsync_KillSwitchThrown_SuspendsBeforeTheBudgetWouldDeny()
+    {
+        var overBudget = Estimate(promptTokens: 20_000, maxOutputTokens: 500);
+        Assert.Equal(AdmissionResult.Deny, (await controller.AdmitAsync(overBudget, CancellationToken.None)).Result);
+
+        await killSwitch.ActivateAsync("cost runaway", CancellationToken.None);
+
+        await Assert.ThrowsAsync<GuardrailsSuspendedException>(() => controller.AdmitAsync(overBudget, CancellationToken.None));
+    }
+
+    /// <summary>The switch is checked before the currency check too: a mis-currencied estimate is suspended, not refused as a contract violation.</summary>
+    [Fact]
+    public async Task AdmitAsync_KillSwitchThrown_SuspendsBeforeTheCurrencyCheck()
+    {
+        var misCurrencied = Estimate(promptTokens: 1_000, maxOutputTokens: 500) with { Currency = "EUR" };
+        await Assert.ThrowsAsync<ContractViolationException>(() => controller.AdmitAsync(misCurrencied, CancellationToken.None));
+
+        await killSwitch.ActivateAsync("cost runaway", CancellationToken.None);
+
+        await Assert.ThrowsAsync<GuardrailsSuspendedException>(() => controller.AdmitAsync(misCurrencied, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task AdmitAsync_KillSwitchResumed_AdmitsAgain()
+    {
+        await killSwitch.ActivateAsync("cost runaway", CancellationToken.None);
+        await killSwitch.DeactivateAsync(CancellationToken.None);
+
+        var decision = await controller.AdmitAsync(Estimate(promptTokens: 1_000, maxOutputTokens: 500), CancellationToken.None);
+
+        Assert.Equal(AdmissionResult.Proceed, decision.Result);
     }
 
     [Fact]

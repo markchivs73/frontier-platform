@@ -36,6 +36,15 @@ public sealed class FailureClassifierTests
         Assert.Equal("guardrail", result.ReasonCode);
     }
 
+    [Fact]
+    public void Classify_GuardrailsSuspendedException_IsPermanentGuardrail()
+    {
+        var result = classifier.Classify(new GuardrailsSuspendedException());
+
+        Assert.Equal(FailureClass.Permanent, result.Class);
+        Assert.Equal("guardrail", result.ReasonCode);
+    }
+
     [Theory]
     [InlineData(HttpStatusCode.TooManyRequests)]
     [InlineData(HttpStatusCode.InternalServerError)]

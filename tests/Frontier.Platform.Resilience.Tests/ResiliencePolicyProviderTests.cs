@@ -180,6 +180,23 @@ public sealed class ResiliencePolicyProviderTests
     }
 
     [Fact]
+    public void HandleOuterRetryFailure_GuardrailsSuspended_ReturnsFalse()
+    {
+        var failure = TaskFailureDetails.FromException(new GuardrailsSuspendedException());
+
+        Assert.False(ResiliencePolicyProvider.HandleOuterRetryFailure(failure));
+    }
+
+    [Fact]
+    public void HandleOuterRetryFailure_GuardrailsSuspendedWrapped_ReturnsFalse()
+    {
+        var suspended = new TaskFailureDetails(typeof(GuardrailsSuspendedException).FullName!, "suspended", null, null, null);
+        var wrapped = new TaskFailureDetails("WrapperException", "outer", null, suspended, null);
+
+        Assert.False(ResiliencePolicyProvider.HandleOuterRetryFailure(wrapped));
+    }
+
+    [Fact]
     public void HandleOuterRetryFailure_PermanentCauseWrapped_ReturnsFalse()
     {
         var budget = new TaskFailureDetails(typeof(BudgetExceededException).FullName!, "over budget", null, null, null);

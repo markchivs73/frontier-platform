@@ -9,10 +9,9 @@ namespace Frontier.Platform.Resilience;
 
 /// <summary>
 /// <see cref="IFailureClassifier"/> implementing doc 10 §3's mapping table. Rows for
-/// exception types that don't exist yet (<c>GuardrailsSuspendedException</c> — the
-/// kill switch, deferred to S6.5; <c>RateDeferredException</c> — Guardrails' rate
-/// limiter, also deferred to S6.5) are not implemented; they will be added when those
-/// types land. Provider 429-with-<c>Retry-After</c> (Deferred/<c>provider_rate_limited</c>)
+/// exception types that don't exist yet (<c>RateDeferredException</c> — Guardrails' rate
+/// limiter, deferred to S6.5) are not implemented; they will be added when those types land.
+/// <see cref="GuardrailsSuspendedException"/>, the kill switch's denial, landed with S13.187. Provider 429-with-<c>Retry-After</c> (Deferred/<c>provider_rate_limited</c>)
 /// is not distinguishable from a plain <see cref="HttpRequestException"/>, which
 /// carries no response headers — that row is wired once S4.2's provider client
 /// surfaces a richer exception.
@@ -28,6 +27,7 @@ internal sealed class FailureClassifier : IFailureClassifier
         {
             ContractViolationException => Permanent("contract_violation"),
             BudgetExceededException => Permanent("guardrail"),
+            GuardrailsSuspendedException => Permanent("guardrail"),
             HttpRequestException http => ClassifyHttp(http),
             CosmosException cosmos => ClassifyCosmos(cosmos),
             BrokenCircuitException => Transient("circuit_open"),

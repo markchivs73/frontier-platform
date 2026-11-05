@@ -65,7 +65,7 @@ public sealed partial class PublicSurfaceSdkTypeTests
         ["Frontier.Platform.Workflow.Compiler|Microsoft.Extensions.AI.IChatClient"] =
             "DesignerModelSelection carries the chat client the consumer's model entry resolves, so the designer call reaches that provider (S13.202).",
         ["Frontier.Platform.Guardrails|Microsoft.Azure.Cosmos.Container"] =
-            "AddFrontierGuardrails takes the guard-rail ledger container from the composition root.",
+            "AddFrontierGuardrails takes the guard-rail ledger and platform-config containers from the composition root.",
     };
 
     /// <summary>A dotted, namespace-qualified name that does not continue an earlier one.</summary>

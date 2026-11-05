@@ -119,6 +119,25 @@ public sealed class GraphConcurrentWalkTests
         Assert.DoesNotContain("c-join", harness.StartedNodes);
     }
 
+    /// <summary>S13.187: a kill-switch suspension pauses the walk on the failure, attributed and classified <c>guardrail</c>, like a budget denial.</summary>
+    [Fact]
+    public async Task FanOut_BranchSuspendedByTheKillSwitch_WalkPausesOnFailureClassifiedGuardrail()
+    {
+        var harness = new WalkHarness(OrchestrationFixtures.FanOutJoin(), deferred: ["b-booking", "b-ticket"]);
+        var walk = harness.StartWalk();
+
+        harness.FailNode("b-ticket", new GuardrailsSuspendedException());
+        harness.CompleteNode("b-booking");
+
+        await Assert.ThrowsAsync<GuardrailsSuspendedException>(() => walk);
+
+        var final = harness.Snapshots[^1];
+        Assert.Equal(ExecutionStatus.PausedOnFailure, final.Status);
+        Assert.Equal("b-ticket", final.CurrentNodeId);
+        Assert.Equal("guardrail", final.FailureClassification);
+        Assert.DoesNotContain("c-join", harness.StartedNodes);
+    }
+
     [Fact]
     public async Task GateBarrier_GateWaitsForUnrelatedInFlightBranch()
     {
@@ -282,6 +301,7 @@ public sealed class GraphConcurrentWalkTests
         Assert.Equal("contract_violation", GraphOrchestratorSteps.ClassifyFailureDetails(contractViolation));
         Assert.Equal("contract_violation", GraphOrchestratorSteps.ClassifyFailureDetails(wrapped));
         Assert.Equal("guardrail", GraphOrchestratorSteps.ClassifyFailureDetails(budget));
+        Assert.Equal("guardrail", GraphOrchestratorSteps.ClassifyFailureDetails(new TaskFailureDetails(typeof(GuardrailsSuspendedException).FullName!, "suspended", null, null, null)));
         Assert.Equal("unclassified", GraphOrchestratorSteps.ClassifyFailureDetails(new TaskFailureDetails("Other", "?", null, null, null)));
         Assert.Equal("unclassified", GraphOrchestratorSteps.ClassifyFailureDetails(null));
     }
@@ -299,6 +319,7 @@ public sealed class GraphConcurrentWalkTests
     {
         Assert.Equal("contract_violation", GraphOrchestratorSteps.ClassifyFailure(new ContractViolationException("X", ["bad"])));
         Assert.Equal("guardrail", GraphOrchestratorSteps.ClassifyFailure(new BudgetExceededException("over")));
+        Assert.Equal("guardrail", GraphOrchestratorSteps.ClassifyFailure(new GuardrailsSuspendedException()));
         Assert.Equal("unclassified", GraphOrchestratorSteps.ClassifyFailure(new InvalidOperationException("?")));
         Assert.Equal("guardrail", GraphOrchestratorSteps.ClassifyFailure(
             new TaskFailedException("AgentTaskActivity", 1, new TaskFailureDetails(typeof(BudgetExceededException).FullName!, "over", null, null, null))));

@@ -16,8 +16,8 @@ namespace Frontier.Platform.Resilience;
 /// failure ratio, and the bulkhead sits outside so saturation rejections don't trip it
 /// (doc 10 §4). The outer DTF <see cref="RetryPolicy"/> uses deterministic exponential
 /// backoff (no <see cref="Random"/> in an orchestrator body, dtf-determinism) and stops
-/// retrying on the permanent exception types <see cref="ContractViolationException"/> and
-/// <see cref="BudgetExceededException"/> anywhere in the failure chain, via
+/// retrying on the permanent exception types <see cref="ContractViolationException"/>,
+/// <see cref="BudgetExceededException"/> and <see cref="GuardrailsSuspendedException"/> anywhere in the failure chain, via
 /// <see cref="TaskFailureDetails.IsCausedBy{T}"/> — the classifications the outer loop
 /// can enforce without a live exception instance (doc 10 §3, hard invariant 7).
 /// Pipelines are built once and cached — per profile, and per <c>(profile, provider, modelId)</c>
@@ -112,14 +112,15 @@ internal sealed class ResiliencePolicyProvider(IFailureClassifier classifier, Ci
     internal static bool HandleOuterRetryFailure(TaskFailureDetails failure) => !IsPermanentCause(failure);
 
     /// <summary>
-    /// True when <paramref name="details"/> or any inner failure is a <see cref="ContractViolationException"/>
-    /// or <see cref="BudgetExceededException"/> — both <c>Permanent</c> in <see cref="FailureClassifier"/>.
+    /// True when <paramref name="details"/> or any inner failure is a <see cref="ContractViolationException"/>,
+    /// <see cref="BudgetExceededException"/> or <see cref="GuardrailsSuspendedException"/> — all <c>Permanent</c>
+    /// in <see cref="FailureClassifier"/>.
     /// Each <see cref="TaskFailureDetails.IsCausedBy{T}"/> checks only its own level, so the chain is walked.
     /// </summary>
     internal static bool IsPermanentCause(TaskFailureDetails? details) => details switch
     {
         null => false,
-        { } d when d.IsCausedBy<ContractViolationException>() || d.IsCausedBy<BudgetExceededException>() => true,
+        { } d when d.IsCausedBy<ContractViolationException>() || d.IsCausedBy<BudgetExceededException>() || d.IsCausedBy<GuardrailsSuspendedException>() => true,
         _ => IsPermanentCause(details.InnerFailure),
     };
 

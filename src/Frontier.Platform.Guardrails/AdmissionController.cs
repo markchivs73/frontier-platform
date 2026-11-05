@@ -2,19 +2,28 @@ namespace Frontier.Platform.Guardrails;
 
 /// <summary>
 /// <see cref="IAdmissionController"/> over <see cref="Phase1GuardrailPolicyCatalogue"/>
-/// (doc 07 §4, §5). Enforces only <see cref="GuardrailPolicy.PerInvocation"/> —
-/// execution/engagement rollup is S6.5 (see <see cref="Phase1GuardrailPolicyCatalogue"/>).
+/// (doc 07 §4, §5). Checks the fleet kill switch first (doc 07 §5a, S13.187), then enforces only
+/// <see cref="GuardrailPolicy.PerInvocation"/> — execution/engagement rollup is S6.5 (see
+/// <see cref="Phase1GuardrailPolicyCatalogue"/>).
 /// </summary>
 internal sealed class AdmissionController : IAdmissionController
 {
     private const string SandboxExecutionIdPrefix = "SANDBOX-";
 
+    private readonly KillSwitchGate killSwitch;
+
+    /// <summary>Creates the controller over the kill switch's cached admission read.</summary>
+    public AdmissionController(KillSwitchGate killSwitch) =>
+        this.killSwitch = killSwitch ?? throw new ArgumentNullException(nameof(killSwitch));
+
     /// <inheritdoc />
-    public Task<AdmissionDecision> AdmitAsync(InvocationCostEstimate estimate, CancellationToken cancellationToken)
+    public async Task<AdmissionDecision> AdmitAsync(InvocationCostEstimate estimate, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(estimate);
 
-        return Task.FromResult(Admit(estimate, SelectPolicy(estimate.ExecutionId)));
+        var policy = SelectPolicy(estimate.ExecutionId);
+        await killSwitch.EnsureNotSuspendedAsync(policy, cancellationToken).ConfigureAwait(false);
+        return Admit(estimate, policy);
     }
 
     /// <summary>

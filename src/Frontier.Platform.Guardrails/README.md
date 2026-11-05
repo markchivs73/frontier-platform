@@ -20,17 +20,23 @@ Requires a GitHub Packages source with a `read:packages` token — see the
 ## Use
 
 ```csharp
-services.AddFrontierGuardrails();                        // in-process ledger
-services.AddFrontierGuardrails(guardrailLedgerContainer); // Cosmos-backed ledger
+services.AddFrontierGuardrails();                        // in-process ledger and kill switch
+services.AddFrontierGuardrails(guardrailLedgerContainer); // Cosmos-backed ledger, in-process kill switch
+services.AddFrontierGuardrails(                           // Cosmos-backed ledger and shared kill switch
+    guardrailLedgerContainer,
+    platformConfigContainer,
+    GuardrailsServiceCollectionExtensions.DefaultKillSwitchCacheDuration);
 ```
 
-Only the composition root should call these. Both register the admission controller, the budget
-hierarchy and the kill switch; they differ only in the `IBudgetLedger` implementation. The
-Cosmos variant takes the `guardrail-ledger` container directly (partition key `/engagementId`) —
-this library does not build its own `CosmosClient`.
+Only the composition root should call these. All three register the admission controller, the
+budget hierarchy and the kill switch; they differ in the `IBudgetLedger` and `IKillSwitch`
+implementations. The Cosmos variants take their containers directly — `guardrail-ledger`
+(partition key `/engagementId`) and, for the shared kill switch, the consumer's `platform-config`
+(partition key `/config_type`) — this library does not build its own `CosmosClient`.
 
-Pick the in-process ledger for tests, tools and single-process runs; pick the Cosmos ledger for
-anything where usage must survive a restart or be seen by more than one process.
+Pick the in-process variants for tests, tools and single-process runs. Anything with more than one
+process — an API head that throws the switch and workers that must stop — needs the third: an
+in-process kill switch stops admissions only in the process it was thrown in.
 
 ## What it contains
 
@@ -42,6 +48,22 @@ anything where usage must survive a restart or be seen by more than one process.
 | `IBudgetLedger` | Records actual usage; returns an aggregated `BudgetSnapshot` for a scope |
 | `IBudgetHierarchy` | Checks and records across invocation → engagement → platform scopes without double-counting |
 | `IKillSwitch` | Global emergency brake: deny everything, independent of budgets |
+
+## The kill switch
+
+The shared switch is one document in `platform-config`: id `kill-switch:fleet`, config type
+`kill-switch`, holding `active`, `reason` and `changed_at`. `IKillSwitch` reads and writes it
+uncached, for the governed activate and resume routes. Admission reads it through a cache of the
+duration given at registration (doc 07 §5a: about 10 s), so a switch thrown anywhere stops new
+admissions on every worker within that window. A missing document means never thrown; a missing
+container is an error, not "never thrown".
+
+While it is thrown, `IAdmissionController.AdmitAsync` throws `GuardrailsSuspendedException`
+(Abstractions): a **permanent** failure in the `guardrail` category, never retried. Invocations
+already past admission finish. If the switch cannot be read, the policy's `FailureMode` decides, as
+below: `FailOpenWithAudit` admits and logs a `guardrail_bypass` warning (through
+`ILogger<KillSwitchGate>` when the consumer registers logging); `FailClosed` rethrows the read
+failure, which the activity retry treats as transient. A failed read is never cached.
 
 **The policy**
 
