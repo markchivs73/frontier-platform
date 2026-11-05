@@ -13,7 +13,12 @@ namespace Frontier.Platform.Workflow.Compiler.Storage;
 /// Cosmos DB implementation of definition storage (workflow-definitions container, PK /workflowId).
 /// Doc 13 §7 schema: draft, published versions, current pointer, proposals, validation reports.
 /// </summary>
-[ExcludeFromCodeCoverage(Justification = "Infrastructure: tested via integration tests against Cosmos emulator (DefinitionCompilerPhaseC_IntegrationTests)")]
+/// <remarks>
+/// The draft-save and publish lost-update decisions are <see cref="DefinitionWriteRules"/>, unit-tested (S13.193).
+/// The rest of this adapter still carries decision logic under its exclusion (proposal transitions, the catalogue
+/// aggregation); narrowing it further is deferred, see the S13.193 PR.
+/// </remarks>
+[ExcludeFromCodeCoverage(Justification = "Infrastructure: tested via integration tests against Cosmos emulator (DefinitionCompilerPhaseC_IntegrationTests); its save and publish conflict decisions are DefinitionWriteRules, unit-tested")]
 public sealed class CosmosDefinitionStore : IDefinitionStore
 {
     private readonly Container _container;
@@ -112,8 +117,8 @@ public sealed class CosmosDefinitionStore : IDefinitionStore
         // the client ETag. The write is then guarded by the Cosmos _etag of the document just
         // compared (GOV-03), so two saves on one revision cannot both pass the check and both win.
         var (current, currentETag) = await ReadDraftAsync(workflowId, ct);
-        if (current is not null && !string.Equals(current.DraftRevision, expectedETag, StringComparison.Ordinal))
-            return new SaveDraftResultConflict("unknown", current.DraftRevision, current);
+        if (DefinitionWriteRules.IsStaleSave(current, expectedETag))
+            return DefinitionWriteRules.Conflict(current);
 
         var doc = DraftToStore(workflowId, draft);
         if (current is null)
@@ -144,7 +149,7 @@ public sealed class CosmosDefinitionStore : IDefinitionStore
         catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.PreconditionFailed)
         {
             var winner = (await ReadDraftAsync(doc.WorkflowId, ct)).Document ?? current;
-            return new SaveDraftResultConflict("unknown", winner.DraftRevision, winner);
+            return DefinitionWriteRules.Conflict(winner);
         }
     }
 
@@ -193,14 +198,9 @@ public sealed class CosmosDefinitionStore : IDefinitionStore
         }
         catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Conflict)
         {
-            // Version document already exists — this is an idempotent re-run (e.g. a previous
-            // attempt created the document but failed before updating the current-version pointer).
-            // Re-use the existing document if the definition hash matches; reject otherwise.
+            // Version document already exists: DefinitionWriteRules decides re-run or refusal.
             var existing = await GetVersionAsync(versionDoc.WorkflowId, versionDoc.DefinitionVersion, ct);
-            if (existing is not null && existing.DefinitionHash == versionDoc.DefinitionHash)
-                return existing;
-            throw new InvalidOperationException(
-                $"Version {versionDoc.DefinitionVersion} already exists with a different definition hash — cannot publish.");
+            return DefinitionWriteRules.ResolvePublishConflict(existing, versionDoc);
         }
     }
 

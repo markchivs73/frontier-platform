@@ -75,14 +75,14 @@ public sealed class MappingProposalQueryBuilderTests
     public void RequestOptionsFor_NamesThePartitionOnlyWhenTheQueryNamesARole()
     {
         // The cross-partition fan-out is bounded rather than unbounded (ADR-PA34).
-        var scoped = CosmosMappingProposalStore.RequestOptionsFor(new MappingProposalQuery { RoleId = RoleId, PageSize = 10 });
-        var crossPartition = CosmosMappingProposalStore.RequestOptionsFor(new MappingProposalQuery { PageSize = 10 });
+        var scoped = ModelRoleConfigWrites.RequestOptionsFor(new MappingProposalQuery { RoleId = RoleId, PageSize = 10 });
+        var crossPartition = ModelRoleConfigWrites.RequestOptionsFor(new MappingProposalQuery { PageSize = 10 });
 
         Assert.Equal(new Microsoft.Azure.Cosmos.PartitionKey(RoleId), scoped.PartitionKey);
         Assert.Equal(10, scoped.MaxItemCount);
         Assert.Null(crossPartition.PartitionKey);
         Assert.Equal(10, crossPartition.MaxItemCount);
-        Assert.Equal(CosmosMappingProposalStore.CrossPartitionConcurrency, crossPartition.MaxConcurrency);
+        Assert.Equal(ModelRoleConfigWrites.CrossPartitionConcurrency, crossPartition.MaxConcurrency);
     }
 
     [Fact]
@@ -102,10 +102,10 @@ public sealed class MappingProposalQueryBuilderTests
     [Fact]
     public void IsConcurrencyConflict_ClassifiesOnlyTheTwoThatMeanAnotherWriterWon()
     {
-        Assert.True(CosmosMappingProposalStore.IsConcurrencyConflict(System.Net.HttpStatusCode.PreconditionFailed));
-        Assert.True(CosmosMappingProposalStore.IsConcurrencyConflict(System.Net.HttpStatusCode.Conflict));
-        Assert.False(CosmosMappingProposalStore.IsConcurrencyConflict(System.Net.HttpStatusCode.NotFound));
-        Assert.False(CosmosMappingProposalStore.IsConcurrencyConflict(System.Net.HttpStatusCode.RequestEntityTooLarge));
+        Assert.True(ModelRoleConfigWrites.IsConcurrencyConflict(System.Net.HttpStatusCode.PreconditionFailed));
+        Assert.True(ModelRoleConfigWrites.IsConcurrencyConflict(System.Net.HttpStatusCode.Conflict));
+        Assert.False(ModelRoleConfigWrites.IsConcurrencyConflict(System.Net.HttpStatusCode.NotFound));
+        Assert.False(ModelRoleConfigWrites.IsConcurrencyConflict(System.Net.HttpStatusCode.RequestEntityTooLarge));
     }
 }
 

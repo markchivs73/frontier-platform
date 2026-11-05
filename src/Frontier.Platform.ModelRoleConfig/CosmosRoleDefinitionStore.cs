@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
+using System.Runtime.CompilerServices;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Options;
 
@@ -11,7 +12,7 @@ namespace Frontier.Platform.ModelRoleConfig;
 /// transactional batch: create <c>{roleId}:definition:v{n}</c>, replace the proposal under its ETag,
 /// and upsert <c>{roleId}:definition:current</c> — all or nothing.
 /// </summary>
-[ExcludeFromCodeCoverage(Justification = "Cosmos SDK adapter (ADR-PA40); exercised by the Integration-category emulator tests, not the unit-coverage gate.")]
+[ExcludeFromCodeCoverage(Justification = "Cosmos SDK glue (ADR-PA40): SDK calls, feed-draining loops and 404/409/412 translation. Status, batch-outcome, query, first-row and dangling-pointer decisions live in ModelRoleConfigWrites, ModelRoleConfigQueries and ModelRoleConfigReads (S13.193). Exercised by the Integration-category emulator tests.")]
 internal sealed class CosmosRoleDefinitionStore(CosmosClient client, IOptions<CosmosOptions> options) : IRoleDefinitionStore
 {
     /// <summary>The proposal replace's position in the allocation batch.</summary>
@@ -23,14 +24,10 @@ internal sealed class CosmosRoleDefinitionStore(CosmosClient client, IOptions<Co
     public async Task<RoleDefinition?> FindCurrentDefinitionAsync(string roleId, CancellationToken cancellationToken)
     {
         var pointer = await ReadOrDefaultAsync<RoleDefinitionCurrentDocument>(ModelRoleConfigDocumentId.ForDefinitionCurrent(roleId), roleId, cancellationToken);
-        if (pointer is null)
-        {
-            return null;
-        }
-
-        var version = await ReadOrDefaultAsync<RoleDefinitionDocument>(pointer.CurrentRef, roleId, cancellationToken);
-        return version?.ToDomain()
-            ?? throw new MappingGovernanceException($"Role '{roleId}' has a definition pointer to '{pointer.CurrentRef}', which is not stored.");
+        return await ModelRoleConfigReads.FollowDefinitionPointerAsync(
+            roleId,
+            pointer?.CurrentRef,
+            async versionId => (await ReadOrDefaultAsync<RoleDefinitionDocument>(versionId, roleId, cancellationToken))?.ToDomain());
     }
 
     /// <inheritdoc />
@@ -51,24 +48,26 @@ internal sealed class CosmosRoleDefinitionStore(CosmosClient client, IOptions<Co
     }
 
     /// <inheritdoc />
-    public async Task<StoredRoleDefinitionProposal?> FindUndecidedProposalAsync(string roleId, CancellationToken cancellationToken)
-    {
-        var undecided = MappingProposalState.List.Where(state => state.IsAwaitingDecision).Select(state => state.Name).ToArray();
-        var query = new QueryDefinition("SELECT * FROM c WHERE c.doc_type = @docType AND ARRAY_CONTAINS(@states, c.state)")
-            .WithParameter("@docType", RoleDefinitionProposalDocument.ProposalDocType)
-            .WithParameter("@states", undecided);
+    public Task<StoredRoleDefinitionProposal?> FindUndecidedProposalAsync(string roleId, CancellationToken cancellationToken) =>
+        ModelRoleConfigReads.FirstResolvedAsync(
+            RowsAsync(ModelRoleConfigQueries.UndecidedProposals(RoleDefinitionProposalDocument.ProposalDocType), roleId, cancellationToken),
+            document => Task.FromResult<StoredRoleDefinitionProposal?>(
+                new StoredRoleDefinitionProposal(document.ToDomain() with { ConcurrencyToken = document.ETag }, document.ETag!)),
+            cancellationToken);
 
+    /// <summary>Drains <paramref name="query"/> over the role's partition one row per page.</summary>
+    private async IAsyncEnumerable<RoleDefinitionProposalDocument> RowsAsync(
+        QueryDefinition query, string roleId, [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
         using var iterator = Container.GetItemQueryIterator<RoleDefinitionProposalDocument>(
             query, requestOptions: new QueryRequestOptions { PartitionKey = new PartitionKey(roleId), MaxItemCount = 1 });
         while (iterator.HasMoreResults)
         {
             foreach (var document in await iterator.ReadNextAsync(cancellationToken))
             {
-                return new StoredRoleDefinitionProposal(document.ToDomain() with { ConcurrencyToken = document.ETag }, document.ETag!);
+                yield return document;
             }
         }
-
-        return null;
     }
 
     /// <inheritdoc />
@@ -100,7 +99,7 @@ internal sealed class CosmosRoleDefinitionStore(CosmosClient client, IOptions<Co
                 new ItemRequestOptions { IfMatchEtag = expectedETag }, cancellationToken);
             return response.ETag;
         }
-        catch (CosmosException ex) when (CosmosMappingProposalStore.IsConcurrencyConflict(ex.StatusCode))
+        catch (CosmosException ex) when (ModelRoleConfigWrites.IsConcurrencyConflict(ex.StatusCode))
         {
             return null;
         }
@@ -118,15 +117,10 @@ internal sealed class CosmosRoleDefinitionStore(CosmosClient client, IOptions<Co
             .UpsertItem(RoleDefinitionCurrentDocument.For(version))
             .ExecuteAsync(cancellationToken);
 
-        if (response.IsSuccessStatusCode)
-        {
-            return response[ProposalReplaceIndex].ETag;
-        }
-
-        return CosmosMappingProposalStore.IsConcurrencyConflict(response.StatusCode)
-            ? null
-            : throw new MappingGovernanceException(
-                $"The definition-version batch for role '{definition.RoleId}' v{version.DefinitionVersion} failed with status {(int)response.StatusCode}: {response.ErrorMessage}");
+        return ModelRoleConfigWrites.AllocationOutcome(
+            response.StatusCode,
+            () => response[ProposalReplaceIndex].ETag,
+            () => $"The definition-version batch for role '{definition.RoleId}' v{version.DefinitionVersion} failed with status {(int)response.StatusCode}: {response.ErrorMessage}");
     }
 
     /// <inheritdoc />
@@ -135,7 +129,7 @@ internal sealed class CosmosRoleDefinitionStore(CosmosClient client, IOptions<Co
         using var iterator = Container.GetItemQueryIterator<RoleDefinitionProposalDocument>(
             MappingProposalQueryBuilder.Build(query, RoleDefinitionProposalDocument.ProposalDocType),
             query.ContinuationToken,
-            CosmosMappingProposalStore.RequestOptionsFor(query));
+            ModelRoleConfigWrites.RequestOptionsFor(query));
 
         if (!iterator.HasMoreResults)
         {

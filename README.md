@@ -120,6 +120,10 @@ dotnet test FrontierPlatform.slnx -c Release --filter "Category=Integration"
 
 Set `COSMOS_EMULATOR_ENDPOINT` if the emulator is not on `http://localhost:8081`.
 
+That solution-wide run is fine without coverage. The CI `integration` job runs each test project
+in turn with `--collect:"XPlat Code Coverage" --settings coverlet.runsettings`, and puts a
+per-assembly table beside the unit gate's in the job summary. That table is a report, not a gate.
+
 The orchestration replay suite (`GraphOrchestratorReplayTests`) also needs the Durable Task
 Scheduler emulator, at the digest CI pins:
 

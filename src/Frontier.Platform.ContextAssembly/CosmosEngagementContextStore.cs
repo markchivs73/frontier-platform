@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Frontier.Platform.Abstractions;
 using Frontier.Platform.Serialization;
 using Microsoft.Azure.Cosmos;
@@ -10,10 +9,13 @@ namespace Frontier.Platform.ContextAssembly;
 /// dynamic context via the <c>engagement-context</c> container with epoch-based versioning.
 /// Each upsert increments the epoch and updates the mutable `:current` pointer.
 /// </summary>
-[ExcludeFromCodeCoverage(Justification = "Cosmos SDK adapter (doc 04 §6); exercised by the ContextAssembly integration tests against the Cosmos emulator (S0.5/CI integration job), not the unit-coverage gate.")]
+/// <remarks>
+/// The decisions — epoch numbering, document ids, what a lost race returns — live here and are unit-tested;
+/// the SDK calls are <see cref="CosmosEngagementContextDocuments"/> (S13.193).
+/// </remarks>
 internal sealed class CosmosEngagementContextStore : IEngagementContextStore
 {
-    private readonly Container container;
+    private readonly IEngagementContextDocuments documents;
 
     /// <summary>The Cosmos container name (<c>engagement-context</c>).</summary>
     internal const string ContainerName = "engagement-context";
@@ -26,85 +28,42 @@ internal sealed class CosmosEngagementContextStore : IEngagementContextStore
 
     /// <summary>Initializes the store with a reference to the engagement-context container.</summary>
     public CosmosEngagementContextStore(Container container)
+        : this(new CosmosEngagementContextDocuments(container))
     {
-        this.container = container ?? throw new ArgumentNullException(nameof(container));
     }
+
+    /// <summary>Initializes the store over <paramref name="documents"/>.</summary>
+    internal CosmosEngagementContextStore(IEngagementContextDocuments documents)
+    {
+        this.documents = documents ?? throw new ArgumentNullException(nameof(documents));
+    }
+
+    /// <summary>The <c>:current</c> pointer's document id.</summary>
+    internal static string PointerId(EngagementId engagementId) => $"{engagementId}{CurrentPointerSuffix}";
+
+    /// <summary>The document id of epoch <paramref name="epoch"/>.</summary>
+    internal static string EpochId(EngagementId engagementId, int epoch) => $"{engagementId}{EpochPrefix}{epoch:D6}";
 
     /// <inheritdoc />
-    public async Task<string?> GetDynamicContextAsync(EngagementId engagementId, CancellationToken ct)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(engagementId);
-
-        try
-        {
-            // Read the current pointer to get the active epoch
-            var pointerId = $"{engagementId}{CurrentPointerSuffix}";
-            var pointerResponse = await container.ReadItemAsync<EngagementContextPointer>(
-                pointerId,
-                new PartitionKey(engagementId),
-                cancellationToken: ct);
-
-            if (pointerResponse.Resource is null)
-                return null;
-
-            // Read the epoch document
-            var epochId = $"{engagementId}{EpochPrefix}{pointerResponse.Resource.Epoch:D6}";
-            var epochResponse = await container.ReadItemAsync<EngagementContextEpoch>(
-                epochId,
-                new PartitionKey(engagementId),
-                cancellationToken: ct);
-
-            return epochResponse.Resource?.Content;
-        }
-        catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
-        {
-            return null;
-        }
-    }
+    public async Task<string?> GetDynamicContextAsync(EngagementId engagementId, CancellationToken ct) =>
+        (await GetDynamicContextSnapshotAsync(engagementId, null, ct))?.Content;
 
     /// <inheritdoc />
     public async Task<EngagementContextSnapshot?> GetDynamicContextSnapshotAsync(EngagementId engagementId, int? epoch, CancellationToken ct)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(engagementId);
 
-        try
-        {
-            var resolvedEpoch = epoch ?? await ReadCurrentEpochAsync(engagementId, ct);
-            if (resolvedEpoch is null)
-                return null;
-
-            var epochId = $"{engagementId}{EpochPrefix}{resolvedEpoch.Value:D6}";
-            var epochResponse = await container.ReadItemAsync<EngagementContextEpoch>(
-                epochId,
-                new PartitionKey(engagementId),
-                cancellationToken: ct);
-
-            return epochResponse.Resource is { } doc
-                ? new EngagementContextSnapshot(doc.Epoch, doc.Id, doc.ContentHash, doc.Content)
-                : null;
-        }
-        catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
-        {
+        var resolvedEpoch = epoch ?? await ReadCurrentEpochAsync(engagementId, ct);
+        if (resolvedEpoch is null)
             return null;
-        }
+
+        var doc = await documents.ReadEpochAsync(engagementId, EpochId(engagementId, resolvedEpoch.Value), ct);
+        return doc is null ? null : new EngagementContextSnapshot(doc.Epoch, doc.Id, doc.ContentHash, doc.Content);
     }
 
     /// <summary>Reads the <c>:current</c> pointer's epoch, or <see langword="null"/> when the engagement has no context.</summary>
-    internal async Task<int?> ReadCurrentEpochAsync(EngagementId engagementId, CancellationToken ct)
-    {
-        try
-        {
-            var pointerResponse = await container.ReadItemAsync<EngagementContextPointer>(
-                $"{engagementId}{CurrentPointerSuffix}",
-                new PartitionKey(engagementId),
-                cancellationToken: ct);
-            return pointerResponse.Resource?.Epoch;
-        }
-        catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
-        {
-            return null;
-        }
-    }
+    internal async Task<int?> ReadCurrentEpochAsync(EngagementId engagementId, CancellationToken ct) =>
+        (await documents.ReadPointerAsync(engagementId, ct))?.Epoch;
 
     /// <inheritdoc />
     /// <remarks>
@@ -118,69 +77,23 @@ internal sealed class CosmosEngagementContextStore : IEngagementContextStore
         EngagementContextMerge.ApplyThroughAsync(this, engagementId, components, ct);
 
     /// <inheritdoc />
+    /// <remarks>
+    /// A concurrent writer that already created the next epoch wins: this write is dropped and the epoch the
+    /// pointer names is returned (0 when the winner has not moved the pointer yet).
+    /// </remarks>
     public async Task<int> UpsertDynamicContextAsync(EngagementId engagementId, string dynamicContent, CancellationToken ct)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(engagementId);
         ArgumentNullException.ThrowIfNull(dynamicContent);
 
-        // Compute hash of the new content
         var contentHash = CanonicalProfile.Hash(dynamicContent);
+        var current = await ReadCurrentEpochAsync(engagementId, ct);
+        var nextEpoch = current is null ? 0 : current.Value + 1;
+        var epochDoc = new EngagementContextEpoch(EpochId(engagementId, nextEpoch), engagementId, nextEpoch, contentHash, dynamicContent, DateTime.UtcNow);
+        if (!await documents.TryCreateEpochAsync(epochDoc, ct))
+            return await ReadCurrentEpochAsync(engagementId, ct) ?? 0;
 
-        try
-        {
-            // Read the current pointer to get the next epoch number
-            var pointerId = $"{engagementId}{CurrentPointerSuffix}";
-            var nextEpoch = 0;
-
-            try
-            {
-                var pointerResponse = await container.ReadItemAsync<EngagementContextPointer>(
-                    pointerId,
-                    new PartitionKey(engagementId),
-                    cancellationToken: ct);
-
-                if (pointerResponse.Resource is not null)
-                    nextEpoch = pointerResponse.Resource.Epoch + 1;
-            }
-            catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
-            {
-                // First write; epoch starts at 0
-                nextEpoch = 0;
-            }
-
-            // Write the new epoch document (append-only)
-            var epochId = $"{engagementId}{EpochPrefix}{nextEpoch:D6}";
-            var epochDoc = new EngagementContextEpoch(
-                epochId,
-                engagementId,
-                nextEpoch,
-                contentHash,
-                dynamicContent,
-                DateTime.UtcNow);
-
-            await container.CreateItemAsync(epochDoc, new PartitionKey(engagementId), cancellationToken: ct);
-
-            // Update (or create) the current pointer
-            var pointerDoc = new EngagementContextPointer(
-                pointerId,
-                engagementId,
-                nextEpoch,
-                contentHash,
-                DateTime.UtcNow);
-
-            await container.UpsertItemAsync(pointerDoc, new PartitionKey(engagementId), cancellationToken: ct);
-            return nextEpoch;
-        }
-        catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Conflict)
-        {
-            // Concurrent write: epoch already exists (same epoch number)
-            // This is fine (idempotent); re-read pointer and return its epoch
-            var pointerId = $"{engagementId}{CurrentPointerSuffix}";
-            var pointerResponse = await container.ReadItemAsync<EngagementContextPointer>(
-                pointerId,
-                new PartitionKey(engagementId),
-                cancellationToken: ct);
-            return pointerResponse.Resource?.Epoch ?? 0;
-        }
+        await documents.UpsertPointerAsync(new EngagementContextPointer(PointerId(engagementId), engagementId, nextEpoch, contentHash, DateTime.UtcNow), ct);
+        return nextEpoch;
     }
 }
