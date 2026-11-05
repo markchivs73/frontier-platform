@@ -100,10 +100,15 @@ sampling window, break duration), `BulkheadSpec` (scope, max concurrent, max que
 `ICircuitStateProvider` reports the state of the endpoint pipelines' breakers per
 `(provider, modelId)` and publishes their `CircuitTransition`s to subscribers. A pair no call has
 reached yet reports `Closed`; a pair called under two profiles has two breakers and reports the
-more severe. Model-Role Config consults it to skip a chain entry whose circuit is open;
-observability and alerting subscribe to the transitions. `Isolated` (a manual stop) lets no
-traffic through either, so a query that skips open circuits should skip it too. State is
-in-process per worker.
+more severe. Observability and alerting subscribe to the transitions. `Isolated` (a manual stop)
+lets no traffic through. State is in-process per worker.
+
+A chain walk should ask `AdmitsCalls`, not test `GetState` for `Open`. Polly moves an open
+breaker to half-open only when a call arrives after the break, so a walk that skips every `Open`
+entry never sends that call, and the breaker never recovers. `AdmitsCalls` is true when closed,
+and when open once the break has elapsed (that call is the probe). It is false during the break,
+while the probe runs (half-open), and while isolated. An open counts only once its `OnOpened`
+callback has published it, which Polly runs on a background task after the state changes. `GetState` still reports Polly's own state.
 
 **The amplification guard**
 

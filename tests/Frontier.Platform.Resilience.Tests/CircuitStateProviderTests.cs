@@ -91,6 +91,90 @@ public sealed class CircuitStateProviderTests
         Assert.Empty(transitions);
     }
 
+    /// <summary>S13.231: no call has reached the pair, so it has no breaker and admits.</summary>
+    [Fact]
+    public void AdmitsCalls_NoCallHasReachedThePair_Admits()
+    {
+        Assert.True(circuits.AdmitsCalls("anthropic", "claude-fable-5"));
+    }
+
+    /// <summary>
+    /// S13.231 (doc 10 §6): an opened breaker refuses calls during its break, then admits the probe once the break has
+    /// elapsed although Polly still reports Open, refuses everything while the probe runs, and admits again once closed.
+    /// </summary>
+    [Fact]
+    public async Task AdmitsCalls_FollowsTheBreakThenTheProbe_WhileGetStateStaysPollysTruth()
+    {
+        var pipeline = policies.GetPipeline("llm-default", "anthropic", "claude-fable-5");
+        await FailAsync(pipeline, times: 10);
+        Assert.False(circuits.AdmitsCalls("anthropic", "claude-fable-5"));
+
+        clock.Advance(TimeSpan.FromSeconds(59));
+        Assert.False(circuits.AdmitsCalls("anthropic", "claude-fable-5"));
+
+        clock.Advance(TimeSpan.FromSeconds(2));
+        Assert.Equal(CircuitState.Open, circuits.GetState("anthropic", "claude-fable-5"));
+        Assert.True(circuits.AdmitsCalls("anthropic", "claude-fable-5"));
+
+        var release = new TaskCompletionSource();
+        var probe = pipeline.ExecuteAsync(async _ => await release.Task, CancellationToken.None).AsTask();
+        Assert.Equal(CircuitState.HalfOpen, circuits.GetState("anthropic", "claude-fable-5"));
+        Assert.False(circuits.AdmitsCalls("anthropic", "claude-fable-5"));
+        await Assert.ThrowsAsync<BrokenCircuitException>(async () => await pipeline.ExecuteAsync(_ => ValueTask.CompletedTask, CancellationToken.None));
+
+        release.SetResult();
+        await probe;
+        Assert.True(circuits.AdmitsCalls("anthropic", "claude-fable-5"));
+    }
+
+    /// <summary>S13.231: an isolated breaker never admits, however long ago it was isolated, and one refusing breaker refuses the pair.</summary>
+    [Fact]
+    public async Task AdmitsCalls_AnIsolatedBreakerUnderAnyProfile_RefusesThePair()
+    {
+        var manual = new CircuitBreakerManualControl();
+        var options = ResiliencePolicyProvider.BuildCircuitBreakerOptions(Phase1ResilienceProfileCatalogue.LlmDefault.CircuitBreaker);
+        options.ManualControl = manual;
+        _ = new ResiliencePipelineBuilder { TimeProvider = clock }.AddCircuitBreaker(circuits.Track("anthropic", "claude-fable-5", options)).Build();
+        _ = policies.GetPipeline("llm-interactive", "anthropic", "claude-fable-5");
+
+        await manual.IsolateAsync();
+        clock.Advance(TimeSpan.FromDays(1));
+
+        Assert.False(circuits.AdmitsCalls("anthropic", "claude-fable-5"));
+    }
+
+    /// <summary>
+    /// S13.231: Polly reports Open before its <c>OnOpened</c> callback has run. Until the open is published, the recorded
+    /// break end is stale (a first open has none; a re-open after a failed probe has the last break's), so it refuses.
+    /// </summary>
+    [Theory]
+    [InlineData(CircuitState.Closed, CircuitState.Closed, 0, true)]
+    [InlineData(CircuitState.Open, CircuitState.Open, -1, false)]
+    [InlineData(CircuitState.Open, CircuitState.Open, 0, true)]
+    [InlineData(CircuitState.Open, CircuitState.Closed, 1, false)]
+    [InlineData(CircuitState.Open, CircuitState.HalfOpen, 1, false)]
+    [InlineData(CircuitState.HalfOpen, CircuitState.HalfOpen, 1, false)]
+    [InlineData(CircuitState.Isolated, CircuitState.Isolated, 1, false)]
+    public void CircuitAdmission_AdmitsOnlyClosed_OrAPublishedOpenWhoseBreakHasEnded(CircuitState polly, CircuitState published, int secondsPastBreakEnd, bool expected)
+    {
+        var breakEndsAt = new DateTimeOffset(2026, 11, 5, 12, 0, 0, TimeSpan.Zero);
+
+        Assert.Equal(expected, CircuitAdmission.Admits(polly, published, breakEndsAt, breakEndsAt.AddSeconds(secondsPastBreakEnd)));
+    }
+
+    /// <summary>S13.231: an implementation that cannot see break timing admits only Closed and HalfOpen.</summary>
+    [Theory]
+    [InlineData(CircuitState.Closed, true)]
+    [InlineData(CircuitState.HalfOpen, true)]
+    [InlineData(CircuitState.Open, false)]
+    [InlineData(CircuitState.Isolated, false)]
+    public void AdmitsCalls_DefaultImplementation_AdmitsOnlyClosedAndHalfOpen(CircuitState state, bool expected)
+    {
+        ICircuitStateProvider fixedState = new FixedStateProvider(state);
+
+        Assert.Equal(expected, fixedState.AdmitsCalls("anthropic", "claude-fable-5"));
+    }
+
     [Fact]
     public void Subscribe_NullCallback_Throws()
     {
@@ -111,6 +195,14 @@ public sealed class CircuitStateProviderTests
     public void MostSevere_PicksTheHighestRankedState()
     {
         Assert.Equal(CircuitState.Open, CircuitStateProvider.MostSevere([CircuitState.Closed, CircuitState.Open, CircuitState.HalfOpen]));
+    }
+
+    /// <summary>An <see cref="ICircuitStateProvider"/> that reports one fixed state and keeps the default <c>AdmitsCalls</c>.</summary>
+    private sealed class FixedStateProvider(CircuitState state) : ICircuitStateProvider
+    {
+        public CircuitState GetState(string provider, string modelId) => state;
+
+        public IDisposable Subscribe(Action<CircuitTransition> onTransition) => throw new NotSupportedException();
     }
 
     /// <summary>Fails <paramref name="times"/> calls with an unclassified (permanent, never-retried) exception, so each is one breaker sample.</summary>
