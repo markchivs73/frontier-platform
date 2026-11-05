@@ -448,6 +448,11 @@ public sealed class S930ResourcedRuleTests
                 new TimeoutsNestingRule(new FakeProfiles()).EvaluateAsync(null!, CancellationToken.None));
     }
 
+    /// <summary>
+    /// The retired rule (S13.139) still evaluates for a caller that constructs it; these keep that
+    /// covered until it is removed. Obsolete because every member names the obsolete types.
+    /// </summary>
+    [Obsolete("Exercises the retired retention.fits-window rule.")]
     public sealed class RetentionFitsWindowRuleTests
     {
         [Fact]
@@ -468,6 +473,15 @@ public sealed class S930ResourcedRuleTests
             var finding = Assert.Single(await rule.EvaluateAsync(new DefinitionValidationContext(definition), CancellationToken.None));
             Assert.Equal("retention.fits-window", finding.RuleId);
             Assert.Equal(ValidationSeverity.Warning, finding.Severity);
+        }
+
+        [Fact]
+        public void Rule_KeepsItsResourcedTierAndWarningSeverity()
+        {
+            var rule = new RetentionFitsWindowRule(new RetentionWindowConfig());
+
+            Assert.Equal(RuleTier.Resourced, rule.Tier);
+            Assert.Equal(ValidationSeverity.Warning, rule.DefaultSeverity);
         }
 
         [Fact]
