@@ -47,6 +47,11 @@ artifact somebody else resolves.** A mistake does not stay inside one solution.
 - [ ] No package/SDK references added to Abstractions; converters live in Serialization
 - [ ] Converters match by shape, not by type reference
 - [ ] Version bump + migration adapter if the change is not additive-with-default
+- [ ] A DTF activity's wire shape changed? `ActivityShapeSnapshotTests` decides (S13.185): an
+      additive change updates `activity-shapes.json` in the same PR; anything it calls breaking
+      needs a new compatibility generation, never an edit to the current one. A hand edit to the
+      current generation is caught only where the base branch's snapshot is supplied (CI on a pull
+      request), so check the snapshot diff here too
 
 ## Library structure, DI, boundaries
 
