@@ -1,12 +1,9 @@
-using System.Diagnostics.CodeAnalysis;
-
 namespace Frontier.Platform.Workflow.Model;
 
 /// <summary>
 /// External event for engagement resolution (doc 16 §4, ADR-E6).
 /// Input to EventResolutionService; typically sourced from webhook/event ingest endpoint.
 /// </summary>
-[ExcludeFromCodeCoverage(Justification = "Pure data contract; Validate() method not called at runtime.")]
 public sealed record ExternalEvent
 {
 	/// <summary>Source system (e.g., "zendesk", "jira", "servicenow").</summary>
@@ -27,6 +24,7 @@ public sealed record ExternalEvent
 	/// <summary>Actor/system that generated the event (optional).</summary>
 	public string? Actor { get; init; }
 
+	/// <summary>Throws <see cref="System.InvalidOperationException"/> naming the first required field that is missing or blank.</summary>
 	public void Validate()
 	{
 		if (string.IsNullOrWhiteSpace(SourceSystem))

@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json;
 using Frontier.Platform.Contracts;
@@ -138,7 +137,6 @@ internal sealed class McpToolInvocationPipeline : IMcpToolInvocationPipeline
         JsonSerializer.Serialize(arguments.ToDictionary(a => a.Key, a => a.Value, StringComparer.Ordinal), CanonicalProfile.Options);
 
     /// <summary>Invokes the tool under the node's per-invocation timeout (doc 10 §7's innermost tier; <c>timeouts.nesting</c> guarantees it fits the activity cap).</summary>
-    [ExcludeFromCodeCoverage(Justification = "Timeout composition over the real invocation path — the cancellation race needs a live slow connector; covered by the S9.25-family gate tests, not unit tests.")]
     internal static async Task<object?> InvokeWithTimeoutAsync(AIFunction function, AIFunctionArguments arguments, int timeoutSeconds, CancellationToken ct)
     {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);

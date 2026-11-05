@@ -58,4 +58,17 @@ runs:
 
     - name: Check coverage threshold (per assembly)
       shell: bash
-      run: python3 .github/scripts/coverage_by_assembly.py ./coverage ${{ inputs.coverage-threshold }}
+      # The report also goes to the job summary, where the integration job's report-only coverage
+      # (ci.yml) sits beside it (S13.193). The gate's exit code is captured rather than piped, so the
+      # table reaches the summary when the gate fails too, and the step still fails with it.
+      run: |
+        status=0
+        python3 .github/scripts/coverage_by_assembly.py ./coverage ${{ inputs.coverage-threshold }} > ./coverage/report.txt 2>&1 || status=$?
+        cat ./coverage/report.txt
+        {
+          echo "### Unit coverage (gate: ${{ inputs.coverage-threshold }}% line and branch per assembly)"
+          echo '```'
+          cat ./coverage/report.txt
+          echo '```'
+        } >> "$GITHUB_STEP_SUMMARY"
+        exit "$status"

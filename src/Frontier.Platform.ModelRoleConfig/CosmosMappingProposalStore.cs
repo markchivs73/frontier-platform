@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
+using System.Runtime.CompilerServices;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Options;
 
@@ -11,7 +12,7 @@ namespace Frontier.Platform.ModelRoleConfig;
 /// what allows an approval to be one transactional batch: create <c>{roleId}:v{n}</c>, replace the
 /// proposal under its ETag, and repoint <c>current</c> — all or nothing.
 /// </summary>
-[ExcludeFromCodeCoverage(Justification = "Cosmos SDK adapter (doc 08 §6, ADR-PA32); exercised by the Integration-category emulator tests, not the unit-coverage gate.")]
+[ExcludeFromCodeCoverage(Justification = "Cosmos SDK glue (doc 08 §6, ADR-PA32): SDK calls, feed-draining loops and 404/409/412 translation, plus adding the pointer upsert to the allocation batch when the caller passes makeCurrent (the caller decides; MappingGovernanceService is unit-tested). Status, batch-outcome, query and first-row decisions live in ModelRoleConfigWrites, ModelRoleConfigQueries and ModelRoleConfigReads (S13.193). Exercised by the Integration-category emulator tests.")]
 internal sealed class CosmosMappingProposalStore(CosmosClient client, IOptions<CosmosOptions> options) : IMappingProposalStore
 {
     private Container Container => client.GetContainer(options.Value.Database, CosmosRoleRegistry.ContainerName);
@@ -117,7 +118,7 @@ internal sealed class CosmosMappingProposalStore(CosmosClient client, IOptions<C
                 new ItemRequestOptions { IfMatchEtag = expectedETag }, cancellationToken);
             return response.ETag;
         }
-        catch (CosmosException ex) when (IsConcurrencyConflict(ex.StatusCode))
+        catch (CosmosException ex) when (ModelRoleConfigWrites.IsConcurrencyConflict(ex.StatusCode))
         {
             return null;
         }
@@ -142,42 +143,32 @@ internal sealed class CosmosMappingProposalStore(CosmosClient client, IOptions<C
         }
 
         using var response = await batch.ExecuteAsync(cancellationToken);
-        if (response.IsSuccessStatusCode)
-        {
-            // Operation 1 is the proposal replace; its result carries the token the next decision needs.
-            return response[ProposalReplaceIndex].ETag;
-        }
 
-        return IsConcurrencyConflict(response.StatusCode)
-            ? null
-            : throw new MappingGovernanceException(
-                $"The mapping-version batch for role '{mapping.RoleId}' v{mapping.MappingVersion} failed with status {(int)response.StatusCode}: {response.ErrorMessage}");
+        // Operation 1 is the proposal replace; its result carries the token the next decision needs.
+        return ModelRoleConfigWrites.AllocationOutcome(
+            response.StatusCode,
+            () => response[ProposalReplaceIndex].ETag,
+            () => $"The mapping-version batch for role '{mapping.RoleId}' v{mapping.MappingVersion} failed with status {(int)response.StatusCode}: {response.ErrorMessage}");
     }
 
     /// <inheritdoc />
-    public async Task<StoredMappingProposal?> FindUndecidedProposalAsync(string roleId, CancellationToken cancellationToken)
-    {
-        var undecided = MappingProposalState.List.Where(state => state.IsAwaitingDecision).Select(state => state.Name).ToArray();
-        var query = new QueryDefinition("SELECT * FROM c WHERE c.doc_type = @docType AND ARRAY_CONTAINS(@states, c.state)")
-            .WithParameter("@docType", MappingProposalDocument.ProposalDocType)
-            .WithParameter("@states", undecided);
-
-        return await FirstOrDefaultAsync(query, roleId, cancellationToken);
-    }
+    public Task<StoredMappingProposal?> FindUndecidedProposalAsync(string roleId, CancellationToken cancellationToken) =>
+        FirstStoredAsync(ModelRoleConfigQueries.UndecidedProposals(MappingProposalDocument.ProposalDocType), roleId, cancellationToken);
 
     /// <inheritdoc />
-    public async Task<StoredMappingProposal?> FindProposalByLiveVersionAsync(string roleId, int version, CancellationToken cancellationToken)
-    {
-        var query = new QueryDefinition(
-            "SELECT * FROM c WHERE c.doc_type = @docType AND (c.promoted_version = @version OR (NOT IS_DEFINED(c.promoted_version) AND c.mapping_version = @version))")
-            .WithParameter("@docType", MappingProposalDocument.ProposalDocType)
-            .WithParameter("@version", version);
+    public Task<StoredMappingProposal?> FindProposalByLiveVersionAsync(string roleId, int version, CancellationToken cancellationToken) =>
+        FirstStoredAsync(ModelRoleConfigQueries.MappingProposalByLiveVersion(version), roleId, cancellationToken);
 
-        return await FirstOrDefaultAsync(query, roleId, cancellationToken);
-    }
+    /// <summary>The first proposal matching <paramref name="query"/> in the role's partition that still point-reads, with its ETag.</summary>
+    private Task<StoredMappingProposal?> FirstStoredAsync(QueryDefinition query, string roleId, CancellationToken cancellationToken) =>
+        ModelRoleConfigReads.FirstResolvedAsync(
+            RowsAsync(query, roleId, cancellationToken),
+            document => FindProposalAsync(roleId, document.ProposalId, cancellationToken),
+            cancellationToken);
 
-    /// <summary>The first proposal matching <paramref name="query"/> in the role's partition, with its ETag.</summary>
-    private async Task<StoredMappingProposal?> FirstOrDefaultAsync(QueryDefinition query, string roleId, CancellationToken cancellationToken)
+    /// <summary>Drains <paramref name="query"/> over the role's partition one row per page.</summary>
+    private async IAsyncEnumerable<MappingProposalDocument> RowsAsync(
+        QueryDefinition query, string roleId, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         using var iterator = Container.GetItemQueryIterator<MappingProposalDocument>(
             query, requestOptions: new QueryRequestOptions { PartitionKey = new PartitionKey(roleId), MaxItemCount = 1 });
@@ -186,15 +177,9 @@ internal sealed class CosmosMappingProposalStore(CosmosClient client, IOptions<C
         {
             foreach (var document in await iterator.ReadNextAsync(cancellationToken))
             {
-                var stored = await FindProposalAsync(roleId, document.ProposalId, cancellationToken);
-                if (stored is not null)
-                {
-                    return stored;
-                }
+                yield return document;
             }
         }
-
-        return null;
     }
 
     /// <inheritdoc />
@@ -203,7 +188,7 @@ internal sealed class CosmosMappingProposalStore(CosmosClient client, IOptions<C
         using var iterator = Container.GetItemQueryIterator<MappingProposalDocument>(
             MappingProposalQueryBuilder.Build(query),
             query.ContinuationToken,
-            RequestOptionsFor(query));
+            ModelRoleConfigWrites.RequestOptionsFor(query));
 
         if (!iterator.HasMoreResults)
         {
@@ -218,25 +203,8 @@ internal sealed class CosmosMappingProposalStore(CosmosClient client, IOptions<C
         };
     }
 
-    /// <summary>
-    /// Single-partition when the query names a role; otherwise a <b>bounded</b> cross-partition fan-out
-    /// (ADR-PA34). The page size caps the rows, the continuation token carries the paging, and the
-    /// concurrency cap stops one admin screen fanning out across every physical partition at once.
-    /// </summary>
-    internal static QueryRequestOptions RequestOptionsFor(MappingProposalQuery query) =>
-        query.RoleId is { } roleId
-            ? new QueryRequestOptions { PartitionKey = new PartitionKey(roleId), MaxItemCount = query.PageSize }
-            : new QueryRequestOptions { MaxItemCount = query.PageSize, MaxConcurrency = CrossPartitionConcurrency };
-
-    /// <summary>The fan-out cap for a cross-partition proposal query (ADR-PA34).</summary>
-    internal const int CrossPartitionConcurrency = 4;
-
     /// <summary>The proposal replace's position in the allocation batch.</summary>
     private const int ProposalReplaceIndex = 1;
-
-    /// <summary>A 412 (the document moved) or 409 (the id is taken) means another writer won; anything else is a real failure.</summary>
-    internal static bool IsConcurrencyConflict(HttpStatusCode status) =>
-        status is HttpStatusCode.PreconditionFailed or HttpStatusCode.Conflict;
 }
 
 /// <summary>Builds the parameterised proposal query (ADR-PA32). Pure and unit-tested.</summary>

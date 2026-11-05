@@ -186,16 +186,49 @@ jobs:
           docker logs dts-emulator
           exit 1
 
-      # Solution-wide, deliberately: no coverage is collected here, so the per-project rule
-      # does not apply, and a hardcoded project list is what silently stops covering a new
-      # suite when someone adds one.
-      - name: Run integration tests
+      # Per test project, collecting coverage (S13.193): coverlet must not run solution-wide (parallel
+      # runs corrupt its per-assembly attribution, see build-and-test), and the loop over tests/*/
+      # rather than a hardcoded list is what keeps a newly added suite covered.
+      - name: Run integration tests with coverage (per project)
+        shell: bash
         env:
           COSMOS_EMULATOR_ENDPOINT: http://localhost:8081
           DTS_EMULATOR_ENDPOINT: http://localhost:8080
-        run: >-
-          dotnet test FrontierPlatform.slnx -c Release --no-build
-          --filter "Category=Integration&Category!=RequiresAzureKeyVault"
+        # Every project runs even after one fails, so one red suite does not hide the rest (or their
+        # coverage); the step still fails if any did.
+        run: |
+          rm -rf ./coverage-integration
+          failed=()
+          for proj in tests/*/; do
+            compgen -G "${proj}*.csproj" > /dev/null || continue
+            dotnet test "$proj" -c Release --no-build \
+              --filter "Category=Integration&Category!=RequiresAzureKeyVault" \
+              --collect:"XPlat Code Coverage" --settings coverlet.runsettings \
+              --results-directory ./coverage-integration || failed+=("$proj")
+          done
+          if [ ${#failed[@]} -gt 0 ]; then
+            echo "::error::Integration tests failed in: ${failed[*]}"
+            exit 1
+          fi
+
+      # Reported beside the unit gate, never gating (S13.193): threshold 0 and continue-on-error, and
+      # if: always() so the table appears when the test step above failed. It
+      # measures what the integration suite reaches outside [ExcludeFromCodeCoverage] — coverlet
+      # always honours that attribute, so the excluded SDK glue itself stays unmeasured here too.
+      - name: Report integration coverage (per assembly, not gated)
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          report=$(python3 .github/scripts/coverage_by_assembly.py ./coverage-integration 0 2>&1) \
+            || echo "::warning::Integration coverage could not be reported (no reports collected?)"
+          echo "$report"
+          {
+            echo "### Integration coverage (report only, not gated)"
+            echo '```'
+            echo "$report"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Dump DTS emulator logs on failure
         if: failure()

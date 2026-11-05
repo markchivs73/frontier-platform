@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Microsoft.Azure.Cosmos;
 
 namespace Frontier.Platform.Guardrails;
@@ -9,16 +8,38 @@ namespace Frontier.Platform.Guardrails;
 /// ledger document under ETag optimistic concurrency: a write that loses a race to a concurrent one (412 on
 /// replace, 409 on first create) backs off with jitter and starts again from the read, up to <see cref="MaxWriteAttempts"/> attempts.
 /// </summary>
-[ExcludeFromCodeCoverage(Justification = "Cosmos SDK adapter; covered by the emulator integration tests in CI's integration job, which the unit coverage gate does not run.")]
+/// <remarks>
+/// The decisions — the retry loop, the backoff, which document answers which scope — live here and are unit-tested;
+/// the SDK calls are <see cref="CosmosBudgetLedgerDocuments"/> (S13.193).
+/// </remarks>
 internal sealed class CosmosBudgetLedger : IBudgetLedger
 {
     /// <summary>How many read-accumulate-write attempts a usage record gets before the last conflict is rethrown.</summary>
     internal const int MaxWriteAttempts = 10;
 
-    private readonly Container container;
+    private readonly IBudgetLedgerDocuments documents;
+    private readonly Func<int, int> jitterMilliseconds;
 
     /// <summary>Creates a new ledger backed by the given Cosmos container (PK: /engagement_id).</summary>
-    public CosmosBudgetLedger(Container container) => this.container = container ?? throw new ArgumentNullException(nameof(container));
+    public CosmosBudgetLedger(Container container)
+        : this(new CosmosBudgetLedgerDocuments(container), FullJitterMilliseconds)
+    {
+    }
+
+    /// <summary>
+    /// Creates a ledger over <paramref name="documents"/>, drawing each backoff from <paramref name="jitterMilliseconds"/>
+    /// (given the ceiling in milliseconds). A test seam: production passes <see cref="FullJitterMilliseconds"/>; tests pass a
+    /// deterministic draw so the backoff ceilings can be asserted.
+    /// </summary>
+    internal CosmosBudgetLedger(IBudgetLedgerDocuments documents, Func<int, int> jitterMilliseconds)
+    {
+        this.documents = documents ?? throw new ArgumentNullException(nameof(documents));
+        this.jitterMilliseconds = jitterMilliseconds ?? throw new ArgumentNullException(nameof(jitterMilliseconds));
+    }
+
+    /// <summary>Full jitter: a uniformly random delay from zero to <paramref name="ceilingMilliseconds"/> inclusive.</summary>
+    internal static int FullJitterMilliseconds(int ceilingMilliseconds) =>
+        System.Security.Cryptography.RandomNumberGenerator.GetInt32(0, ceilingMilliseconds + 1);
 
     /// <inheritdoc />
     /// <remarks>
@@ -39,8 +60,8 @@ internal sealed class CosmosBudgetLedger : IBudgetLedger
             catch (CosmosException ex) when (BudgetLedgerWriteConflict.IsConcurrencyConflict(ex.StatusCode) && attempt < MaxWriteAttempts)
             {
                 // Lost the race to a concurrent write: back off with jitter so contenders spread out, then re-read.
-                var ceiling = BudgetLedgerWriteConflict.BackoffCeiling(attempt);
-                await Task.Delay(TimeSpan.FromMilliseconds(System.Security.Cryptography.RandomNumberGenerator.GetInt32(0, (int)ceiling.TotalMilliseconds + 1)), cancellationToken);
+                var ceiling = (int)BudgetLedgerWriteConflict.BackoffCeiling(attempt).TotalMilliseconds;
+                await Task.Delay(TimeSpan.FromMilliseconds(jitterMilliseconds(ceiling)), cancellationToken);
             }
         }
     }
@@ -48,121 +69,52 @@ internal sealed class CosmosBudgetLedger : IBudgetLedger
     /// <summary>One read-accumulate-write attempt; throws a 412/409 <see cref="CosmosException"/> on a lost race.</summary>
     private async Task TryRecordUsageAsync(UsageRecord usage, CancellationToken cancellationToken)
     {
-        var docId = BudgetLedgerAccumulation.DocumentId(usage.EngagementId);
-        var partitionKey = new PartitionKey(usage.EngagementId);
-        var (existing, etag) = await ReadLedgerAsync(docId, partitionKey, cancellationToken);
+        var (existing, etag) = await documents.ReadAsync(usage.EngagementId, cancellationToken);
         var updated = BudgetLedgerAccumulation.Accumulate(existing, usage, DateTime.UtcNow);
 
-        if (existing is null)
-        {
-            await container.CreateItemAsync(updated, partitionKey, cancellationToken: cancellationToken);
-            return;
-        }
-
-        await container.ReplaceItemAsync(
-            updated,
-            docId,
-            partitionKey,
-            new ItemRequestOptions { IfMatchEtag = etag },
-            cancellationToken);
-    }
-
-    /// <summary>Reads the ledger document with its ETag; a missing document yields <c>(null, null)</c>.</summary>
-    private async Task<(BudgetLedgerDocument? Document, string? ETag)> ReadLedgerAsync(string docId, PartitionKey partitionKey, CancellationToken cancellationToken)
-    {
-        try
-        {
-            var response = await container.ReadItemAsync<BudgetLedgerDocument>(docId, partitionKey, cancellationToken: cancellationToken);
-            return (response.Resource, response.ETag);
-        }
-        catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
-        {
-            return (null, null);
-        }
+        await (existing is null
+            ? documents.CreateAsync(updated, cancellationToken)
+            : documents.ReplaceAsync(updated, etag, cancellationToken));
     }
 
     /// <inheritdoc />
-    public async Task<BudgetSnapshot> GetSnapshotAsync(BudgetScopeRef scope, CancellationToken cancellationToken)
+    public Task<BudgetSnapshot> GetSnapshotAsync(BudgetScopeRef scope, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(scope);
 
-        switch (scope.Kind)
+        return scope.Kind switch
         {
-            case BudgetScopeKind.Invocation:
-                return await GetInvocationSnapshotAsync(scope.Id, cancellationToken);
-
-            case BudgetScopeKind.Execution:
-                return await GetExecutionSnapshotAsync(scope.Id, cancellationToken);
-
-            case BudgetScopeKind.Engagement:
-                return await GetEngagementSnapshotAsync(scope.Id, cancellationToken);
-
-            case BudgetScopeKind.Fleet:
-                return new BudgetSnapshot(scope, 0, 0, null, 0);
-
-            default:
-                throw new InvalidOperationException($"Unknown budget scope kind: {scope.Kind}");
-        }
+            // Invocation-level usage is not stored in the ledger doc; Phase 1 limitation, deferred to S6.5b.
+            BudgetScopeKind.Invocation or BudgetScopeKind.Fleet => Task.FromResult(Empty(scope)),
+            BudgetScopeKind.Execution => GetExecutionSnapshotAsync(scope, cancellationToken),
+            BudgetScopeKind.Engagement => GetEngagementSnapshotAsync(scope, cancellationToken),
+            _ => throw new InvalidOperationException($"Unknown budget scope kind: {scope.Kind}"),
+        };
     }
 
-    /// <summary>
-    /// Queries for invocation by correlationId (not stored in ledger doc; requires separate invocation-usage table or log).
-    /// Phase 1 limitation: defer to S6.5b (invocation-level ledger table with separate PK).
-    /// </summary>
-    private static Task<BudgetSnapshot> GetInvocationSnapshotAsync(string correlationId, CancellationToken cancellationToken)
+    /// <summary>Execution-level usage: the first ledger document holding a snapshot for the execution, else empty.</summary>
+    private async Task<BudgetSnapshot> GetExecutionSnapshotAsync(BudgetScopeRef scope, CancellationToken cancellationToken)
     {
-        var scope = new BudgetScopeRef(BudgetScopeKind.Invocation, correlationId);
-        return Task.FromResult(new BudgetSnapshot(scope, 0, 0, null, 0));
-    }
-
-    /// <summary>Retrieves execution-level usage from the ledger doc's ExecutionSnapshots map.</summary>
-    private async Task<BudgetSnapshot> GetExecutionSnapshotAsync(string executionId, CancellationToken cancellationToken)
-    {
-        // SQL, not LINQ: the Cosmos LINQ provider cannot translate Dictionary.ContainsKey.
-        var query = new QueryDefinition("SELECT * FROM c WHERE IS_DEFINED(c.execution_snapshots[@executionId])")
-            .WithParameter("@executionId", executionId);
-        using var docs = container.GetItemQueryIterator<BudgetLedgerDocument>(query);
-
-        while (docs.HasMoreResults)
+        await foreach (var doc in documents.FindByExecutionAsync(scope.Id, cancellationToken))
         {
-            var page = await docs.ReadNextAsync(cancellationToken);
-            foreach (var doc in page)
+            if (doc.ExecutionSnapshots?.TryGetValue(scope.Id, out var snapshot) == true)
             {
-                if (doc.ExecutionSnapshots?.TryGetValue(executionId, out var snapshot) == true)
-                {
-                    var scope = new BudgetScopeRef(BudgetScopeKind.Execution, executionId);
-                    return new BudgetSnapshot(scope, snapshot.TotalTokens, snapshot.TotalCost, snapshot.Currency, snapshot.InvocationCount);
-                }
+                return new BudgetSnapshot(scope, snapshot.TotalTokens, snapshot.TotalCost, snapshot.Currency, snapshot.InvocationCount);
             }
         }
 
-        var emptyScope = new BudgetScopeRef(BudgetScopeKind.Execution, executionId);
-        return new BudgetSnapshot(emptyScope, 0, 0, null, 0);
+        return Empty(scope);
     }
 
-    /// <summary>Retrieves engagement-level usage (totals from the ledger doc).</summary>
-    private async Task<BudgetSnapshot> GetEngagementSnapshotAsync(string engagementId, CancellationToken cancellationToken)
+    /// <summary>Engagement-level usage: the totals of the engagement's ledger document, else empty.</summary>
+    private async Task<BudgetSnapshot> GetEngagementSnapshotAsync(BudgetScopeRef scope, CancellationToken cancellationToken)
     {
-        try
-        {
-            var docId = $"{engagementId}:ledger";
-            var doc = await container.ReadItemAsync<BudgetLedgerDocument>(
-                docId,
-                new PartitionKey(engagementId),
-                cancellationToken: cancellationToken);
-
-            var scope = new BudgetScopeRef(BudgetScopeKind.Engagement, engagementId);
-            return new BudgetSnapshot(
-                scope,
-                doc.Resource.TotalInputTokens + doc.Resource.TotalOutputTokens,
-                doc.Resource.TotalCost,
-                doc.Resource.Currency,
-                doc.Resource.InvocationCount);
-        }
-        catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
-        {
-            var scope = new BudgetScopeRef(BudgetScopeKind.Engagement, engagementId);
-            return new BudgetSnapshot(scope, 0, 0, null, 0);
-        }
+        var (doc, _) = await documents.ReadAsync(scope.Id, cancellationToken);
+        return doc is null
+            ? Empty(scope)
+            : new BudgetSnapshot(scope, doc.TotalInputTokens + doc.TotalOutputTokens, doc.TotalCost, doc.Currency, doc.InvocationCount);
     }
+
+    /// <summary>Nothing recorded at <paramref name="scope"/>.</summary>
+    internal static BudgetSnapshot Empty(BudgetScopeRef scope) => new(scope, 0, 0, null, 0);
 }

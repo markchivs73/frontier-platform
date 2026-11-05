@@ -5,13 +5,12 @@ using Microsoft.Extensions.Options;
 namespace Frontier.Platform.Hitl;
 
 /// <summary>
-/// <see cref="IApprovalQueryService"/> implementation over Cosmos (doc 06 §9).
+/// <see cref="IApprovalQueryService"/> implementation over Cosmos (doc 06 §9). What each read selects
+/// is <see cref="ApprovalQueries"/>; this adapter only runs the query and drains its pages.
 /// </summary>
-[ExcludeFromCodeCoverage(Justification = "Cosmos SDK adapter (doc 06 §9); exercised by the Hitl integration tests against the Cosmos emulator (S0.5/CI integration job), not the unit-coverage gate.")]
+[ExcludeFromCodeCoverage(Justification = "Cosmos SDK glue (doc 06 §9): runs ApprovalQueries' definitions and drains pages, no decisions; exercised by the Hitl integration tests against the Cosmos emulator (CI integration job), not the unit-coverage gate.")]
 internal sealed class ApprovalQueryService(CosmosClient client, IOptions<CosmosOptions> options) : IApprovalQueryService
 {
-    private const string ContainerName = "approvals";
-
     /// <inheritdoc />
     public async Task<ApprovalRequest?> GetAsync(string approvalId, CancellationToken cancellationToken)
     {
@@ -19,13 +18,7 @@ internal sealed class ApprovalQueryService(CosmosClient client, IOptions<CosmosO
 
         try
         {
-            var container = client.GetContainer(options.Value.Database, ContainerName);
-            // Cross-partition point-read: we don't know the engagement_id, so partition key is not available
-            var query = container.GetItemQueryIterator<ApprovalRequest>(
-                new QueryDefinition("SELECT * FROM c WHERE c.id = @id")
-                    .WithParameter("@id", approvalId),
-                requestOptions: new QueryRequestOptions { MaxItemCount = 1 });
-
+            using var query = Container.GetItemQueryIterator<ApprovalRequest>(ApprovalQueries.ById(approvalId), requestOptions: ApprovalQueries.ByIdOptions());
             var results = await query.ReadNextAsync(cancellationToken);
             return results.FirstOrDefault();
         }
@@ -36,52 +29,25 @@ internal sealed class ApprovalQueryService(CosmosClient client, IOptions<CosmosO
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyList<ApprovalRequest>> GetByEngagementAsync(string engagementId, CancellationToken cancellationToken)
+    public Task<IReadOnlyList<ApprovalRequest>> GetByEngagementAsync(string engagementId, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(engagementId);
 
-        var container = client.GetContainer(options.Value.Database, ContainerName);
-        var query = container.GetItemQueryIterator<ApprovalRequest>(
-            new QueryDefinition("SELECT * FROM c WHERE c.engagement_id = @engagementId ORDER BY c._ts DESC")
-                .WithParameter("@engagementId", engagementId),
-            requestOptions: new QueryRequestOptions { PartitionKey = new PartitionKey(engagementId) });
-
-        var results = new List<ApprovalRequest>();
-        while (query.HasMoreResults)
-        {
-            results.AddRange(await query.ReadNextAsync(cancellationToken));
-        }
-
-        return results.AsReadOnly();
+        return DrainAsync(ApprovalQueries.ByEngagement(engagementId), ApprovalQueries.ByEngagementOptions(engagementId), cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyList<ApprovalRequest>> GetPendingAsync(CancellationToken cancellationToken)
-    {
-        var container = client.GetContainer(options.Value.Database, ContainerName);
-        var query = container.GetItemQueryIterator<ApprovalRequest>(
-            new QueryDefinition("SELECT * FROM c WHERE c.status = @status ORDER BY c._ts DESC")
-                .WithParameter("@status", ApprovalRequestStatus.Pending.Name),
-            requestOptions: new QueryRequestOptions { MaxItemCount = 100 });
-
-        var results = new List<ApprovalRequest>();
-        while (query.HasMoreResults)
-        {
-            results.AddRange(await query.ReadNextAsync(cancellationToken));
-        }
-
-        return results.AsReadOnly();
-    }
+    public Task<IReadOnlyList<ApprovalRequest>> GetPendingAsync(CancellationToken cancellationToken) =>
+        DrainAsync(ApprovalQueries.ByStatus(ApprovalRequestStatus.Pending), ApprovalQueries.ByStatusOptions(), cancellationToken);
 
     /// <inheritdoc />
-    public async Task<IReadOnlyList<ApprovalRequest>> GetEscalatedAsync(CancellationToken cancellationToken)
-    {
-        var container = client.GetContainer(options.Value.Database, ContainerName);
-        var query = container.GetItemQueryIterator<ApprovalRequest>(
-            new QueryDefinition("SELECT * FROM c WHERE c.status = @status ORDER BY c._ts DESC")
-                .WithParameter("@status", ApprovalRequestStatus.Escalated.Name),
-            requestOptions: new QueryRequestOptions { MaxItemCount = 100 });
+    public Task<IReadOnlyList<ApprovalRequest>> GetEscalatedAsync(CancellationToken cancellationToken) =>
+        DrainAsync(ApprovalQueries.ByStatus(ApprovalRequestStatus.Escalated), ApprovalQueries.ByStatusOptions(), cancellationToken);
 
+    /// <summary>Runs <paramref name="definition"/> and collects every page.</summary>
+    private async Task<IReadOnlyList<ApprovalRequest>> DrainAsync(QueryDefinition definition, QueryRequestOptions requestOptions, CancellationToken cancellationToken)
+    {
+        using var query = Container.GetItemQueryIterator<ApprovalRequest>(definition, requestOptions: requestOptions);
         var results = new List<ApprovalRequest>();
         while (query.HasMoreResults)
         {
@@ -90,4 +56,7 @@ internal sealed class ApprovalQueryService(CosmosClient client, IOptions<CosmosO
 
         return results.AsReadOnly();
     }
+
+    /// <summary>The <c>approvals</c> container in the configured database.</summary>
+    private Container Container => client.GetContainer(options.Value.Database, CosmosApprovalStore.ContainerName);
 }
