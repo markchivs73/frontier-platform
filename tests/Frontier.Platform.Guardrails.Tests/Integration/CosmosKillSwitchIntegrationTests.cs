@@ -1,6 +1,7 @@
 using Frontier.Platform.Abstractions;
 using Frontier.Platform.Serialization;
 using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Frontier.Platform.Guardrails.Tests.Integration;
@@ -57,6 +58,41 @@ public sealed class CosmosKillSwitchIntegrationTests : IAsyncLifetime, IDisposab
     }
 
     [Fact]
+    public async Task ComposedFromConfiguration_ASwitchThrownOnTheApiHead_StopsTheNextAdmissionOnAWorker()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["Cosmos:Database"] = DatabaseId })
+            .Build();
+        using var apiHead = ProcessFrom(configuration);
+        using var worker = ProcessFrom(configuration);
+        var admission = worker.GetRequiredService<IAdmissionController>();
+        Assert.Equal(AdmissionResult.Proceed, (await admission.AdmitAsync(AdmissionControllerTests.Estimate(1_000, 500), CancellationToken.None)).Result);
+
+        await apiHead.GetRequiredService<IKillSwitch>().ActivateAsync("drill", CancellationToken.None);
+
+        await Assert.ThrowsAsync<GuardrailsSuspendedException>(() => admission.AdmitAsync(AdmissionControllerTests.Estimate(1_000, 500), CancellationToken.None));
+        var stored = await platformConfig.ReadItemAsync<KillSwitchDocument>(KillSwitchDocument.FleetId, new PartitionKey(KillSwitchDocument.ConfigTypeValue));
+        Assert.True(stored.Resource.Active);
+
+        await apiHead.GetRequiredService<IKillSwitch>().DeactivateAsync(CancellationToken.None);
+        Assert.Equal(AdmissionResult.Proceed, (await admission.AdmitAsync(AdmissionControllerTests.Estimate(1_000, 500), CancellationToken.None)).Result);
+    }
+
+    [Fact]
+    public async Task ComposedFromConfiguration_TheLedgerWritesToTheGuardrailLedgerContainer()
+    {
+        var engagementId = $"eng-{Guid.NewGuid():N}";
+        using var worker = ProcessFrom(new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["Cosmos:Database"] = DatabaseId })
+            .Build());
+
+        await worker.GetRequiredService<IBudgetLedger>().RecordUsageAsync(BudgetLedgerTests.Usage("corr-1", "exec-1", engagementId, 100, 50, 0.001m), CancellationToken.None);
+
+        var stored = await ledger.ReadItemAsync<BudgetLedgerDocument>(BudgetLedgerAccumulation.DocumentId(engagementId), new PartitionKey(engagementId));
+        Assert.Equal(engagementId, stored.Resource.EngagementId);
+    }
+
+    [Fact]
     public async Task ActivateAsync_StoresTheDocumentUnderTheKillSwitchPartition()
     {
         await Process().GetRequiredService<IKillSwitch>().ActivateAsync("drill", CancellationToken.None);
@@ -82,4 +118,8 @@ public sealed class CosmosKillSwitchIntegrationTests : IAsyncLifetime, IDisposab
     /// <summary>One process's composition over the shared containers; a zero cache so the test needs no wait.</summary>
     private ServiceProvider Process() =>
         new ServiceCollection().AddFrontierGuardrails(ledger, platformConfig, TimeSpan.Zero).BuildServiceProvider();
+
+    /// <summary>One process composed as a consumer head composes it: its registered client, and the database from configuration.</summary>
+    private ServiceProvider ProcessFrom(IConfiguration configuration) =>
+        new ServiceCollection().AddSingleton(client).AddFrontierGuardrails(configuration, TimeSpan.Zero).BuildServiceProvider();
 }

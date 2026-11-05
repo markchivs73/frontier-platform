@@ -26,17 +26,23 @@ services.AddFrontierGuardrails(                           // Cosmos-backed ledge
     guardrailLedgerContainer,
     platformConfigContainer,
     GuardrailsServiceCollectionExtensions.DefaultKillSwitchCacheDuration);
+services.AddFrontierGuardrails(                           // the same, containers resolved from DI
+    configuration,
+    GuardrailsServiceCollectionExtensions.DefaultKillSwitchCacheDuration);
 ```
 
-Only the composition root should call these. All three register the admission controller, the
+Only the composition root should call these. All four register the admission controller, the
 budget hierarchy and the kill switch; they differ in the `IBudgetLedger` and `IKillSwitch`
-implementations. The Cosmos variants take their containers directly — `guardrail-ledger`
-(partition key `/engagementId`) and, for the shared kill switch, the consumer's `platform-config`
-(partition key `/config_type`) — this library does not build its own `CosmosClient`.
+implementations. The Cosmos variants use `guardrail-ledger` (partition key `/engagement_id`) and,
+for the shared kill switch, the consumer's `platform-config` (partition key `/config_type`). This
+library does not build its own `CosmosClient`. The container overloads take the containers
+directly. The configuration overload binds `Cosmos:Database` into `CosmosOptions` and resolves
+both containers from the `CosmosClient` the composition root registers, when a guardrail is first
+resolved, as the other platform libraries' Cosmos stores do.
 
 Pick the in-process variants for tests, tools and single-process runs. Anything with more than one
-process — an API head that throws the switch and workers that must stop — needs the third: an
-in-process kill switch stops admissions only in the process it was thrown in.
+process — an API head that throws the switch and workers that must stop — needs a shared variant:
+an in-process kill switch stops admissions only in the process it was thrown in.
 
 ## What it contains
 
