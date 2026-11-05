@@ -85,6 +85,10 @@ Frontier.Platform.Guardrails.BudgetSpec.MaxCost.get -> decimal?
 Frontier.Platform.Guardrails.BudgetSpec.MaxCost.init -> void
 Frontier.Platform.Guardrails.BudgetSpec.MaxTokens.get -> long?
 Frontier.Platform.Guardrails.BudgetSpec.MaxTokens.init -> void
+Frontier.Platform.Guardrails.CosmosOptions
+Frontier.Platform.Guardrails.CosmosOptions.CosmosOptions() -> void
+Frontier.Platform.Guardrails.CosmosOptions.Database.get -> string!
+Frontier.Platform.Guardrails.CosmosOptions.Database.init -> void
 Frontier.Platform.Guardrails.ExecutionLedgerSnapshot
 Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.<Clone>$() -> Frontier.Platform.Guardrails.ExecutionLedgerSnapshot!
 Frontier.Platform.Guardrails.ExecutionLedgerSnapshot.Currency.get -> string!
@@ -230,6 +234,7 @@ static Frontier.Platform.Guardrails.GuardrailPolicy.operator ==(Frontier.Platfor
 static Frontier.Platform.Guardrails.GuardrailsServiceCollectionExtensions.AddFrontierGuardrails(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Frontier.Platform.Guardrails.GuardrailsServiceCollectionExtensions.AddFrontierGuardrails(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Microsoft.Azure.Cosmos.Container! guardRailLedgerContainer) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Frontier.Platform.Guardrails.GuardrailsServiceCollectionExtensions.AddFrontierGuardrails(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Microsoft.Azure.Cosmos.Container! guardRailLedgerContainer, Microsoft.Azure.Cosmos.Container! platformConfigContainer, System.TimeSpan killSwitchCacheDuration) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Frontier.Platform.Guardrails.GuardrailsServiceCollectionExtensions.AddFrontierGuardrails(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Microsoft.Extensions.Configuration.IConfiguration! configuration, System.TimeSpan killSwitchCacheDuration) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Frontier.Platform.Guardrails.InvocationCostEstimate.operator !=(Frontier.Platform.Guardrails.InvocationCostEstimate? left, Frontier.Platform.Guardrails.InvocationCostEstimate? right) -> bool
 static Frontier.Platform.Guardrails.InvocationCostEstimate.operator ==(Frontier.Platform.Guardrails.InvocationCostEstimate? left, Frontier.Platform.Guardrails.InvocationCostEstimate? right) -> bool
 static Frontier.Platform.Guardrails.UsageRecord.operator !=(Frontier.Platform.Guardrails.UsageRecord? left, Frontier.Platform.Guardrails.UsageRecord? right) -> bool
