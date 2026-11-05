@@ -28,6 +28,7 @@ internal sealed class ReplayRecorder
     private readonly ConcurrentQueue<ApprovalRequest> _approvals = new();
     private readonly ConcurrentQueue<string> _auditWorkers = new();
     private readonly ConcurrentQueue<AppliedRefresh> _refreshes = new();
+    private readonly ConcurrentQueue<string> _startedNodes = new();
 
     /// <summary>Every scripted-model call, in completion order.</summary>
     public IReadOnlyList<AgentCall> AgentCalls => [.. _agentCalls];
@@ -50,6 +51,12 @@ internal sealed class ReplayRecorder
         _refreshes.Enqueue(new AppliedRefresh(reason, DateTimeOffset.UtcNow));
         return _refreshes.Count;
     }
+
+    /// <summary>Every node whose scripted-model call has started, in start order.</summary>
+    public IReadOnlyList<string> StartedNodes => [.. _startedNodes];
+
+    /// <summary>Records that a scripted-model call for <paramref name="nodeId"/> has started.</summary>
+    public void AddStarted(string nodeId) => _startedNodes.Enqueue(nodeId);
 
     /// <summary>Records a scripted-model call.</summary>
     public void Add(AgentCall call) => _agentCalls.Enqueue(call);

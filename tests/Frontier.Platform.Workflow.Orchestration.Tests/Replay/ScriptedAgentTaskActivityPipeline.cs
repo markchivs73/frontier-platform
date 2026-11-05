@@ -20,6 +20,7 @@ internal sealed class ScriptedAgentTaskActivityPipeline(
         ArgumentNullException.ThrowIfNull(input);
 
         var startedAt = DateTimeOffset.UtcNow;
+        recorder.AddStarted(input.NodeId);
         await Task.Delay(delays.GetValueOrDefault(input.NodeId, TimeSpan.Zero), ct);
         var result = await _answers.RunAsync(input, ct);
         recorder.Add(new AgentCall(input.NodeId, worker, startedAt, DateTimeOffset.UtcNow, input.DynamicContextEpoch));

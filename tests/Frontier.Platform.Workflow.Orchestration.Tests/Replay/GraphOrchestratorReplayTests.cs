@@ -119,7 +119,9 @@ public sealed class GraphOrchestratorReplayTests : IAsyncLifetime
 
         await using var worker = await ReplayWorkerHost.StartAsync("worker-a", recorder, delays);
         await worker.Client.ScheduleNewOrchestrationInstanceAsync(WorkflowActivityNames.GraphOrchestrator, input, new StartOrchestrationOptions { InstanceId = instanceId });
-        await WaitUntilAsync(() => recorder.AgentCalls.Any(call => call.NodeId == "a-entry"), "the entry node to finish");
+        // Wait for both branches to start, not just the entry to finish: between the entry ending and
+        // the branches being scheduled the walk is quiescent, and a refresh applied there is correct.
+        await WaitUntilAsync(() => recorder.StartedNodes.Count(node => node.StartsWith("b-", StringComparison.Ordinal)) == 2, "both branches to start");
         await worker.Client.RaiseEventAsync(instanceId, GraphOrchestratorSteps.DynamicContextRefreshEventName, Signal(input.EngagementId, "first"));
         await worker.Client.RaiseEventAsync(instanceId, GraphOrchestratorSteps.DynamicContextRefreshEventName, Signal(input.EngagementId, "second"));
         var raisedAt = DateTimeOffset.UtcNow;
