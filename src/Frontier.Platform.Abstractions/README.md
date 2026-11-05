@@ -33,9 +33,9 @@ There is no `AddFrontier…()` call: this package is types only, with nothing to
 
 **Permanent-failure exceptions**
 
-- `ContractViolationException` and `BudgetExceededException`. Both signal failures that must
-  never be retried, as distinct from transient faults, which are retried per the policies in
-  `Frontier.Platform.Resilience`.
+- `ContractViolationException`, `BudgetExceededException` and `GuardrailsSuspendedException` (the
+  fleet kill switch is thrown). All signal failures that must never be retried, as distinct from
+  transient faults, which are retried per the policies in `Frontier.Platform.Resilience`.
 
 **Execution identity**
 

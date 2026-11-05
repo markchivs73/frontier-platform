@@ -183,7 +183,8 @@ internal sealed class AgentTaskActivityPipeline : IAgentTaskActivityPipeline
     /// <summary>
     /// Checks Guardrails admission for this invocation (doc 07 §5) and returns the granted
     /// output-token budget. Throws <see cref="BudgetExceededException"/> (permanent, doc
-    /// 10 §3) if <see cref="AdmissionResult.Deny"/>.
+    /// 10 §3) if <see cref="AdmissionResult.Deny"/>; the admission controller itself throws
+    /// <see cref="GuardrailsSuspendedException"/> (permanent too) while the fleet kill switch is thrown (doc 07 §5a).
     /// </summary>
     internal async Task<long> AdmitAsync(AgentTaskActivityInput input, ResolvedModel resolved, string instructions, string prompt, CancellationToken ct)
     {

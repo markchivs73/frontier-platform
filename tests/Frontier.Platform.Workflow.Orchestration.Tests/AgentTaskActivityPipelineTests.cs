@@ -7,6 +7,7 @@ using Frontier.Platform.ModelRoleConfig;
 using Frontier.Platform.Serialization;
 using Frontier.Platform.Workflow.Model;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.DependencyInjection;
 using ContextPackageContract = Frontier.Platform.Serialization.ContextPackage;
 
 namespace Frontier.Platform.Workflow.Orchestration.Tests;
@@ -296,6 +297,51 @@ public sealed class AgentTaskActivityPipelineTests
         var granted = await pipeline.AdmitAsync(input, resolved, "instructions", "prompt", CancellationToken.None);
 
         Assert.Equal(100, granted);
+    }
+
+    /// <summary>
+    /// S13.187's binding behaviour in the activity pipeline (doc 07 §5a): a switch thrown through the registered
+    /// <see cref="IKillSwitch"/> stops the next invocation before the agent is called, with the permanent
+    /// <see cref="GuardrailsSuspendedException"/>; a resume lets the next one through.
+    /// </summary>
+    [Fact]
+    public async Task RunAsync_KillSwitchThrown_StopsTheNextInvocationBeforeTheAgent_AndAResumeLiftsIt()
+    {
+        var guardrails = new ServiceCollection().AddFrontierGuardrails().BuildServiceProvider();
+        var killSwitch = guardrails.GetRequiredService<IKillSwitch>();
+        var d = Dependencies(ScopeSectionFixture(), """{"engagement_brief":"Design a product scope."}""");
+        var pipeline = new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, guardrails.GetRequiredService<IAdmissionController>(), d.InstructionsResolver, d.ToolCatalog, d.Dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance, TestHostBuildStamp.Instance);
+        var input = BuildInput(nameof(BriefArtifact), nameof(SummaryArtifact), upstreamPayload: null);
+
+        await killSwitch.ActivateAsync("drill", CancellationToken.None);
+        await Assert.ThrowsAsync<GuardrailsSuspendedException>(() => pipeline.RunAsync(input, CancellationToken.None));
+        Assert.Null(d.Invoker.ReceivedRequest);
+
+        await killSwitch.DeactivateAsync(CancellationToken.None);
+        await pipeline.RunAsync(input, CancellationToken.None);
+        Assert.NotNull(d.Invoker.ReceivedRequest);
+    }
+
+    /// <summary>
+    /// S13.187 (doc 07 §5a): the switch is read only at admission, so an invocation already past admission finishes
+    /// even when the switch is thrown while its model call is in flight; only the next one is stopped.
+    /// </summary>
+    [Fact]
+    public async Task RunAsync_KillSwitchThrownMidInvocation_TheAdmittedInvocationFinishes()
+    {
+        var guardrails = new ServiceCollection().AddFrontierGuardrails().BuildServiceProvider();
+        var killSwitch = guardrails.GetRequiredService<IKillSwitch>();
+        var d = Dependencies(ScopeSectionFixture(), """{"engagement_brief":"Design a product scope."}""");
+        var throwing = new ThrowsTheSwitchWhileInvoking(d.Invoker, killSwitch);
+        var dispatcher = new AgentInvocationDispatcher(throwing, d.ContractTypes, TestContractValidator.Instance, new FakeResiliencePolicyProvider());
+        var pipeline = new AgentTaskActivityPipeline(d.Composer, d.AssembleContext, d.ContractTypes, d.ModelResolver, guardrails.GetRequiredService<IAdmissionController>(), d.InstructionsResolver, d.ToolCatalog, dispatcher, d.TelemetryStaging, new FakeEntryPayloadBuilder(), TestContractValidator.Instance, TestHostBuildStamp.Instance);
+        var input = BuildInput(nameof(BriefArtifact), nameof(SummaryArtifact), upstreamPayload: null);
+
+        var result = await pipeline.RunAsync(input, CancellationToken.None);
+
+        Assert.NotNull(result);
+        Assert.True(await killSwitch.IsActiveAsync(CancellationToken.None));
+        await Assert.ThrowsAsync<GuardrailsSuspendedException>(() => pipeline.RunAsync(input, CancellationToken.None));
     }
 
     [Fact]
@@ -682,6 +728,16 @@ public sealed class AgentTaskActivityPipelineTests
             Invoker: invoker,
             AdmissionControllerDouble: admission,
             TelemetryStaging: new FakeAuditTelemetryStaging());
+    }
+
+    /// <summary>An <see cref="IAgentInvoker"/> that throws the kill switch while its model call is in flight, then replies as <paramref name="inner"/> does.</summary>
+    private sealed class ThrowsTheSwitchWhileInvoking(IAgentInvoker inner, IKillSwitch killSwitch) : IAgentInvoker
+    {
+        public async Task<AgentInvocationOutcome> InvokeAsync(AgentInvocationRequest request, CancellationToken ct)
+        {
+            await killSwitch.ActivateAsync("drill", ct);
+            return await inner.InvokeAsync(request, ct);
+        }
     }
 
     private sealed record PipelineDependencies(
