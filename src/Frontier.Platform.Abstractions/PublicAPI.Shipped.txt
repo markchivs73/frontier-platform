@@ -101,6 +101,10 @@ Frontier.Platform.Abstractions.EngagementId.Value.init -> void
 Frontier.Platform.Abstractions.ExecutionId
 Frontier.Platform.Abstractions.ExecutionStatus
 Frontier.Platform.Abstractions.GateKind
+Frontier.Platform.Abstractions.GuardrailsSuspendedException
+Frontier.Platform.Abstractions.GuardrailsSuspendedException.GuardrailsSuspendedException() -> void
+Frontier.Platform.Abstractions.GuardrailsSuspendedException.GuardrailsSuspendedException(string! message) -> void
+Frontier.Platform.Abstractions.GuardrailsSuspendedException.GuardrailsSuspendedException(string! message, System.Exception! innerException) -> void
 Frontier.Platform.Abstractions.HitlDecision
 Frontier.Platform.Abstractions.HitlDecision.<Clone>$() -> Frontier.Platform.Abstractions.HitlDecision!
 Frontier.Platform.Abstractions.HitlDecision.ApproverId.get -> string!
@@ -166,6 +170,7 @@ const Frontier.Platform.Abstractions.ContractBudgets.PayloadDepthCeiling = 256 -
 const Frontier.Platform.Abstractions.ContractBudgets.ViolationsCeiling = 1000 -> int
 const Frontier.Platform.Abstractions.ExecutionId.MaxInstanceIdLength = 100 -> int
 const Frontier.Platform.Abstractions.ExecutionId.Separator = "::" -> string!
+const Frontier.Platform.Abstractions.GuardrailsSuspendedException.DefaultMessage = "guardrails_suspended: the fleet kill switch is active, so no new invocation is admitted." -> string!
 override Frontier.Platform.Abstractions.ContextRequest.Equals(object? obj) -> bool
 override Frontier.Platform.Abstractions.ContextRequest.GetHashCode() -> int
 override Frontier.Platform.Abstractions.ContextRequest.ToString() -> string!

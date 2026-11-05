@@ -1,6 +1,1 @@
 #nullable enable
-const Frontier.Platform.Abstractions.GuardrailsSuspendedException.DefaultMessage = "guardrails_suspended: the fleet kill switch is active, so no new invocation is admitted." -> string!
-Frontier.Platform.Abstractions.GuardrailsSuspendedException
-Frontier.Platform.Abstractions.GuardrailsSuspendedException.GuardrailsSuspendedException() -> void
-Frontier.Platform.Abstractions.GuardrailsSuspendedException.GuardrailsSuspendedException(string! message) -> void
-Frontier.Platform.Abstractions.GuardrailsSuspendedException.GuardrailsSuspendedException(string! message, System.Exception! innerException) -> void

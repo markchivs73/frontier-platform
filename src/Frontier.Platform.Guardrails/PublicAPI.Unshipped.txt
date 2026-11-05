@@ -1,3 +1,1 @@
 #nullable enable
-static Frontier.Platform.Guardrails.GuardrailsServiceCollectionExtensions.AddFrontierGuardrails(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Microsoft.Azure.Cosmos.Container! guardRailLedgerContainer, Microsoft.Azure.Cosmos.Container! platformConfigContainer, System.TimeSpan killSwitchCacheDuration) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
-static readonly Frontier.Platform.Guardrails.GuardrailsServiceCollectionExtensions.DefaultKillSwitchCacheDuration -> System.TimeSpan

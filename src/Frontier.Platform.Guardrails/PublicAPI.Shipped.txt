@@ -229,9 +229,11 @@ static Frontier.Platform.Guardrails.GuardrailPolicy.operator !=(Frontier.Platfor
 static Frontier.Platform.Guardrails.GuardrailPolicy.operator ==(Frontier.Platform.Guardrails.GuardrailPolicy? left, Frontier.Platform.Guardrails.GuardrailPolicy? right) -> bool
 static Frontier.Platform.Guardrails.GuardrailsServiceCollectionExtensions.AddFrontierGuardrails(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Frontier.Platform.Guardrails.GuardrailsServiceCollectionExtensions.AddFrontierGuardrails(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Microsoft.Azure.Cosmos.Container! guardRailLedgerContainer) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Frontier.Platform.Guardrails.GuardrailsServiceCollectionExtensions.AddFrontierGuardrails(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, Microsoft.Azure.Cosmos.Container! guardRailLedgerContainer, Microsoft.Azure.Cosmos.Container! platformConfigContainer, System.TimeSpan killSwitchCacheDuration) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Frontier.Platform.Guardrails.InvocationCostEstimate.operator !=(Frontier.Platform.Guardrails.InvocationCostEstimate? left, Frontier.Platform.Guardrails.InvocationCostEstimate? right) -> bool
 static Frontier.Platform.Guardrails.InvocationCostEstimate.operator ==(Frontier.Platform.Guardrails.InvocationCostEstimate? left, Frontier.Platform.Guardrails.InvocationCostEstimate? right) -> bool
 static Frontier.Platform.Guardrails.UsageRecord.operator !=(Frontier.Platform.Guardrails.UsageRecord? left, Frontier.Platform.Guardrails.UsageRecord? right) -> bool
 static Frontier.Platform.Guardrails.UsageRecord.operator ==(Frontier.Platform.Guardrails.UsageRecord? left, Frontier.Platform.Guardrails.UsageRecord? right) -> bool
+static readonly Frontier.Platform.Guardrails.GuardrailsServiceCollectionExtensions.DefaultKillSwitchCacheDuration -> System.TimeSpan
 static readonly Frontier.Platform.Guardrails.Phase1GuardrailPolicyCatalogue.Default -> Frontier.Platform.Guardrails.GuardrailPolicy!
 static readonly Frontier.Platform.Guardrails.Phase1GuardrailPolicyCatalogue.Sandbox -> Frontier.Platform.Guardrails.GuardrailPolicy!
