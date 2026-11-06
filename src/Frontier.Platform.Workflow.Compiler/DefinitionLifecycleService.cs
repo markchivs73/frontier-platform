@@ -184,11 +184,23 @@ public sealed class DefinitionLifecycleService : IDefinitionLifecycleService
                 CreatedUtc: current.LastEditedUtc));
     }
 
+    /// <summary>Propose publishing a draft with no title or change summary.</summary>
+    public Task<PublishProposal> ProposePublishAsync(
+        string workflowId,
+        string draftRevision,
+        ValidationReport report,
+        string userId,
+        CancellationToken ct) =>
+        ProposePublishAsync(workflowId, draftRevision, report, userId, title: null, changeSummary: null, ct);
+
+    /// <inheritdoc />
     public async Task<PublishProposal> ProposePublishAsync(
         string workflowId,
         string draftRevision,
         ValidationReport report,
         string userId,
+        string? title,
+        string? changeSummary,
         CancellationToken ct)
     {
         if (string.IsNullOrEmpty(workflowId)) throw new ArgumentException("Workflow ID required", nameof(workflowId));
@@ -235,7 +247,9 @@ public sealed class DefinitionLifecycleService : IDefinitionLifecycleService
             ProposedAtUtc = now,
             ValidationReportRef = new ValidationReportRef { DocumentId = reportDoc.Id },
             State = ProposalState.InReview,
-            ApproverNoteOrReason = null
+            ApproverNoteOrReason = null,
+            Title = OptionalText(title),
+            ChangeSummary = OptionalText(changeSummary)
         };
 
         var storedProposal = await _store.CreateProposalAsync(proposal, ct);
@@ -324,7 +338,10 @@ public sealed class DefinitionLifecycleService : IDefinitionLifecycleService
             ApprovedUtc = now,
             ValidationReportRef = proposal.ValidationReportRef.DocumentId,
             SupersededByVersion = null,
-            Retirement = null
+            Retirement = null,
+            // S13.201: the version keeps the proposer's title and summary for its history view.
+            Title = proposal.Title,
+            ChangeSummary = proposal.ChangeSummary
         };
 
         await _store.PublishVersionAsync(versionDoc, ct);
@@ -346,6 +363,9 @@ public sealed class DefinitionLifecycleService : IDefinitionLifecycleService
             ApprovedBy: approverId,
             ApprovedAtUtc: now);
     }
+
+    /// <summary>A proposer's optional text, or <see langword="null"/> when it is blank, so the key is omitted rather than stored empty.</summary>
+    internal static string? OptionalText(string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
 
     /// <summary>
     /// The next version number: one past whichever is greater of the current-version pointer and

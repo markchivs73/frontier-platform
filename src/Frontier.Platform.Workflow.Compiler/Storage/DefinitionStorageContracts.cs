@@ -68,6 +68,16 @@ public sealed record DefinitionVersionDocument
     public int? SupersededByVersion { get; init; }
     [JsonPropertyName("retirement")]
     public RetirementInfoDocument? Retirement { get; init; }
+    /// <summary>
+    /// S13.201: the proposer's title for this version, copied from its proposal at approval.
+    /// Optional and null-omitting: versions published before it, or from a proposal without one,
+    /// have no key. It sits on the envelope, so the definition's bytes and hash are untouched.
+    /// </summary>
+    [JsonPropertyName("title")]
+    public string? Title { get; init; }
+    /// <summary>S13.201: the proposer's summary of what changed, copied from its proposal at approval; optional, as for <see cref="Title"/>.</summary>
+    [JsonPropertyName("changeSummary")]
+    public string? ChangeSummary { get; init; }
 }
 
 /// <summary>Current version pointer (always one per workflow).</summary>
@@ -199,6 +209,15 @@ public sealed record PublishProposalDocument
     public required ProposalState State { get; init; }
     [JsonPropertyName("approverNoteOrReason")]
     public string? ApproverNoteOrReason { get; init; }
+    /// <summary>
+    /// S13.201: the proposer's title for the version, shown to the approver and copied onto the
+    /// version at approval. Optional and null-omitting: proposals written before it have no key.
+    /// </summary>
+    [JsonPropertyName("title")]
+    public string? Title { get; init; }
+    /// <summary>S13.201: the proposer's summary of what changed; optional and copied at approval, as for <see cref="Title"/>.</summary>
+    [JsonPropertyName("changeSummary")]
+    public string? ChangeSummary { get; init; }
 }
 
 /// <summary>Reference to a validation report (immutable once proposed).</summary>

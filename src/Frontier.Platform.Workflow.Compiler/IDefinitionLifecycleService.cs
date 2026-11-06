@@ -37,6 +37,23 @@ public interface IDefinitionLifecycleService
         string userId,
         CancellationToken ct);
 
+    /// <summary>
+    /// Propose publishing a draft with the proposer's optional <paramref name="title"/> and
+    /// <paramref name="changeSummary"/> (S13.201). Both are stored on the proposal for the approver
+    /// and copied onto the version at approval; a blank value is stored as absent.
+    /// </summary>
+    /// <remarks>The default implementation throws <see cref="NotSupportedException"/>, so an implementer
+    /// that predates this overload fails loudly instead of dropping the title and summary.</remarks>
+    Task<PublishProposal> ProposePublishAsync(
+        string workflowId,
+        string draftRevision,
+        ValidationReport report,
+        string userId,
+        string? title,
+        string? changeSummary,
+        CancellationToken ct) =>
+        throw new NotSupportedException($"{GetType().Name} does not implement {nameof(ProposePublishAsync)} with a title and change summary.");
+
     /// <summary>Approve a publish proposal.</summary>
     Task<PublishedVersion> ApproveAsync(
         string proposalId,
