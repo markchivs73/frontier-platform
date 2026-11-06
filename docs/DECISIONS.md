@@ -1375,6 +1375,67 @@ than the node's, and saying nothing is better than naming the wrong node.
 Release: **minor, v0.37.0 proposed** — purely additive; the consumer's B3 failure band needs a
 version to bump to.
 
+### ADR-PA26 — amended 2026-11-06: a terminated run says who ended it, and its pending approval is withdrawn under a guard
+
+Consumer S13.149 adds a governed route that ends a stuck live run (Mark's decisions of 2026-11-03,
+review-01 GOV-06, and 2026-11-06).
+- `ExecutionStatus.Terminated` (`terminated`) is a new terminal status. It is kept apart from
+  `cancelled`, which no person asked for by name.
+- `ExecutionSnapshot` gains `terminated_by`, `termination_reason` and `terminated_at_utc` (orders
+  24–26). `Validate()` requires all three on a terminated snapshot, as it requires
+  `failure_classification` on a `paused_on_failure` one. No other status is checked.
+- *Mark kept the rule for machine terminates (2026-11-06).* A terminate no person asked for, such as
+  a recovery sweep, must still give an actor, a reason and a time. By the ADR-E8 convention its actor
+  is an explicit `system:*` id such as `system:recovery`. `Validate()` cannot enforce that convention:
+  a human principal id has no fixed format, so a non-blank actor is all it can require. The consumer's
+  snapshot writer keeps it.
+- `ApprovalRequestStatus.Withdrawn` (`withdrawn`) is for a gate-paused run that is terminated. The
+  request gains `withdrawn_by` and `withdrawal_reason` (orders 12–13, after `ttl`).
+- The sandbox test-run mapping treats `terminated` as terminal, like `cancelled`.
+
+**Withdrawal and escalation are guarded transitions (Mark, 2026-11-06).** An unguarded upsert would let
+a withdrawal overwrite a decision that landed after the consumer's read. It would also let an
+escalation activity still running when the run is terminated write `escalated` back over `withdrawn`.
+- `IApprovalStore` gains `WithdrawAsync(engagementId, approvalId, withdrawnBy, withdrawalReason)` and
+  `EscalateAsync(engagementId, approvalId)`. Both return an `ApprovalTransitionResult`, which is
+  `applied`, `refused` with the stored record, or `not_found`.
+- They run over the same read, check and replace loop as `DecideAsync`, now `ApprovalTransitioner`. A
+  lost ETag race re-reads once and is refused if the winner no longer allows it, so a decision and a
+  withdrawal racing each other cannot both land.
+- A withdrawal accepts exactly the statuses a decision does: `pending` and `escalated`.
+- An escalation accepts `pending`, `escalated` (a retried activity) and a `decided` request whose
+  decision is the approver's own `escalate`. That last case is what the unguarded write did: the
+  approver's escalate is recorded through `DecideAsync`, and the escalation re-opens the request for
+  the real decision. An approve, a reject, an expired request and a withdrawn one are never
+  overwritten.
+- `EscalateApprovalActivity` now writes through `EscalateAsync` and returns the stored record when
+  refused; the orchestrator discards that return value, as it always did. It writes the request whole
+  only when the store does not hold it, as before, so a lost projection document is rebuilt rather
+  than failing the gate. Its CLR input and output types are unchanged. Its wire shape gains only
+  additive members, the `withdrawn` status value and the two optional withdrawal members, as
+  `activity-shapes.json` records.
+- Each transition names the statuses it accepts, so a status added later is refused by construction.
+  `ApprovalStatusTransitionsTests` classifies every value of `ApprovalRequestStatus.List` in one
+  explicit table and fails when a value is missing from it.
+- The scripted `ApprovalLifecycleTests` drive each direction of the race. The emulator test runs a
+  decision and a withdrawal concurrently and shows they never both land. It cannot force them to
+  conflict, so it does not by itself prove the retry path.
+
+**This is a public-surface break, so the commit is scoped `hitl!`.** Every implementation of
+`IApprovalStore` must add the two members. ADR-PA41 and ADR-PA43 treat a new member on an
+implemented interface this way. The consumer's three test doubles are the implementations affected.
+
+The platform offers no terminate operation. The orchestration factory, the one-live-run claim, the
+snapshot store and the governance catalogue are all the consumer's (doc 12 §5).
+
+Every new member is omit-null under the ADR-E15 floor. Nothing is renumbered and no member is
+`required`. Every older snapshot golden reads the new members as null and re-serializes
+byte-identically (`ExecutionTerminationTests`), and so does `approval_request_pending.json`, which
+was written by the code before this change. The activity-shape snapshot records the change as
+additive.
+
+Release: **rides v0.54.0**. While the major version is 0, a break may ship in a minor.
+
 ## ADR-PA27 — a role's chain may resolve to a remote agent; the invoker learns what it resolved to
 
 frontier-workflow is wiring A2A agents hosted in Azure AI Foundry into workflows (its S13.80–S13.89).

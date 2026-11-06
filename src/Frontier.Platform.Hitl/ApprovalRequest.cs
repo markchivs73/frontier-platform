@@ -10,8 +10,9 @@ namespace Frontier.Platform.Hitl;
 /// <see cref="ApprovalRequestStatus.Pending"/> by <see cref="RequestApprovalActivity"/>;
 /// <see cref="EscalateApprovalActivity"/> transitions it to
 /// <see cref="ApprovalRequestStatus.Escalated"/> on timeout. <see cref="Decision"/> is
-/// embedded once decided — the single ETag-guarded update in the platform (doc 06 §9),
-/// written by the future <c>/decide</c> endpoint (S4.7/S9.1).
+/// embedded once decided (doc 06 §9). Deciding, withdrawing (S13.149) and escalating are the
+/// ETag-guarded updates: <see cref="IApprovalStore.DecideAsync"/>, <see cref="IApprovalStore.WithdrawAsync"/>
+/// and <see cref="IApprovalStore.EscalateAsync"/>.
 /// </summary>
 [ExcludeFromCodeCoverage(Justification = "Plain data contract; properties are exercised by ApprovalRequestFactory and CosmosApprovalStore tests.")]
 public sealed record ApprovalRequest
@@ -75,4 +76,18 @@ public sealed record ApprovalRequest
     [JsonPropertyOrder(11)]
     [JsonPropertyName("ttl")]
     public int Ttl { get; init; } = -1;
+
+    /// <summary>
+    /// Who terminated the run this request was waiting on, once <see cref="Status"/> is
+    /// <see cref="ApprovalRequestStatus.Withdrawn"/> (S13.149, doc 20). <b>Additive and optional</b>:
+    /// absent on every request written before this field existed, and on any request not withdrawn.
+    /// </summary>
+    [JsonPropertyOrder(12)]
+    [JsonPropertyName("withdrawn_by")]
+    public string? WithdrawnBy { get; init; }
+
+    /// <summary>The reason the terminating person gave, once <see cref="Status"/> is <see cref="ApprovalRequestStatus.Withdrawn"/>. Additive and optional, as <see cref="WithdrawnBy"/>.</summary>
+    [JsonPropertyOrder(13)]
+    [JsonPropertyName("withdrawal_reason")]
+    public string? WithdrawalReason { get; init; }
 }

@@ -54,7 +54,7 @@ public sealed class WireShapeReaderTests
     [InlineData(typeof(JsonElement), "any")]
     [InlineData(typeof(decimal), "decimal(scale=4)")]
     [InlineData(typeof(SampleStatus), "enum(0|1)")]
-    [InlineData(typeof(Abstractions.ExecutionStatus), "enum(cancelled|completed|failed|paused_at_gate|paused_on_failure|running)")]
+    [InlineData(typeof(Abstractions.ExecutionStatus), "enum(cancelled|completed|failed|paused_at_gate|paused_on_failure|running|terminated)")]
     [InlineData(typeof(ListlessSmartEnum), "string")]
     [InlineData(typeof(Abstractions.EngagementId), "string")]
     [InlineData(typeof(Uri), "scalar:Uri")]

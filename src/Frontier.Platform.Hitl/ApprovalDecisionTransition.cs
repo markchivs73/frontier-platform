@@ -13,8 +13,11 @@ internal static class ApprovalDecisionTransition
     /// <summary>
     /// A request takes a decision while it is awaiting one: <see cref="ApprovalRequestStatus.Pending"/>,
     /// or <see cref="ApprovalRequestStatus.Escalated"/> — escalation re-routes and reminds, it never
-    /// decides (doc 06 §7). <see cref="ApprovalRequestStatus.Decided"/> and
-    /// <see cref="ApprovalRequestStatus.Expired"/> are final.
+    /// decides (doc 06 §7). <see cref="ApprovalRequestStatus.Decided"/>,
+    /// <see cref="ApprovalRequestStatus.Expired"/> and <see cref="ApprovalRequestStatus.Withdrawn"/>
+    /// (its run was terminated, S13.149) are final. Named statuses, never "anything not final", so a
+    /// status added later is refused by construction; <c>ApprovalStatusTransitionsTests</c> also fails
+    /// until the new status is classified in its table.
     /// </summary>
     internal static bool CanDecide(ApprovalRequest request)
     {

@@ -22,6 +22,16 @@ public sealed class ApprovalDecisionTransitionTests
     public void CanDecide_ExpiredRequest_IsFalse() =>
         Assert.False(ApprovalDecisionTransition.CanDecide(HitlFixtures.PendingRequest() with { Status = ApprovalRequestStatus.Expired }));
 
+    /// <summary>S13.149: a request whose run was terminated is final — a decision arriving after the withdrawal is refused.</summary>
+    [Fact]
+    public void CanDecide_WithdrawnRequest_IsFalse() =>
+        Assert.False(ApprovalDecisionTransition.CanDecide(HitlFixtures.PendingRequest() with
+        {
+            Status = ApprovalRequestStatus.Withdrawn,
+            WithdrawnBy = "user:manager-1",
+            WithdrawalReason = "Parked run, restarting.",
+        }));
+
     [Fact]
     public void CanDecide_NullRequest_Throws() =>
         Assert.Throws<ArgumentNullException>(() => ApprovalDecisionTransition.CanDecide(null!));

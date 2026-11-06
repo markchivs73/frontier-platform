@@ -17,10 +17,12 @@ internal static class TestRunExecution
     /// it reads as "paused": nothing ever writes a further snapshot after it (the
     /// orchestration instance faults right behind the checkpoint, doc 03 §9, no resume
     /// path exists), so waiting past it would just time out instead of ever completing.
+    /// <see cref="ExecutionStatus.Terminated"/> (S13.149) is terminal like <see cref="ExecutionStatus.Cancelled"/>.
     /// </summary>
     internal static bool IsTerminal(ExecutionStatus status) =>
         status == ExecutionStatus.Completed || status == ExecutionStatus.Failed
-        || status == ExecutionStatus.Cancelled || status == ExecutionStatus.PausedOnFailure;
+        || status == ExecutionStatus.Cancelled || status == ExecutionStatus.Terminated
+        || status == ExecutionStatus.PausedOnFailure;
 
     /// <summary>
     /// S9.53 (doc 19 A4-R4): a structured per-step row for every node that has completed so far
@@ -81,6 +83,7 @@ internal static class TestRunExecution
             var s when s == ExecutionStatus.PausedAtGate => $"Test-run paused at gate '{snapshot.PausedAtGateId}' awaiting an interactive decision (gateMode=interactive; not auto-handled).",
             var s when s == ExecutionStatus.PausedOnFailure => $"Test-run failed permanently at node '{snapshot.CurrentNodeId}' ({snapshot.FailureClassification}).",
             var s when s == ExecutionStatus.Cancelled => "Test-run was cancelled.",
+            var s when s == ExecutionStatus.Terminated => $"Test-run was terminated by '{snapshot.TerminatedBy}': {snapshot.TerminationReason}",
             _ => null
         },
         PausedAtGateId: snapshot.Status == ExecutionStatus.PausedAtGate ? snapshot.PausedAtGateId : null,

@@ -211,7 +211,7 @@
             "$.dynamic_context_hash": "string",
             "$.engagement_id": "string (required)",
             "$.execution_id": "string (required)",
-            "$.final_status": "enum(cancelled|completed|failed|paused_at_gate|paused_on_failure|running) (required)",
+            "$.final_status": "enum(cancelled|completed|failed|paused_at_gate|paused_on_failure|running|terminated) (required)",
             "$.generation": "integer",
             "$.human_decisions": "array (required)",
             "$.human_decisions[]": "object",
@@ -288,8 +288,10 @@
             "$.requested_at_utc": "date_time (required)",
             "$.section_refs": "map (required)",
             "$.section_refs{}": "string",
-            "$.status": "enum(decided|escalated|expired|pending) (required)",
-            "$.ttl": "integer"
+            "$.status": "enum(decided|escalated|expired|pending|withdrawn) (required)",
+            "$.ttl": "integer",
+            "$.withdrawal_reason": "string",
+            "$.withdrawn_by": "string"
           },
           "output": {
             "$": "object",
@@ -312,8 +314,10 @@
             "$.requested_at_utc": "date_time (required)",
             "$.section_refs": "map (required)",
             "$.section_refs{}": "string",
-            "$.status": "enum(decided|escalated|expired|pending) (required)",
-            "$.ttl": "integer"
+            "$.status": "enum(decided|escalated|expired|pending|withdrawn) (required)",
+            "$.ttl": "integer",
+            "$.withdrawal_reason": "string",
+            "$.withdrawn_by": "string"
           }
         },
         {
@@ -635,8 +639,10 @@
             "$.requested_at_utc": "date_time (required)",
             "$.section_refs": "map (required)",
             "$.section_refs{}": "string",
-            "$.status": "enum(decided|escalated|expired|pending) (required)",
-            "$.ttl": "integer"
+            "$.status": "enum(decided|escalated|expired|pending|withdrawn) (required)",
+            "$.ttl": "integer",
+            "$.withdrawal_reason": "string",
+            "$.withdrawn_by": "string"
           }
         },
         {
@@ -899,7 +905,10 @@
             "$.skipped_node_ids": "array",
             "$.skipped_node_ids[]": "string",
             "$.started_at_utc": "date_time",
-            "$.status": "enum(cancelled|completed|failed|paused_at_gate|paused_on_failure|running) (required)",
+            "$.status": "enum(cancelled|completed|failed|paused_at_gate|paused_on_failure|running|terminated) (required)",
+            "$.terminated_at_utc": "date_time",
+            "$.terminated_by": "string",
+            "$.termination_reason": "string",
             "$.work_item_id": "string",
             "$.workflow_id": "string (required)"
           },

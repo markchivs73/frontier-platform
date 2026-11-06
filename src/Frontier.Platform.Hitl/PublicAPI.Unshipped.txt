@@ -1,1 +1,28 @@
 #nullable enable
+Frontier.Platform.Hitl.ApprovalRequest.WithdrawalReason.get -> string?
+Frontier.Platform.Hitl.ApprovalRequest.WithdrawalReason.init -> void
+Frontier.Platform.Hitl.ApprovalRequest.WithdrawnBy.get -> string?
+Frontier.Platform.Hitl.ApprovalRequest.WithdrawnBy.init -> void
+Frontier.Platform.Hitl.ApprovalTransitionOutcome
+Frontier.Platform.Hitl.ApprovalTransitionResult
+Frontier.Platform.Hitl.ApprovalTransitionResult.<Clone>$() -> Frontier.Platform.Hitl.ApprovalTransitionResult!
+Frontier.Platform.Hitl.ApprovalTransitionResult.ApprovalTransitionResult() -> void
+Frontier.Platform.Hitl.ApprovalTransitionResult.Equals(Frontier.Platform.Hitl.ApprovalTransitionResult? other) -> bool
+Frontier.Platform.Hitl.ApprovalTransitionResult.Outcome.get -> Frontier.Platform.Hitl.ApprovalTransitionOutcome!
+Frontier.Platform.Hitl.ApprovalTransitionResult.Outcome.init -> void
+Frontier.Platform.Hitl.ApprovalTransitionResult.Request.get -> Frontier.Platform.Hitl.ApprovalRequest?
+Frontier.Platform.Hitl.ApprovalTransitionResult.Request.init -> void
+Frontier.Platform.Hitl.IApprovalStore.EscalateAsync(string! engagementId, string! approvalId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Hitl.ApprovalTransitionResult!>!
+Frontier.Platform.Hitl.IApprovalStore.WithdrawAsync(string! engagementId, string! approvalId, string! withdrawnBy, string! withdrawalReason, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Hitl.ApprovalTransitionResult!>!
+override Frontier.Platform.Hitl.ApprovalTransitionResult.Equals(object? obj) -> bool
+override Frontier.Platform.Hitl.ApprovalTransitionResult.GetHashCode() -> int
+override Frontier.Platform.Hitl.ApprovalTransitionResult.ToString() -> string!
+static Frontier.Platform.Hitl.ApprovalTransitionResult.Applied(Frontier.Platform.Hitl.ApprovalRequest! request) -> Frontier.Platform.Hitl.ApprovalTransitionResult!
+static Frontier.Platform.Hitl.ApprovalTransitionResult.NotFound() -> Frontier.Platform.Hitl.ApprovalTransitionResult!
+static Frontier.Platform.Hitl.ApprovalTransitionResult.Refused(Frontier.Platform.Hitl.ApprovalRequest! request) -> Frontier.Platform.Hitl.ApprovalTransitionResult!
+static Frontier.Platform.Hitl.ApprovalTransitionResult.operator !=(Frontier.Platform.Hitl.ApprovalTransitionResult? left, Frontier.Platform.Hitl.ApprovalTransitionResult? right) -> bool
+static Frontier.Platform.Hitl.ApprovalTransitionResult.operator ==(Frontier.Platform.Hitl.ApprovalTransitionResult? left, Frontier.Platform.Hitl.ApprovalTransitionResult? right) -> bool
+static readonly Frontier.Platform.Hitl.ApprovalRequestStatus.Withdrawn -> Frontier.Platform.Hitl.ApprovalRequestStatus!
+static readonly Frontier.Platform.Hitl.ApprovalTransitionOutcome.Applied -> Frontier.Platform.Hitl.ApprovalTransitionOutcome!
+static readonly Frontier.Platform.Hitl.ApprovalTransitionOutcome.NotFound -> Frontier.Platform.Hitl.ApprovalTransitionOutcome!
+static readonly Frontier.Platform.Hitl.ApprovalTransitionOutcome.Refused -> Frontier.Platform.Hitl.ApprovalTransitionOutcome!

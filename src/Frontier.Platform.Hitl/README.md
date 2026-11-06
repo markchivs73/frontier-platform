@@ -38,15 +38,18 @@ the shared `CanonicalProfile`, the approval store and query service, the rollbac
   its status, when it opened, when it escalates, and the embedded `HitlDecision` once decided.
 - `GateOpenRequest` — everything needed to open a gate, built by the caller's orchestrator from
   the gate node and the current execution state.
-- `ApprovalRequestStatus` — `pending` → `decided`, with `escalated` when the timeout fires and
-  `expired` as a reporting-only terminal state.
+- `ApprovalRequestStatus` — `pending` → `decided`, with `escalated` when the timeout fires,
+  `expired` as a reporting-only terminal state, and `withdrawn` (S13.149) when the run waiting on
+  the request was terminated. A withdrawn request carries `withdrawn_by` and `withdrawal_reason`
+  and, like `decided` and `expired`, can no longer take a decision. The consumer that terminates
+  the run writes it through `IApprovalStore.WithdrawAsync`.
 - `RollbackPlan` — the invalid set (regenerate) and the restore set (keep the approved snapshot).
 
 **The services**
 
 | Interface | What it does |
 |---|---|
-| `IApprovalStore` | Convergent upsert of an approval request; the ETag-guarded `pending → decided` transition (`DecideAsync`, doc 06 §9 — exactly one decision wins, the loser is told who won); and the recovery sweep's read of every decided request across engagements |
+| `IApprovalStore` | Convergent upsert of an approval request; the ETag-guarded `pending → decided` transition (`DecideAsync`, doc 06 §9 — exactly one decision wins, the loser is told who won); the ETag-guarded `WithdrawAsync` and `EscalateAsync` (S13.149 — refused, with the stored record, once the request is decided, expired or withdrawn); and the recovery sweep's read of every decided request across engagements |
 | `IApprovalQueryService` | Point-read by id, list by engagement, list pending across engagements, list escalated |
 | `IRollbackPlanner` | Splits a rejected gate's downstream set into what is regenerated and what is restored |
 

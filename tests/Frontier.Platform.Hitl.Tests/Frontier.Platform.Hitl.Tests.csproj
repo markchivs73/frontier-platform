@@ -27,6 +27,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- S13.149: canonical bytes of an approval request, pinned before and after the withdrawal members. -->
+    <None Include="GoldenFiles\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Shared HITL fixtures (S11.3): one copy for Hitl.Tests and the relocated activity tests -->
     <Compile Include="..\Shared\HitlFixtures.cs" Link="HitlFixtures.cs" />
   </ItemGroup>
