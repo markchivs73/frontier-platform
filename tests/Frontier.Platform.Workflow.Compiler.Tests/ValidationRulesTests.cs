@@ -323,6 +323,54 @@ public sealed class ValidationRulesTests
 
             Assert.Empty(findings);
         }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        [InlineData(null)]
+        public async Task RequiredFields_NameMissingOrBlank_ReturnsErrorOnName(string? name)
+        {
+            var definition = MinimalValidDefinition() with { Name = name! };
+
+            var finding = Assert.Single(await EvaluateAsync(definition));
+
+            AssertRequiredFieldError(finding, "name");
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("\t")]
+        [InlineData(null)]
+        public async Task RequiredFields_EngagementTypeMissingOrBlank_ReturnsErrorOnEngagementType(string? engagementType)
+        {
+            var definition = MinimalValidDefinition() with { EngagementType = engagementType! };
+
+            var finding = Assert.Single(await EvaluateAsync(definition));
+
+            AssertRequiredFieldError(finding, "engagement_type");
+        }
+
+        [Fact]
+        public async Task RequiredFields_BothBlank_ReturnsOneErrorPerField()
+        {
+            var definition = MinimalValidDefinition() with { Name = "", EngagementType = "" };
+
+            var findings = await EvaluateAsync(definition);
+
+            Assert.Equal(["name", "engagement_type"], findings.Select(f => f.FieldPath));
+            Assert.All(findings, f => Assert.Equal(ValidationSeverity.Error, f.Severity));
+        }
+
+        private static Task<IReadOnlyList<ValidationFinding>> EvaluateAsync(WorkflowDefinition definition) =>
+            new StructureRequiredFieldsRule().EvaluateAsync(new DefinitionValidationContext(definition), CancellationToken.None);
+
+        private static void AssertRequiredFieldError(ValidationFinding finding, string fieldPath)
+        {
+            Assert.Equal("structure.required-fields", finding.RuleId);
+            Assert.Equal(ValidationSeverity.Error, finding.Severity);
+            Assert.Equal(fieldPath, finding.FieldPath);
+            Assert.Contains($"'{fieldPath}'", finding.Message, StringComparison.Ordinal);
+        }
     }
 
     public sealed class VersioningNoClashRuleTests
