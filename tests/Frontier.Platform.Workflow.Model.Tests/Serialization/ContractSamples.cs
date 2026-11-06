@@ -283,6 +283,15 @@ internal static class ContractSamples
     /// <summary>ADR-PA26: a dispatcher child's snapshot — the mode it runs under and the work item it serves.</summary>
     public static ExecutionSnapshot ExecutionSnapshotDispatcherChild() => ExecutionSnapshot() with { ExecutionMode = ExecutionMode.Dispatcher, WorkItemId = "TICKET-1" };
 
+    /// <summary>S13.149: a run ended through the governed terminate, saying who, why and when — new golden; every older snapshot golden is untouched, which is the compatibility claim.</summary>
+    public static ExecutionSnapshot ExecutionSnapshotTerminated() => ExecutionSnapshotPausedOnFailure() with
+    {
+        Status = ExecutionStatus.Terminated,
+        TerminatedBy = "user:manager-1",
+        TerminationReason = "Parked on a failure that will not be fixed; restarting from a new run.",
+        TerminatedAtUtc = new DateTime(2026, 1, 1, 2, 0, 0, DateTimeKind.Utc),
+    };
+
     /// <summary>S13.60: a snapshot citing the dynamic-context epoch and hash the run was pinned to.</summary>
     public static ExecutionSnapshot ExecutionSnapshotWithContextPin() => ExecutionSnapshot() with { DynamicContextEpoch = 3, DynamicContextHash = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" };
 

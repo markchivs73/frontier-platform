@@ -18,13 +18,45 @@ public sealed class EscalateApprovalActivityTests
     public async Task RunAsync_PendingRequest_PersistsAndReturnsEscalatedRequest()
     {
         var store = new FakeApprovalStore();
-        var activity = new EscalateApprovalActivity(store);
         var pending = HitlFixtures.PendingRequest();
+        store.Seed(pending);
+        var activity = new EscalateApprovalActivity(store);
 
         var result = await activity.RunAsync(FakeTaskActivityContext.ForEscalateApproval(), pending);
 
         Assert.Equal(ApprovalRequestStatus.Escalated, result.Status);
         Assert.Equal(pending.Id, result.Id);
         Assert.Same(result, store.UpsertedRequest);
+        Assert.Equal(0, store.Upserts);
+    }
+
+    /// <summary>S13.149: an escalation still running when its run is terminated must not re-open the withdrawn request.</summary>
+    [Fact]
+    public async Task RunAsync_WithdrawnRequest_LeavesItWithdrawnAndReturnsIt()
+    {
+        var store = new FakeApprovalStore();
+        var pending = HitlFixtures.PendingRequest();
+        var withdrawn = pending with { Status = ApprovalRequestStatus.Withdrawn, WithdrawnBy = "user:manager-1", WithdrawalReason = "Parked run." };
+        store.Seed(withdrawn);
+
+        var result = await new EscalateApprovalActivity(store).RunAsync(FakeTaskActivityContext.ForEscalateApproval(), pending);
+
+        Assert.Same(withdrawn, result);
+        Assert.Same(withdrawn, store.UpsertedRequest);
+        Assert.Equal(0, store.Upserts);
+    }
+
+    /// <summary>The unguarded write rebuilt a lost projection document; the guarded one still does, rather than failing the gate.</summary>
+    [Fact]
+    public async Task RunAsync_RequestNotStored_WritesTheEscalatedRequestWhole()
+    {
+        var store = new FakeApprovalStore();
+        var pending = HitlFixtures.PendingRequest();
+
+        var result = await new EscalateApprovalActivity(store).RunAsync(FakeTaskActivityContext.ForEscalateApproval(), pending);
+
+        Assert.Equal(ApprovalRequestStatus.Escalated, result.Status);
+        Assert.Same(result, store.UpsertedRequest);
+        Assert.Equal(1, store.Upserts);
     }
 }

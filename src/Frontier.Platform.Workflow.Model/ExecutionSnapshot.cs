@@ -213,6 +213,31 @@ public sealed record ExecutionSnapshot : IVersionedContract
     [JsonPropertyName("failure_detail")]
     public ExecutionFailureDetail? FailureDetail { get; init; }
 
+    /// <summary>
+    /// Who ended this run through the governed terminate (S13.149, doc 20), when <see cref="Status"/>
+    /// is <see cref="ExecutionStatus.Terminated"/>: the terminating principal, attributed as
+    /// <see cref="InitiatedBy"/> is (ADR-E8) — an explicit <c>system:*</c> actor when a machine terminated it.
+    /// <para>
+    /// <b>Additive and optional</b> per the ADR-E15 floor: snapshots written before this field read as
+    /// <see langword="null"/>, and it is omitted on every snapshot that is not terminated.
+    /// <see cref="Validate"/> requires it, with <see cref="TerminationReason"/> and
+    /// <see cref="TerminatedAtUtc"/>, only when the status is terminated.
+    /// </para>
+    /// </summary>
+    [JsonPropertyOrder(24)]
+    [JsonPropertyName("terminated_by")]
+    public string? TerminatedBy { get; init; }
+
+    /// <summary>The reason the terminating person gave (doc 20 makes it mandatory). Additive and optional, as <see cref="TerminatedBy"/>.</summary>
+    [JsonPropertyOrder(25)]
+    [JsonPropertyName("termination_reason")]
+    public string? TerminationReason { get; init; }
+
+    /// <summary>When the run was terminated, in UTC. Additive and optional, as <see cref="TerminatedBy"/>.</summary>
+    [JsonPropertyOrder(26)]
+    [JsonPropertyName("terminated_at_utc")]
+    public DateTime? TerminatedAtUtc { get; init; }
+
     /// <inheritdoc />
     public void Validate()
     {
@@ -242,6 +267,8 @@ public sealed record ExecutionSnapshot : IVersionedContract
         {
             violations.AddRange(FailureDetail.Violations());
         }
+
+        violations.AddRange(ExecutionTerminationRule.Violations(this));
 
         if (violations.Count > 0)
         {

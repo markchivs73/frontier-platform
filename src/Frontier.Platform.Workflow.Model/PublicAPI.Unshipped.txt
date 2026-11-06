@@ -1,0 +1,7 @@
+#nullable enable
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.TerminatedAtUtc.get -> System.DateTime?
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.TerminatedAtUtc.init -> void
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.TerminatedBy.get -> string?
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.TerminatedBy.init -> void
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.TerminationReason.get -> string?
+Frontier.Platform.Workflow.Model.ExecutionSnapshot.TerminationReason.init -> void

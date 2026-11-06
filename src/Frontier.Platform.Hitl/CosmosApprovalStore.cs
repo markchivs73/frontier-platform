@@ -10,8 +10,9 @@ namespace Frontier.Platform.Hitl;
 /// <see cref="IApprovalStore"/> over the <c>approvals</c> container (doc 02 §3, doc 06 §9).
 /// </summary>
 /// <remarks>
-/// SDK glue only: the decision loop and its lost-race retry live in <see cref="ApprovalDecider"/>,
-/// which runs over this adapter's <see cref="IApprovalDocuments"/> half (S13.193).
+/// SDK glue only: the decision loop and its lost-race retry live in <see cref="ApprovalDecider"/>, and
+/// withdrawal and escalation in <see cref="ApprovalLifecycle"/> (S13.149), which run over this adapter's
+/// <see cref="IApprovalDocuments"/> half (S13.193).
 /// </remarks>
 [ExcludeFromCodeCoverage(Justification = "Cosmos SDK glue (doc 02 §3, doc 06 §9): status-code translation only, its decisions live in ApprovalDecider; exercised by the Hitl integration tests against the Cosmos emulator (CI integration job), not the unit-coverage gate.")]
 internal sealed class CosmosApprovalStore(CosmosClient client, IOptions<CosmosOptions> options, DecidedApprovalQuery decidedQuery) : IApprovalStore, IApprovalDocuments
@@ -34,6 +35,14 @@ internal sealed class CosmosApprovalStore(CosmosClient client, IOptions<CosmosOp
     /// <inheritdoc />
     public Task<ApprovalDecisionResult> DecideAsync(string engagementId, string approvalId, HitlDecision decision, CancellationToken cancellationToken) =>
         new ApprovalDecider(this).DecideAsync(engagementId, approvalId, decision, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<ApprovalTransitionResult> WithdrawAsync(string engagementId, string approvalId, string withdrawnBy, string withdrawalReason, CancellationToken cancellationToken) =>
+        new ApprovalLifecycle(this).WithdrawAsync(engagementId, approvalId, withdrawnBy, withdrawalReason, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<ApprovalTransitionResult> EscalateAsync(string engagementId, string approvalId, CancellationToken cancellationToken) =>
+        new ApprovalLifecycle(this).EscalateAsync(engagementId, approvalId, cancellationToken);
 
     /// <inheritdoc />
     public async Task<VersionedApproval?> ReadAsync(string engagementId, string approvalId, CancellationToken cancellationToken)

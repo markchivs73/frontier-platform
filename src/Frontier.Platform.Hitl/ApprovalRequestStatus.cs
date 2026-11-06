@@ -20,6 +20,13 @@ public sealed class ApprovalRequestStatus : SmartEnum<ApprovalRequestStatus>
     /// <summary>Reporting-only terminal state for an unattended gate (doc 06 §7); the platform never auto-decides.</summary>
     public static readonly ApprovalRequestStatus Expired = new("expired");
 
+    /// <summary>
+    /// The run waiting on this request was terminated (S13.149, doc 20), so it can no longer be
+    /// decided; final. <see cref="ApprovalRequest.WithdrawnBy"/> and <see cref="ApprovalRequest.WithdrawalReason"/>
+    /// say who ended the run and why.
+    /// </summary>
+    public static readonly ApprovalRequestStatus Withdrawn = new("withdrawn");
+
     private ApprovalRequestStatus(string name)
         : base(name)
     {

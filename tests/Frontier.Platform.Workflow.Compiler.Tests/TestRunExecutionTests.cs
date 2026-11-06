@@ -40,6 +40,7 @@ public sealed class TestRunExecutionTests
     [InlineData("completed")]
     [InlineData("failed")]
     [InlineData("cancelled")]
+    [InlineData("terminated")] // S13.149: a terminated run writes no further snapshot.
     [InlineData("paused_on_failure")] // S9.45: terminal for polling purposes - nothing ever writes a further snapshot after it.
     public void IsTerminal_TerminalStatuses_ReturnsTrue(string statusName)
     {
@@ -201,6 +202,24 @@ public sealed class TestRunExecutionTests
 
         Assert.False(outcome.Success);
         Assert.Equal("Test-run was cancelled.", outcome.ErrorMessage);
+    }
+
+    /// <summary>S13.149: a terminated run is a failure that names who ended it and why.</summary>
+    [Fact]
+    public void ToOutcome_Terminated_FailureNamingTheActorAndReason()
+    {
+        var snapshot = Snapshot(ExecutionStatus.Terminated) with
+        {
+            TerminatedBy = "user:manager-1",
+            TerminationReason = "Parked on a failure that will not be fixed.",
+            TerminatedAtUtc = new DateTime(2026, 11, 6, 9, 0, 0, DateTimeKind.Utc),
+        };
+
+        var outcome = TestRunExecution.ToOutcome(snapshot);
+
+        Assert.False(outcome.Success);
+        Assert.Equal("Test-run was terminated by 'user:manager-1': Parked on a failure that will not be fixed.", outcome.ErrorMessage);
+        Assert.Null(outcome.FailureNodeId);
     }
 
     [Fact]

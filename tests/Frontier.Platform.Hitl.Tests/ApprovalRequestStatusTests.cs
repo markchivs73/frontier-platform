@@ -4,10 +4,10 @@ namespace Frontier.Platform.Hitl.Tests;
 public sealed class ApprovalRequestStatusTests
 {
     [Fact]
-    public void List_Always_ReturnsAllFourValuesInDeclarationOrder()
+    public void List_Always_ReturnsAllFiveValuesInDeclarationOrder()
     {
         Assert.Equal(
-            [ApprovalRequestStatus.Pending, ApprovalRequestStatus.Decided, ApprovalRequestStatus.Escalated, ApprovalRequestStatus.Expired],
+            [ApprovalRequestStatus.Pending, ApprovalRequestStatus.Decided, ApprovalRequestStatus.Escalated, ApprovalRequestStatus.Expired, ApprovalRequestStatus.Withdrawn],
             ApprovalRequestStatus.List);
     }
 
@@ -16,6 +16,7 @@ public sealed class ApprovalRequestStatusTests
     [InlineData("decided")]
     [InlineData("escalated")]
     [InlineData("expired")]
+    [InlineData("withdrawn")]
     public void FromName_KnownName_RoundTrips(string name)
     {
         Assert.Equal(name, ApprovalRequestStatus.FromName(name).Name);

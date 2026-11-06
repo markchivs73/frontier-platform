@@ -46,6 +46,20 @@ public sealed class ApprovalDeciderTests
         Assert.Empty(documents.ReplaceVersions);
     }
 
+    /// <summary>S13.149: a decision arriving after the run was terminated leaves the withdrawn record as it stands.</summary>
+    [Fact]
+    public async Task DecideAsync_WithdrawnRequest_ReportsTheStoredRecordWithoutWriting()
+    {
+        var withdrawn = HitlFixtures.PendingRequest() with { Status = ApprovalRequestStatus.Withdrawn, WithdrawnBy = "user:manager-1", WithdrawalReason = "Parked run." };
+        var documents = new FakeApprovalDocuments(withdrawn);
+
+        var result = await Decide(documents, HitlFixtures.PendingRequest());
+
+        Assert.Equal(ApprovalDecisionOutcome.AlreadyDecided, result.Outcome);
+        Assert.Same(withdrawn, result.Request);
+        Assert.Empty(documents.ReplaceVersions);
+    }
+
     [Fact]
     public async Task DecideAsync_LostRaceThenWins_RetriesFromAFreshRead()
     {
@@ -66,7 +80,7 @@ public sealed class ApprovalDeciderTests
 
         var result = await Decide(documents, request);
 
-        Assert.Equal(ApprovalDecider.DecideAttempts, documents.ReplaceVersions.Count);
+        Assert.Equal(ApprovalTransitioner.Attempts, documents.ReplaceVersions.Count);
         Assert.Equal(ApprovalDecisionOutcome.AlreadyDecided, result.Outcome);
         Assert.Same(request, result.Request);
     }
@@ -75,7 +89,7 @@ public sealed class ApprovalDeciderTests
     public async Task DecideAsync_LosesEveryAttemptAndTheRequestIsGone_ReportsNotFound()
     {
         var request = HitlFixtures.PendingRequest();
-        var documents = new FakeApprovalDocuments(request) { LosingReplaces = int.MaxValue, VanishAfterReads = ApprovalDecider.DecideAttempts };
+        var documents = new FakeApprovalDocuments(request) { LosingReplaces = int.MaxValue, VanishAfterReads = ApprovalTransitioner.Attempts };
 
         var result = await Decide(documents, request);
 

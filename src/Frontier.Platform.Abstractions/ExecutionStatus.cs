@@ -25,6 +25,14 @@ public sealed class ExecutionStatus : SmartEnum<ExecutionStatus>
     /// <summary>The execution was cancelled before completion.</summary>
     public static readonly ExecutionStatus Cancelled = new("cancelled");
 
+    /// <summary>
+    /// The live run was ended through the governed terminate (S13.149, doc 20): terminal, and the
+    /// snapshot says who, why and when. The actor is the person who asked, or a <c>system:*</c> actor
+    /// when a machine terminated it (ADR-E8). Distinct from <see cref="Cancelled"/>, which records no
+    /// actor and no reason.
+    /// </summary>
+    public static readonly ExecutionStatus Terminated = new("terminated");
+
     private ExecutionStatus(string name)
         : base(name)
     {

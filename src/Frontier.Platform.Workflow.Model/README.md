@@ -89,6 +89,12 @@ exactly that.
 - `ExecutionFailureDetail` — why a run paused on a failure: the first faulting node, the
   exception's type and a bounded, secret-free message, beside the snapshot's reason code.
   Optional and additive — absent on snapshots written before it existed.
+- A terminated run (`status: terminated`, S13.149) carries `terminated_by`, `termination_reason`
+  and `terminated_at_utc`: who ended it through the governed terminate, why and when. All three
+  are optional and additive, and `Validate()` requires them only on a terminated snapshot. A
+  machine-originated terminate records an explicit `system:*` actor (for example `system:recovery`),
+  as ADR-E8 requires of every machine action. That is a convention the consumer's writer keeps:
+  `Validate()` cannot check it, because a human principal id has no fixed format.
 - `TypedPayload` and `PayloadRef` — a payload travels inline or by reference, so large
   outputs never inflate orchestration state. Since ADR-PA30 both types are compiled into
   `Frontier.Platform.Serialization` (same namespace) and forwarded from this assembly, so the

@@ -1,1 +1,2 @@
 #nullable enable
+static readonly Frontier.Platform.Abstractions.ExecutionStatus.Terminated -> Frontier.Platform.Abstractions.ExecutionStatus!
