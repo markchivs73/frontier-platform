@@ -188,7 +188,9 @@ public sealed class CosmosDefinitionStore : IDefinitionStore
             ApprovedUtc = versionDoc.ApprovedUtc,
             ValidationReportRef = versionDoc.ValidationReportRef,
             SupersededByVersion = null,
-            Retirement = null
+            Retirement = null,
+            Title = versionDoc.Title,
+            ChangeSummary = versionDoc.ChangeSummary
         };
 
         try
@@ -472,7 +474,9 @@ public sealed class CosmosDefinitionStore : IDefinitionStore
             ProposedAtUtc = proposal.ProposedAtUtc,
             ValidationReportRef = proposal.ValidationReportRef,
             State = ProposalState.InReview,
-            ApproverNoteOrReason = null
+            ApproverNoteOrReason = null,
+            Title = proposal.Title,
+            ChangeSummary = proposal.ChangeSummary
         };
 
         var response = await _container.CreateItemAsync(doc, new PartitionKey(proposal.WorkflowId), cancellationToken: ct);

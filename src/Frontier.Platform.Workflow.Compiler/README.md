@@ -149,6 +149,16 @@ contract, such as `frontier/gate-decision/1.0`, comes from the engine; everythin
 different ref stops the publish before the proposal is approved. A definition that names only CLR
 contracts embeds nothing.
 
+## A proposal can carry a title and a change summary
+
+The `ProposePublishAsync` overload that takes `title` and `changeSummary` stores both on the
+`PublishProposalDocument`, for the approver to read, and `ApproveAsync` copies them onto the
+`DefinitionVersionDocument` it publishes. Both are optional: a null or blank value is stored as
+absent, and the overload without them stores neither. They sit on the documents, not on the
+definition, so the definition hash does not change. The interface's default implementation of the
+new overload throws `NotSupportedException`, so if you implement `IDefinitionLifecycleService`
+yourself, implement it before you call it.
+
 ## A note on the definition hash
 
 The hash is SHA-256 over the RFC 8785 (JCS) form of the definition's canonical-profile bytes,

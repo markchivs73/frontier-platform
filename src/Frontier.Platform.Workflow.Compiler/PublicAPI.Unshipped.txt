@@ -1,1 +1,11 @@
 #nullable enable
+Frontier.Platform.Workflow.Compiler.DefinitionLifecycleService.ProposePublishAsync(string! workflowId, string! draftRevision, Frontier.Platform.Workflow.Compiler.ValidationReport! report, string! userId, string? title, string? changeSummary, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.PublishProposal!>!
+Frontier.Platform.Workflow.Compiler.IDefinitionLifecycleService.ProposePublishAsync(string! workflowId, string! draftRevision, Frontier.Platform.Workflow.Compiler.ValidationReport! report, string! userId, string? title, string? changeSummary, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.PublishProposal!>!
+Frontier.Platform.Workflow.Compiler.Storage.DefinitionVersionDocument.ChangeSummary.get -> string?
+Frontier.Platform.Workflow.Compiler.Storage.DefinitionVersionDocument.ChangeSummary.init -> void
+Frontier.Platform.Workflow.Compiler.Storage.DefinitionVersionDocument.Title.get -> string?
+Frontier.Platform.Workflow.Compiler.Storage.DefinitionVersionDocument.Title.init -> void
+Frontier.Platform.Workflow.Compiler.Storage.PublishProposalDocument.ChangeSummary.get -> string?
+Frontier.Platform.Workflow.Compiler.Storage.PublishProposalDocument.ChangeSummary.init -> void
+Frontier.Platform.Workflow.Compiler.Storage.PublishProposalDocument.Title.get -> string?
+Frontier.Platform.Workflow.Compiler.Storage.PublishProposalDocument.Title.init -> void
