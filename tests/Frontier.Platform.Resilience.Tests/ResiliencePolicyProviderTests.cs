@@ -1,4 +1,6 @@
+using System.Net;
 using Frontier.Platform.Abstractions;
+using Microsoft.Azure.Cosmos;
 using Microsoft.DurableTask;
 using Polly;
 using Polly.Retry;
@@ -218,6 +220,16 @@ public sealed class ResiliencePolicyProviderTests
     public void HandleOuterRetryFailure_OtherException_ReturnsTrue()
     {
         var failure = TaskFailureDetails.FromException(new InvalidOperationException("transient"));
+
+        Assert.True(ResiliencePolicyProvider.HandleOuterRetryFailure(failure));
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.PreconditionFailed)]
+    [InlineData(HttpStatusCode.Conflict)]
+    public void HandleOuterRetryFailure_CosmosWriteConflict_ReturnsTrue(HttpStatusCode lostRace)
+    {
+        var failure = TaskFailureDetails.FromException(new CosmosException("lost race", lostRace, 0, "activity-1", 0));
 
         Assert.True(ResiliencePolicyProvider.HandleOuterRetryFailure(failure));
     }

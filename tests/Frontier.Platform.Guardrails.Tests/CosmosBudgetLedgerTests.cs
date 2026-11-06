@@ -65,6 +65,36 @@ public sealed class CosmosBudgetLedgerTests
     }
 
     [Fact]
+    public async Task RecordUsageAsync_LosesAllButTheLastAttempt_StillRecords()
+    {
+        var documents = new FakeLedgerDocuments { FailingWrites = CosmosBudgetLedger.MaxWriteAttempts - 1 };
+
+        await Ledger(documents).RecordUsageAsync(Usage, CancellationToken.None);
+
+        Assert.Equal(CosmosBudgetLedger.MaxWriteAttempts, documents.Reads);
+        Assert.Single(documents.Created);
+    }
+
+    [Fact]
+    public async Task RecordUsageAsync_LosesToEachOfTwentyFourOtherWriters_StillRecords()
+    {
+        var documents = new FakeLedgerDocuments { FailingWrites = 24 };
+
+        await Ledger(documents).RecordUsageAsync(Usage, CancellationToken.None);
+
+        Assert.Equal(25, documents.Reads);
+        Assert.Single(documents.Created);
+    }
+
+    [Fact]
+    public void MaxWriteAttempts_WorstCaseBackoff_StaysUnderTwentySeconds()
+    {
+        var ceilings = Enumerable.Range(1, CosmosBudgetLedger.MaxWriteAttempts - 1).Select(BudgetLedgerWriteConflict.BackoffCeiling);
+
+        Assert.Equal(TimeSpan.FromMilliseconds(19_575), ceilings.Aggregate(TimeSpan.Zero, (total, ceiling) => total + ceiling));
+    }
+
+    [Fact]
     public async Task RecordUsageAsync_NonConflictFailure_IsNotRetried()
     {
         var documents = new FakeLedgerDocuments { FailingWrites = int.MaxValue, FailureStatus = HttpStatusCode.TooManyRequests };

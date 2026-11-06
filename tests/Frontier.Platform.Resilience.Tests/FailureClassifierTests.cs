@@ -127,6 +127,15 @@ public sealed class FailureClassifierTests
     }
 
     [Fact]
+    public void Classify_CosmosPreconditionFailed_IsPermanentUnclassified()
+    {
+        var result = classifier.Classify(new CosmosException("etag stale", HttpStatusCode.PreconditionFailed, 0, "activity-1", 0));
+
+        Assert.Equal(FailureClass.Permanent, result.Class);
+        Assert.Equal("unclassified", result.ReasonCode);
+    }
+
+    [Fact]
     public void Classify_BrokenCircuitException_IsTransientCircuitOpen()
     {
         var result = classifier.Classify(new BrokenCircuitException());

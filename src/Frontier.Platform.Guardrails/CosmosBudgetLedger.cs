@@ -14,8 +14,15 @@ namespace Frontier.Platform.Guardrails;
 /// </remarks>
 internal sealed class CosmosBudgetLedger : IBudgetLedger
 {
-    /// <summary>How many read-accumulate-write attempts a usage record gets before the last conflict is rethrown.</summary>
-    internal const int MaxWriteAttempts = 10;
+    /// <summary>
+    /// How many read-accumulate-write attempts a usage record gets before the last conflict is rethrown: one per writer
+    /// for 25 concurrent writers on one ledger (S13.233). Each lost attempt means another writer's write committed
+    /// between this attempt's read and its write, and the next attempt reads afterwards, so every loss is to a different
+    /// write. When each read sees the latest committed document, a record contending with 24 others that each write
+    /// once loses at most 24 times and the 25th attempt lands, whatever the timing. The backoff one record can spend
+    /// before that last attempt stays under 20 seconds.
+    /// </summary>
+    internal const int MaxWriteAttempts = 25;
 
     private readonly IBudgetLedgerDocuments documents;
     private readonly Func<int, int> jitterMilliseconds;
@@ -43,8 +50,11 @@ internal sealed class CosmosBudgetLedger : IBudgetLedger
 
     /// <inheritdoc />
     /// <remarks>
-    /// When every attempt loses to a concurrent write, the last conflict <see cref="CosmosException"/> is rethrown so
-    /// the caller's resilience policy sees a transient failure.
+    /// When every attempt loses to a concurrent write, the last conflict <see cref="CosmosException"/> (412 or 409) is
+    /// rethrown. The platform's failure classifier treats it as permanent, so a Polly inner loop gated by the classifier
+    /// does not retry it; an outer DTF activity retry, which retries every failure but a contract, budget or suspension
+    /// one, can still run the caller's whole activity again. Within one call, <see cref="MaxWriteAttempts"/> is the
+    /// whole budget.
     /// </remarks>
     public async Task RecordUsageAsync(UsageRecord usage, CancellationToken cancellationToken)
     {
