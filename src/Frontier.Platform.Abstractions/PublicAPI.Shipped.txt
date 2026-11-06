@@ -237,6 +237,7 @@ static readonly Frontier.Platform.Abstractions.ExecutionStatus.Failed -> Frontie
 static readonly Frontier.Platform.Abstractions.ExecutionStatus.PausedAtGate -> Frontier.Platform.Abstractions.ExecutionStatus!
 static readonly Frontier.Platform.Abstractions.ExecutionStatus.PausedOnFailure -> Frontier.Platform.Abstractions.ExecutionStatus!
 static readonly Frontier.Platform.Abstractions.ExecutionStatus.Running -> Frontier.Platform.Abstractions.ExecutionStatus!
+static readonly Frontier.Platform.Abstractions.ExecutionStatus.Terminated -> Frontier.Platform.Abstractions.ExecutionStatus!
 static readonly Frontier.Platform.Abstractions.GateKind.Business -> Frontier.Platform.Abstractions.GateKind!
 static readonly Frontier.Platform.Abstractions.GateKind.Intake -> Frontier.Platform.Abstractions.GateKind!
 static readonly Frontier.Platform.Abstractions.GateKind.Technical -> Frontier.Platform.Abstractions.GateKind!

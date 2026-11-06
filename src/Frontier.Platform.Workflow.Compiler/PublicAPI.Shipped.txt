@@ -72,6 +72,7 @@ Frontier.Platform.Workflow.Compiler.DefinitionLifecycleService.DefinitionLifecyc
 Frontier.Platform.Workflow.Compiler.DefinitionLifecycleService.DeleteDraftAsync(string! workflowId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.DeleteDraftResult!>!
 Frontier.Platform.Workflow.Compiler.DefinitionLifecycleService.GetHistoryAsync(string! workflowId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.VersionHistory!>!
 Frontier.Platform.Workflow.Compiler.DefinitionLifecycleService.ProposePublishAsync(string! workflowId, string! draftRevision, Frontier.Platform.Workflow.Compiler.ValidationReport! report, string! userId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.PublishProposal!>!
+Frontier.Platform.Workflow.Compiler.DefinitionLifecycleService.ProposePublishAsync(string! workflowId, string! draftRevision, Frontier.Platform.Workflow.Compiler.ValidationReport! report, string! userId, string? title, string? changeSummary, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.PublishProposal!>!
 Frontier.Platform.Workflow.Compiler.DefinitionLifecycleService.RejectAsync(string! proposalId, string! approverId, string! reason, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task!
 Frontier.Platform.Workflow.Compiler.DefinitionLifecycleService.RetireAsync(string! workflowId, int version, string! adminId, string! reason, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task!
 Frontier.Platform.Workflow.Compiler.DefinitionLifecycleService.SaveDraftAsync(string! workflowId, Frontier.Platform.Workflow.Model.WorkflowDefinition! definition, string! expectedRevision, string! userId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.SaveDraftResponse!>!
@@ -207,6 +208,7 @@ Frontier.Platform.Workflow.Compiler.IDefinitionLifecycleService.CreateDraftAsync
 Frontier.Platform.Workflow.Compiler.IDefinitionLifecycleService.DeleteDraftAsync(string! workflowId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.DeleteDraftResult!>!
 Frontier.Platform.Workflow.Compiler.IDefinitionLifecycleService.GetHistoryAsync(string! workflowId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.VersionHistory!>!
 Frontier.Platform.Workflow.Compiler.IDefinitionLifecycleService.ProposePublishAsync(string! workflowId, string! draftRevision, Frontier.Platform.Workflow.Compiler.ValidationReport! report, string! userId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.PublishProposal!>!
+Frontier.Platform.Workflow.Compiler.IDefinitionLifecycleService.ProposePublishAsync(string! workflowId, string! draftRevision, Frontier.Platform.Workflow.Compiler.ValidationReport! report, string! userId, string? title, string? changeSummary, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.PublishProposal!>!
 Frontier.Platform.Workflow.Compiler.IDefinitionLifecycleService.RejectAsync(string! proposalId, string! approverId, string! reason, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task!
 Frontier.Platform.Workflow.Compiler.IDefinitionLifecycleService.RetireAsync(string! workflowId, int version, string! adminId, string! reason, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task!
 Frontier.Platform.Workflow.Compiler.IDefinitionLifecycleService.SaveDraftAsync(string! workflowId, Frontier.Platform.Workflow.Model.WorkflowDefinition! definition, string! expectedRevision, string! userId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.SaveDraftResponse!>!
@@ -818,6 +820,8 @@ Frontier.Platform.Workflow.Compiler.Storage.DefinitionVersionDocument.ApprovedBy
 Frontier.Platform.Workflow.Compiler.Storage.DefinitionVersionDocument.ApprovedBy.init -> void
 Frontier.Platform.Workflow.Compiler.Storage.DefinitionVersionDocument.ApprovedUtc.get -> System.DateTime
 Frontier.Platform.Workflow.Compiler.Storage.DefinitionVersionDocument.ApprovedUtc.init -> void
+Frontier.Platform.Workflow.Compiler.Storage.DefinitionVersionDocument.ChangeSummary.get -> string?
+Frontier.Platform.Workflow.Compiler.Storage.DefinitionVersionDocument.ChangeSummary.init -> void
 Frontier.Platform.Workflow.Compiler.Storage.DefinitionVersionDocument.Definition.get -> Frontier.Platform.Workflow.Model.WorkflowDefinition!
 Frontier.Platform.Workflow.Compiler.Storage.DefinitionVersionDocument.Definition.init -> void
 Frontier.Platform.Workflow.Compiler.Storage.DefinitionVersionDocument.DefinitionHash.get -> string!
@@ -838,6 +842,8 @@ Frontier.Platform.Workflow.Compiler.Storage.DefinitionVersionDocument.State.get 
 Frontier.Platform.Workflow.Compiler.Storage.DefinitionVersionDocument.State.init -> void
 Frontier.Platform.Workflow.Compiler.Storage.DefinitionVersionDocument.SupersededByVersion.get -> int?
 Frontier.Platform.Workflow.Compiler.Storage.DefinitionVersionDocument.SupersededByVersion.init -> void
+Frontier.Platform.Workflow.Compiler.Storage.DefinitionVersionDocument.Title.get -> string?
+Frontier.Platform.Workflow.Compiler.Storage.DefinitionVersionDocument.Title.init -> void
 Frontier.Platform.Workflow.Compiler.Storage.DefinitionVersionDocument.ValidationReportRef.get -> string!
 Frontier.Platform.Workflow.Compiler.Storage.DefinitionVersionDocument.ValidationReportRef.init -> void
 Frontier.Platform.Workflow.Compiler.Storage.DefinitionVersionDocument.WorkflowId.get -> string!
@@ -920,6 +926,8 @@ Frontier.Platform.Workflow.Compiler.Storage.PublishProposalDocument
 Frontier.Platform.Workflow.Compiler.Storage.PublishProposalDocument.<Clone>$() -> Frontier.Platform.Workflow.Compiler.Storage.PublishProposalDocument!
 Frontier.Platform.Workflow.Compiler.Storage.PublishProposalDocument.ApproverNoteOrReason.get -> string?
 Frontier.Platform.Workflow.Compiler.Storage.PublishProposalDocument.ApproverNoteOrReason.init -> void
+Frontier.Platform.Workflow.Compiler.Storage.PublishProposalDocument.ChangeSummary.get -> string?
+Frontier.Platform.Workflow.Compiler.Storage.PublishProposalDocument.ChangeSummary.init -> void
 Frontier.Platform.Workflow.Compiler.Storage.PublishProposalDocument.DraftRevision.get -> string!
 Frontier.Platform.Workflow.Compiler.Storage.PublishProposalDocument.DraftRevision.init -> void
 Frontier.Platform.Workflow.Compiler.Storage.PublishProposalDocument.Equals(Frontier.Platform.Workflow.Compiler.Storage.PublishProposalDocument? other) -> bool
@@ -932,6 +940,8 @@ Frontier.Platform.Workflow.Compiler.Storage.PublishProposalDocument.ProposerId.i
 Frontier.Platform.Workflow.Compiler.Storage.PublishProposalDocument.PublishProposalDocument() -> void
 Frontier.Platform.Workflow.Compiler.Storage.PublishProposalDocument.State.get -> Frontier.Platform.Workflow.Compiler.ProposalState!
 Frontier.Platform.Workflow.Compiler.Storage.PublishProposalDocument.State.init -> void
+Frontier.Platform.Workflow.Compiler.Storage.PublishProposalDocument.Title.get -> string?
+Frontier.Platform.Workflow.Compiler.Storage.PublishProposalDocument.Title.init -> void
 Frontier.Platform.Workflow.Compiler.Storage.PublishProposalDocument.ValidationReportRef.get -> Frontier.Platform.Workflow.Compiler.Storage.ValidationReportRef!
 Frontier.Platform.Workflow.Compiler.Storage.PublishProposalDocument.ValidationReportRef.init -> void
 Frontier.Platform.Workflow.Compiler.Storage.PublishProposalDocument.WorkflowId.get -> string!
