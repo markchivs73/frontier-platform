@@ -1,4 +1,5 @@
 using Frontier.Platform.Abstractions;
+using Frontier.Platform.Resilience;
 using Frontier.Platform.Workflow.Model;
 using Microsoft.DurableTask;
 
@@ -21,9 +22,15 @@ namespace Frontier.Platform.Workflow.Orchestration;
 /// nothing. Restoring an <c>await</c> inside the loop, a throttle, or a <c>WhenAll</c> at the
 /// boundary would each turn the router back into the serial queue this replaced.
 /// </para>
+/// <para>
+/// <see cref="IResiliencePolicyProvider"/> resolves the version lookup's retry profile by name over
+/// the compiled-in catalogue, so it returns identical <see cref="TaskOptions"/> on every replay
+/// (dtf-determinism), exactly as it does for <see cref="GraphOrchestrator"/> (S13.247).
+/// </para>
 /// </summary>
+/// <param name="policyProvider">Resolves the named retry profile each activity call runs under (doc 10 §4).</param>
 [DurableTask(WorkflowActivityNames.DispatcherOrchestrator)]
-public sealed class DispatcherOrchestrator : TaskOrchestrator<GraphOrchestratorInput, GraphOrchestratorResult>
+public sealed class DispatcherOrchestrator(IResiliencePolicyProvider policyProvider) : TaskOrchestrator<GraphOrchestratorInput, GraphOrchestratorResult>
 {
     /// <summary>
     /// The ADR-E8 work-item event name — a wire contract shared with the ingest surface that raises
@@ -99,7 +106,7 @@ public sealed class DispatcherOrchestrator : TaskOrchestrator<GraphOrchestratorI
 
                 if (spawned >= RolloverThresholdFor(input))
                 {
-                    return await RollOverAsync(context, input);
+                    return await RollOverAsync(context, input, policyProvider);
                 }
             }
 
@@ -118,12 +125,17 @@ public sealed class DispatcherOrchestrator : TaskOrchestrator<GraphOrchestratorI
     /// or an item raised between the Nth spawn and the new generation would be accepted and
     /// silently dropped.
     /// </para>
+    /// <para>
+    /// The lookup is a read, so it runs under <see cref="GraphOrchestratorSteps.StorageProfile"/>: a
+    /// passing store fault re-runs it rather than failing the eternal dispatcher (S13.247).
+    /// </para>
     /// </summary>
-    internal static async Task<GraphOrchestratorResult> RollOverAsync(TaskOrchestrationContext context, GraphOrchestratorInput input)
+    internal static async Task<GraphOrchestratorResult> RollOverAsync(TaskOrchestrationContext context, GraphOrchestratorInput input, IResiliencePolicyProvider policyProvider)
     {
         var resolved = await context.CallActivityAsync<ResolveDispatcherVersionResult>(
             WorkflowActivityNames.ResolveDispatcherVersionActivity,
-            DispatcherSteps.BuildResolveRequest(input));
+            DispatcherSteps.BuildResolveRequest(input),
+            policyProvider.GetTaskOptions(GraphOrchestratorSteps.StorageProfile));
 
         context.ContinueAsNew(DispatcherSteps.BuildNextGenerationInput(input, resolved.Definition));
 

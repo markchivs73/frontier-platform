@@ -203,17 +203,23 @@ public static class Phase1ResilienceProfileCatalogue
     /// Storage profile (doc 10 §4: "defer to SDK retry, thin wrapper"): inner retry set to
     /// 1 so Polly does not double-retry on top of the Cosmos SDK's own retry budget;
     /// bulkhead is permissive because SDK-managed I/O queues natively.
+    /// <para>
+    /// v2 (S13.247): the store-backed engine activities run under this profile, and v1's single outer
+    /// attempt let one passing store fault fail the run. The outer DTF loop now re-runs the activity
+    /// up to 3 times; the outer interval is derived from the inner delays (1s, then 2s, capped at
+    /// 30s), which shape nothing else here because the inner loop makes one attempt.
+    /// </para>
     /// </summary>
     public static readonly ResilienceProfile Storage = new()
     {
         ProfileId = "storage",
-        Version = 1,
+        Version = 2,
         InnerRetry = new InnerRetrySpec
         {
             MaxAttempts = 1,
             Backoff = "decorrelated-jitter",
-            BaseDelayMs = 100,
-            MaxDelayMs = 100,
+            BaseDelayMs = 1_000,
+            MaxDelayMs = 30_000,
         },
         TimeoutMs = 10_000,
         CircuitBreaker = new CircuitBreakerSpec
@@ -231,7 +237,7 @@ public static class Phase1ResilienceProfileCatalogue
         },
         OuterRetry = new OuterRetrySpec
         {
-            MaxAttempts = 1,
+            MaxAttempts = 3,
         },
     };
 

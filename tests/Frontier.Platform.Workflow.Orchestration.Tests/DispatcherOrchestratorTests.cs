@@ -17,7 +17,7 @@ namespace Frontier.Platform.Workflow.Orchestration.Tests;
 /// </summary>
 public sealed class DispatcherOrchestratorTests
 {
-    private readonly DispatcherOrchestrator orchestrator = new();
+    private readonly DispatcherOrchestrator orchestrator = new(new FakeResiliencePolicyProvider());
 
     [Fact]
     public async Task RunAsync_NullContext_Throws()

@@ -48,6 +48,23 @@ internal static class GraphOrchestratorSteps
     /// <summary>The Resilience profile (doc 10 §4, ADR-S3) for <see cref="WorkflowActivityNames.SnapshotStateActivity"/> calls.</summary>
     internal const string SnapshotPersistenceProfile = "snapshot-persistence";
 
+    /// <summary>
+    /// The Resilience profile (doc 10 §4) for the store-backed engine activities: saving an artifact
+    /// version, restoring one, opening and escalating an approval, and the dispatcher's version
+    /// lookup (S13.247). A passing store fault re-runs the activity with the request built before the
+    /// call; a permanent cause still fails at once (invariant 7). The approval activities converge on
+    /// a re-run (their tests pin it); the artifact activities' stores are consumer ports, so their
+    /// convergence is the consumer store's to keep.
+    /// </summary>
+    internal const string StorageProfile = "storage";
+
+    /// <summary>
+    /// The Resilience profile (doc 10 §4: "cascade evaluation gets <c>none</c>") for
+    /// <see cref="WorkflowActivityNames.EvaluateCascadeActivity"/>: the evaluation is pure and does no
+    /// I/O, so a fault is deterministic and a re-run would fail the same way (S13.247).
+    /// </summary>
+    internal const string PureActivityProfile = "none";
+
     /// <summary>Prefix for a <see cref="HumanGateNode"/>'s decision external event name (doc 06 §3).</summary>
     internal const string GateEventNamePrefix = "Gate:";
 
@@ -281,7 +298,7 @@ internal static class GraphOrchestratorSteps
         if (node.ArtifactKey is not null)
         {
             state.ArtifactStatuses[node.ArtifactKey] = ArtifactStatus.Draft;
-            await WriteArtifactVersionAsync(context, input, state, node.ArtifactKey, result.OutputPayload, result.OutputHash);
+            await WriteArtifactVersionAsync(context, input, state, node.ArtifactKey, result.OutputPayload, result.OutputHash, policyProvider);
         }
 
         await WriteSnapshotAsync(context, input, state, ExecutionStatus.Running, node.NodeId, policyProvider);
@@ -439,7 +456,7 @@ internal static class GraphOrchestratorSteps
             return;
         }
 
-        var cascade = await EvaluateCascadeAsync(context, input.Definition, state, changedArtifact);
+        var cascade = await EvaluateCascadeAsync(context, input.Definition, state, changedArtifact, policyProvider);
         await RegenerateDownstreamAsync(context, input, state, cascade.DownstreamArtifacts, policyProvider);
     }
 
@@ -537,7 +554,7 @@ internal static class GraphOrchestratorSteps
         if (node.ArtifactKey is not null)
         {
             state.ArtifactStatuses[node.ArtifactKey] = ArtifactStatus.Draft;
-            await WriteArtifactVersionAsync(context, input, state, node.ArtifactKey, result.OutputPayload, result.OutputHash);
+            await WriteArtifactVersionAsync(context, input, state, node.ArtifactKey, result.OutputPayload, result.OutputHash, policyProvider);
         }
 
         await WriteSnapshotAsync(context, input, state, ExecutionStatus.Running, node.NodeId, policyProvider);
@@ -643,8 +660,8 @@ internal static class GraphOrchestratorSteps
         }
     }
 
-    /// <summary>Calls <see cref="WorkflowActivityNames.EvaluateCascadeActivity"/> for <paramref name="changedArtifact"/> against the execution's current section statuses.</summary>
-    internal static Task<CascadeActivityResponse> EvaluateCascadeAsync(TaskOrchestrationContext context, WorkflowDefinition definition, GraphExecutionState state, string changedArtifact)
+    /// <summary>Calls <see cref="WorkflowActivityNames.EvaluateCascadeActivity"/> for <paramref name="changedArtifact"/> against the execution's current section statuses, under <see cref="PureActivityProfile"/>.</summary>
+    internal static Task<CascadeActivityResponse> EvaluateCascadeAsync(TaskOrchestrationContext context, WorkflowDefinition definition, GraphExecutionState state, string changedArtifact, IResiliencePolicyProvider policyProvider)
     {
         var request = new CascadeActivityRequest
         {
@@ -657,7 +674,7 @@ internal static class GraphOrchestratorSteps
             },
         };
 
-        return context.CallActivityAsync<CascadeActivityResponse>(WorkflowActivityNames.EvaluateCascadeActivity, request);
+        return context.CallActivityAsync<CascadeActivityResponse>(WorkflowActivityNames.EvaluateCascadeActivity, request, policyProvider.GetTaskOptions(PureActivityProfile));
     }
 
     /// <summary>
@@ -684,9 +701,10 @@ internal static class GraphOrchestratorSteps
     /// <paramref name="sectionKey"/>'s next version (doc 02 §2-3), advancing
     /// <see cref="GraphExecutionState.ArtifactVersions"/> from 0 so the first write for a
     /// section is version 1, never derived from wall-clock time. Records the written
-    /// version's ref in <see cref="GraphExecutionState.SectionRefs"/> (S4.6, doc 06 §9).
+    /// version's ref in <see cref="GraphExecutionState.SectionRefs"/> (S4.6, doc 06 §9). The write
+    /// runs under <see cref="StorageProfile"/>: a retry re-writes the same version, so it converges.
     /// </summary>
-    internal static async Task WriteArtifactVersionAsync(TaskOrchestrationContext context, GraphOrchestratorInput input, GraphExecutionState state, string sectionKey, string content, string contentHash)
+    internal static async Task WriteArtifactVersionAsync(TaskOrchestrationContext context, GraphOrchestratorInput input, GraphExecutionState state, string sectionKey, string content, string contentHash, IResiliencePolicyProvider policyProvider)
     {
         var version = (state.ArtifactVersions.GetValueOrDefault(sectionKey)) + 1;
         state.ArtifactVersions[sectionKey] = version;
@@ -702,7 +720,7 @@ internal static class GraphOrchestratorSteps
             UpdatedAtUtc = context.CurrentUtcDateTime,
         };
 
-        var response = await context.CallActivityAsync<ArtifactStateActivityResponse>(WorkflowActivityNames.ArtifactStateActivity, request);
+        var response = await context.CallActivityAsync<ArtifactStateActivityResponse>(WorkflowActivityNames.ArtifactStateActivity, request, policyProvider.GetTaskOptions(StorageProfile));
         state.SectionRefs[sectionKey] = response.SectionRef;
     }
 
@@ -799,10 +817,10 @@ internal static class GraphOrchestratorSteps
     {
         while (true)
         {
-            var approvalRequest = await OpenGateAsync(context, input, gate, state);
+            var approvalRequest = await OpenGateAsync(context, input, gate, state, policyProvider);
             await WriteSnapshotAsync(context, input, state, ExecutionStatus.PausedAtGate, gate.NodeId, policyProvider, gate.NodeId);
 
-            var decision = await DecideAsync(context, gate, approvalRequest);
+            var decision = await DecideAsync(context, gate, approvalRequest, policyProvider);
             state.Decisions.Add(decision);
             state.NodeOutputPayloads[gate.NodeId] = GateOutput(decision);
 
@@ -835,9 +853,10 @@ internal static class GraphOrchestratorSteps
     /// Calls <see cref="WorkflowActivityNames.RequestApprovalActivity"/> to open
     /// <paramref name="gate"/>'s approval request at its current
     /// <see cref="GraphExecutionState.GateOccurrences"/> count, then increments it for any
-    /// re-entry after rollback (doc 06 §4, §9, §13).
+    /// re-entry after rollback (doc 06 §4, §9, §13). The open is an upsert of the same request, so it
+    /// runs under <see cref="StorageProfile"/>.
     /// </summary>
-    internal static Task<ApprovalRequest> OpenGateAsync(TaskOrchestrationContext context, GraphOrchestratorInput input, HumanGateNode gate, GraphExecutionState state)
+    internal static Task<ApprovalRequest> OpenGateAsync(TaskOrchestrationContext context, GraphOrchestratorInput input, HumanGateNode gate, GraphExecutionState state, IResiliencePolicyProvider policyProvider)
     {
         var occurrence = state.GateOccurrences.GetValueOrDefault(gate.NodeId);
         state.GateOccurrences[gate.NodeId] = occurrence + 1;
@@ -855,7 +874,7 @@ internal static class GraphOrchestratorSteps
             RequestedAtUtc = context.CurrentUtcDateTime,
         };
 
-        return context.CallActivityAsync<ApprovalRequest>(WorkflowActivityNames.RequestApprovalActivity, request);
+        return context.CallActivityAsync<ApprovalRequest>(WorkflowActivityNames.RequestApprovalActivity, request, policyProvider.GetTaskOptions(StorageProfile));
     }
 
     /// <summary>
@@ -864,10 +883,10 @@ internal static class GraphOrchestratorSteps
     /// re-routes and reminds, it never auto-decides, so the gate keeps waiting on the
     /// same decision task.
     /// </summary>
-    internal static async Task<HitlDecision> DecideAsync(TaskOrchestrationContext context, HumanGateNode gate, ApprovalRequest approvalRequest)
+    internal static async Task<HitlDecision> DecideAsync(TaskOrchestrationContext context, HumanGateNode gate, ApprovalRequest approvalRequest, IResiliencePolicyProvider policyProvider)
     {
         var eventName = GateEventName(gate.NodeId);
-        var decision = await WaitForGateDecisionAsync(context, gate, eventName, approvalRequest);
+        var decision = await WaitForGateDecisionAsync(context, gate, eventName, approvalRequest, policyProvider);
 
         while (true)
         {
@@ -882,7 +901,7 @@ internal static class GraphOrchestratorSteps
                 return decision;
             }
 
-            await EscalateAsync(context, approvalRequest);
+            await EscalateAsync(context, approvalRequest, policyProvider);
             decision = await context.WaitForExternalEvent<HitlDecision>(eventName);
         }
     }
@@ -903,7 +922,7 @@ internal static class GraphOrchestratorSteps
     /// <see cref="WorkflowActivityNames.EscalateApprovalActivity"/> (doc 06 §7) and then
     /// waits indefinitely for the same decision task.
     /// </summary>
-    internal static async Task<HitlDecision> WaitForGateDecisionAsync(TaskOrchestrationContext context, HumanGateNode gate, string eventName, ApprovalRequest approvalRequest)
+    internal static async Task<HitlDecision> WaitForGateDecisionAsync(TaskOrchestrationContext context, HumanGateNode gate, string eventName, ApprovalRequest approvalRequest, IResiliencePolicyProvider policyProvider)
     {
         if (gate.TimeoutMinutes <= 0)
         {
@@ -916,14 +935,14 @@ internal static class GraphOrchestratorSteps
         }
         catch (TaskCanceledException)
         {
-            await EscalateAsync(context, approvalRequest);
+            await EscalateAsync(context, approvalRequest, policyProvider);
             return await context.WaitForExternalEvent<HitlDecision>(eventName);
         }
     }
 
-    /// <summary>Calls <see cref="WorkflowActivityNames.EscalateApprovalActivity"/> to mark <paramref name="approvalRequest"/> escalated (doc 06 §7).</summary>
-    internal static Task<ApprovalRequest> EscalateAsync(TaskOrchestrationContext context, ApprovalRequest approvalRequest) =>
-        context.CallActivityAsync<ApprovalRequest>(WorkflowActivityNames.EscalateApprovalActivity, approvalRequest);
+    /// <summary>Calls <see cref="WorkflowActivityNames.EscalateApprovalActivity"/> to mark <paramref name="approvalRequest"/> escalated (doc 06 §7), under <see cref="StorageProfile"/>: the escalation is a guarded transition, so a re-run converges.</summary>
+    internal static Task<ApprovalRequest> EscalateAsync(TaskOrchestrationContext context, ApprovalRequest approvalRequest, IResiliencePolicyProvider policyProvider) =>
+        context.CallActivityAsync<ApprovalRequest>(WorkflowActivityNames.EscalateApprovalActivity, approvalRequest, policyProvider.GetTaskOptions(StorageProfile));
 
     /// <summary>Builds a <see cref="HumanGateNode"/>'s decision external event name (doc 06 §3): <c>Gate:{gateId}</c>.</summary>
     internal static string GateEventName(string gateId) => $"{GateEventNamePrefix}{gateId}";
@@ -948,10 +967,10 @@ internal static class GraphOrchestratorSteps
     internal static async Task HandleRejectionAsync(TaskOrchestrationContext context, GraphOrchestratorInput input, HumanGateNode gate, HitlDecision decision, GraphExecutionState state, IRollbackPlanner rollbackPlanner, IResiliencePolicyProvider policyProvider)
     {
         var rollbackTargetArtifact = ResolveRollbackTargetArtifact(input.Definition, gate);
-        var cascade = await EvaluateCascadeAsync(context, input.Definition, state, rollbackTargetArtifact);
+        var cascade = await EvaluateCascadeAsync(context, input.Definition, state, rollbackTargetArtifact, policyProvider);
         var plan = rollbackPlanner.Plan(rollbackTargetArtifact, cascade.DownstreamArtifacts, state.ApprovedSnapshotRefs);
 
-        await RestoreArtifactsAsync(context, input, plan.RestoreSet, state);
+        await RestoreArtifactsAsync(context, input, plan.RestoreSet, state, policyProvider);
         MarkInvalidSetRegenerating(state, plan.InvalidSet);
         await RegenerateDownstreamAsync(context, input, state, plan.InvalidSet, policyProvider, decision.Notes);
     }
@@ -967,8 +986,8 @@ internal static class GraphOrchestratorSteps
             ?? throw new ContractViolationException(nameof(HumanGateNode), [$"Gate '{gate.NodeId}' rejected with no resolvable RollbackToNodeId/ArtifactKey; reject-in-place is unsupported by the PoC orchestrator."]);
     }
 
-    /// <summary>Calls <see cref="WorkflowActivityNames.RestoreArtifactsActivity"/> for every section in <paramref name="restoreSet"/>, updating <see cref="GraphExecutionState.SectionRefs"/> from the response (doc 06 §6).</summary>
-    internal static async Task RestoreArtifactsAsync(TaskOrchestrationContext context, GraphOrchestratorInput input, IReadOnlyDictionary<string, string> restoreSet, GraphExecutionState state)
+    /// <summary>Calls <see cref="WorkflowActivityNames.RestoreArtifactsActivity"/> for every section in <paramref name="restoreSet"/>, updating <see cref="GraphExecutionState.SectionRefs"/> from the response (doc 06 §6), under <see cref="StorageProfile"/>: a restore repoints at the same version, so a re-run converges.</summary>
+    internal static async Task RestoreArtifactsAsync(TaskOrchestrationContext context, GraphOrchestratorInput input, IReadOnlyDictionary<string, string> restoreSet, GraphExecutionState state, IResiliencePolicyProvider policyProvider)
     {
         foreach (var (section, restoreRef) in restoreSet)
         {
@@ -979,7 +998,7 @@ internal static class GraphOrchestratorSteps
                 RestoredAtUtc = context.CurrentUtcDateTime,
             };
 
-            var response = await context.CallActivityAsync<ArtifactStateActivityResponse>(WorkflowActivityNames.RestoreArtifactsActivity, request);
+            var response = await context.CallActivityAsync<ArtifactStateActivityResponse>(WorkflowActivityNames.RestoreArtifactsActivity, request, policyProvider.GetTaskOptions(StorageProfile));
             state.SectionRefs[section] = response.SectionRef;
         }
     }

@@ -10,9 +10,10 @@ namespace Frontier.Platform.Workflow.Orchestration.Tests.Replay;
 /// The store-shaped activities a consumer supplies (snapshot writer, artifact state, approval store,
 /// audit consolidation, dynamic-context refresh), reduced to recording what they received (S13.192). The snapshot write can be
 /// held for <paramref name="snapshotDelay"/> so a checkpoint is still in flight when a sibling branch
-/// completes, the review-01 ENG-02 interleaving.
+/// completes, the review-01 ENG-02 interleaving. The first write of each section can throw
+/// <paramref name="artifactFault"/>, so a test can watch the SDK's retry handling of it (S13.247).
 /// </summary>
-internal sealed class RecordingActivities(string worker, ReplayRecorder recorder, TimeSpan snapshotDelay)
+internal sealed class RecordingActivities(string worker, ReplayRecorder recorder, TimeSpan snapshotDelay, Exception? artifactFault = null)
 {
     /// <summary>Records <paramref name="snapshot"/> after the scripted write delay.</summary>
     public async Task<SnapshotActivityResponse> WriteSnapshotAsync(ExecutionSnapshot snapshot)
@@ -23,9 +24,16 @@ internal sealed class RecordingActivities(string worker, ReplayRecorder recorder
         return new SnapshotActivityResponse { SnapshotId = $"{snapshot.ExecutionId}:{snapshot.Sequence:D6}" };
     }
 
-    /// <summary>Answers an artifact-state append with a stable section ref.</summary>
-    public static ArtifactStateActivityResponse WriteArtifact(ArtifactStateActivityRequest request) =>
-        new() { SectionRef = $"{request.ExecutionId}:{request.ArtifactKey}:v{request.Version}" };
+    /// <summary>Answers an artifact-state append with a stable section ref, throwing the scripted fault on a section's first attempt.</summary>
+    public ArtifactStateActivityResponse WriteArtifact(ArtifactStateActivityRequest request)
+    {
+        if (recorder.AddArtifactWrite(request.ArtifactKey) == 1 && artifactFault is not null)
+        {
+            throw artifactFault;
+        }
+
+        return new() { SectionRef = $"{request.ExecutionId}:{request.ArtifactKey}:v{request.Version}" };
+    }
 
     /// <summary>Applies a dynamic-context refresh: the new epoch is the count of refreshes applied so far.</summary>
     public DynamicContextRefreshResult Refresh(RefreshDynamicContextRequest request)

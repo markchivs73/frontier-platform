@@ -32,6 +32,7 @@ internal sealed class ReplayRecorder
     private readonly ConcurrentQueue<RecordedAudit> _audits = new();
     private readonly ConcurrentQueue<AppliedRefresh> _refreshes = new();
     private readonly ConcurrentQueue<string> _startedNodes = new();
+    private readonly ConcurrentQueue<string> _artifactWrites = new();
 
     /// <summary>Every scripted-model call, in completion order.</summary>
     public IReadOnlyList<AgentCall> AgentCalls => [.. _agentCalls];
@@ -63,6 +64,16 @@ internal sealed class ReplayRecorder
 
     /// <summary>Records that a scripted-model call for <paramref name="nodeId"/> has started.</summary>
     public void AddStarted(string nodeId) => _startedNodes.Enqueue(nodeId);
+
+    /// <summary>Every artifact-state write attempt, by section key, including ones that faulted (S13.247).</summary>
+    public IReadOnlyList<string> ArtifactWrites => [.. _artifactWrites];
+
+    /// <summary>Records an artifact-state write attempt for <paramref name="artifactKey"/> and returns how many that section has had.</summary>
+    public int AddArtifactWrite(string artifactKey)
+    {
+        _artifactWrites.Enqueue(artifactKey);
+        return _artifactWrites.Count(key => key == artifactKey);
+    }
 
     /// <summary>Records a scripted-model call.</summary>
     public void Add(AgentCall call) => _agentCalls.Enqueue(call);

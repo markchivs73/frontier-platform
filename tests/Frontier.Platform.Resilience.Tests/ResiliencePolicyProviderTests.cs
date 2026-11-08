@@ -154,6 +154,22 @@ public sealed class ResiliencePolicyProviderTests
         Assert.Equal(TimeSpan.FromMilliseconds(30_000), policy.MaxRetryInterval);
     }
 
+    /// <summary>S13.247: <c>storage</c> v2 gives the outer DTF loop 3 attempts at 1s then 2s, capped at 30s, and the same retry shape on every call, which replay relies on.</summary>
+    [Fact]
+    public void GetTaskOptions_Storage_BuildsTheSameRetryPolicyOnEveryCall()
+    {
+        var first = provider.GetTaskOptions("storage").Retry!.Policy!;
+        var second = provider.GetTaskOptions("storage").Retry!.Policy!;
+
+        Assert.Equal(3, first.MaxNumberOfAttempts);
+        Assert.Equal(TimeSpan.FromMilliseconds(1_000), first.FirstRetryInterval);
+        Assert.Equal(2.0, first.BackoffCoefficient);
+        Assert.Equal(TimeSpan.FromMilliseconds(30_000), first.MaxRetryInterval);
+        Assert.Equal(
+            (first.MaxNumberOfAttempts, first.FirstRetryInterval, first.BackoffCoefficient, first.MaxRetryInterval, first.RetryTimeout),
+            (second.MaxNumberOfAttempts, second.FirstRetryInterval, second.BackoffCoefficient, second.MaxRetryInterval, second.RetryTimeout));
+    }
+
     [Fact]
     public void GetTaskOptions_SnapshotPersistence_BuildsRetryPolicyFromProfile()
     {

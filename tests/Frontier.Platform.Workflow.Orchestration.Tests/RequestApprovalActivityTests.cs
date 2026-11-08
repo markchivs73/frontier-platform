@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Frontier.Platform.Hitl;
 using Frontier.TestSupport;
 
@@ -26,5 +27,21 @@ public sealed class RequestApprovalActivityTests
         Assert.Equal(ApprovalRequestStatus.Pending, result.Status);
         Assert.Equal("eng-1::wf-chain:gate-business-1:0", result.Id);
         Assert.Same(result, store.UpsertedRequest);
+    }
+
+    /// <summary>S13.247: the <c>storage</c> profile may re-run an open that already wrote; the re-run upserts the same request under the same id.</summary>
+    [Fact]
+    public async Task RunAsync_ReRunWithTheSameInput_UpsertsTheSameRequest()
+    {
+        var store = new FakeApprovalStore();
+        var activity = new RequestApprovalActivity(store);
+        var input = HitlFixtures.GateOpenRequest();
+
+        var first = await activity.RunAsync(FakeTaskActivityContext.ForRequestApproval(), input);
+        var second = await activity.RunAsync(FakeTaskActivityContext.ForRequestApproval(), input);
+
+        Assert.Equal(JsonSerializer.Serialize(first), JsonSerializer.Serialize(second));
+        Assert.Same(second, store.UpsertedRequest);
+        Assert.Equal(2, store.Upserts);
     }
 }

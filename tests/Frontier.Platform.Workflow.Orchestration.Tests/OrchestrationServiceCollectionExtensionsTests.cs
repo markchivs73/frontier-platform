@@ -1,3 +1,4 @@
+using Frontier.Platform.Resilience;
 using Frontier.Platform.Workflow.Model;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -41,6 +42,18 @@ public sealed class OrchestrationServiceCollectionExtensionsTests
         Assert.Contains(typeof(IAuditConsolidator), registered);
         Assert.Contains(typeof(IAgentTaskActivityPipeline), registered);
         Assert.Contains(typeof(IContractTypeRegistry), registered);
+    }
+
+    /// <summary>S13.247: <see cref="DispatcherOrchestrator"/> now takes <see cref="IResiliencePolicyProvider"/>, and resolves from the two registrations a host already makes.</summary>
+    [Fact]
+    public void AddFrontierWorkflowOrchestration_WithResilience_ResolvesTheDispatcherOrchestrator()
+    {
+        using var provider = new ServiceCollection()
+            .AddFrontierResilience()
+            .AddFrontierWorkflowOrchestration(Configuration())
+            .BuildServiceProvider();
+
+        Assert.NotNull(provider.GetRequiredService<DispatcherOrchestrator>());
     }
 
     [Fact]

@@ -98,7 +98,18 @@ public sealed class Phase1ResilienceProfileCatalogueTests
 
         Assert.Equal("storage", profile.ProfileId);
         Assert.Equal(1, profile.InnerRetry.MaxAttempts);
-        Assert.Equal(1, profile.OuterRetry.MaxAttempts);
+    }
+
+    /// <summary>S13.247: v2 re-runs a store-backed activity in the outer DTF loop, so one passing store fault does not fail the run.</summary>
+    [Fact]
+    public void Storage_V2_RetriesInTheOuterLoopWithASecondScaleInterval()
+    {
+        var profile = Phase1ResilienceProfileCatalogue.Storage;
+
+        Assert.Equal(2, profile.Version);
+        Assert.Equal(3, profile.OuterRetry.MaxAttempts);
+        Assert.Equal(1_000, profile.InnerRetry.BaseDelayMs);
+        Assert.Equal(30_000, profile.InnerRetry.MaxDelayMs);
     }
 
     [Fact]
