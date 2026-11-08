@@ -228,6 +228,35 @@ internal static class AuditContractSamples
         return SignedAuditRecord() with { AgentInvocations = unsigned.AgentInvocations, McpToolInvocations = unsigned.McpToolInvocations, Generation = unsigned.Generation };
     }
 
+    /// <summary>S13.240 (ADR-PA46): why a failed run stopped, as its paused-on-failure checkpoint recorded it.</summary>
+    public static FailureRecord FailureRecord() => new()
+    {
+        Classification = "contract_violation",
+        NodeId = "pricing-agent",
+        ExceptionType = "Frontier.Platform.Abstractions.ContractViolationException",
+        Message = "PricingSection: reply failed validation.",
+    };
+
+    /// <summary>S13.240 (ADR-PA46): who ended a terminated run, why and when.</summary>
+    public static TerminationRecord TerminationRecord() => new()
+    {
+        TerminatedBy = "user:operator-1",
+        Reason = "Parked on a failure that will not be fixed.",
+        TerminatedAtUtc = new DateTime(2026, 1, 1, 2, 0, 0, DateTimeKind.Utc),
+    };
+
+    /// <summary>S13.240: a failed run's record.</summary>
+    public static AuditRecord AuditRecordFailed() => AuditRecord() with { FinalStatus = ExecutionStatus.Failed, Failure = FailureRecord() };
+
+    /// <summary>S13.240: the signed shape of <see cref="AuditRecordFailed"/>.</summary>
+    public static SignedAuditRecord SignedAuditRecordFailed() => SignedAuditRecord() with { FinalStatus = ExecutionStatus.Failed, Failure = FailureRecord() };
+
+    /// <summary>S13.240: a terminated run's record.</summary>
+    public static AuditRecord AuditRecordTerminated() => AuditRecord() with { FinalStatus = ExecutionStatus.Terminated, Termination = TerminationRecord() };
+
+    /// <summary>S13.240: the signed shape of <see cref="AuditRecordTerminated"/>.</summary>
+    public static SignedAuditRecord SignedAuditRecordTerminated() => SignedAuditRecord() with { FinalStatus = ExecutionStatus.Terminated, Termination = TerminationRecord() };
+
     public static AuditRecord AuditRecordWithContextPin() => AuditRecord() with { DynamicContextEpoch = 3, DynamicContextHash = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" };
 
     /// <summary>A well-formed <see cref="SignedAuditRecord"/> (doc 05 §3, all 18 fields).</summary>

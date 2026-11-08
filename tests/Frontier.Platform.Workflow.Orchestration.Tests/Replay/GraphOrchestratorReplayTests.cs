@@ -136,6 +136,35 @@ public sealed class GraphOrchestratorReplayTests : IAsyncLifetime
         Assert.Equal(2, recorder.AgentCalls.Single(call => call.NodeId == "c-join").Epoch);
     }
 
+    /// <summary>
+    /// S13.240 (ADR-PA46): the failure path under real replay. One branch fails while its sibling is still
+    /// in flight, so the drain, the paused-on-failure checkpoint and the audit consolidation each run in a
+    /// later episode that replays the ones before. The run ends failed with the node's own failure, after
+    /// exactly one consolidation attesting <c>failed</c>, and no agent node runs twice.
+    /// </summary>
+    [Fact]
+    public async Task BranchFails_RunEndsFailedWithTheNodesFailure_AfterOneFailedAuditConsolidation()
+    {
+        var recorder = new ReplayRecorder();
+        var instanceId = NewInstanceId();
+        var delays = new Dictionary<string, TimeSpan> { ["b-ticket"] = TimeSpan.FromSeconds(3) };
+
+        await using var worker = await ReplayWorkerHost.StartAsync("worker-a", recorder, delays, failingNodes: new HashSet<string>(["b-booking"], StringComparer.Ordinal));
+        await worker.Client.ScheduleNewOrchestrationInstanceAsync(WorkflowActivityNames.GraphOrchestrator, Input(OrchestrationFixtures.FanOutJoin()), new StartOrchestrationOptions { InstanceId = instanceId });
+        var metadata = await FinishAsync(worker.Client, instanceId);
+
+        Assert.Equal(OrchestrationRuntimeStatus.Failed, metadata.RuntimeStatus);
+        Assert.True(metadata.FailureDetails?.InnerFailure?.IsCausedBy<ContractViolationException>(), $"the run's failure is not the node's: {metadata.FailureDetails}");
+        var audit = Assert.Single(recorder.Audits);
+        Assert.Equal(ExecutionStatus.Failed, audit.Input.FinalStatus);
+        var paused = recorder.Snapshots.MaxBy(s => s.Snapshot.Sequence)!;
+        Assert.Equal(ExecutionStatus.PausedOnFailure, paused.Snapshot.Status);
+        Assert.Equal("b-booking", paused.Snapshot.CurrentNodeId);
+        Assert.True(paused.RecordedAt <= audit.RecordedAt, "the audit was consolidated before the checkpoint it reads had landed");
+        Assert.Equal(["a-entry", "b-ticket"], recorder.AgentCalls.Select(call => call.NodeId));
+        Assert.Equal(["a-entry", "b-booking", "b-ticket"], recorder.StartedNodes.Order(StringComparer.Ordinal));
+    }
+
     /// <summary>One checkpoint per sequence number, numbered from 1 with no gap, the last one <see cref="ExecutionStatus.Completed"/>.</summary>
     private static void AssertCheckpointsAreUniqueAndEndCompleted(ReplayRecorder recorder)
     {
@@ -159,6 +188,13 @@ public sealed class GraphOrchestratorReplayTests : IAsyncLifetime
         var metadata = await client.WaitForInstanceCompletionAsync(instanceId, getInputsAndOutputs: true, timeout.Token);
         Assert.True(metadata.RuntimeStatus == OrchestrationRuntimeStatus.Completed, $"{metadata.RuntimeStatus}: {metadata.FailureDetails}");
         return metadata.ReadOutputAs<GraphOrchestratorResult>()!;
+    }
+
+    /// <summary>Waits for <paramref name="instanceId"/> to finish, whatever its outcome, and returns its metadata with its failure details.</summary>
+    private static async Task<OrchestrationMetadata> FinishAsync(DurableTaskClient client, string instanceId)
+    {
+        using var timeout = new CancellationTokenSource(Timeout);
+        return await client.WaitForInstanceCompletionAsync(instanceId, getInputsAndOutputs: true, timeout.Token);
     }
 
     /// <summary>

@@ -33,8 +33,8 @@ internal sealed class ReplayWorkerHost : IAsyncDisposable
     /// <summary>The client for scheduling, raising events and waiting on this hub.</summary>
     public DurableTaskClient Client => _host.Services.GetRequiredService<DurableTaskClient>();
 
-    /// <summary>Builds and starts a worker labelled <paramref name="worker"/>.</summary>
-    public static async Task<ReplayWorkerHost> StartAsync(string worker, ReplayRecorder recorder, IReadOnlyDictionary<string, TimeSpan>? agentDelays = null, TimeSpan? snapshotDelay = null)
+    /// <summary>Builds and starts a worker labelled <paramref name="worker"/>; agent nodes in <paramref name="failingNodes"/> fail permanently.</summary>
+    public static async Task<ReplayWorkerHost> StartAsync(string worker, ReplayRecorder recorder, IReadOnlyDictionary<string, TimeSpan>? agentDelays = null, TimeSpan? snapshotDelay = null, IReadOnlySet<string>? failingNodes = null)
     {
         var builder = Host.CreateApplicationBuilder();
         builder.Logging.SetMinimumLevel(LogLevel.Warning);
@@ -44,7 +44,7 @@ internal sealed class ReplayWorkerHost : IAsyncDisposable
             .AddTransient<GraphOrchestrator>();
 
         var activities = new RecordingActivities(worker, recorder, snapshotDelay ?? TimeSpan.Zero);
-        var pipeline = new ScriptedAgentTaskActivityPipeline(worker, recorder, agentDelays ?? new Dictionary<string, TimeSpan>());
+        var pipeline = new ScriptedAgentTaskActivityPipeline(worker, recorder, agentDelays ?? new Dictionary<string, TimeSpan>(), failingNodes);
         builder.Services.AddDurableTaskWorker(w => ConfigureWorker(w, activities, pipeline));
         builder.Services.AddDurableTaskClient(c => c
             .Configure(options => options.DataConverter = new JsonDataConverter(CanonicalProfile.Options))

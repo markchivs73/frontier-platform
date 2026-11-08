@@ -88,4 +88,43 @@ public sealed class AuditGoldenFileTests
         Assert.All(record.AgentInvocations, invocation => Assert.Null(invocation.HostBuild));
         Assert.Equal(stored, CanonicalProfile.SerializeCanonical(recomputed));
     }
+
+    /// <summary>S13.240 (ADR-PA46): a failed run's record carries why it failed. New goldens; every older audit golden is unchanged.</summary>
+    [Fact]
+    public void AuditRecordFailed_IsByteStableAndRoundTrips() =>
+        ContractRoundTripAssertions.AssertStableAndRoundTrips(AuditContractSamples.AuditRecordFailed(), "audit_record_failed.json");
+
+    [Fact]
+    public void SignedAuditRecordFailed_IsByteStableAndRoundTrips() =>
+        ContractRoundTripAssertions.AssertStableAndRoundTrips(AuditContractSamples.SignedAuditRecordFailed(), "signed_audit_record_failed.json");
+
+    /// <summary>S13.240 (ADR-PA46): a terminated run's record carries who ended it, why and when.</summary>
+    [Fact]
+    public void AuditRecordTerminated_IsByteStableAndRoundTrips() =>
+        ContractRoundTripAssertions.AssertStableAndRoundTrips(AuditContractSamples.AuditRecordTerminated(), "audit_record_terminated.json");
+
+    [Fact]
+    public void SignedAuditRecordTerminated_IsByteStableAndRoundTrips() =>
+        ContractRoundTripAssertions.AssertStableAndRoundTrips(AuditContractSamples.SignedAuditRecordTerminated(), "signed_audit_record_terminated.json");
+
+    /// <summary>
+    /// S13.240: a record signed before failed and terminated runs were audited must recompute to exactly its
+    /// stored bytes, or verification would read the two new members as tampering.
+    /// </summary>
+    [Theory]
+    [InlineData("signed_audit_record.json")]
+    [InlineData("signed_audit_record_optional_fields.json")]
+    [InlineData("signed_audit_record_mcp_tool_invocations.json")]
+    [InlineData("signed_audit_record_host_build_generation.json")]
+    public void RecordSignedBeforeFailureAndTermination_RecomputesToItsStoredBytes(string goldenFileName)
+    {
+        var stored = File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "GoldenFiles", goldenFileName));
+        var record = JsonSerializer.Deserialize<SignedAuditRecord>(stored, CanonicalProfile.Options)!;
+
+        var recomputed = AuditRecordHasher.ToSignedShape(AuditRecordHasher.ToAuditRecord(record), record.PreviousRecordHash, record.RecordHash, record.Signature, record.SigningKeyId);
+
+        Assert.Null(record.Failure);
+        Assert.Null(record.Termination);
+        Assert.Equal(stored, CanonicalProfile.SerializeCanonical(recomputed));
+    }
 }

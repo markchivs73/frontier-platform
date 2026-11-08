@@ -87,6 +87,16 @@ public sealed class WorkflowEventProjectorTests
         Assert.Null(workflowEvent.Details);
     }
 
+    /// <summary>S13.240: the closing bookend names the status the record attests, not the paused checkpoint's.</summary>
+    [Fact]
+    public void Project_FinalStatusGiven_ClosingBookendNamesIt()
+    {
+        var snapshot = Snapshot() with { Status = ExecutionStatus.PausedOnFailure, FailureClassification = "guardrail" };
+
+        Assert.Equal("failed", WorkflowEventProjector.Project(snapshot, StartedAtUtc, ExecutionStatus.Failed)[^1].Details);
+        Assert.Equal("paused_on_failure", WorkflowEventProjector.Project(snapshot, StartedAtUtc)[^1].Details);
+    }
+
     /// <summary>A completed execution with one completed step and one human decision (mirrors doc 05's Gate-3-style execution).</summary>
     internal static ExecutionSnapshot Snapshot() => new()
     {

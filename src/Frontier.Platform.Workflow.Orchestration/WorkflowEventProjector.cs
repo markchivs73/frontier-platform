@@ -14,8 +14,12 @@ namespace Frontier.Platform.Workflow.Orchestration;
 /// </summary>
 internal static class WorkflowEventProjector
 {
-    /// <summary>Builds the ordered <see cref="WorkflowEvent"/> timeline for <paramref name="snapshot"/>.</summary>
-    internal static IReadOnlyList<WorkflowEvent> Project(ExecutionSnapshot snapshot, DateTime startedAtUtc)
+    /// <summary>
+    /// Builds the ordered <see cref="WorkflowEvent"/> timeline for <paramref name="snapshot"/>. The closing
+    /// bookend names <paramref name="finalStatus"/>, the status the record attests, when one is given
+    /// (S13.240: a failed run's last checkpoint is <c>paused_on_failure</c>), else the snapshot's own.
+    /// </summary>
+    internal static IReadOnlyList<WorkflowEvent> Project(ExecutionSnapshot snapshot, DateTime startedAtUtc, ExecutionStatus? finalStatus = null)
     {
         var middle = snapshot.CompletedSteps.Select(ToTaskCompleted)
             .Concat(snapshot.Decisions.Select(ToExternalEventRaised))
@@ -25,7 +29,7 @@ internal static class WorkflowEventProjector
         [
             Bookend(WorkflowEventType.ExecutionStarted, startedAtUtc, details: null),
             .. middle,
-            Bookend(WorkflowEventType.ExecutionCompleted, snapshot.CheckpointedAtUtc, snapshot.Status.Name),
+            Bookend(WorkflowEventType.ExecutionCompleted, snapshot.CheckpointedAtUtc, (finalStatus ?? snapshot.Status).Name),
         ];
     }
 

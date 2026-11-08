@@ -56,6 +56,8 @@ internal static class AuditRecordHasher
         DynamicContextHash = record.DynamicContextHash,
         McpToolInvocations = record.McpToolInvocations,
         Generation = record.Generation,
+        Failure = record.Failure,
+        Termination = record.Termination,
         PreviousRecordHash = previousRecordHash,
         RecordHash = recordHash,
         Signature = signature,
@@ -84,5 +86,7 @@ internal static class AuditRecordHasher
         DynamicContextHash = record.DynamicContextHash,
         McpToolInvocations = record.McpToolInvocations,
         Generation = record.Generation,
+        Failure = record.Failure,
+        Termination = record.Termination,
     };
 }

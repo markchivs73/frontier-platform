@@ -57,4 +57,15 @@ public sealed record ConsolidateAuditInput
     [JsonPropertyOrder(5)]
     [JsonPropertyName("run_id")]
     public string? RunId { get; init; }
+
+    /// <summary>
+    /// The status the record attests, when it is not the final snapshot's (S13.240, ADR-PA46). The
+    /// orchestrator's failure path sets <see cref="ExecutionStatus.Failed"/>: the run's last checkpoint
+    /// says <see cref="ExecutionStatus.PausedOnFailure"/>, and the orchestration has ended failed.
+    /// <b>Additive and optional</b> per the ADR-E15 floor: <see langword="null"/> (omitted on the wire)
+    /// means the snapshot's own status, which is what every input recorded before this member meant.
+    /// </summary>
+    [JsonPropertyOrder(6)]
+    [JsonPropertyName("final_status")]
+    public ExecutionStatus? FinalStatus { get; init; }
 }

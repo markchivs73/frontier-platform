@@ -128,6 +128,23 @@ public sealed record AuditRecord : IVersionedContract
     [JsonPropertyName("generation")]
     public int? Generation { get; init; }
 
+    /// <summary>
+    /// Why the execution failed, when <see cref="FinalStatus"/> is <see cref="ExecutionStatus.Failed"/>
+    /// (S13.240, ADR-PA46). <see langword="null"/> (omitted on the wire) for every other record, and on
+    /// records written before failed runs were audited, so existing golden and signed bytes are unaffected.
+    /// </summary>
+    [JsonPropertyOrder(19)]
+    [JsonPropertyName("failure")]
+    public FailureRecord? Failure { get; init; }
+
+    /// <summary>
+    /// Who ended the execution, why and when, when <see cref="FinalStatus"/> is
+    /// <see cref="ExecutionStatus.Terminated"/> (S13.240, ADR-PA46). Omit-null, as <see cref="Failure"/>.
+    /// </summary>
+    [JsonPropertyOrder(20)]
+    [JsonPropertyName("termination")]
+    public TerminationRecord? Termination { get; init; }
+
     /// <inheritdoc />
     public void Validate()
     {
@@ -152,6 +169,8 @@ public sealed record AuditRecord : IVersionedContract
         {
             violations.Add(ToolCallNoteCap.Violation);
         }
+
+        violations.AddRange(AuditOutcomeRule.Violations(FinalStatus, Failure, Termination));
 
         if (violations.Count > 0)
         {

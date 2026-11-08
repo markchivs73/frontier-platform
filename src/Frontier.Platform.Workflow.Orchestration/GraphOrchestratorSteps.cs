@@ -67,8 +67,10 @@ internal static class GraphOrchestratorSteps
     /// spans an await, which siblings can interleave; history order keeps replay deterministic),
     /// gates run only at full quiescence (Decision 2), and a permanent failure lets
     /// in-flight siblings finish before the walk pauses attributed (Decision 4).
+    /// <paramref name="runStartedAtUtc"/> is the orchestration's own start, which a failed run's audit
+    /// record carries as the completed run's does (S13.240); absent, the walk's start stands in.
     /// </summary>
-    internal static async Task<GraphExecutionState> RunInitialWalkAsync(TaskOrchestrationContext context, GraphOrchestratorInput input, IRollbackPlanner rollbackPlanner, IResiliencePolicyProvider policyProvider, IMcpWriteClassifier mcpWriteClassifier, IReadOnlyList<ModelRolePin>? pins = null)
+    internal static async Task<GraphExecutionState> RunInitialWalkAsync(TaskOrchestrationContext context, GraphOrchestratorInput input, IRollbackPlanner rollbackPlanner, IResiliencePolicyProvider policyProvider, IMcpWriteClassifier mcpWriteClassifier, IReadOnlyList<ModelRolePin>? pins = null, DateTime? runStartedAtUtc = null)
     {
         EnsureSupported(input.Definition, input.WorkItemId);
 
@@ -124,7 +126,7 @@ internal static class GraphOrchestratorSteps
             ObserveFinished(walk);
         }
 
-        await ThrowIfFailedAsync(context, input, state, walk, policyProvider);
+        await ThrowIfFailedAsync(context, input, state, walk, policyProvider, runStartedAtUtc ?? state.StartedAtUtc);
         walk.ThrowIfIncomplete();
         return state;
     }
@@ -363,10 +365,11 @@ internal static class GraphOrchestratorSteps
     /// <see cref="ExecutionStatus.PausedOnFailure"/> checkpoint carrying the actually
     /// failing node id, its doc 10 §3 classification — the real-execution half of the
     /// C-35 attribution fix — and, since S13.120, the failure itself (type and bounded
-    /// message, <see cref="FailureDetailSummary"/>), then rethrows the original failure so
-    /// DTF records it.
+    /// message, <see cref="FailureDetailSummary"/>), consolidates and signs the run's
+    /// <see cref="ExecutionStatus.Failed"/> audit record from it (S13.240,
+    /// <see cref="ConsolidateFailedAuditAsync"/>), then rethrows the original failure so DTF records it.
     /// </summary>
-    internal static async Task ThrowIfFailedAsync(TaskOrchestrationContext context, GraphOrchestratorInput input, GraphExecutionState state, GraphWalk walk, IResiliencePolicyProvider policyProvider)
+    internal static async Task ThrowIfFailedAsync(TaskOrchestrationContext context, GraphOrchestratorInput input, GraphExecutionState state, GraphWalk walk, IResiliencePolicyProvider policyProvider, DateTime runStartedAtUtc)
     {
         if (walk.FirstFailure is not { } failure)
         {
@@ -375,7 +378,30 @@ internal static class GraphOrchestratorSteps
 
         var detail = FailureDetailSummary.Describe(walk.FailedNodeId!, failure);
         await WriteSnapshotAsync(context, input, state, ExecutionStatus.PausedOnFailure, walk.FailedNodeId, policyProvider, failureClassification: ClassifyFailure(failure), failureDetail: detail);
+        await ConsolidateFailedAuditAsync(context, input, runStartedAtUtc, policyProvider);
         System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(failure).Throw();
+    }
+
+    /// <summary>
+    /// The failure path's <see cref="WorkflowActivityNames.ConsolidateAuditActivity"/> call (S13.240,
+    /// ADR-PA46): the same activity the completed path ends with, attesting
+    /// <see cref="ExecutionStatus.Failed"/> over the <see cref="ExecutionStatus.PausedOnFailure"/>
+    /// checkpoint just written, so the record chains through the engagement's guarded append (ADR-PA31).
+    /// An audit activity that fails after its retries is swallowed: the run failed because of its node,
+    /// and that is the failure DTF must record and the consumer classifies. The missing record is not
+    /// hidden — the run's projection is terminal and has no <c>audit-records</c> entry, which is what a
+    /// missing-audit sweep looks for.
+    /// </summary>
+    internal static async Task ConsolidateFailedAuditAsync(TaskOrchestrationContext context, GraphOrchestratorInput input, DateTime runStartedAtUtc, IResiliencePolicyProvider policyProvider)
+    {
+        try
+        {
+            await ConsolidateAuditAsync(context, input, runStartedAtUtc, policyProvider, ExecutionStatus.Failed);
+        }
+        catch (TaskFailedException)
+        {
+            // Deliberately empty: the node's failure, rethrown by the caller, is the run's outcome.
+        }
     }
 
     /// <summary>Unwraps the single inner exception a faulted node task carries.</summary>
@@ -428,9 +454,12 @@ internal static class GraphOrchestratorSteps
     /// <c>audit-records</c> entry. Reuses the <see cref="SnapshotPersistenceProfile"/> retry
     /// profile (S4.4) — the same Cosmos-write characteristics as the snapshot writer it
     /// follows. <paramref name="startedAtUtc"/> is <c>context.CurrentUtcDateTime</c> captured
-    /// once at orchestration start (deterministic, ADR-2).
+    /// once at orchestration start (deterministic, ADR-2). <paramref name="finalStatus"/> is the status
+    /// the record attests when it is not the final snapshot's: the failure path's
+    /// <see cref="ExecutionStatus.Failed"/> (S13.240); the completed path leaves it null, so its input's
+    /// recorded bytes are unchanged.
     /// </summary>
-    internal static Task ConsolidateAuditAsync(TaskOrchestrationContext context, GraphOrchestratorInput input, DateTime startedAtUtc, IResiliencePolicyProvider policyProvider)
+    internal static Task ConsolidateAuditAsync(TaskOrchestrationContext context, GraphOrchestratorInput input, DateTime startedAtUtc, IResiliencePolicyProvider policyProvider, ExecutionStatus? finalStatus = null)
     {
         var request = new ConsolidateAuditInput
         {
@@ -440,6 +469,7 @@ internal static class GraphOrchestratorSteps
             DefinitionHash = input.Definition.DefinitionHash,
             StartedAtUtc = startedAtUtc,
             RunId = input.RunId,
+            FinalStatus = finalStatus,
         };
 
         var taskOptions = policyProvider.GetTaskOptions(SnapshotPersistenceProfile);

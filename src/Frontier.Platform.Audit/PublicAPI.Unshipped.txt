@@ -1,0 +1,41 @@
+#nullable enable
+Frontier.Platform.Audit.AuditRecord.Failure.get -> Frontier.Platform.Audit.FailureRecord?
+Frontier.Platform.Audit.AuditRecord.Failure.init -> void
+Frontier.Platform.Audit.AuditRecord.Termination.get -> Frontier.Platform.Audit.TerminationRecord?
+Frontier.Platform.Audit.AuditRecord.Termination.init -> void
+Frontier.Platform.Audit.SignedAuditRecord.Failure.get -> Frontier.Platform.Audit.FailureRecord?
+Frontier.Platform.Audit.SignedAuditRecord.Failure.init -> void
+Frontier.Platform.Audit.SignedAuditRecord.Termination.get -> Frontier.Platform.Audit.TerminationRecord?
+Frontier.Platform.Audit.SignedAuditRecord.Termination.init -> void
+Frontier.Platform.Audit.FailureRecord
+Frontier.Platform.Audit.FailureRecord.<Clone>$() -> Frontier.Platform.Audit.FailureRecord!
+Frontier.Platform.Audit.FailureRecord.Equals(Frontier.Platform.Audit.FailureRecord? other) -> bool
+Frontier.Platform.Audit.FailureRecord.FailureRecord() -> void
+Frontier.Platform.Audit.FailureRecord.Classification.get -> string!
+Frontier.Platform.Audit.FailureRecord.Classification.init -> void
+Frontier.Platform.Audit.FailureRecord.NodeId.get -> string?
+Frontier.Platform.Audit.FailureRecord.NodeId.init -> void
+Frontier.Platform.Audit.FailureRecord.ExceptionType.get -> string?
+Frontier.Platform.Audit.FailureRecord.ExceptionType.init -> void
+Frontier.Platform.Audit.FailureRecord.Message.get -> string?
+Frontier.Platform.Audit.FailureRecord.Message.init -> void
+override Frontier.Platform.Audit.FailureRecord.Equals(object? obj) -> bool
+override Frontier.Platform.Audit.FailureRecord.GetHashCode() -> int
+override Frontier.Platform.Audit.FailureRecord.ToString() -> string!
+static Frontier.Platform.Audit.FailureRecord.operator !=(Frontier.Platform.Audit.FailureRecord? left, Frontier.Platform.Audit.FailureRecord? right) -> bool
+static Frontier.Platform.Audit.FailureRecord.operator ==(Frontier.Platform.Audit.FailureRecord? left, Frontier.Platform.Audit.FailureRecord? right) -> bool
+Frontier.Platform.Audit.TerminationRecord
+Frontier.Platform.Audit.TerminationRecord.<Clone>$() -> Frontier.Platform.Audit.TerminationRecord!
+Frontier.Platform.Audit.TerminationRecord.Equals(Frontier.Platform.Audit.TerminationRecord? other) -> bool
+Frontier.Platform.Audit.TerminationRecord.TerminationRecord() -> void
+Frontier.Platform.Audit.TerminationRecord.TerminatedBy.get -> string!
+Frontier.Platform.Audit.TerminationRecord.TerminatedBy.init -> void
+Frontier.Platform.Audit.TerminationRecord.Reason.get -> string!
+Frontier.Platform.Audit.TerminationRecord.Reason.init -> void
+Frontier.Platform.Audit.TerminationRecord.TerminatedAtUtc.get -> System.DateTime
+Frontier.Platform.Audit.TerminationRecord.TerminatedAtUtc.init -> void
+override Frontier.Platform.Audit.TerminationRecord.Equals(object? obj) -> bool
+override Frontier.Platform.Audit.TerminationRecord.GetHashCode() -> int
+override Frontier.Platform.Audit.TerminationRecord.ToString() -> string!
+static Frontier.Platform.Audit.TerminationRecord.operator !=(Frontier.Platform.Audit.TerminationRecord? left, Frontier.Platform.Audit.TerminationRecord? right) -> bool
+static Frontier.Platform.Audit.TerminationRecord.operator ==(Frontier.Platform.Audit.TerminationRecord? left, Frontier.Platform.Audit.TerminationRecord? right) -> bool

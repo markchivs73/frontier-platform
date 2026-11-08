@@ -134,6 +134,16 @@ public sealed record SignedAuditRecord : IVersionedContract
     [JsonPropertyName("generation")]
     public int? Generation { get; init; }
 
+    /// <summary><see cref="AuditRecord.Failure"/>, carried through and covered by <see cref="RecordHash"/> (S13.240); omitted when null.</summary>
+    [JsonPropertyOrder(23)]
+    [JsonPropertyName("failure")]
+    public FailureRecord? Failure { get; init; }
+
+    /// <summary><see cref="AuditRecord.Termination"/>, carried through and covered by <see cref="RecordHash"/> (S13.240); omitted when null.</summary>
+    [JsonPropertyOrder(24)]
+    [JsonPropertyName("termination")]
+    public TerminationRecord? Termination { get; init; }
+
     /// <inheritdoc />
     public void Validate()
     {
@@ -164,6 +174,8 @@ public sealed record SignedAuditRecord : IVersionedContract
         {
             violations.Add("previous_record_hash, record_hash, signature, and signing_key_id must all be present.");
         }
+
+        violations.AddRange(AuditOutcomeRule.Violations(FinalStatus, Failure, Termination));
 
         if (violations.Count > 0)
         {

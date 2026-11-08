@@ -90,6 +90,20 @@ public sealed class ContractGoldenFileTests
     public void ConsolidateAuditInput_SerializesStablyAndRoundTrips() =>
         ContractRoundTripAssertions.AssertByteStableAndRoundTrips(ContractSamples.ConsolidateAuditInput());
 
+    /// <summary>
+    /// S13.240 (ADR-PA46): the failure path's input names the status it attests as <c>final_status</c>, last;
+    /// the completed path's leaves it null and omitted, so the input it has always recorded is byte-identical.
+    /// </summary>
+    [Fact]
+    public void ConsolidateAuditInput_FinalStatus_IsLastWhenSetAndOmittedWhenNull()
+    {
+        var withStatus = ContractSamples.ConsolidateAuditInput() with { FinalStatus = ExecutionStatus.Failed };
+
+        ContractRoundTripAssertions.AssertByteStableAndRoundTrips(withStatus);
+        Assert.EndsWith(",\"final_status\":\"failed\"}", System.Text.Encoding.UTF8.GetString(Frontier.Platform.Serialization.CanonicalProfile.SerializeCanonical(withStatus)), StringComparison.Ordinal);
+        Assert.DoesNotContain("final_status", System.Text.Encoding.UTF8.GetString(Frontier.Platform.Serialization.CanonicalProfile.SerializeCanonical(ContractSamples.ConsolidateAuditInput())), StringComparison.Ordinal);
+    }
+
     [Fact]
     public void PayloadRef_SerializesStablyAndRoundTrips() =>
         ContractRoundTripAssertions.AssertStableAndRoundTrips(ContractSamples.PayloadRef(), "payload_ref.json");

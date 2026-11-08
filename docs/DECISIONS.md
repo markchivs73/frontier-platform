@@ -3421,3 +3421,80 @@ The rule is a deployment ordering, and no check in this repo can enforce it: the
 already-shipped package that never sees this code, and nothing in the platform knows which versions a
 consumer runs side by side. The consumer meets it by moving every process that verifies and every
 worker to the same `FrontierPlatformVersion` in one bump, which its lockstep pin already does.
+
+## ADR-PA46 — a failed or terminated run gets a signed, chained audit record
+
+`ConsolidateAuditActivity` ran only on the completed path, so a run that failed, or was ended by the
+consumer's terminate (its S13.149), left no signed, hash-chained record of what it did (consumer
+S13.240, from the 2026-11-07 as-built survey; Mark decided 2026-11-07 to build it).
+
+**Where each record is written.**
+- *Failed: on the orchestrator's failure path, through the same activity.* After the drain
+  (ADR-5 Decision 4), `ThrowIfFailedAsync` writes the `paused_on_failure` checkpoint as before, then
+  calls `ConsolidateAuditActivity` with `ConsolidateAuditInput.final_status = failed`, then rethrows the
+  node's failure. The orchestration does end failed, and the checkpoint stays `paused_on_failure`: the
+  consumer's projection, recovery sweep and B3 failure band read that status, and the record attests
+  the outcome, not the checkpoint. The body stays pure: the consolidation is an activity, and the
+  start time is the one the orchestrator captured from `context.CurrentUtcDateTime` at its start, the
+  same value the completed path's record carries.
+- *If the failure path's audit activity fails after its retries, it is swallowed.* The run failed
+  because of its node, and that failure is what DTF must record and what the consumer's
+  `GetFailureInfoAsync` classifies. An audit failure would replace it with an unclassified one. The
+  missing record stays detectable: the run is terminal and has no `audit-records` entry.
+- *Terminated: by whoever ends the run.* A terminated orchestration runs no further activities, so the
+  consumer's terminate route closes the record after the DTF terminate. The existing seam is enough and
+  nothing new was added to it: write the `terminated` snapshot, then `IAuditConsolidator.ConsolidateAsync`
+  (with `final_status = terminated` or null), then `IAuditSigner.SignAsync`. `IAuditConsolidator`'s doc
+  comment says this.
+- *Only the node-failure path writes a record.* A throw elsewhere in the body (an unsupported definition,
+  an unmapped role at pinning, a snapshot write that fails) writes no `paused_on_failure` checkpoint, so
+  there is no failure to attest; those runs still end without a record, as before
+  (`RunAsync_FailsOutsideTheNodeDrain_ConsolidatesNoAudit`, which also fails the `paused_on_failure`
+  write itself). Recording them is deferred.
+
+**The chain stays unforked.** All three outcomes go through `IAuditSigner.SignAsync`, the guarded
+per-engagement append of ADR-PA31. `audit-records` is create-only per execution, so if a failed run's
+record and a terminate's record ever race for the same execution, the second is refused with "already
+exists" and the chain keeps one. `AuditOutcomeTests` signs a mix of completed, failed and terminated
+records on one engagement and verifies one linear chain in which every record verifies.
+
+**What the record says.** Two additive, omit-null members, both covered by `record_hash`:
+- `AuditRecord.failure` / `SignedAuditRecord.failure` (orders 19 and 23): `FailureRecord`, the doc 10 §3
+  `classification` (required), and the `node_id`, `exception_type` and bounded `message` of the
+  checkpoint's `failure_detail` (S13.120) when it recorded one.
+- `AuditRecord.termination` / `SignedAuditRecord.termination` (orders 20 and 24): `TerminationRecord`,
+  `terminated_by`, `reason` and `terminated_at_utc` from the terminated snapshot (ADR-PA26, 2026-11-06).
+- The consolidator copies each from the snapshot whenever the snapshot holds it, so a run that paused on
+  a failure and was then terminated keeps both facts. The closing `execution_completed` event names the
+  attested status.
+- `Validate()` on both shapes requires `failure` with a classification when `final_status` is `failed`,
+  and `termination` with an actor and a reason when it is `terminated`. No other status is checked.
+- The consolidator refuses to attest `failed` or `terminated` when the latest snapshot does not back the
+  claim, with a permanent `ContractViolationException`. The usual cause is a terminate that consolidates
+  before it writes its terminated snapshot, and an append-only store cannot take the claim back.
+
+`ConsolidateAuditInput.final_status` (order 6) is additive and optional under the ADR-E15 floor. Null,
+and omitted on the wire, means the snapshot's own status, which is what every recorded input meant. The
+completed path leaves it null, so its recorded bytes are unchanged. No schema version moves: every older
+golden recomputes to its stored bytes (`RecordSignedBeforeFailureAndTermination_RecomputesToItsStoredBytes`),
+and four new goldens pin the new shapes. `activity-shapes.json` records the change as additive in the
+current generation.
+
+**Replay, and the skew this accepts (ADR-E15).** The new activity call sits after the failure checkpoint
+and before the throw, which happen in one episode, so no recorded history ends between them. A run that
+reaches its failure on the new code schedules the call as a new action. A run already failed is
+complete and is never replayed. The new replay test runs the failure path on the DTS emulator, with the
+sibling branch still in flight so each step lands in a later, replaying episode. The existing replay
+tests pass unchanged. *Residual skew, accepted and recorded, not observed:* an old worker can pick up a run
+whose history already holds the audit call a new worker scheduled. The old code throws the node's
+failure where that history expects the call. Either way the run ends failed, but whether the record lands,
+and whether the SDK reports the node's failure or a replay mismatch, has not been tested; no test here
+mixes worker versions. Deploying workers in one step, as the consumer's lockstep pin does, closes the
+window.
+
+**Verifiers adopt this release no later than the workers that write it**, for the reason ADR-PA45
+gives: a reader without the two members reads a failed or terminated record without them, and fails
+its signature.
+
+The public API change is additive: two records, two members on each audit record shape and one on
+`ConsolidateAuditInput`. No interface gains a member, so the commit is not scoped `!`.
