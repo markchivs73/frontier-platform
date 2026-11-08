@@ -1,1 +1,9 @@
 #nullable enable
+Frontier.Platform.Workflow.Compiler.PublishRevalidationException
+Frontier.Platform.Workflow.Compiler.PublishRevalidationException.Findings.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Workflow.Compiler.ValidationFinding!>!
+Frontier.Platform.Workflow.Compiler.PublishRevalidationException.PublishRevalidationException() -> void
+Frontier.Platform.Workflow.Compiler.PublishRevalidationException.PublishRevalidationException(string! message) -> void
+Frontier.Platform.Workflow.Compiler.PublishRevalidationException.PublishRevalidationException(string! message, System.Exception! innerException) -> void
+Frontier.Platform.Workflow.Compiler.PublishRevalidationException.PublishRevalidationException(string! proposalId, System.Collections.Generic.IReadOnlyList<Frontier.Platform.Workflow.Compiler.ValidationFinding!>! findings) -> void
+Frontier.Platform.Workflow.Compiler.Storage.CosmosDefinitionStore.ApproveAndPublishAsync(Frontier.Platform.Workflow.Compiler.Storage.PublishProposalDocument! proposal, Frontier.Platform.Workflow.Compiler.Storage.DefinitionVersionDocument! version, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<bool>!
+Frontier.Platform.Workflow.Compiler.Storage.IDefinitionStore.ApproveAndPublishAsync(Frontier.Platform.Workflow.Compiler.Storage.PublishProposalDocument! proposal, Frontier.Platform.Workflow.Compiler.Storage.DefinitionVersionDocument! version, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<bool>!

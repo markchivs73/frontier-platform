@@ -54,7 +54,17 @@ public interface IDefinitionLifecycleService
         CancellationToken ct) =>
         throw new NotSupportedException($"{GetType().Name} does not implement {nameof(ProposePublishAsync)} with a title and change summary.");
 
-    /// <summary>Approve a publish proposal.</summary>
+    /// <summary>
+    /// Approve a publish proposal: re-validate the proposed revision against the live registries,
+    /// then record the approval, the new version and the current-version pointer together (doc 13 §3).
+    /// </summary>
+    /// <exception cref="PublishRevalidationException">The revision no longer passes validation; nothing was written.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// The proposal cannot be approved (missing, decided, stale, or lost a race); nothing was written. Also
+    /// thrown when superseding the earlier versions fails, which happens after the new version is current,
+    /// and when a store that keeps <see cref="Storage.IDefinitionStore.ApproveAndPublishAsync"/>'s
+    /// non-atomic default fails after the approval landed.
+    /// </exception>
     Task<PublishedVersion> ApproveAsync(
         string proposalId,
         string approverId,

@@ -90,7 +90,7 @@ public sealed class ProposalTitleAndSummaryIntegrationTests : IAsyncLifetime, ID
 
     private DefinitionLifecycleService Lifecycle()
     {
-        var compiler = new Mock<IDefinitionCompiler>();
+        var compiler = new Mock<IDefinitionCompiler>().PassesValidation();
         compiler.Setup(c => c.ComputeDefinitionHash(It.IsAny<WorkflowDefinition>())).Returns("sha256:s13201");
         var embedder = new Mock<IDefinitionContractEmbedder>();
         embedder.Setup(e => e.EmbedAsync(It.IsAny<WorkflowDefinition>(), It.IsAny<CancellationToken>()))

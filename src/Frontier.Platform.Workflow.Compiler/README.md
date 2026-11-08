@@ -149,6 +149,26 @@ contract, such as `frontier/gate-decision/1.0`, comes from the engine; everythin
 different ref stops the publish before the proposal is approved. A definition that names only CLR
 contracts embeds nothing.
 
+## Approval validates again, and writes once
+
+`ApproveAsync` runs `IDefinitionCompiler.ValidateAsync` over the proposed revision again, so the
+resourced rules read the registries as they are now, not as the stored report saw them (doc 13
+§3). A tool retired since submission fails `mcp.tool-resolves`; one whose server drifted fails
+`mcp.server-not-drifted`. Either refuses the approval with `PublishRevalidationException`, an
+`InvalidOperationException` whose `Findings` lists the error findings. Nothing is written.
+
+The approval, the new version and the current-version pointer are then written by
+`IDefinitionStore.ApproveAndPublishAsync`. `CosmosDefinitionStore` writes them as one
+transactional batch in the workflow's partition, so either all three land or none does, and a
+failed approve can be re-run. The interface's default implementation calls
+`ApproveProposalAsync`, `PublishVersionAsync` and `SetCurrentVersionAsync` in turn, which is not
+atomic: if the second or third call fails, the proposal is already approved. A store you write
+yourself that is used in production should override it; nothing checks that it does.
+
+Superseding the versions the new one replaces runs after that write. If it fails, `ApproveAsync`
+throws although the new version is already current. The fresh report is used only to decide; it is
+not stored, so the stored report is still the one from proposal.
+
 ## A proposal can carry a title and a change summary
 
 The `ProposePublishAsync` overload that takes `title` and `changeSummary` stores both on the

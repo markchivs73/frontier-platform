@@ -264,6 +264,14 @@ public sealed class DefinitionLifecycleService : IDefinitionLifecycleService
             State: storedProposal.State);
     }
 
+    /// <inheritdoc />
+    /// <remarks>
+    /// Doc 13 §3, S13.248: the revision is validated again here, against the live registries, and
+    /// refused with the findings when it no longer passes; the proposal, the version and the pointer
+    /// are then written as one store operation. With a store that overrides it atomically
+    /// (<see cref="CosmosDefinitionStore"/>), a failure part-way leaves the proposal in review and a
+    /// re-run can approve it; the interface's default makes no such promise.
+    /// </remarks>
     public async Task<PublishedVersion> ApproveAsync(
         string proposalId,
         string approverId,
@@ -272,62 +280,92 @@ public sealed class DefinitionLifecycleService : IDefinitionLifecycleService
         if (string.IsNullOrEmpty(proposalId)) throw new ArgumentException("Proposal ID required", nameof(proposalId));
         if (string.IsNullOrEmpty(approverId)) throw new ArgumentException("Approver ID required", nameof(approverId));
 
-        var proposal = await _store.GetProposalAsync(proposalId, ct);
-        if (proposal == null)
-            throw new InvalidOperationException($"Proposal {proposalId} not found");
+        var (proposal, draft) = await LoadApprovableAsync(proposalId, approverId, ct);
+        await RevalidateAsync(proposal, draft, ct);
+
+        // Pin the contracts before anything changes state, so a contract that cannot be pinned
+        // leaves the proposal in review rather than approved with no version (ADR-E27 D15).
+        var definition = await _contracts.EmbedAsync(draft.Definition, ct);
+        var existingVersions = await _store.GetAllVersionsAsync(proposal.WorkflowId, ct);
+        var pointer = await _store.GetCurrentVersionPointerAsync(proposal.WorkflowId, ct);
+        var versionDoc = NewVersion(proposal, approverId, definition, NextVersionNumber(pointer, existingVersions));
+
+        if (!await _store.ApproveAndPublishAsync(proposal, versionDoc, ct))
+            throw new InvalidOperationException("Failed to approve proposal — it may have been modified concurrently");
+
+        // GOV-14: the versions this one replaces become superseded. After the pointer moves, so a
+        // failure here leaves the new version current and the old ones published, never the reverse.
+        await SupersedePredecessorsAsync(proposal.WorkflowId, existingVersions, versionDoc.DefinitionVersion, ct);
+
+        // The draft stays open for the next edit; publish does not retire it (Mark, 2026-11-05).
+        return new PublishedVersion(
+            WorkflowId: proposal.WorkflowId,
+            DefinitionVersion: versionDoc.DefinitionVersion,
+            DefinitionHash: versionDoc.DefinitionHash,
+            ProposedBy: proposal.ProposerId,
+            ApprovedBy: approverId,
+            ApprovedAtUtc: versionDoc.ApprovedUtc);
+    }
+
+    /// <summary>
+    /// The proposal and the draft it froze, once every guard that needs no validation has passed: the
+    /// proposal exists and is in review, the distinct-approver policy allows <paramref name="approverId"/>,
+    /// the draft is still at the proposed revision, and the report it was proposed with exists.
+    /// </summary>
+    private async Task<(PublishProposalDocument Proposal, DefinitionDraftDocument Draft)> LoadApprovableAsync(
+        string proposalId,
+        string approverId,
+        CancellationToken ct)
+    {
+        var proposal = await _store.GetProposalAsync(proposalId, ct)
+            ?? throw new InvalidOperationException($"Proposal {proposalId} not found");
 
         if (!proposal.State.CanTransitionTo(ProposalState.Approved))
             throw new InvalidOperationException($"Proposal is not in review (current state: {proposal.State})");
 
-        // Distinct-approver policy check
         if (_publishGovernance.RequireDistinctApprover && proposal.ProposerId == approverId)
             throw new InvalidOperationException("Distinct approver required: proposer cannot approve");
 
-        // Re-validate draft (pure tier only) and check resource drift
-        var draft = await _store.GetDraftAsync(proposal.WorkflowId, ct);
-        if (draft == null)
-            throw new InvalidOperationException($"Draft not found for workflow {proposal.WorkflowId}");
+        var draft = await _store.GetDraftAsync(proposal.WorkflowId, ct)
+            ?? throw new InvalidOperationException($"Draft not found for workflow {proposal.WorkflowId}");
 
         if (draft.DraftRevision != proposal.DraftRevision)
             throw new InvalidOperationException(
                 "Draft has been edited since proposal — proposal auto-withdrawn. Please re-validate and re-propose.");
 
-        // Get the validation report
-        var report = await _store.GetValidationReportAsync(proposal.WorkflowId, proposal.DraftRevision, ct);
-        if (report == null)
-            throw new InvalidOperationException($"Validation report not found for revision {proposal.DraftRevision}");
+        _ = await _store.GetValidationReportAsync(proposal.WorkflowId, proposal.DraftRevision, ct)
+            ?? throw new InvalidOperationException($"Validation report not found for revision {proposal.DraftRevision}");
 
-        // Pin the contracts before anything changes state, so a contract that cannot be pinned
-        // leaves the proposal in review rather than approved with no version (ADR-E27 D15).
-        var definition = await _contracts.EmbedAsync(draft.Definition, ct);
+        return (proposal, draft);
+    }
 
-        // Check resourceVersions for drift (Phase 1: log drift, don't block)
-        // Full implementation with registry version checks deferred to Phase B hardening
+    /// <summary>
+    /// Runs the full rule catalogue (pure and resourced tiers) over the proposed revision again, so the
+    /// resourced rules read today's registries rather than the ones the stored report saw: a tool retired
+    /// or a server drifted since submission fails <c>mcp.tool-resolves</c> or <c>mcp.server-not-drifted</c>
+    /// here (doc 13 §3). Refuses with the error findings; warnings do not block, as at proposal.
+    /// </summary>
+    private async Task RevalidateAsync(PublishProposalDocument proposal, DefinitionDraftDocument draft, CancellationToken ct)
+    {
+        var report = await _compiler.ValidateAsync(draft.Definition, draft.DraftRevision, draft.StoredSchemaVersion, ct);
+        if (report.Outcome == ValidationOutcome.Fail)
+            throw new PublishRevalidationException(proposal.Id, [.. report.Findings.Where(f => f.Severity == ValidationSeverity.Error)]);
+    }
 
-        // Mark proposal as approved
-        var approved = await _store.ApproveProposalAsync(proposalId, ct);
-        if (!approved)
-            throw new InvalidOperationException("Failed to approve proposal — it may have been modified concurrently");
-
-        // Compute next version number. Base it on the highest version that has ever existed —
-        // not the current-version pointer alone — so a pointer that lags the true max (after a
-        // retire/unretire, or an environment re-seeded with a rolled-back pointer) can never mint
-        // a number that collides with an existing version document, which PublishVersionAsync
-        // rejects on hash mismatch.
-        var pointer = await _store.GetCurrentVersionPointerAsync(proposal.WorkflowId, ct);
-        var existingVersions = await _store.GetAllVersionsAsync(proposal.WorkflowId, ct);
-        int nextVersion = NextVersionNumber(pointer, existingVersions);
-
-        // Create published version
+    /// <summary>The version document <paramref name="approverId"/>'s approval publishes, stamped with its own hash.</summary>
+    private DefinitionVersionDocument NewVersion(
+        PublishProposalDocument proposal,
+        string approverId,
+        WorkflowDefinition definition,
+        int version)
+    {
         var definitionHash = _compiler.ComputeDefinitionHash(definition);
-        var now = DateTime.UtcNow;
-
-        var versionDoc = new DefinitionVersionDocument
+        return new DefinitionVersionDocument
         {
-            Id = $"{proposal.WorkflowId}:v{nextVersion}",
+            Id = $"{proposal.WorkflowId}:v{version}",
             WorkflowId = proposal.WorkflowId,
             State = "published",
-            DefinitionVersion = nextVersion,
+            DefinitionVersion = version,
             DefinitionHash = definitionHash,
             // The definition a run carries inline (ADR-2) names its own hash, so the audit can say
             // which definition ran. Before this it kept the draft's empty field (S13.138).
@@ -335,7 +373,7 @@ public sealed class DefinitionLifecycleService : IDefinitionLifecycleService
             ProposedBy = proposal.ProposerId,
             ApprovedBy = approverId,
             ProposedUtc = proposal.ProposedAtUtc,
-            ApprovedUtc = now,
+            ApprovedUtc = DateTime.UtcNow,
             ValidationReportRef = proposal.ValidationReportRef.DocumentId,
             SupersededByVersion = null,
             Retirement = null,
@@ -343,25 +381,6 @@ public sealed class DefinitionLifecycleService : IDefinitionLifecycleService
             Title = proposal.Title,
             ChangeSummary = proposal.ChangeSummary
         };
-
-        await _store.PublishVersionAsync(versionDoc, ct);
-
-        // Update current pointer
-        await _store.SetCurrentVersionAsync(proposal.WorkflowId, nextVersion, ct);
-
-        // GOV-14: the versions this one replaces become superseded. After the pointer moves, so a
-        // failure here leaves the new version current and the old ones published, never the reverse.
-        await SupersedePredecessorsAsync(proposal.WorkflowId, existingVersions, nextVersion, ct);
-
-        // The draft stays open for the next edit; publish does not retire it (Mark, 2026-11-05).
-
-        return new PublishedVersion(
-            WorkflowId: proposal.WorkflowId,
-            DefinitionVersion: nextVersion,
-            DefinitionHash: definitionHash,
-            ProposedBy: proposal.ProposerId,
-            ApprovedBy: approverId,
-            ApprovedAtUtc: now);
     }
 
     /// <summary>A proposer's optional text, or <see langword="null"/> when it is blank, so the key is omitted rather than stored empty.</summary>
