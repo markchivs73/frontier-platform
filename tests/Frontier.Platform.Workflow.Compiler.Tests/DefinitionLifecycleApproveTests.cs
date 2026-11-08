@@ -61,7 +61,9 @@ public sealed class DefinitionLifecycleApproveTests
         _store.Setup(s => s.GetProposalAsync(ProposalId, It.IsAny<CancellationToken>())).ReturnsAsync(Proposal());
         _store.Setup(s => s.GetDraftAsync(WorkflowId, It.IsAny<CancellationToken>())).ReturnsAsync(Draft());
         _store.Setup(s => s.GetValidationReportAsync(WorkflowId, Revision, It.IsAny<CancellationToken>())).ReturnsAsync(Report());
-        _store.Setup(s => s.ApproveProposalAsync(ProposalId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _store.Setup(s => s.ApproveAndPublishAsync(It.IsAny<PublishProposalDocument>(), It.IsAny<DefinitionVersionDocument>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        ArrangeRevalidation(ValidationOutcome.Pass);
         _store.Setup(s => s.GetCurrentVersionPointerAsync(WorkflowId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(currentVersion is null ? null : new CurrentVersionPointerDocument
             {
@@ -73,10 +75,19 @@ public sealed class DefinitionLifecycleApproveTests
         // unless a test overrides it to exercise the pointer-lags-max drift case.
         _store.Setup(s => s.GetAllVersionsAsync(WorkflowId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingVersions ?? VersionsUpTo(currentVersion ?? 0));
-        _store.Setup(s => s.PublishVersionAsync(It.IsAny<DefinitionVersionDocument>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((DefinitionVersionDocument d, CancellationToken _) => d);
         _compiler.Setup(c => c.ComputeDefinitionHash(It.IsAny<WorkflowDefinition>())).Returns("sha256:new");
     }
+
+    private void ArrangeRevalidation(ValidationOutcome outcome, params ValidationFinding[] findings) =>
+        _compiler.Setup(c => c.ValidateAsync(It.IsAny<WorkflowDefinition>(), Revision, It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ValidationReport(WorkflowId, Revision, DateTime.UtcNow, outcome, findings, new Dictionary<string, string>()));
+
+    /// <summary>Verifies the one approve-and-publish write named the proposal and a version matching <paramref name="version"/>.</summary>
+    private void VerifyPublished(System.Linq.Expressions.Expression<Func<DefinitionVersionDocument, bool>> version, Times? times = null) =>
+        _store.Verify(s => s.ApproveAndPublishAsync(
+            It.Is<PublishProposalDocument>(p => p.Id == ProposalId),
+            It.Is(version),
+            It.IsAny<CancellationToken>()), times ?? Times.Once());
 
     private static IReadOnlyList<DefinitionVersionDocument> VersionsUpTo(int highest) =>
         [.. Enumerable.Range(1, highest).Select(VersionDoc)];
@@ -107,10 +118,7 @@ public sealed class DefinitionLifecycleApproveTests
         Assert.Equal("sha256:new", published.DefinitionHash);
         Assert.Equal("user:proposer", published.ProposedBy);
         Assert.Equal("user:approver", published.ApprovedBy);
-        _store.Verify(s => s.PublishVersionAsync(
-            It.Is<DefinitionVersionDocument>(d => d.DefinitionVersion == 2 && d.State == "published" && d.ApprovedBy == "user:approver"),
-            It.IsAny<CancellationToken>()), Times.Once);
-        _store.Verify(s => s.SetCurrentVersionAsync(WorkflowId, 2, It.IsAny<CancellationToken>()), Times.Once);
+        VerifyPublished(d => d.DefinitionVersion == 2 && d.State == "published" && d.ApprovedBy == "user:approver");
     }
 
     /// <summary>
@@ -125,9 +133,7 @@ public sealed class DefinitionLifecycleApproveTests
 
         await _service.ApproveAsync(ProposalId, "user:approver", CancellationToken.None);
 
-        _store.Verify(s => s.PublishVersionAsync(
-            It.Is<DefinitionVersionDocument>(d => d.Definition.DefinitionHash == "sha256:new" && d.DefinitionHash == "sha256:new"),
-            It.IsAny<CancellationToken>()), Times.Once);
+        VerifyPublished(d => d.Definition.DefinitionHash == "sha256:new" && d.DefinitionHash == "sha256:new");
     }
 
     /// <summary>ADR-E27 D15: publish embeds the contracts first, and hashes and stores the definition that carries them.</summary>
@@ -144,9 +150,7 @@ public sealed class DefinitionLifecycleApproveTests
         await service.ApproveAsync(ProposalId, "user:approver", CancellationToken.None);
 
         _compiler.Verify(c => c.ComputeDefinitionHash(It.Is<WorkflowDefinition>(d => d.Contracts == pinned)), Times.Once);
-        _store.Verify(s => s.PublishVersionAsync(
-            It.Is<DefinitionVersionDocument>(d => d.Definition.Contracts == pinned && d.Definition.DefinitionHash == "sha256:new"),
-            It.IsAny<CancellationToken>()), Times.Once);
+        VerifyPublished(d => d.Definition.Contracts == pinned && d.Definition.DefinitionHash == "sha256:new");
     }
 
     /// <summary>ADR-E27 D15: a contract that cannot be pinned stops the publish before the proposal is approved.</summary>
@@ -161,8 +165,7 @@ public sealed class DefinitionLifecycleApproveTests
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.ApproveAsync(ProposalId, "user:approver", CancellationToken.None));
 
-        _store.Verify(s => s.ApproveProposalAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
-        _store.Verify(s => s.PublishVersionAsync(It.IsAny<DefinitionVersionDocument>(), It.IsAny<CancellationToken>()), Times.Never);
+        VerifyPublished(_ => true, Times.Never());
     }
 
     [Fact]
@@ -193,10 +196,7 @@ public sealed class DefinitionLifecycleApproveTests
         var published = await _service.ApproveAsync(ProposalId, "user:approver", CancellationToken.None);
 
         Assert.Equal(4, published.DefinitionVersion);
-        _store.Verify(s => s.PublishVersionAsync(
-            It.Is<DefinitionVersionDocument>(d => d.DefinitionVersion == 4),
-            It.IsAny<CancellationToken>()), Times.Once);
-        _store.Verify(s => s.SetCurrentVersionAsync(WorkflowId, 4, It.IsAny<CancellationToken>()), Times.Once);
+        VerifyPublished(d => d.DefinitionVersion == 4);
     }
 
     [Theory]
@@ -275,7 +275,10 @@ public sealed class DefinitionLifecycleApproveTests
         _store.Setup(s => s.GetProposalAsync(ProposalId, It.IsAny<CancellationToken>())).ReturnsAsync(Proposal());
         _store.Setup(s => s.GetDraftAsync(WorkflowId, It.IsAny<CancellationToken>())).ReturnsAsync(Draft());
         _store.Setup(s => s.GetValidationReportAsync(WorkflowId, Revision, It.IsAny<CancellationToken>())).ReturnsAsync(Report());
-        _store.Setup(s => s.ApproveProposalAsync(ProposalId, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        ArrangeRevalidation(ValidationOutcome.Pass);
+        _store.Setup(s => s.GetAllVersionsAsync(WorkflowId, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+        _store.Setup(s => s.ApproveAndPublishAsync(It.IsAny<PublishProposalDocument>(), It.IsAny<DefinitionVersionDocument>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _service.ApproveAsync(ProposalId, "user:approver", CancellationToken.None));
 
@@ -299,14 +302,14 @@ public sealed class DefinitionLifecycleApproveTests
     {
         ArrangeHappyPath(currentVersion: 2);
         var calls = new List<string>();
-        _store.Setup(s => s.SetCurrentVersionAsync(WorkflowId, 3, It.IsAny<CancellationToken>()))
-            .Callback(() => calls.Add("pointer")).Returns(Task.CompletedTask);
+        _store.Setup(s => s.ApproveAndPublishAsync(It.IsAny<PublishProposalDocument>(), It.Is<DefinitionVersionDocument>(d => d.DefinitionVersion == 3), It.IsAny<CancellationToken>()))
+            .Callback(() => calls.Add("publish")).ReturnsAsync(true);
         _store.Setup(s => s.SupersedeVersionAsync(WorkflowId, It.IsAny<int>(), 3, It.IsAny<CancellationToken>()))
             .Callback((string _, int v, int _, CancellationToken _) => calls.Add($"supersede v{v}")).ReturnsAsync(true);
 
         await _service.ApproveAsync(ProposalId, "user:approver", CancellationToken.None);
 
-        Assert.Equal(["pointer", "supersede v1", "supersede v2"], calls);
+        Assert.Equal(["publish", "supersede v1", "supersede v2"], calls);
         _store.Verify(s => s.DeleteDraftAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -337,8 +340,7 @@ public sealed class DefinitionLifecycleApproveTests
         await Assert.ThrowsAsync<InvalidOperationException>(
             () => _service.ApproveAsync(ProposalId, "user:approver", CancellationToken.None));
 
-        _store.Verify(s => s.PublishVersionAsync(It.Is<DefinitionVersionDocument>(d => d.DefinitionVersion == 2), It.IsAny<CancellationToken>()), Times.Once);
-        _store.Verify(s => s.SetCurrentVersionAsync(WorkflowId, 2, It.IsAny<CancellationToken>()), Times.Once);
+        VerifyPublished(d => d.DefinitionVersion == 2);
     }
 
     [Fact]

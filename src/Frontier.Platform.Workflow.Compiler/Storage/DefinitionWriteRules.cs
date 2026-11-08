@@ -1,11 +1,13 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Net;
 
 namespace Frontier.Platform.Workflow.Compiler.Storage;
 
 /// <summary>
 /// The lost-update decisions of <see cref="CosmosDefinitionStore"/>'s draft save and version publish (doc 13 §7,
 /// ADR-CD2, GOV-03), kept apart from the coverage-excluded adapter (S13.193) so the unit gate measures them: when
-/// a save is stale, and when a publish that found its version id taken is an idempotent re-run.
+/// a save is stale, when a publish that found its version id taken is an idempotent re-run, and what an
+/// approve-and-publish batch's outcome means (S13.248).
 /// </summary>
 internal static class DefinitionWriteRules
 {
@@ -33,5 +35,27 @@ internal static class DefinitionWriteRules
             ? existing
             : throw new InvalidOperationException(
                 $"Version {publishing.DefinitionVersion} already exists with a different definition hash — cannot publish.");
+    }
+
+    /// <summary>An approval may be written only for a proposal that still exists and is still in review.</summary>
+    internal static bool CanApprove([NotNullWhen(true)] PublishProposalDocument? stored) =>
+        stored is not null && stored.State.CanTransitionTo(ProposalState.Approved);
+
+    /// <summary>
+    /// What an approve-and-publish batch's status means: <see langword="true"/> when it landed;
+    /// <see langword="false"/> when another writer won, either deciding the proposal first (412) or
+    /// publishing the same version number first (409), so nothing was written; and an
+    /// <see cref="InvalidOperationException"/> naming <paramref name="describeFailure"/> for any other
+    /// failure, which also wrote nothing but is not a lost race.
+    /// </summary>
+    internal static bool ApprovalLanded(HttpStatusCode status, Func<string> describeFailure)
+    {
+        ArgumentNullException.ThrowIfNull(describeFailure);
+        if ((int)status is >= 200 and <= 299)
+            return true;
+
+        return status is HttpStatusCode.PreconditionFailed or HttpStatusCode.Conflict
+            ? false
+            : throw new InvalidOperationException(describeFailure());
     }
 }

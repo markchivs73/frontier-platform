@@ -174,24 +174,7 @@ public sealed class CosmosDefinitionStore : IDefinitionStore
         ArgumentNullException.ThrowIfNull(versionDoc);
         ValidateWorkflowId(versionDoc.WorkflowId);
 
-        var doc = new DefinitionVersionDocument
-        {
-            Id = $"{versionDoc.WorkflowId}:v{versionDoc.DefinitionVersion}",
-            WorkflowId = versionDoc.WorkflowId,
-            State = "published",
-            DefinitionVersion = versionDoc.DefinitionVersion,
-            DefinitionHash = versionDoc.DefinitionHash,
-            Definition = versionDoc.Definition,
-            ProposedBy = versionDoc.ProposedBy,
-            ApprovedBy = versionDoc.ApprovedBy,
-            ProposedUtc = versionDoc.ProposedUtc,
-            ApprovedUtc = versionDoc.ApprovedUtc,
-            ValidationReportRef = versionDoc.ValidationReportRef,
-            SupersededByVersion = null,
-            Retirement = null,
-            Title = versionDoc.Title,
-            ChangeSummary = versionDoc.ChangeSummary
-        };
+        var doc = AsPublished(versionDoc);
 
         try
         {
@@ -205,6 +188,26 @@ public sealed class CosmosDefinitionStore : IDefinitionStore
             return DefinitionWriteRules.ResolvePublishConflict(existing, versionDoc);
         }
     }
+
+    /// <summary>The version document as first written: <c>published</c>, with no successor and no retirement.</summary>
+    private static DefinitionVersionDocument AsPublished(DefinitionVersionDocument versionDoc) => new()
+    {
+        Id = $"{versionDoc.WorkflowId}:v{versionDoc.DefinitionVersion}",
+        WorkflowId = versionDoc.WorkflowId,
+        State = "published",
+        DefinitionVersion = versionDoc.DefinitionVersion,
+        DefinitionHash = versionDoc.DefinitionHash,
+        Definition = versionDoc.Definition,
+        ProposedBy = versionDoc.ProposedBy,
+        ApprovedBy = versionDoc.ApprovedBy,
+        ProposedUtc = versionDoc.ProposedUtc,
+        ApprovedUtc = versionDoc.ApprovedUtc,
+        ValidationReportRef = versionDoc.ValidationReportRef,
+        SupersededByVersion = null,
+        Retirement = null,
+        Title = versionDoc.Title,
+        ChangeSummary = versionDoc.ChangeSummary
+    };
 
     /// <inheritdoc />
     public Task<bool> RetireVersionAsync(
@@ -448,15 +451,16 @@ public sealed class CosmosDefinitionStore : IDefinitionStore
     {
         ValidateWorkflowId(workflowId);
 
-        var doc = new CurrentVersionPointerDocument
-        {
-            Id = $"{workflowId}:current",
-            WorkflowId = workflowId,
-            CurrentVersion = version
-        };
-
-        await _container.UpsertItemAsync(doc, new PartitionKey(workflowId), cancellationToken: ct);
+        await _container.UpsertItemAsync(PointerTo(workflowId, version), new PartitionKey(workflowId), cancellationToken: ct);
     }
+
+    /// <summary>The current-version pointer naming <paramref name="version"/>.</summary>
+    private static CurrentVersionPointerDocument PointerTo(string workflowId, int version) => new()
+    {
+        Id = $"{workflowId}:current",
+        WorkflowId = workflowId,
+        CurrentVersion = version
+    };
 
     public async Task<PublishProposalDocument> CreateProposalAsync(
         PublishProposalDocument proposal,
@@ -517,6 +521,50 @@ public sealed class CosmosDefinitionStore : IDefinitionStore
 
         return TransitionProposalAsync(
             proposalId, ProposalState.Approved, proposal => proposal with { State = ProposalState.Approved }, ct);
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// One transactional batch in the workflow's partition (S13.248): the proposal is replaced at the
+    /// ETag it was read at, the version is created, and the pointer is upserted. Cosmos applies all
+    /// three or none, so a lost race or a failure part-way leaves the proposal in review and no version.
+    /// </remarks>
+    public async Task<bool> ApproveAndPublishAsync(
+        PublishProposalDocument proposal,
+        DefinitionVersionDocument version,
+        CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(proposal);
+        ArgumentNullException.ThrowIfNull(version);
+        ValidateWorkflowId(proposal.WorkflowId);
+
+        var partitionKey = new PartitionKey(proposal.WorkflowId);
+        var read = await ReadProposalOrDefaultAsync(proposal.Id, partitionKey, ct);
+        if (!DefinitionWriteRules.CanApprove(read?.Resource))
+            return false;
+
+        using var response = await _container.CreateTransactionalBatch(partitionKey)
+            .ReplaceItem(proposal.Id, read!.Resource with { State = ProposalState.Approved }, new TransactionalBatchItemRequestOptions { IfMatchEtag = read.ETag })
+            .CreateItem(AsPublished(version))
+            .UpsertItem(PointerTo(version.WorkflowId, version.DefinitionVersion))
+            .ExecuteAsync(ct);
+
+        return DefinitionWriteRules.ApprovalLanded(
+            response.StatusCode,
+            () => $"The approve-and-publish batch for proposal '{proposal.Id}' (v{version.DefinitionVersion}) failed with status {(int)response.StatusCode}: {response.ErrorMessage}");
+    }
+
+    /// <summary>The proposal and its ETag, or <see langword="null"/> when it does not exist in <paramref name="partitionKey"/>.</summary>
+    private async Task<ItemResponse<PublishProposalDocument>?> ReadProposalOrDefaultAsync(string proposalId, PartitionKey partitionKey, CancellationToken ct)
+    {
+        try
+        {
+            return await _container.ReadItemAsync<PublishProposalDocument>(proposalId, partitionKey, cancellationToken: ct);
+        }
+        catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return null;
+        }
     }
 
     public Task<bool> RejectProposalAsync(

@@ -149,11 +149,11 @@ public sealed class ProposalTitleAndSummaryTests
     {
         _store.Setup(s => s.GetProposalAsync(ProposalId, It.IsAny<CancellationToken>())).ReturnsAsync(proposal);
         _store.Setup(s => s.GetValidationReportAsync(WorkflowId, Revision, It.IsAny<CancellationToken>())).ReturnsAsync(ReportDocument());
-        _store.Setup(s => s.ApproveProposalAsync(ProposalId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _store.Setup(s => s.GetAllVersionsAsync(WorkflowId, It.IsAny<CancellationToken>())).ReturnsAsync([]);
-        _store.Setup(s => s.PublishVersionAsync(It.IsAny<DefinitionVersionDocument>(), It.IsAny<CancellationToken>()))
-            .Callback((DefinitionVersionDocument d, CancellationToken _) => _published = d)
-            .ReturnsAsync((DefinitionVersionDocument d, CancellationToken _) => d);
+        _store.Setup(s => s.ApproveAndPublishAsync(It.IsAny<PublishProposalDocument>(), It.IsAny<DefinitionVersionDocument>(), It.IsAny<CancellationToken>()))
+            .Callback((PublishProposalDocument _, DefinitionVersionDocument d, CancellationToken _) => _published = d)
+            .ReturnsAsync(true);
+        _compiler.Setup(c => c.ValidateAsync(It.IsAny<WorkflowDefinition>(), Revision, It.IsAny<string?>(), It.IsAny<CancellationToken>())).ReturnsAsync(Report());
         _compiler.Setup(c => c.ComputeDefinitionHash(It.IsAny<WorkflowDefinition>())).Returns("sha256:new");
     }
 

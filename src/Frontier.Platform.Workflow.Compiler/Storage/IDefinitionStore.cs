@@ -169,6 +169,44 @@ public interface IDefinitionStore
         string proposalId,
         CancellationToken ct);
 
+    /// <summary>
+    /// Records an approval and what it publishes as one write (doc 13 §3, S13.248): the in-review
+    /// <paramref name="proposal"/> becomes <c>approved</c>, <paramref name="version"/> is created
+    /// <c>published</c>, and the current-version pointer moves to it. An overriding store writes all
+    /// three or none, so a failure part-way can never leave an approved proposal with no version, which
+    /// no re-run could then approve. The proposal is identified by its <c>Id</c> (and, for a store that
+    /// partitions by workflow, its <c>WorkflowId</c>); a store approves the copy it holds, not the
+    /// caller's document.
+    /// </summary>
+    /// <returns>
+    /// <see langword="false"/> when the proposal is missing or no longer in review. An atomic override
+    /// also returns <see langword="false"/>, with nothing written, when the version number was taken by
+    /// a concurrent publish.
+    /// </returns>
+    /// <remarks>
+    /// The default implementation is <b>not</b> atomic and makes none of the guarantees above beyond
+    /// the first: it calls <see cref="ApproveProposalAsync"/>, <see cref="PublishVersionAsync"/> and
+    /// <see cref="SetCurrentVersionAsync"/> in turn, as every approval did before this member existed,
+    /// so a store that does not override it (a test double) keeps its behaviour. If the second or third
+    /// call throws, the proposal is already approved. A store used in production should override it;
+    /// <see cref="CosmosDefinitionStore"/> does so with one transactional batch in the workflow's
+    /// partition. Nothing checks that an implementation overrides it.
+    /// </remarks>
+    async Task<bool> ApproveAndPublishAsync(
+        PublishProposalDocument proposal,
+        DefinitionVersionDocument version,
+        CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(proposal);
+        ArgumentNullException.ThrowIfNull(version);
+        if (!await ApproveProposalAsync(proposal.Id, ct).ConfigureAwait(false))
+            return false;
+
+        await PublishVersionAsync(version, ct).ConfigureAwait(false);
+        await SetCurrentVersionAsync(version.WorkflowId, version.DefinitionVersion, ct).ConfigureAwait(false);
+        return true;
+    }
+
     /// <summary>Conditionally reject a proposal.</summary>
     Task<bool> RejectProposalAsync(
         string proposalId,

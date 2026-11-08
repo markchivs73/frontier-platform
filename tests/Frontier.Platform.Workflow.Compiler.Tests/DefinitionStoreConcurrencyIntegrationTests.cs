@@ -123,6 +123,63 @@ public sealed class DefinitionStoreConcurrencyIntegrationTests : IAsyncLifetime,
         Assert.Equal(ProposalState.Rejected, (await _store.GetProposalAsync("prop-gov04-c", CancellationToken.None))!.State);
     }
 
+    /// <summary>S13.248: with no race, one batch approves the proposal, creates the version and moves the pointer.</summary>
+    [Fact]
+    public async Task ApproveAndPublish_WithNoRace_WritesTheApprovalTheVersionAndThePointerTogether()
+    {
+        var proposal = await _store!.CreateProposalAsync(Proposal("wf-s13248-a", "prop-s13248-a"), CancellationToken.None);
+
+        Assert.True(await _store.ApproveAndPublishAsync(proposal, Version("wf-s13248-a", 1), CancellationToken.None));
+
+        Assert.Equal(ProposalState.Approved, (await _store.GetProposalAsync("prop-s13248-a", CancellationToken.None))!.State);
+        Assert.Equal("published", (await _store.GetVersionAsync("wf-s13248-a", 1, CancellationToken.None))!.State);
+        Assert.Equal(1, (await _store.GetCurrentVersionPointerAsync("wf-s13248-a", CancellationToken.None))!.CurrentVersion);
+    }
+
+    /// <summary>
+    /// S13.248: a failure between the two writes. The version id is already taken, so the batch's
+    /// second operation fails after its first, the proposal's approval, would have applied. Cosmos rolls
+    /// the approval back: the proposal is still in review, the other version is untouched, no pointer moved.
+    /// </summary>
+    [Fact]
+    public async Task ApproveAndPublish_WhenTheVersionWriteFails_TheApprovalDoesNotLand()
+    {
+        var proposal = await _store!.CreateProposalAsync(Proposal("wf-s13248-b", "prop-s13248-b"), CancellationToken.None);
+        await _store.PublishVersionAsync(Version("wf-s13248-b", 1) with { DefinitionHash = "sha256:other" }, CancellationToken.None);
+
+        Assert.False(await _store.ApproveAndPublishAsync(proposal, Version("wf-s13248-b", 1), CancellationToken.None));
+
+        Assert.Equal(ProposalState.InReview, (await _store.GetProposalAsync("prop-s13248-b", CancellationToken.None))!.State);
+        Assert.Equal("sha256:other", (await _store.GetVersionAsync("wf-s13248-b", 1, CancellationToken.None))!.DefinitionHash);
+        Assert.Null(await _store.GetCurrentVersionPointerAsync("wf-s13248-b", CancellationToken.None));
+    }
+
+    /// <summary>S13.248: a reject that lands between the store's read and its batch wins, and no version is written.</summary>
+    [Fact]
+    public async Task ApproveAndPublish_WhenARejectLandsFirst_ReturnsFalseAndWritesNoVersion()
+    {
+        var proposal = await _store!.CreateProposalAsync(Proposal("wf-s13248-c", "prop-s13248-c"), CancellationToken.None);
+        var racing = new CosmosDefinitionStore(Interleaving(
+            () => _store.RejectProposalAsync("prop-s13248-c", "Not ready", CancellationToken.None)));
+
+        Assert.False(await racing.ApproveAndPublishAsync(proposal, Version("wf-s13248-c", 1), CancellationToken.None));
+
+        Assert.Equal(ProposalState.Rejected, (await _store.GetProposalAsync("prop-s13248-c", CancellationToken.None))!.State);
+        Assert.Null(await _store.GetVersionAsync("wf-s13248-c", 1, CancellationToken.None));
+        Assert.Null(await _store.GetCurrentVersionPointerAsync("wf-s13248-c", CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task ApproveAndPublish_RefusesAMissingOrDecidedProposal()
+    {
+        var decided = await _store!.CreateProposalAsync(Proposal("wf-s13248-d", "prop-s13248-d"), CancellationToken.None);
+        Assert.True(await _store.RejectProposalAsync("prop-s13248-d", "No", CancellationToken.None));
+
+        Assert.False(await _store.ApproveAndPublishAsync(decided, Version("wf-s13248-d", 1), CancellationToken.None));
+        Assert.False(await _store.ApproveAndPublishAsync(Proposal("wf-s13248-d", "prop-s13248-missing"), Version("wf-s13248-d", 1), CancellationToken.None));
+        Assert.Null(await _store.GetVersionAsync("wf-s13248-d", 1, CancellationToken.None));
+    }
+
     /// <summary>
     /// A container over the emulator one whose first replace or upsert runs <paramref name="competingWrite"/>
     /// before its own write — another writer landing between the store's read and its write.
@@ -145,6 +202,12 @@ public sealed class DefinitionStoreConcurrencyIntegrationTests : IAsyncLifetime,
             .Returns((string id, PartitionKey pk, ItemRequestOptions o, CancellationToken ct) => real.ReadItemAsync<PublishProposalDocument>(id, pk, o, ct));
         mock.Setup(c => c.GetItemQueryIterator<PublishProposalDocument>(It.IsAny<QueryDefinition>(), It.IsAny<string>(), It.IsAny<QueryRequestOptions>()))
             .Returns((QueryDefinition q, string t, QueryRequestOptions o) => real.GetItemQueryIterator<PublishProposalDocument>(q, t, o));
+        mock.Setup(c => c.CreateTransactionalBatch(It.IsAny<PartitionKey>()))
+            .Returns((PartitionKey pk) =>
+            {
+                RaceOnceAsync().GetAwaiter().GetResult();
+                return real.CreateTransactionalBatch(pk);
+            });
         SetupRacedWrites<DefinitionDraftDocument>(mock, real, RaceOnceAsync);
         SetupRacedWrites<PublishProposalDocument>(mock, real, RaceOnceAsync);
         return mock.Object;
@@ -176,6 +239,21 @@ public sealed class DefinitionStoreConcurrencyIntegrationTests : IAsyncLifetime,
         Definition = WorkflowDefinitionFixture.MinimalDefinition(),
         LastEditedBy = "user:mark",
         LastEditedUtc = DateTime.UtcNow,
+    };
+
+    private static DefinitionVersionDocument Version(string workflowId, int version) => new()
+    {
+        Id = $"{workflowId}:v{version}",
+        WorkflowId = workflowId,
+        State = "published",
+        DefinitionVersion = version,
+        DefinitionHash = "sha256:s13248",
+        Definition = WorkflowDefinitionFixture.MinimalDefinition(),
+        ProposedBy = "user:mark",
+        ApprovedBy = "user:sarah",
+        ProposedUtc = DateTime.UtcNow,
+        ApprovedUtc = DateTime.UtcNow,
+        ValidationReportRef = $"{workflowId}:report:rev-1",
     };
 
     private static PublishProposalDocument Proposal(string workflowId, string proposalId) => new()

@@ -111,7 +111,7 @@ public sealed class VersionRetirementIntegrationTests : IAsyncLifetime, IDisposa
         await store.SetCurrentVersionAsync("wf-gov14-a", 1, CancellationToken.None);
         var definitionBefore = await RawDefinitionAsync("wf-gov14-a", 1);
         var proposalId = await ProposeAsync(store, "wf-gov14-a");
-        var compiler = new Mock<IDefinitionCompiler>();
+        var compiler = new Mock<IDefinitionCompiler>().PassesValidation();
         compiler.Setup(c => c.ComputeDefinitionHash(It.IsAny<Frontier.Platform.Workflow.Model.WorkflowDefinition>())).Returns("sha256:v2");
         var embedder = new Mock<IDefinitionContractEmbedder>();
         embedder.Setup(e => e.EmbedAsync(It.IsAny<Frontier.Platform.Workflow.Model.WorkflowDefinition>(), It.IsAny<CancellationToken>()))
