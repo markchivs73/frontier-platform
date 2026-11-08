@@ -201,7 +201,7 @@ Frontier.Platform.Workflow.Orchestration.CascadeEvalRequestPayload.ExecutionId.i
 Frontier.Platform.Workflow.Orchestration.ConsolidateAuditActivity
 Frontier.Platform.Workflow.Orchestration.ConsolidateAuditActivity.ConsolidateAuditActivity(Frontier.Platform.Workflow.Orchestration.IAuditConsolidator! consolidator, Frontier.Platform.Audit.IAuditSigner! signer) -> void
 Frontier.Platform.Workflow.Orchestration.DispatcherOrchestrator
-Frontier.Platform.Workflow.Orchestration.DispatcherOrchestrator.DispatcherOrchestrator() -> void
+Frontier.Platform.Workflow.Orchestration.DispatcherOrchestrator.DispatcherOrchestrator(Frontier.Platform.Resilience.IResiliencePolicyProvider! policyProvider) -> void
 Frontier.Platform.Workflow.Orchestration.EscalateApprovalActivity
 Frontier.Platform.Workflow.Orchestration.EscalateApprovalActivity.EscalateApprovalActivity(Frontier.Platform.Hitl.IApprovalStore! store) -> void
 Frontier.Platform.Workflow.Orchestration.GraphOrchestrator

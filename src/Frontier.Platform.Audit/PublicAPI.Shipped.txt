@@ -98,6 +98,8 @@ Frontier.Platform.Audit.AuditRecord.EngagementId.init -> void
 Frontier.Platform.Audit.AuditRecord.Equals(Frontier.Platform.Audit.AuditRecord? other) -> bool
 Frontier.Platform.Audit.AuditRecord.ExecutionId.get -> string!
 Frontier.Platform.Audit.AuditRecord.ExecutionId.init -> void
+Frontier.Platform.Audit.AuditRecord.Failure.get -> Frontier.Platform.Audit.FailureRecord?
+Frontier.Platform.Audit.AuditRecord.Failure.init -> void
 Frontier.Platform.Audit.AuditRecord.FinalStatus.get -> Frontier.Platform.Abstractions.ExecutionStatus!
 Frontier.Platform.Audit.AuditRecord.FinalStatus.init -> void
 Frontier.Platform.Audit.AuditRecord.Generation.get -> int?
@@ -114,6 +116,8 @@ Frontier.Platform.Audit.AuditRecord.SchemaVersion.get -> string!
 Frontier.Platform.Audit.AuditRecord.SchemaVersion.init -> void
 Frontier.Platform.Audit.AuditRecord.StartedAtUtc.get -> System.DateTime
 Frontier.Platform.Audit.AuditRecord.StartedAtUtc.init -> void
+Frontier.Platform.Audit.AuditRecord.Termination.get -> Frontier.Platform.Audit.TerminationRecord?
+Frontier.Platform.Audit.AuditRecord.Termination.init -> void
 Frontier.Platform.Audit.AuditRecord.Validate() -> void
 Frontier.Platform.Audit.AuditRecord.ValidatorOutcomes.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.ValidatorOutcome!>!
 Frontier.Platform.Audit.AuditRecord.ValidatorOutcomes.init -> void
@@ -244,6 +248,18 @@ Frontier.Platform.Audit.ExecutionAuditOptions.AppendMaxAttempts.init -> void
 Frontier.Platform.Audit.ExecutionAuditOptions.AppendMaxDelayMs.get -> int
 Frontier.Platform.Audit.ExecutionAuditOptions.AppendMaxDelayMs.init -> void
 Frontier.Platform.Audit.ExecutionAuditOptions.ExecutionAuditOptions() -> void
+Frontier.Platform.Audit.FailureRecord
+Frontier.Platform.Audit.FailureRecord.<Clone>$() -> Frontier.Platform.Audit.FailureRecord!
+Frontier.Platform.Audit.FailureRecord.Classification.get -> string!
+Frontier.Platform.Audit.FailureRecord.Classification.init -> void
+Frontier.Platform.Audit.FailureRecord.Equals(Frontier.Platform.Audit.FailureRecord? other) -> bool
+Frontier.Platform.Audit.FailureRecord.ExceptionType.get -> string?
+Frontier.Platform.Audit.FailureRecord.ExceptionType.init -> void
+Frontier.Platform.Audit.FailureRecord.FailureRecord() -> void
+Frontier.Platform.Audit.FailureRecord.Message.get -> string?
+Frontier.Platform.Audit.FailureRecord.Message.init -> void
+Frontier.Platform.Audit.FailureRecord.NodeId.get -> string?
+Frontier.Platform.Audit.FailureRecord.NodeId.init -> void
 Frontier.Platform.Audit.GovernanceAuditAppendException
 Frontier.Platform.Audit.GovernanceAuditAppendException.GovernanceAuditAppendException() -> void
 Frontier.Platform.Audit.GovernanceAuditAppendException.GovernanceAuditAppendException(string! message) -> void
@@ -459,6 +475,8 @@ Frontier.Platform.Audit.SignedAuditRecord.EngagementId.init -> void
 Frontier.Platform.Audit.SignedAuditRecord.Equals(Frontier.Platform.Audit.SignedAuditRecord? other) -> bool
 Frontier.Platform.Audit.SignedAuditRecord.ExecutionId.get -> string!
 Frontier.Platform.Audit.SignedAuditRecord.ExecutionId.init -> void
+Frontier.Platform.Audit.SignedAuditRecord.Failure.get -> Frontier.Platform.Audit.FailureRecord?
+Frontier.Platform.Audit.SignedAuditRecord.Failure.init -> void
 Frontier.Platform.Audit.SignedAuditRecord.FinalStatus.get -> Frontier.Platform.Abstractions.ExecutionStatus!
 Frontier.Platform.Audit.SignedAuditRecord.FinalStatus.init -> void
 Frontier.Platform.Audit.SignedAuditRecord.Generation.get -> int?
@@ -484,6 +502,8 @@ Frontier.Platform.Audit.SignedAuditRecord.SigningKeyId.get -> string!
 Frontier.Platform.Audit.SignedAuditRecord.SigningKeyId.init -> void
 Frontier.Platform.Audit.SignedAuditRecord.StartedAtUtc.get -> System.DateTime
 Frontier.Platform.Audit.SignedAuditRecord.StartedAtUtc.init -> void
+Frontier.Platform.Audit.SignedAuditRecord.Termination.get -> Frontier.Platform.Audit.TerminationRecord?
+Frontier.Platform.Audit.SignedAuditRecord.Termination.init -> void
 Frontier.Platform.Audit.SignedAuditRecord.Validate() -> void
 Frontier.Platform.Audit.SignedAuditRecord.ValidatorOutcomes.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.ValidatorOutcome!>!
 Frontier.Platform.Audit.SignedAuditRecord.ValidatorOutcomes.init -> void
@@ -551,6 +571,16 @@ Frontier.Platform.Audit.SigningKey.KeyMaterial.get -> System.ReadOnlyMemory<byte
 Frontier.Platform.Audit.SigningKey.KeyMaterial.init -> void
 Frontier.Platform.Audit.SigningKey.SigningKey(string! KeyId, System.ReadOnlyMemory<byte> KeyMaterial) -> void
 Frontier.Platform.Audit.SigningKeyPurpose
+Frontier.Platform.Audit.TerminationRecord
+Frontier.Platform.Audit.TerminationRecord.<Clone>$() -> Frontier.Platform.Audit.TerminationRecord!
+Frontier.Platform.Audit.TerminationRecord.Equals(Frontier.Platform.Audit.TerminationRecord? other) -> bool
+Frontier.Platform.Audit.TerminationRecord.Reason.get -> string!
+Frontier.Platform.Audit.TerminationRecord.Reason.init -> void
+Frontier.Platform.Audit.TerminationRecord.TerminatedAtUtc.get -> System.DateTime
+Frontier.Platform.Audit.TerminationRecord.TerminatedAtUtc.init -> void
+Frontier.Platform.Audit.TerminationRecord.TerminatedBy.get -> string!
+Frontier.Platform.Audit.TerminationRecord.TerminatedBy.init -> void
+Frontier.Platform.Audit.TerminationRecord.TerminationRecord() -> void
 Frontier.Platform.Audit.ToolCall
 Frontier.Platform.Audit.ToolCall.<Clone>$() -> Frontier.Platform.Audit.ToolCall!
 Frontier.Platform.Audit.ToolCall.Equals(Frontier.Platform.Audit.ToolCall? other) -> bool
@@ -648,6 +678,9 @@ override Frontier.Platform.Audit.CacheMetrics.ToString() -> string!
 override Frontier.Platform.Audit.CacheTierMetrics.Equals(object? obj) -> bool
 override Frontier.Platform.Audit.CacheTierMetrics.GetHashCode() -> int
 override Frontier.Platform.Audit.CacheTierMetrics.ToString() -> string!
+override Frontier.Platform.Audit.FailureRecord.Equals(object? obj) -> bool
+override Frontier.Platform.Audit.FailureRecord.GetHashCode() -> int
+override Frontier.Platform.Audit.FailureRecord.ToString() -> string!
 override Frontier.Platform.Audit.GovernanceAuditChainBreak.Equals(object? obj) -> bool
 override Frontier.Platform.Audit.GovernanceAuditChainBreak.GetHashCode() -> int
 override Frontier.Platform.Audit.GovernanceAuditChainBreak.ToString() -> string!
@@ -681,6 +714,9 @@ override Frontier.Platform.Audit.SignedGovernanceAuditRecord.ToString() -> strin
 override Frontier.Platform.Audit.SigningKey.Equals(object? obj) -> bool
 override Frontier.Platform.Audit.SigningKey.GetHashCode() -> int
 override Frontier.Platform.Audit.SigningKey.ToString() -> string!
+override Frontier.Platform.Audit.TerminationRecord.Equals(object? obj) -> bool
+override Frontier.Platform.Audit.TerminationRecord.GetHashCode() -> int
+override Frontier.Platform.Audit.TerminationRecord.ToString() -> string!
 override Frontier.Platform.Audit.ToolCall.Equals(object? obj) -> bool
 override Frontier.Platform.Audit.ToolCall.GetHashCode() -> int
 override Frontier.Platform.Audit.ToolCall.ToString() -> string!
@@ -712,6 +748,8 @@ static Frontier.Platform.Audit.CacheMetrics.operator !=(Frontier.Platform.Audit.
 static Frontier.Platform.Audit.CacheMetrics.operator ==(Frontier.Platform.Audit.CacheMetrics? left, Frontier.Platform.Audit.CacheMetrics? right) -> bool
 static Frontier.Platform.Audit.CacheTierMetrics.operator !=(Frontier.Platform.Audit.CacheTierMetrics? left, Frontier.Platform.Audit.CacheTierMetrics? right) -> bool
 static Frontier.Platform.Audit.CacheTierMetrics.operator ==(Frontier.Platform.Audit.CacheTierMetrics? left, Frontier.Platform.Audit.CacheTierMetrics? right) -> bool
+static Frontier.Platform.Audit.FailureRecord.operator !=(Frontier.Platform.Audit.FailureRecord? left, Frontier.Platform.Audit.FailureRecord? right) -> bool
+static Frontier.Platform.Audit.FailureRecord.operator ==(Frontier.Platform.Audit.FailureRecord? left, Frontier.Platform.Audit.FailureRecord? right) -> bool
 static Frontier.Platform.Audit.GovernanceAuditChainBreak.operator !=(Frontier.Platform.Audit.GovernanceAuditChainBreak? left, Frontier.Platform.Audit.GovernanceAuditChainBreak? right) -> bool
 static Frontier.Platform.Audit.GovernanceAuditChainBreak.operator ==(Frontier.Platform.Audit.GovernanceAuditChainBreak? left, Frontier.Platform.Audit.GovernanceAuditChainBreak? right) -> bool
 static Frontier.Platform.Audit.GovernanceAuditChainHead.operator !=(Frontier.Platform.Audit.GovernanceAuditChainHead? left, Frontier.Platform.Audit.GovernanceAuditChainHead? right) -> bool
@@ -736,6 +774,8 @@ static Frontier.Platform.Audit.SignedGovernanceAuditRecord.operator ==(Frontier.
 static Frontier.Platform.Audit.SigningKey.ForEs256(string! keyId, System.ReadOnlyMemory<byte> publicKeyDer) -> Frontier.Platform.Audit.SigningKey!
 static Frontier.Platform.Audit.SigningKey.operator !=(Frontier.Platform.Audit.SigningKey? left, Frontier.Platform.Audit.SigningKey? right) -> bool
 static Frontier.Platform.Audit.SigningKey.operator ==(Frontier.Platform.Audit.SigningKey? left, Frontier.Platform.Audit.SigningKey? right) -> bool
+static Frontier.Platform.Audit.TerminationRecord.operator !=(Frontier.Platform.Audit.TerminationRecord? left, Frontier.Platform.Audit.TerminationRecord? right) -> bool
+static Frontier.Platform.Audit.TerminationRecord.operator ==(Frontier.Platform.Audit.TerminationRecord? left, Frontier.Platform.Audit.TerminationRecord? right) -> bool
 static Frontier.Platform.Audit.ToolCall.operator !=(Frontier.Platform.Audit.ToolCall? left, Frontier.Platform.Audit.ToolCall? right) -> bool
 static Frontier.Platform.Audit.ToolCall.operator ==(Frontier.Platform.Audit.ToolCall? left, Frontier.Platform.Audit.ToolCall? right) -> bool
 static Frontier.Platform.Audit.ValidatorOutcome.operator !=(Frontier.Platform.Audit.ValidatorOutcome? left, Frontier.Platform.Audit.ValidatorOutcome? right) -> bool
