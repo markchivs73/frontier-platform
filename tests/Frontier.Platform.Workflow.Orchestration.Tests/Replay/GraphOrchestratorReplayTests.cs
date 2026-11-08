@@ -165,6 +165,41 @@ public sealed class GraphOrchestratorReplayTests : IAsyncLifetime
         Assert.Equal(["a-entry", "b-booking", "b-ticket"], recorder.StartedNodes.Order(StringComparer.Ordinal));
     }
 
+    /// <summary>
+    /// S13.247 under the real SDK: each section's first artifact write throws a passing fault. The
+    /// storage profile's outer retry re-runs the write, so the run completes and every section was
+    /// written exactly twice.
+    /// </summary>
+    [Fact]
+    public async Task ArtifactWriteFaultsOnce_TheStorageProfileRetriesIt_AndTheRunCompletes()
+    {
+        var recorder = new ReplayRecorder();
+        var instanceId = NewInstanceId();
+
+        await using var worker = await ReplayWorkerHost.StartAsync("worker-a", recorder, artifactFault: new TimeoutException("store unavailable"));
+        await worker.Client.ScheduleNewOrchestrationInstanceAsync(WorkflowActivityNames.GraphOrchestrator, Input(OrchestrationFixtures.ThreeArtifactChain()), new StartOrchestrationOptions { InstanceId = instanceId });
+        await CompleteAsync(worker.Client, instanceId);
+
+        Assert.Equal(["approach", "approach", "pricing", "pricing", "scope", "scope"], recorder.ArtifactWrites.Order(StringComparer.Ordinal));
+        AssertCheckpointsAreUniqueAndEndCompleted(recorder);
+    }
+
+    /// <summary>S13.247 under the real SDK: a contract violation from the artifact write is permanent, so it runs once and the run fails with it.</summary>
+    [Fact]
+    public async Task ArtifactWriteContractViolation_IsNotRetried_AndTheRunFails()
+    {
+        var recorder = new ReplayRecorder();
+        var instanceId = NewInstanceId();
+
+        await using var worker = await ReplayWorkerHost.StartAsync("worker-a", recorder, artifactFault: new ContractViolationException("ArtifactStateActivityRequest", ["bad"]));
+        await worker.Client.ScheduleNewOrchestrationInstanceAsync(WorkflowActivityNames.GraphOrchestrator, Input(OrchestrationFixtures.ThreeArtifactChain()), new StartOrchestrationOptions { InstanceId = instanceId });
+        var metadata = await FinishAsync(worker.Client, instanceId);
+
+        Assert.Equal(OrchestrationRuntimeStatus.Failed, metadata.RuntimeStatus);
+        Assert.True(metadata.FailureDetails?.InnerFailure?.IsCausedBy<ContractViolationException>(), $"the run's failure is not the write's: {metadata.FailureDetails}");
+        Assert.Equal(["scope"], recorder.ArtifactWrites);
+    }
+
     /// <summary>One checkpoint per sequence number, numbered from 1 with no gap, the last one <see cref="ExecutionStatus.Completed"/>.</summary>
     private static void AssertCheckpointsAreUniqueAndEndCompleted(ReplayRecorder recorder)
     {

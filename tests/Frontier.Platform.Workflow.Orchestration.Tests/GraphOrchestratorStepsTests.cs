@@ -481,7 +481,7 @@ public sealed class GraphOrchestratorStepsTests
             return expectedResponse;
         };
 
-        var response = await GraphOrchestratorSteps.EvaluateCascadeAsync(context, definition, state, "scope");
+        var response = await GraphOrchestratorSteps.EvaluateCascadeAsync(context, definition, state, "scope", PolicyProvider);
 
         Assert.Same(expectedResponse, response);
         Assert.NotNull(capturedRequest);
@@ -761,7 +761,7 @@ public sealed class GraphOrchestratorStepsTests
         ]);
         var approvalRequest = BuildApprovalRequest(gate, occurrence: 0);
 
-        var decision = await GraphOrchestratorSteps.DecideAsync(context, gate, approvalRequest);
+        var decision = await GraphOrchestratorSteps.DecideAsync(context, gate, approvalRequest, PolicyProvider);
 
         Assert.Equal(DecisionKind.Approve, decision.Kind);
         Assert.Single(escalated);
@@ -780,7 +780,7 @@ public sealed class GraphOrchestratorStepsTests
         var current = Decision(DecisionKind.Reject) with { RequestId = approvalRequest.Id };
         context.ExternalEvents[GraphOrchestratorSteps.GateEventName(gate.NodeId)] = new Queue<object>([stale, current]);
 
-        var decision = await GraphOrchestratorSteps.DecideAsync(context, gate, approvalRequest);
+        var decision = await GraphOrchestratorSteps.DecideAsync(context, gate, approvalRequest, PolicyProvider);
 
         Assert.Same(current, decision);
         Assert.Empty(escalated);
@@ -799,7 +799,7 @@ public sealed class GraphOrchestratorStepsTests
         var state = new GraphExecutionState { StartedAtUtc = OrchestrationFixtures.StartedAtUtc };
         state.SectionRefs["scope"] = "scope-ref-v1";
 
-        await GraphOrchestratorSteps.OpenGateAsync(context, input, gate, state);
+        await GraphOrchestratorSteps.OpenGateAsync(context, input, gate, state, PolicyProvider);
 
         var request = Assert.Single(requests);
         Assert.Equal(0, request.Occurrence);
@@ -821,7 +821,7 @@ public sealed class GraphOrchestratorStepsTests
         var state = new GraphExecutionState { StartedAtUtc = OrchestrationFixtures.StartedAtUtc };
         state.GateOccurrences[gate.NodeId] = 1;
 
-        await GraphOrchestratorSteps.OpenGateAsync(context, input, gate, state);
+        await GraphOrchestratorSteps.OpenGateAsync(context, input, gate, state, PolicyProvider);
 
         Assert.Equal(1, Assert.Single(requests).Occurrence);
         Assert.Equal(2, state.GateOccurrences[gate.NodeId]);
@@ -874,7 +874,7 @@ public sealed class GraphOrchestratorStepsTests
         var state = new GraphExecutionState { StartedAtUtc = OrchestrationFixtures.StartedAtUtc };
         state.SectionRefs["scope"] = "scope-ref-v1";
 
-        await GraphOrchestratorSteps.RestoreArtifactsAsync(context, input, new Dictionary<string, string>(), state);
+        await GraphOrchestratorSteps.RestoreArtifactsAsync(context, input, new Dictionary<string, string>(), state, PolicyProvider);
 
         Assert.Equal("scope-ref-v1", state.SectionRefs["scope"]);
     }
@@ -889,7 +889,7 @@ public sealed class GraphOrchestratorStepsTests
         state.SectionRefs["approach"] = "approach-ref-v2";
         var restoreSet = new Dictionary<string, string> { ["approach"] = "approach-ref-v1" };
 
-        await GraphOrchestratorSteps.RestoreArtifactsAsync(context, input, restoreSet, state);
+        await GraphOrchestratorSteps.RestoreArtifactsAsync(context, input, restoreSet, state, PolicyProvider);
 
         Assert.Equal("approach-ref-v1", state.SectionRefs["approach"]);
     }

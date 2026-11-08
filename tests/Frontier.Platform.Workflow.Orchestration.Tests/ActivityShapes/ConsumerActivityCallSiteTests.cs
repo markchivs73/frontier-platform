@@ -31,9 +31,9 @@ public sealed class ConsumerActivityCallSiteTests
     {
         var input = OrchestrationFixtures.Input(OrchestrationFixtures.ThreeArtifactChain());
         var state = new GraphExecutionState { StartedAtUtc = OrchestrationFixtures.StartedAtUtc };
-        await GraphOrchestratorSteps.EvaluateCascadeAsync(context, input.Definition, state, "scope");
-        await GraphOrchestratorSteps.WriteArtifactVersionAsync(context, input, state, "scope", "content", "hash");
+        await GraphOrchestratorSteps.EvaluateCascadeAsync(context, input.Definition, state, "scope", new FakeResiliencePolicyProvider());
+        await GraphOrchestratorSteps.WriteArtifactVersionAsync(context, input, state, "scope", "content", "hash", new FakeResiliencePolicyProvider());
         await GraphOrchestratorSteps.WriteSnapshotAsync(context, input, state, ExecutionStatus.Running, currentNodeId: null, new FakeResiliencePolicyProvider());
-        await GraphOrchestratorSteps.RestoreArtifactsAsync(context, input, new Dictionary<string, string> { ["scope"] = "scope-ref-v1" }, state);
+        await GraphOrchestratorSteps.RestoreArtifactsAsync(context, input, new Dictionary<string, string> { ["scope"] = "scope-ref-v1" }, state, new FakeResiliencePolicyProvider());
     }
 }

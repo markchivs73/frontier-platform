@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Frontier.Platform.Hitl;
 using Frontier.TestSupport;
 
@@ -27,6 +28,24 @@ public sealed class EscalateApprovalActivityTests
         Assert.Equal(ApprovalRequestStatus.Escalated, result.Status);
         Assert.Equal(pending.Id, result.Id);
         Assert.Same(result, store.UpsertedRequest);
+        Assert.Equal(0, store.Upserts);
+    }
+
+    /// <summary>S13.247: the <c>storage</c> profile may re-run an escalation that already applied; the re-run leaves the request escalated and writes nothing.</summary>
+    [Fact]
+    public async Task RunAsync_ReRunAfterItApplied_ConvergesOnTheSameEscalatedRequest()
+    {
+        var store = new FakeApprovalStore();
+        var pending = HitlFixtures.PendingRequest();
+        store.Seed(pending);
+        var activity = new EscalateApprovalActivity(store);
+
+        var first = await activity.RunAsync(FakeTaskActivityContext.ForEscalateApproval(), pending);
+        var second = await activity.RunAsync(FakeTaskActivityContext.ForEscalateApproval(), pending);
+
+        Assert.Equal(JsonSerializer.Serialize(first), JsonSerializer.Serialize(second));
+        Assert.Same(second, store.UpsertedRequest);
+        Assert.Equal(ApprovalRequestStatus.Escalated, second.Status);
         Assert.Equal(0, store.Upserts);
     }
 

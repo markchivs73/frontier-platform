@@ -133,10 +133,45 @@ internal sealed class FakeTaskOrchestrationContext : TaskOrchestrationContext
     /// <summary>Every <see cref="CallActivityAsync{TResult}"/> call, in order: the name, the input's runtime type and the result type asked for (S13.185).</summary>
     public List<ActivityCall> ActivityCalls { get; } = [];
 
+    /// <summary>How many times each activity's handler ran, keyed by activity name: a call retried under its <see cref="TaskOptions"/> counts every attempt (S13.247).</summary>
+    public Dictionary<string, int> ActivityAttempts { get; } = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Runs the activity's handler, honouring a <see cref="RetryPolicy"/> on <paramref name="options"/>
+    /// the way the SDK does (S13.247): a faulted attempt is retried while attempts remain and
+    /// <see cref="RetryPolicy.Handle"/> accepts it in the form the SDK's retry interceptor passes
+    /// (see <see cref="CoreFailure"/>), which hands its details to <c>HandleFailure</c>; otherwise the
+    /// handler's own exception propagates, as it always has here.
+    /// No delay is taken between attempts. Options with no retry policy, which is what
+    /// <see cref="FakeResiliencePolicyProvider"/> returns, run the handler exactly once, as before.
+    /// </summary>
     /// <inheritdoc />
     public override async Task<TResult> CallActivityAsync<TResult>(TaskName name, object? input = null, TaskOptions? options = null)
     {
         ActivityCalls.Add(new(name.Name, input?.GetType(), typeof(TResult)));
+        var policy = options?.Retry?.Policy;
+        for (var attempt = 1; ; attempt++)
+        {
+            ActivityAttempts[name.Name] = ActivityAttempts.GetValueOrDefault(name.Name) + 1;
+            try
+            {
+                return await InvokeActivityAsync<TResult>(name, input);
+            }
+            catch (Exception exception) when (policy is not null && attempt < policy.MaxNumberOfAttempts && policy.Handle(CoreFailure(exception)))
+            {
+            }
+        }
+    }
+
+    /// <summary>
+    /// The failure as the SDK's retry interceptor hands it to <see cref="RetryPolicy.Handle"/>: a
+    /// DurableTask.Core task failure carrying the fault's details, which <c>HandleFailure</c> reads.
+    /// </summary>
+    private static DurableTask.Core.Exceptions.TaskFailedException CoreFailure(Exception exception) =>
+        new(exception.Message, exception) { FailureDetails = new DurableTask.Core.FailureDetails(exception) };
+
+    private async Task<TResult> InvokeActivityAsync<TResult>(TaskName name, object? input)
+    {
         if (AsyncActivityHandlers.TryGetValue(name.Name, out var asyncHandler))
         {
             return (TResult)await asyncHandler(input);

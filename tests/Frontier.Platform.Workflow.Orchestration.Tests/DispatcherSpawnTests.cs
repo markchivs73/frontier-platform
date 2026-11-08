@@ -382,7 +382,7 @@ public sealed class DispatcherSpawnTests
         internal int Subscriptions(string eventName) => Context.ExternalEventSubscriptions.GetValueOrDefault(eventName);
 
         internal Task<GraphOrchestratorResult> Start(GraphOrchestratorInput? input = null) =>
-            new DispatcherOrchestrator().RunAsync(Context, input ?? DispatcherFixtures.Input());
+            new DispatcherOrchestrator(new FakeResiliencePolicyProvider()).RunAsync(Context, input ?? DispatcherFixtures.Input());
 
         internal void RaiseWorkItem(string workItemId, string? directedBy = null) =>
             workItems.Raise(DispatcherFixtures.Item(workItemId, directedBy));
