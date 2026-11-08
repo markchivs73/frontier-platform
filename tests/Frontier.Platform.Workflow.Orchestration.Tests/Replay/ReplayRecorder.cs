@@ -13,6 +13,9 @@ internal sealed record AgentCall(string NodeId, string Worker, DateTimeOffset St
 /// </summary>
 internal sealed record RecordedSnapshot(ExecutionSnapshot Snapshot, string Worker, DateTimeOffset StartedAt, DateTimeOffset RecordedAt);
 
+/// <summary>One audit consolidation the orchestrator asked for, the worker that ran it, and when.</summary>
+internal sealed record RecordedAudit(ConsolidateAuditInput Input, string Worker, DateTimeOffset RecordedAt);
+
 /// <summary>One dynamic-context refresh the walk applied: the signal's reason, and when the activity ran.</summary>
 internal sealed record AppliedRefresh(string Reason, DateTimeOffset AppliedAt);
 
@@ -26,7 +29,7 @@ internal sealed class ReplayRecorder
     private readonly ConcurrentQueue<AgentCall> _agentCalls = new();
     private readonly ConcurrentQueue<RecordedSnapshot> _snapshots = new();
     private readonly ConcurrentQueue<ApprovalRequest> _approvals = new();
-    private readonly ConcurrentQueue<string> _auditWorkers = new();
+    private readonly ConcurrentQueue<RecordedAudit> _audits = new();
     private readonly ConcurrentQueue<AppliedRefresh> _refreshes = new();
     private readonly ConcurrentQueue<string> _startedNodes = new();
 
@@ -40,7 +43,10 @@ internal sealed class ReplayRecorder
     public IReadOnlyList<ApprovalRequest> Approvals => [.. _approvals];
 
     /// <summary>The worker that ran each audit consolidation.</summary>
-    public IReadOnlyList<string> AuditWorkers => [.. _auditWorkers];
+    public IReadOnlyList<string> AuditWorkers => [.. _audits.Select(audit => audit.Worker)];
+
+    /// <summary>Every audit consolidation, in arrival order.</summary>
+    public IReadOnlyList<RecordedAudit> Audits => [.. _audits];
 
     /// <summary>Each dynamic-context refresh applied, in the order applied.</summary>
     public IReadOnlyList<AppliedRefresh> Refreshes => [.. _refreshes];
@@ -67,6 +73,6 @@ internal sealed class ReplayRecorder
     /// <summary>Records an opened approval request.</summary>
     public void Add(ApprovalRequest approval) => _approvals.Enqueue(approval);
 
-    /// <summary>Records an audit consolidation on <paramref name="worker"/>.</summary>
-    public void AddAudit(string worker) => _auditWorkers.Enqueue(worker);
+    /// <summary>Records an audit consolidation of <paramref name="input"/> on <paramref name="worker"/>.</summary>
+    public void AddAudit(string worker, ConsolidateAuditInput input) => _audits.Enqueue(new RecordedAudit(input, worker, DateTimeOffset.UtcNow));
 }

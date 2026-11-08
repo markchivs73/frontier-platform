@@ -349,6 +349,77 @@ public sealed class GraphConcurrentWalkTests
         Assert.All(harness.Snapshots[..^1], snapshot => Assert.Null(snapshot.FailureDetail));
     }
 
+    /// <summary>
+    /// S13.240 (ADR-PA46): the failure path consolidates and signs the run's audit record, attesting
+    /// failed, after the paused-on-failure checkpoint it is built from, and still rethrows the node's failure.
+    /// </summary>
+    [Fact]
+    public async Task FanOut_BranchFails_ConsolidatesAFailedAuditAfterThePausedCheckpoint()
+    {
+        var harness = new WalkHarness(OrchestrationFixtures.FanOutJoin(), deferred: ["b-booking", "b-ticket"]);
+        var walk = harness.StartWalk();
+
+        harness.FailNode("b-booking", new ContractViolationException(nameof(AgentTaskActivityInput), ["output failed validation."]));
+        harness.CompleteNode("b-ticket");
+
+        await Assert.ThrowsAsync<ContractViolationException>(() => walk);
+
+        var audit = Assert.Single(harness.Audits);
+        Assert.Equal(ExecutionStatus.Failed, audit.FinalStatus);
+        Assert.Equal(harness.Context.InstanceId, audit.ExecutionId);
+        Assert.Equal(harness.Snapshots[^1].StartedAtUtc, audit.StartedAtUtc);
+        Assert.Equal(
+            [WorkflowActivityNames.SnapshotStateActivity, WorkflowActivityNames.ConsolidateAuditActivity],
+            harness.Context.ActivityCalls.TakeLast(2).Select(call => call.Name));
+        Assert.Equal(ExecutionStatus.PausedOnFailure, harness.Snapshots[^1].Status);
+    }
+
+    /// <summary>S13.240: the record carries the orchestration's own start, which the caller passes, as the completed path's does.</summary>
+    [Fact]
+    public async Task BranchFails_RunStartGiven_TheFailedAuditCarriesIt()
+    {
+        var runStartedAtUtc = new DateTime(2025, 12, 31, 23, 59, 0, DateTimeKind.Utc);
+        var harness = new WalkHarness(OrchestrationFixtures.FanOutJoin(), deferred: ["b-booking", "b-ticket"]);
+        var walk = harness.StartWalk(runStartedAtUtc);
+
+        harness.FailNode("b-ticket", new BudgetExceededException("invocation budget exhausted."));
+        harness.CompleteNode("b-booking");
+
+        await Assert.ThrowsAsync<BudgetExceededException>(() => walk);
+        Assert.Equal(runStartedAtUtc, Assert.Single(harness.Audits).StartedAtUtc);
+    }
+
+    /// <summary>
+    /// S13.240: an audit activity that fails after its retries does not replace the run's failure. DTF
+    /// must record the node's failure, which is what the consumer classifies.
+    /// </summary>
+    [Fact]
+    public async Task BranchFails_AuditActivityFails_TheNodeFailureIsStillWhatIsThrown()
+    {
+        var harness = new WalkHarness(OrchestrationFixtures.FanOutJoin(), deferred: ["b-booking", "b-ticket"]);
+        harness.Context.ActivityHandlers[WorkflowActivityNames.ConsolidateAuditActivity] = _ =>
+            throw new TaskFailedException(WorkflowActivityNames.ConsolidateAuditActivity, 9, new TaskFailureDetails(typeof(InvalidOperationException).FullName!, "Cosmos unavailable.", null, null, null));
+        var walk = harness.StartWalk();
+
+        harness.FailNode("b-booking", new ContractViolationException(nameof(AgentTaskActivityInput), ["output failed validation."]));
+        harness.CompleteNode("b-ticket");
+
+        var thrown = await Assert.ThrowsAsync<ContractViolationException>(() => walk);
+        Assert.Contains("output failed validation", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(ExecutionStatus.PausedOnFailure, harness.Snapshots[^1].Status);
+    }
+
+    /// <summary>S13.240: a walk that completes consolidates nothing itself; the completed path's audit is the orchestrator's last step.</summary>
+    [Fact]
+    public async Task FanOut_WalkCompletes_ConsolidatesNoAudit()
+    {
+        var harness = new WalkHarness(OrchestrationFixtures.FanOutJoin(), deferred: []);
+
+        await harness.StartWalk();
+
+        Assert.Empty(harness.Audits);
+    }
+
     private static HitlDecision Decision(DecisionKind kind) => new()
     {
         GateId = "gate-scope",
@@ -392,6 +463,12 @@ public sealed class GraphConcurrentWalkTests
                 GateOpenings.Add(request);
                 return ApprovalRequestFactory.Open(request);
             };
+            Context.ActivityHandlers[WorkflowActivityNames.ConsolidateAuditActivity] = input =>
+            {
+                var request = (ConsolidateAuditInput)input!;
+                Audits.Add(request);
+                return AuditFixtures.SignedRecord(request);
+            };
         }
 
         public WorkflowDefinition Definition { get; }
@@ -399,9 +476,10 @@ public sealed class GraphConcurrentWalkTests
         public List<string> StartedNodes { get; } = [];
         public List<ExecutionSnapshot> Snapshots { get; } = [];
         public List<GateOpenRequest> GateOpenings { get; } = [];
+        public List<ConsolidateAuditInput> Audits { get; } = [];
 
-        public Task<GraphExecutionState> StartWalk() =>
-            GraphOrchestratorSteps.RunInitialWalkAsync(Context, OrchestrationFixtures.Input(Definition), new RollbackPlanner(), PolicyProvider, OrchestrationFixtures.WriteClassifier);
+        public Task<GraphExecutionState> StartWalk(DateTime? runStartedAtUtc = null) =>
+            GraphOrchestratorSteps.RunInitialWalkAsync(Context, OrchestrationFixtures.Input(Definition), new RollbackPlanner(), PolicyProvider, OrchestrationFixtures.WriteClassifier, runStartedAtUtc: runStartedAtUtc);
 
         public void CompleteNode(string nodeId) => _pending[nodeId].SetResult(RunRealActivity(_inputs[nodeId]));
 

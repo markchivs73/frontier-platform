@@ -209,6 +209,14 @@ migrated. Git history holds the 1.0 bytes if they are ever needed.
   writes `generation` yet: it arrives with the generation stamping on the execution snapshot.
   A verifier on an older platform version reads a new record without the three members and fails
   its signature, so move verifiers and workers to this release together.
+- **Failed and terminated runs are recorded too** (ADR-PA46). A record whose `final_status` is
+  `failed` carries `failure` (the classification, and the failing node, exception type and bounded
+  message when the checkpoint recorded them); one whose status is `terminated` carries `termination`
+  (`terminated_by`, `reason`, `terminated_at_utc`). `Validate()` requires each for its status. Both are
+  omit-null and covered by `record_hash`, so every record signed before them recomputes to its stored
+  bytes. They chain through the same guarded append as a completed run's record, so a mix of outcomes
+  on one engagement stays one linear chain. Move verifiers and workers to this release together, as
+  for ADR-PA45.
 - **Sandbox runs are marked, not mixed.** `AuditRecord.Sandbox` is `true` for a `SANDBOX-`-prefixed
   engagement and omitted entirely otherwise, so existing golden bytes are unaffected and the
   aggregation layer can filter test runs out of empirical evidence with a one-line predicate.

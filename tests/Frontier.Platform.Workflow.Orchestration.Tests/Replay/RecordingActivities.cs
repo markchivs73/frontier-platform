@@ -49,7 +49,7 @@ internal sealed class RecordingActivities(string worker, ReplayRecorder recorder
     /// </summary>
     public SignedAuditRecord Consolidate(ConsolidateAuditInput input)
     {
-        recorder.AddAudit(worker);
+        recorder.AddAudit(worker, input);
         return AuditFixtures.SignedRecord(new AuditRecord
         {
             ExecutionId = input.ExecutionId,
@@ -59,7 +59,7 @@ internal sealed class RecordingActivities(string worker, ReplayRecorder recorder
             DefinitionHash = input.DefinitionHash,
             StartedAtUtc = input.StartedAtUtc,
             ClosedAtUtc = input.StartedAtUtc,
-            FinalStatus = ExecutionStatus.Completed,
+            FinalStatus = input.FinalStatus ?? ExecutionStatus.Completed,
             OrchestrationEvents = [],
             AgentInvocations = [],
             ValidatorOutcomes = [],

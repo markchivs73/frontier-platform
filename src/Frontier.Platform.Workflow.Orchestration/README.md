@@ -99,6 +99,16 @@ A node with no output contract records the whole reply, unchanged.
 `AuditRecord.McpToolInvocations`, beside the contract hashes that validated it (ADR-E27 D15). An
 execution with no MCP step leaves the field out, so its record keeps the bytes it always had.
 
+**A run that does not complete still gets a signed record (ADR-PA46).** On a node failure the
+orchestrator writes the `paused_on_failure` checkpoint, then calls `ConsolidateAuditActivity` with
+`ConsolidateAuditInput.FinalStatus = failed`, then rethrows the node's failure. The record attests
+`failed` and carries the checkpoint's failure fields. If that activity itself fails, the node's failure
+is still what the orchestration throws. A terminated orchestration runs no further activities, so
+whoever terminates it writes its record: write the `terminated` snapshot first, then call
+`IAuditConsolidator.ConsolidateAsync` (with `FinalStatus = terminated`, or leave it null) and pass the
+result to `IAuditSigner.SignAsync`. The consolidator refuses a `failed` or `terminated` claim its latest
+snapshot does not back.
+
 **Model-role pinning (ADR-PA29).** When `GraphOrchestratorInput.PinModelRoles` is true, the
 orchestrator's first action is `PinMappingsActivity`, and every agent invocation resolves under
 the pin it recorded. The flag exists because of replay: an input recorded without it replays

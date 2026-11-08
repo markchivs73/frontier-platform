@@ -76,6 +76,95 @@ public sealed class GraphOrchestratorTests
         Assert.Equal($"{WorkflowActivityNames.SnapshotStateActivity}:{ExecutionStatus.Completed}", callOrder[^2]);
     }
 
+    /// <summary>
+    /// S13.240 (ADR-PA46): each final status gets its record. A completed run's input attests nothing
+    /// beyond its snapshot, so its recorded bytes are unchanged; a failed run's attests failed and carries
+    /// the orchestration's own start, and the node's failure is still what the orchestration throws.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task RunAsync_EachEnding_ConsolidatesOneAuditWithItsFinalStatus(bool approachFails)
+    {
+        var context = new FakeTaskOrchestrationContext();
+        var audits = new List<ConsolidateAuditInput>();
+        context.ActivityHandlers[WorkflowActivityNames.AgentTaskActivity] = activityInput => (AgentTaskActivityInput)activityInput! is { NodeId: "approach-agent" } && approachFails
+            ? throw new ContractViolationException(nameof(AgentTaskActivityInput), ["output failed validation."])
+            : new AgentTaskActivity(new FakeAgentTaskActivityPipeline()).RunAsync(new FakeTaskActivityContext(), (AgentTaskActivityInput)activityInput!).GetAwaiter().GetResult();
+        context.ActivityHandlers[WorkflowActivityNames.SnapshotStateActivity] = activityInput =>
+            new SnapshotActivityResponse { SnapshotId = $"{((ExecutionSnapshot)activityInput!).ExecutionId}:{((ExecutionSnapshot)activityInput!).Sequence:D6}" };
+        context.ActivityHandlers[WorkflowActivityNames.ArtifactStateActivity] = activityInput =>
+            new ArtifactStateActivityResponse { SectionRef = $"{((ArtifactStateActivityRequest)activityInput!).ExecutionId}:{((ArtifactStateActivityRequest)activityInput!).ArtifactKey}:v{((ArtifactStateActivityRequest)activityInput!).Version}" };
+        context.ActivityHandlers[WorkflowActivityNames.ConsolidateAuditActivity] = activityInput =>
+        {
+            audits.Add((ConsolidateAuditInput)activityInput!);
+            return AuditFixtures.SignedRecord((ConsolidateAuditInput)activityInput!);
+        };
+        var input = new GraphOrchestratorInput { Definition = OrchestrationFixtures.ThreeArtifactChain(), EngagementId = "eng-1" };
+
+        if (approachFails)
+        {
+            await Assert.ThrowsAsync<ContractViolationException>(() => orchestrator.RunAsync(context, input));
+        }
+        else
+        {
+            await orchestrator.RunAsync(context, input);
+        }
+
+        var audit = Assert.Single(audits);
+        Assert.Equal(approachFails ? ExecutionStatus.Failed : null, audit.FinalStatus);
+        Assert.Equal(context.CurrentUtcDateTime, audit.StartedAtUtc);
+    }
+
+    /// <summary>
+    /// S13.240 (ADR-PA46): only the node-failure drain writes a failed record. A run that fails anywhere
+    /// else — its model-role pinning, an unsupported definition, its final checkpoint, or the
+    /// paused-on-failure checkpoint the record would read — consolidates nothing.
+    /// </summary>
+    [Theory]
+    [InlineData("pinning")]
+    [InlineData("unsupported-definition")]
+    [InlineData("final-snapshot")]
+    [InlineData("paused-checkpoint")]
+    public async Task RunAsync_FailsOutsideTheNodeDrain_ConsolidatesNoAudit(string failurePoint)
+    {
+        var (context, audits) = ContextFailingAt(failurePoint);
+        var definition = OrchestrationFixtures.ThreeArtifactChain();
+        var input = new GraphOrchestratorInput
+        {
+            Definition = failurePoint == "unsupported-definition" ? definition with { Mode = ExecutionMode.Dispatcher } : definition,
+            EngagementId = "eng-1",
+            PinModelRoles = failurePoint == "pinning" ? true : null,
+        };
+
+        await Assert.ThrowsAnyAsync<Exception>(() => orchestrator.RunAsync(context, input));
+
+        Assert.Empty(audits);
+    }
+
+    /// <summary>A context whose activities succeed except at <paramref name="failurePoint"/>; the list collects every audit consolidation asked for.</summary>
+    private static (FakeTaskOrchestrationContext Context, List<ConsolidateAuditInput> Audits) ContextFailingAt(string failurePoint)
+    {
+        var context = new FakeTaskOrchestrationContext();
+        var audits = new List<ConsolidateAuditInput>();
+        var failingStatus = failurePoint == "final-snapshot" ? ExecutionStatus.Completed : ExecutionStatus.PausedOnFailure;
+        context.ActivityHandlers[WorkflowActivityNames.PinMappingsActivity] = _ => throw new InvalidOperationException("pinning failed.");
+        context.ActivityHandlers[WorkflowActivityNames.AgentTaskActivity] = activityInput => (AgentTaskActivityInput)activityInput! is { NodeId: "approach-agent" } && failurePoint == "paused-checkpoint"
+            ? throw new ContractViolationException(nameof(AgentTaskActivityInput), ["output failed validation."])
+            : new AgentTaskActivity(new FakeAgentTaskActivityPipeline()).RunAsync(new FakeTaskActivityContext(), (AgentTaskActivityInput)activityInput!).GetAwaiter().GetResult();
+        context.ActivityHandlers[WorkflowActivityNames.SnapshotStateActivity] = activityInput => ((ExecutionSnapshot)activityInput!).Status == failingStatus
+            ? throw new InvalidOperationException("snapshot write failed.")
+            : new SnapshotActivityResponse { SnapshotId = $"{((ExecutionSnapshot)activityInput!).ExecutionId}:{((ExecutionSnapshot)activityInput!).Sequence:D6}" };
+        context.ActivityHandlers[WorkflowActivityNames.ArtifactStateActivity] = activityInput =>
+            new ArtifactStateActivityResponse { SectionRef = $"{((ArtifactStateActivityRequest)activityInput!).ExecutionId}:{((ArtifactStateActivityRequest)activityInput!).ArtifactKey}:v{((ArtifactStateActivityRequest)activityInput!).Version}" };
+        context.ActivityHandlers[WorkflowActivityNames.ConsolidateAuditActivity] = activityInput =>
+        {
+            audits.Add((ConsolidateAuditInput)activityInput!);
+            return AuditFixtures.SignedRecord((ConsolidateAuditInput)activityInput!);
+        };
+        return (context, audits);
+    }
+
     [Fact]
     public async Task RunAsync_ArtifactUpdatedEvent_AlsoRunsCascadeRegeneration()
     {

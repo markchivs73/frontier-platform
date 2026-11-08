@@ -294,5 +294,25 @@ if (contractValidator.Validate(registration.Snapshot!, breaksRule.RootElement, C
 }
 
 Console.WriteLine($"  contracts       : registered {registration.Snapshot!.ContractRef} ({registration.Snapshot.Hash[..19]}…), refused a bad shape and a broken rule, with and without pinned budgets");
+// 12. Closing a run that did not complete (ADR-PA46). A consumer's terminate route writes the record
+//     itself, through the consolidator's input and the audit record's outcome members, so both must be
+//     constructible from outside and the input must carry the status it attests on the wire.
+var terminatedClose = new ConsolidateAuditInput
+{
+    ExecutionId = "run-smoke-001",
+    EngagementId = "eng-smoke-001",
+    WorkflowId = "wf-smoke",
+    DefinitionHash = new string('0', 64),
+    StartedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+    FinalStatus = ExecutionStatus.Terminated,
+};
+_ = new TerminationRecord { TerminatedBy = "system:smoke", Reason = "smoke", TerminatedAtUtc = terminatedClose.StartedAtUtc };
+_ = new FailureRecord { Classification = "contract_violation" };
+if (!System.Text.Encoding.UTF8.GetString(CanonicalProfile.SerializeCanonical(terminatedClose)).Contains("\"final_status\":\"terminated\"", StringComparison.Ordinal))
+{
+    throw new InvalidOperationException("ConsolidateAuditInput did not carry final_status on the wire.");
+}
+
+Console.WriteLine("  run outcomes    : terminated close input + failure/termination records reachable");
 Console.WriteLine();
 Console.WriteLine("PASS - all thirteen packages restored, loaded and registered.");

@@ -1,3 +1,4 @@
+using Frontier.Platform.Abstractions;
 
 namespace Frontier.Platform.Workflow.Orchestration.Tests.Replay;
 
@@ -5,12 +6,14 @@ namespace Frontier.Platform.Workflow.Orchestration.Tests.Replay;
 /// The scripted fake model behind the real <see cref="AgentTaskActivity"/> shell (S13.192): no key,
 /// no cost, no network. Each node answers after its scripted <c>delays</c> entry (zero when absent)
 /// with the same stable payload <see cref="FakeAgentTaskActivityPipeline"/> produces, and every call
-/// is recorded with the worker it ran on, so a test can tell a replayed step from a re-run one.
+/// is recorded with the worker it ran on, so a test can tell a replayed step from a re-run one. A node
+/// in <c>failing</c> fails its reply's validation instead, a permanent failure (S13.240).
 /// </summary>
 internal sealed class ScriptedAgentTaskActivityPipeline(
     string worker,
     ReplayRecorder recorder,
-    IReadOnlyDictionary<string, TimeSpan> delays) : IAgentTaskActivityPipeline
+    IReadOnlyDictionary<string, TimeSpan> delays,
+    IReadOnlySet<string>? failing = null) : IAgentTaskActivityPipeline
 {
     private readonly FakeAgentTaskActivityPipeline _answers = new();
 
@@ -22,6 +25,11 @@ internal sealed class ScriptedAgentTaskActivityPipeline(
         var startedAt = DateTimeOffset.UtcNow;
         recorder.AddStarted(input.NodeId);
         await Task.Delay(delays.GetValueOrDefault(input.NodeId, TimeSpan.Zero), ct);
+        if (failing?.Contains(input.NodeId) == true)
+        {
+            throw new ContractViolationException(nameof(AgentTaskActivityInput), ["scripted reply failed validation."]);
+        }
+
         var result = await _answers.RunAsync(input, ct);
         recorder.Add(new AgentCall(input.NodeId, worker, startedAt, DateTimeOffset.UtcNow, input.DynamicContextEpoch));
         return result;

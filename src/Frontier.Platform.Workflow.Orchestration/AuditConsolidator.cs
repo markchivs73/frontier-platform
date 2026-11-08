@@ -11,7 +11,9 @@ namespace Frontier.Platform.Workflow.Orchestration;
 /// human decisions, status) with staged <see cref="AuditTelemetryRecord"/>s (MAF-side
 /// evidence — agent invocations, cache metrics, C-15) into one unsigned
 /// <see cref="AuditRecord"/>. <see cref="AuditRecord.ValidatorOutcomes"/> is always
-/// <c>[]</c> — no validators exist until Stage 6.
+/// <c>[]</c> — no validators exist until Stage 6. Since S13.240 it closes failed and terminated runs
+/// too: <see cref="ConsolidateAuditInput.FinalStatus"/> names the status attested, and the snapshot's
+/// failure or termination fields ride on the record (<see cref="AuditOutcomeProjector"/>).
 /// </summary>
 internal sealed class AuditConsolidator(IExecutionSnapshotReader snapshotReader, IAuditTelemetryStaging telemetryStaging) : IAuditConsolidator
 {
@@ -24,7 +26,7 @@ internal sealed class AuditConsolidator(IExecutionSnapshotReader snapshotReader,
             ?? throw new InvalidOperationException($"No execution snapshot found for '{input.ExecutionId}' (doc 05 §4 step 4 requires the final checkpoint).");
         var telemetry = await telemetryStaging.GetForExecutionAsync(input.ExecutionId, cancellationToken);
 
-        return BuildAuditRecord(input, input.EngagementId, input.WorkflowId, snapshot, telemetry);
+        return AuditOutcomeProjector.EnsureEvidenced(BuildAuditRecord(input, input.EngagementId, input.WorkflowId, snapshot, telemetry));
     }
 
     private const string SandboxEngagementIdPrefix = "SANDBOX-";
@@ -44,8 +46,9 @@ internal sealed class AuditConsolidator(IExecutionSnapshotReader snapshotReader,
         DefinitionHash = input.DefinitionHash,
         StartedAtUtc = input.StartedAtUtc,
         ClosedAtUtc = snapshot.CheckpointedAtUtc,
-        FinalStatus = snapshot.Status,
-        OrchestrationEvents = WorkflowEventProjector.Project(snapshot, input.StartedAtUtc),
+        // S13.240: the status the caller attests (the failure path's failed) over the checkpoint's own.
+        FinalStatus = input.FinalStatus ?? snapshot.Status,
+        OrchestrationEvents = WorkflowEventProjector.Project(snapshot, input.StartedAtUtc, input.FinalStatus),
         AgentInvocations = AgentInvocationProjector.Project(telemetry),
         ValidatorOutcomes = [],
         HumanDecisions = HumanDecisionProjector.Project(snapshot.Decisions),
@@ -58,5 +61,7 @@ internal sealed class AuditConsolidator(IExecutionSnapshotReader snapshotReader,
         McpToolInvocations = McpToolInvocationProjector.Project(snapshot.CompletedSteps),
         // S9.38e: SANDBOX-{guid} engagement ids are minted only by S9.38a's TestRunExecutorAdapter.
         Sandbox = engagementId.StartsWith(SandboxEngagementIdPrefix, StringComparison.Ordinal) ? true : null,
+        Failure = AuditOutcomeProjector.Failure(snapshot),
+        Termination = AuditOutcomeProjector.Termination(snapshot),
     };
 }

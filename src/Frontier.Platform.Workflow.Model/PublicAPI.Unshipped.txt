@@ -1,1 +1,3 @@
 #nullable enable
+Frontier.Platform.Workflow.Model.ConsolidateAuditInput.FinalStatus.get -> Frontier.Platform.Abstractions.ExecutionStatus?
+Frontier.Platform.Workflow.Model.ConsolidateAuditInput.FinalStatus.init -> void
