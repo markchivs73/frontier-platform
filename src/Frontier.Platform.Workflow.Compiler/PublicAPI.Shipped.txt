@@ -382,6 +382,12 @@ Frontier.Platform.Workflow.Compiler.PublishProposal.ValidationReport.get -> Fron
 Frontier.Platform.Workflow.Compiler.PublishProposal.ValidationReport.init -> void
 Frontier.Platform.Workflow.Compiler.PublishProposal.WorkflowId.get -> string!
 Frontier.Platform.Workflow.Compiler.PublishProposal.WorkflowId.init -> void
+Frontier.Platform.Workflow.Compiler.PublishRevalidationException
+Frontier.Platform.Workflow.Compiler.PublishRevalidationException.Findings.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Workflow.Compiler.ValidationFinding!>!
+Frontier.Platform.Workflow.Compiler.PublishRevalidationException.PublishRevalidationException() -> void
+Frontier.Platform.Workflow.Compiler.PublishRevalidationException.PublishRevalidationException(string! message) -> void
+Frontier.Platform.Workflow.Compiler.PublishRevalidationException.PublishRevalidationException(string! message, System.Exception! innerException) -> void
+Frontier.Platform.Workflow.Compiler.PublishRevalidationException.PublishRevalidationException(string! proposalId, System.Collections.Generic.IReadOnlyList<Frontier.Platform.Workflow.Compiler.ValidationFinding!>! findings) -> void
 Frontier.Platform.Workflow.Compiler.PublishedVersion
 Frontier.Platform.Workflow.Compiler.PublishedVersion.<Clone>$() -> Frontier.Platform.Workflow.Compiler.PublishedVersion!
 Frontier.Platform.Workflow.Compiler.PublishedVersion.ApprovedAtUtc.get -> System.DateTime
@@ -744,6 +750,7 @@ Frontier.Platform.Workflow.Compiler.Storage.ChatHistoryDocument.TurnDocumentIds.
 Frontier.Platform.Workflow.Compiler.Storage.ChatHistoryDocument.WorkflowId.get -> string!
 Frontier.Platform.Workflow.Compiler.Storage.ChatHistoryDocument.WorkflowId.init -> void
 Frontier.Platform.Workflow.Compiler.Storage.CosmosDefinitionStore
+Frontier.Platform.Workflow.Compiler.Storage.CosmosDefinitionStore.ApproveAndPublishAsync(Frontier.Platform.Workflow.Compiler.Storage.PublishProposalDocument! proposal, Frontier.Platform.Workflow.Compiler.Storage.DefinitionVersionDocument! version, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<bool>!
 Frontier.Platform.Workflow.Compiler.Storage.CosmosDefinitionStore.ApproveProposalAsync(string! proposalId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<bool>!
 Frontier.Platform.Workflow.Compiler.Storage.CosmosDefinitionStore.CosmosDefinitionStore(Microsoft.Azure.Cosmos.Container! container) -> void
 Frontier.Platform.Workflow.Compiler.Storage.CosmosDefinitionStore.CreateDraftAsync(string! workflowId, int baseVersion, Frontier.Platform.Workflow.Compiler.Storage.DefinitionDraftDocument! draft, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.Storage.DefinitionDraftDocument!>!
@@ -885,6 +892,7 @@ Frontier.Platform.Workflow.Compiler.Storage.DesignTurnDocument.TurnNumber.init -
 Frontier.Platform.Workflow.Compiler.Storage.DesignTurnDocument.WorkflowId.get -> string!
 Frontier.Platform.Workflow.Compiler.Storage.DesignTurnDocument.WorkflowId.init -> void
 Frontier.Platform.Workflow.Compiler.Storage.IDefinitionStore
+Frontier.Platform.Workflow.Compiler.Storage.IDefinitionStore.ApproveAndPublishAsync(Frontier.Platform.Workflow.Compiler.Storage.PublishProposalDocument! proposal, Frontier.Platform.Workflow.Compiler.Storage.DefinitionVersionDocument! version, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<bool>!
 Frontier.Platform.Workflow.Compiler.Storage.IDefinitionStore.ApproveProposalAsync(string! proposalId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<bool>!
 Frontier.Platform.Workflow.Compiler.Storage.IDefinitionStore.CreateDraftAsync(string! workflowId, int baseVersion, Frontier.Platform.Workflow.Compiler.Storage.DefinitionDraftDocument! draft, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.Storage.DefinitionDraftDocument!>!
 Frontier.Platform.Workflow.Compiler.Storage.IDefinitionStore.CreateOrUpdateChatHistoryAsync(Frontier.Platform.Workflow.Compiler.Storage.ChatHistoryDocument! history, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.Storage.ChatHistoryDocument!>!

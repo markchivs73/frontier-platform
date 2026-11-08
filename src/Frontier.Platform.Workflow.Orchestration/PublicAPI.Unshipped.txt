@@ -1,3 +1,1 @@
 #nullable enable
-*REMOVED*Frontier.Platform.Workflow.Orchestration.DispatcherOrchestrator.DispatcherOrchestrator() -> void
-Frontier.Platform.Workflow.Orchestration.DispatcherOrchestrator.DispatcherOrchestrator(Frontier.Platform.Resilience.IResiliencePolicyProvider! policyProvider) -> void
