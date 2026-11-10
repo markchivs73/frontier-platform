@@ -50,20 +50,28 @@ internal static class WorkflowCatalogueRules
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage(Justification = "Storage POCO record with compiler-generated equality")]
 internal sealed record CatalogueRow
 {
+    /// <summary>The workflow the row belongs to (the partition key).</summary>
     [System.Text.Json.Serialization.JsonPropertyName("workflowId")]
     public string WorkflowId { get; init; } = "";
+    /// <summary>The document id: <c>{workflowId}:draft</c> or <c>{workflowId}:v{n}</c>.</summary>
     [System.Text.Json.Serialization.JsonPropertyName("id")]
     public string Id { get; init; } = "";
+    /// <summary><c>draft</c> for the draft; <c>published</c>, <c>superseded</c> or <c>retired</c> for a version.</summary>
     [System.Text.Json.Serialization.JsonPropertyName("state")]
     public string State { get; init; } = "";
+    /// <summary>The version number; null on the draft, which counts as 0 when rows are ordered.</summary>
     [System.Text.Json.Serialization.JsonPropertyName("definitionVersion")]
     public int? DefinitionVersion { get; init; }
+    /// <summary>When the version was approved; null on the draft.</summary>
     [System.Text.Json.Serialization.JsonPropertyName("approvedUtc")]
     public DateTime? ApprovedUtc { get; init; }
+    /// <summary>Who approved the version; null on the draft.</summary>
     [System.Text.Json.Serialization.JsonPropertyName("approvedBy")]
     public string? ApprovedBy { get; init; }
+    /// <summary>The definition's <c>name</c>.</summary>
     [System.Text.Json.Serialization.JsonPropertyName("definitionName")]
     public string? DefinitionName { get; init; }
+    /// <summary>The definition's <c>engagement_type</c>.</summary>
     [System.Text.Json.Serialization.JsonPropertyName("definitionEngagementType")]
     public string? DefinitionEngagementType { get; init; }
     /// <summary>The definition's <c>mode</c> as its canonical wire string (<c>one_shot</c>, <c>dispatcher</c>).</summary>
