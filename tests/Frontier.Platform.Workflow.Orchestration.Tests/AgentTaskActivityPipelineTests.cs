@@ -84,6 +84,23 @@ public sealed class AgentTaskActivityPipelineTests
         Assert.Equal(nameof(SummaryArtifact), exception.ContractType);
     }
 
+    /// <summary>
+    /// S13.274: a definition naming an input contract type the Host no longer has fails the node as a
+    /// contract violation — classified <c>contract_violation</c>, so the outer loop never retries it (invariant 7).
+    /// </summary>
+    [Fact]
+    public async Task RunAsync_UnknownInputContractType_FailsAsAContractViolation()
+    {
+        var pipeline = BuildPipeline(new PlanArtifact { Strategy = "strategy", CostEstimate = 1m }, out var invoker, out _);
+        var input = BuildInput("RecordExtract", nameof(PlanArtifact), upstreamPayload: "{}");
+
+        var exception = await Assert.ThrowsAsync<ContractViolationException>(() => pipeline.RunAsync(input, CancellationToken.None));
+
+        Assert.Equal("RecordExtract", exception.ContractType);
+        Assert.Equal("contract_violation", GraphOrchestratorSteps.ClassifyFailure(exception));
+        Assert.Null(invoker.ReceivedRequest);
+    }
+
     [Fact]
     public async Task RunAsync_RecordsAuditTelemetryBeforeReturning()
     {

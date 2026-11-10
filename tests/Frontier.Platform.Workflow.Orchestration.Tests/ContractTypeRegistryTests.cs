@@ -50,12 +50,24 @@ public sealed class ContractTypeRegistryTests
         Assert.Equal(expectedNames, resolvedNames);
     }
 
+    /// <summary>S13.274: a name the contract set does not hold is a permanent contract violation, not a plain InvalidOperationException.</summary>
     [Fact]
-    public void Resolve_UnknownContractType_ThrowsInvalidOperationException()
+    public void Resolve_UnknownContractType_ThrowsContractViolationException()
     {
-        var exception = Assert.Throws<InvalidOperationException>(() => registry.Resolve("UnknownArtifact"));
+        var exception = Assert.Throws<ContractViolationException>(() => registry.Resolve("UnknownArtifact"));
 
-        Assert.Contains("UnknownArtifact", exception.Message, StringComparison.Ordinal);
+        Assert.Equal("UnknownArtifact", exception.ContractType);
+        Assert.Equal("Unknown contract type 'UnknownArtifact'; the workload's contract set does not name it.", Assert.Single(exception.Violations));
+        Assert.Equal("contract_violation", GraphOrchestratorSteps.ClassifyFailure(exception));
+    }
+
+    /// <summary>S13.274: DeserializeAndValidate on an unknown name fails the same way, before any JSON is read.</summary>
+    [Fact]
+    public void DeserializeAndValidate_UnknownContractType_ThrowsContractViolationException()
+    {
+        var exception = Assert.Throws<ContractViolationException>(() => registry.DeserializeAndValidate("RecordExtract", "{}"));
+
+        Assert.Equal("RecordExtract", exception.ContractType);
     }
 
     [Fact]
