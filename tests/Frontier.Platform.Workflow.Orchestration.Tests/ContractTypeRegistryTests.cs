@@ -61,13 +61,17 @@ public sealed class ContractTypeRegistryTests
         Assert.Equal("contract_violation", GraphOrchestratorSteps.ClassifyFailure(exception));
     }
 
-    /// <summary>S13.274: DeserializeAndValidate on an unknown name fails the same way, before any JSON is read.</summary>
+    /// <summary>
+    /// S13.274: DeserializeAndValidate on an unknown name fails the same way, before any JSON is read — the
+    /// payload is not JSON, yet the only violation reported is the unknown name.
+    /// </summary>
     [Fact]
     public void DeserializeAndValidate_UnknownContractType_ThrowsContractViolationException()
     {
-        var exception = Assert.Throws<ContractViolationException>(() => registry.DeserializeAndValidate("RecordExtract", "{}"));
+        var exception = Assert.Throws<ContractViolationException>(() => registry.DeserializeAndValidate("RecordExtract", "not json"));
 
         Assert.Equal("RecordExtract", exception.ContractType);
+        Assert.Equal("Unknown contract type 'RecordExtract'; the workload's contract set does not name it.", Assert.Single(exception.Violations));
     }
 
     [Fact]
