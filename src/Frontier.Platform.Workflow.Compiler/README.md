@@ -186,6 +186,12 @@ with its own `definition_hash` field blank. The profile fixes the typed shell's 
 fixes the order of what the profile cannot: the embedded contract schemas. Nothing recomputes a
 stored hash, so versions published before the switch keep the hash they were recorded with.
 
+Approval stamps the version it allocates onto the definition's own `definition_version` before
+hashing it, then stamps the hash, so the definition a run carries inline names both and hashes
+back to the version document's `definition_hash`. Through v0.56.0 only the version document
+carried the number: the definition kept its draft's, `0` for a new workflow, and runs recorded
+that. Versions published then are immutable and keep the number and hash they were stored with.
+
 `ComputeDefinitionHash` produces lower-case hex. The hash is stored on every published
 definition, pinned by running executions and used as a cache key. Changing its case would
 silently invalidate every stored hash and every pin.

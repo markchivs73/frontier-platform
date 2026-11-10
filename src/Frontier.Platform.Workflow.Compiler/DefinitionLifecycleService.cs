@@ -352,24 +352,25 @@ public sealed class DefinitionLifecycleService : IDefinitionLifecycleService
             throw new PublishRevalidationException(proposal.Id, [.. report.Findings.Where(f => f.Severity == ValidationSeverity.Error)]);
     }
 
-    /// <summary>The version document <paramref name="approverId"/>'s approval publishes, stamped with its own hash.</summary>
+    /// <summary>
+    /// The version document <paramref name="approverId"/>'s approval publishes, wrapping the
+    /// definition <see cref="PublishedDefinition"/> stamps with its version number and hash.
+    /// </summary>
     private DefinitionVersionDocument NewVersion(
         PublishProposalDocument proposal,
         string approverId,
-        WorkflowDefinition definition,
+        WorkflowDefinition draftDefinition,
         int version)
     {
-        var definitionHash = _compiler.ComputeDefinitionHash(definition);
+        var definition = PublishedDefinition(draftDefinition, version);
         return new DefinitionVersionDocument
         {
             Id = $"{proposal.WorkflowId}:v{version}",
             WorkflowId = proposal.WorkflowId,
             State = "published",
             DefinitionVersion = version,
-            DefinitionHash = definitionHash,
-            // The definition a run carries inline (ADR-2) names its own hash, so the audit can say
-            // which definition ran. Before this it kept the draft's empty field (S13.138).
-            Definition = definition with { DefinitionHash = definitionHash },
+            DefinitionHash = definition.DefinitionHash,
+            Definition = definition,
             ProposedBy = proposal.ProposerId,
             ApprovedBy = approverId,
             ProposedUtc = proposal.ProposedAtUtc,
@@ -381,6 +382,20 @@ public sealed class DefinitionLifecycleService : IDefinitionLifecycleService
             Title = proposal.Title,
             ChangeSummary = proposal.ChangeSummary
         };
+    }
+
+    /// <summary>
+    /// <paramref name="draftDefinition"/> as version <paramref name="version"/> publishes it: stamped
+    /// with the version number first, so the hash covers the number a run records, then with that hash.
+    /// </summary>
+    private WorkflowDefinition PublishedDefinition(WorkflowDefinition draftDefinition, int version)
+    {
+        // S13.273: a draft carries 0 (new) or the version it was copied from, so runs built from the
+        // inner definition recorded that, not the version they ran. Stored versions are never re-stamped.
+        var definition = draftDefinition with { DefinitionVersion = version };
+        // The definition a run carries inline (ADR-2) names its own hash, so the audit can say which
+        // definition ran. Before S13.138 it kept the draft's empty field.
+        return definition with { DefinitionHash = _compiler.ComputeDefinitionHash(definition) };
     }
 
     /// <summary>A proposer's optional text, or <see langword="null"/> when it is blank, so the key is omitted rather than stored empty.</summary>

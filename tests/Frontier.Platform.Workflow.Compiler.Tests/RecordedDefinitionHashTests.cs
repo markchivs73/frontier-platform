@@ -34,6 +34,21 @@ public sealed class RecordedDefinitionHashTests
     }
 
     [Fact]
+    public void Fill_LeavesTheVersionNumberAVersionWasStoredWith()
+    {
+        // S13.273: versions published through v0.56.0 carry the draft's number (often 0) inside;
+        // a read never re-stamps it, so the stored definition and its recorded hash still agree.
+        var stored = Version(string.Empty);
+        stored = stored with { Definition = stored.Definition with { DefinitionVersion = 0 } };
+
+        var read = RecordedDefinitionHash.Fill(stored);
+
+        Assert.Equal(0, read.Definition.DefinitionVersion);
+        Assert.Equal(1, read.DefinitionVersion);
+        Assert.Equal(stored.Definition with { DefinitionHash = "sha256:recorded" }, read.Definition);
+    }
+
+    [Fact]
     public void Fill_RefusesANullVersion()
     {
         Assert.Throws<ArgumentNullException>(() => RecordedDefinitionHash.Fill(null!));
