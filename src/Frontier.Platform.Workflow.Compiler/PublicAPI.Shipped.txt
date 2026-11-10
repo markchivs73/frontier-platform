@@ -1063,6 +1063,10 @@ Frontier.Platform.Workflow.Compiler.Storage.WorkflowCataloguePage.WorkflowCatalo
 Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary
 Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.<Clone>$() -> Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary!
 Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.Deconstruct(out string! WorkflowId, out string! Name, out string? EngagementType, out string! Status, out System.DateTime? LastPublishedAt, out string? LastPublishedBy, out string? ExecutionMode) -> void
+Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.DraftEngagementType.get -> string?
+Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.DraftEngagementType.init -> void
+Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.DraftName.get -> string?
+Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.DraftName.init -> void
 Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.EngagementType.get -> string?
 Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.EngagementType.init -> void
 Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.Equals(Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary? other) -> bool
