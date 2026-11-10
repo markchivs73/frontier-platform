@@ -340,7 +340,12 @@ public sealed record WorkflowCataloguePage(
     IReadOnlyList<WorkflowCatalogueSummary> Items,
     int Total);
 
-/// <summary>Minimal workflow projection for catalogue listing (A1).</summary>
+/// <summary>
+/// Minimal workflow projection for catalogue listing (A1). <see cref="Name"/>, <see cref="EngagementType"/> and
+/// <see cref="ExecutionMode"/> come from what would run: the current published version, else the highest-numbered
+/// row. <see cref="DraftName"/> and <see cref="DraftEngagementType"/> are the draft's own, so a rename or retype that
+/// lives only on the draft of a published workflow is visible too (consumer S13.271).
+/// </summary>
 [ExcludeFromCodeCoverage(Justification = "Storage POCO record with compiler-generated equality")]
 public sealed record WorkflowCatalogueSummary(
     string WorkflowId,
@@ -349,7 +354,14 @@ public sealed record WorkflowCatalogueSummary(
     string Status,
     DateTime? LastPublishedAt,
     string? LastPublishedBy,
-    string? ExecutionMode = null);
+    string? ExecutionMode = null)
+{
+    /// <summary>The draft's definition name, or null when the workflow has no draft (or its draft has no name).</summary>
+    public string? DraftName { get; init; }
+
+    /// <summary>The draft's definition engagement type, or null when the workflow has no draft (or its draft has none).</summary>
+    public string? DraftEngagementType { get; init; }
+}
 
 /// <summary>Chat history index (one per draft, tracks turns).</summary>
 [ExcludeFromCodeCoverage(Justification = "Storage POCO record with compiler-generated equality")]

@@ -968,56 +968,12 @@ public sealed class CosmosDefinitionStore : IDefinitionStore
             rows.AddRange(page);
         }
 
-        // Group rows by workflowId and derive an effective status per workflow.
-        var byWorkflow = rows.GroupBy(r => r.WorkflowId, StringComparer.Ordinal);
-        var summaries = new List<WorkflowCatalogueSummary>();
-
-        foreach (var group in byWorkflow)
-        {
-            var wfId = group.Key;
-            var versions = group
-                .Where(r => r.State is "published" or "superseded" or "retired")
-                .OrderByDescending(r => r.DefinitionVersion ?? 0)
-                .ToList();
-
-            string effectiveStatus;
-            DateTime? lastPublishedAt = null;
-            string? lastPublishedBy = null;
-
-            if (versions.Count > 0)
-            {
-                var latestPublished = versions.FirstOrDefault(v => v.State == "published");
-                effectiveStatus = latestPublished is not null ? "published" : "retired";
-                if (latestPublished is not null)
-                {
-                    lastPublishedAt = latestPublished.ApprovedUtc;
-                    lastPublishedBy = latestPublished.ApprovedBy;
-                }
-            }
-            else
-            {
-                effectiveStatus = "draft";
-            }
-
-            var resolvedName = group
-                .Select(r => r.DefinitionName)
-                .FirstOrDefault(n => !string.IsNullOrWhiteSpace(n)) ?? wfId;
-
-            // Type and mode come from what would actually run: the current published version, else the
-            // draft. Before this they were never projected — the summary hard-coded EngagementType to null
-            // and the engagementType filter below did not exist, so ?engagement_type= returned everything
-            // (consumer S13.67).
-            var authority = versions.FirstOrDefault(v => v.State == "published")
-                ?? group.OrderByDescending(r => r.DefinitionVersion ?? 0).First();
-            summaries.Add(new WorkflowCatalogueSummary(
-                WorkflowId: wfId,
-                Name: resolvedName,
-                EngagementType: authority.DefinitionEngagementType,
-                Status: effectiveStatus,
-                LastPublishedAt: lastPublishedAt,
-                LastPublishedBy: lastPublishedBy,
-                ExecutionMode: authority.DefinitionMode));
-        }
+        // One entry per workflow: name, type and mode from the current published version, else the highest
+        // row, with the draft's own name and type alongside (WorkflowCatalogueRules).
+        var summaries = rows
+            .GroupBy(r => r.WorkflowId, StringComparer.Ordinal)
+            .Select(g => WorkflowCatalogueRules.Summarise(g.Key, g.ToList()))
+            .ToList();
 
         // In-memory filters (Phase 1 — catalogue sizes are small).
         if (!string.IsNullOrWhiteSpace(engagementType))
@@ -1038,29 +994,5 @@ public sealed class CosmosDefinitionStore : IDefinitionStore
     {
         if (string.IsNullOrEmpty(workflowId))
             throw new ArgumentException("Workflow ID required", nameof(workflowId));
-    }
-
-    /// <summary>Projection record for the catalogue cross-partition query.</summary>
-    private sealed record CatalogueRow
-    {
-        [System.Text.Json.Serialization.JsonPropertyName("workflowId")]
-        public string WorkflowId { get; init; } = "";
-        [System.Text.Json.Serialization.JsonPropertyName("id")]
-        public string Id { get; init; } = "";
-        [System.Text.Json.Serialization.JsonPropertyName("state")]
-        public string State { get; init; } = "";
-        [System.Text.Json.Serialization.JsonPropertyName("definitionVersion")]
-        public int? DefinitionVersion { get; init; }
-        [System.Text.Json.Serialization.JsonPropertyName("approvedUtc")]
-        public DateTime? ApprovedUtc { get; init; }
-        [System.Text.Json.Serialization.JsonPropertyName("approvedBy")]
-        public string? ApprovedBy { get; init; }
-        [System.Text.Json.Serialization.JsonPropertyName("definitionName")]
-        public string? DefinitionName { get; init; }
-        [System.Text.Json.Serialization.JsonPropertyName("definitionEngagementType")]
-        public string? DefinitionEngagementType { get; init; }
-        /// <summary>The definition's <c>mode</c> as its canonical wire string (<c>one_shot</c>, <c>dispatcher</c>).</summary>
-        [System.Text.Json.Serialization.JsonPropertyName("definitionMode")]
-        public string? DefinitionMode { get; init; }
     }
 }

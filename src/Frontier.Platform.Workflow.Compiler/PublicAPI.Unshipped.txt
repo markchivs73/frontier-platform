@@ -1,1 +1,5 @@
 #nullable enable
+Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.DraftEngagementType.get -> string?
+Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.DraftEngagementType.init -> void
+Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.DraftName.get -> string?
+Frontier.Platform.Workflow.Compiler.Storage.WorkflowCatalogueSummary.DraftName.init -> void

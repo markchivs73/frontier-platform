@@ -407,6 +407,31 @@ public sealed class DefinitionCompilerPhaseC_IntegrationTests : IAsyncLifetime, 
         Assert.Equal("dispatcher", b.ExecutionMode);
     }
 
+    /// <summary>
+    /// Consumer S13.271: a published workflow whose draft was renamed and retyped. The entry keeps the published
+    /// name and type, whatever order the rows come back in, and carries the draft's own alongside.
+    /// </summary>
+    [Fact]
+    public async Task ListWorkflowsAsync_DraftRenamedAfterPublish_KeepsThePublishedNameAndCarriesTheDrafts()
+    {
+        ArgumentNullException.ThrowIfNull(_store);
+        ArgumentNullException.ThrowIfNull(_container);
+        var published = DefinitionOf("wf-cat-draft", "alpha", ExecutionMode.OneShot) with { Name = "Intake" };
+        await _container.UpsertItemAsync(VersionDoc("wf-cat-draft", 1, "published", published), new PartitionKey("wf-cat-draft"), cancellationToken: CancellationToken.None);
+        var draft = new DefinitionDraftDocument
+        {
+            Id = "wf-cat-draft:draft", WorkflowId = "wf-cat-draft", State = "draft", BaseVersion = 1, DraftRevision = "rev-2",
+            Definition = published with { Name = "Intake v2", EngagementType = "beta" }, LastEditedBy = "user:mark", LastEditedUtc = DateTime.UtcNow,
+        };
+        await _container.UpsertItemAsync(draft, new PartitionKey("wf-cat-draft"), cancellationToken: CancellationToken.None);
+
+        var all = await _store.ListWorkflowsAsync(null, null, null, 0, 500, CancellationToken.None);
+
+        var entry = Assert.Single(all.Items, i => i.WorkflowId == "wf-cat-draft");
+        Assert.Equal(("Intake", "alpha", "published"), (entry.Name, entry.EngagementType, entry.Status));
+        Assert.Equal(("Intake v2", "beta"), (entry.DraftName, entry.DraftEngagementType));
+    }
+
     private static DefinitionVersionDocument VersionDoc(string workflowId, int version, string state, WorkflowDefinition definition) => new()
     {
         Id = $"{workflowId}:v{version}",
