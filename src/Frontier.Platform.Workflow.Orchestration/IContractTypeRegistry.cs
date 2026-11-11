@@ -12,14 +12,18 @@ namespace Frontier.Platform.Workflow.Orchestration;
 /// </summary>
 internal interface IContractTypeRegistry
 {
-    /// <summary>Resolves <paramref name="contractTypeName"/> (e.g. <c>"ScopeSection"</c>) to its CLR type.</summary>
+    /// <summary>
+    /// Resolves <paramref name="contractTypeName"/> (e.g. <c>"ScopeSection"</c>) to its CLR type.
+    /// Throws <see cref="ContractViolationException"/> (permanent, doc 09) when no contract carries that name.
+    /// </summary>
     Type Resolve(string contractTypeName);
 
     /// <summary>
     /// Deserializes <paramref name="json"/> as the contract type named by
     /// <paramref name="contractTypeName"/> and calls its <see cref="IVersionedContract.Validate"/>.
     /// Throws <see cref="ContractViolationException"/> (permanent, doc 09) if
-    /// <paramref name="json"/> is not valid JSON for that type or fails validation.
+    /// <paramref name="contractTypeName"/> is unknown, or <paramref name="json"/> is not valid JSON for that
+    /// type or fails validation.
     /// </summary>
     IVersionedContract DeserializeAndValidate(string contractTypeName, string json);
 }

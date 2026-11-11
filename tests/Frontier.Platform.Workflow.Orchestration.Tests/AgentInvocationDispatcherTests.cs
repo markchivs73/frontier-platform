@@ -84,6 +84,49 @@ public sealed class AgentInvocationDispatcherTests
             () => dispatcher.InvokeAsync("llm-default", nameof(SummaryArtifact), null, null, ModelRequest(), CancellationToken.None));
     }
 
+    /// <summary>
+    /// S13.274: a model target's output format is built from the output contract type, so an unknown one is a
+    /// contract violation before the invoker is called.
+    /// </summary>
+    [Fact]
+    public async Task InvokeAsync_AnUnknownOutputContractTypeForAModel_IsAContractViolationBeforeTheCall()
+    {
+        var invoker = new FakeAgentInvoker(new SummaryArtifact { Title = "Scope", Objectives = ["objective"] });
+        var dispatcher = new AgentInvocationDispatcher(invoker, new ContractTypeRegistry(TestContractSet.Instance), TestContractValidator.Instance, new FakeResiliencePolicyProvider());
+
+        var exception = await Assert.ThrowsAsync<Frontier.Platform.Abstractions.ContractViolationException>(
+            () => dispatcher.InvokeAsync("llm-default", "RecordExtract", null, null, ModelRequest(), CancellationToken.None));
+
+        Assert.Equal("RecordExtract", exception.ContractType);
+        Assert.Null(invoker.ReceivedRequest);
+    }
+
+    /// <summary>S13.274: an agent target is asked for no format, so an unknown output contract type fails when its reply is bound.</summary>
+    [Fact]
+    public async Task InvokeAsync_AnUnknownOutputContractTypeForAnAgent_IsAContractViolationWhenBound()
+    {
+        var invoker = new CardHashReportingInvoker(new SummaryArtifact { Title = "Scope", Objectives = ["objective"] }, "sha256:pinned-card");
+        var dispatcher = new AgentInvocationDispatcher(invoker, new ContractTypeRegistry(TestContractSet.Instance), TestContractValidator.Instance, new FakeResiliencePolicyProvider());
+        var request = ModelRequest() with
+        {
+            Target = new Frontier.Platform.ModelRoleConfig.AgentEntry
+            {
+                Provider = Frontier.Platform.ModelRoleConfig.AgentEntry.A2aProvider,
+                Currency = "USD",
+                ResourceName = "com.azure.foundry/echo",
+                ResourceVersion = "1.0",
+                CostPerInvocation = 0.02m,
+            },
+        };
+
+        var exception = await Assert.ThrowsAsync<Frontier.Platform.Abstractions.ContractViolationException>(
+            () => dispatcher.InvokeAsync("llm-default", "RecordExtract", null, null, request, CancellationToken.None));
+
+        Assert.Equal("RecordExtract", exception.ContractType);
+        Assert.Equal("Unknown contract type 'RecordExtract'; the workload's contract set does not name it.", Assert.Single(exception.Violations));
+        Assert.Null(invoker.ReceivedFormat);
+    }
+
     private static AgentInvocationRequest ModelRequest() => new()
     {
         Instructions = "instructions",

@@ -27,12 +27,17 @@ internal sealed class ContractTypeRegistry : IContractTypeRegistry
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// A name the workload's contract set does not hold is a <see cref="ContractViolationException"/>
+    /// (S13.274): the definition names a type this Host cannot bind, which no retry can change, so it is
+    /// classified <c>contract_violation</c> and never retried (doc 10 §3, invariant 7).
+    /// </remarks>
     public Type Resolve(string contractTypeName)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(contractTypeName);
 
         return contractTypes.Resolve(contractTypeName)
-            ?? throw new InvalidOperationException($"Unknown contract type '{contractTypeName}'.");
+            ?? throw new ContractViolationException(contractTypeName, [$"Unknown contract type '{contractTypeName}'; the workload's contract set does not name it."]);
     }
 
     /// <inheritdoc />
