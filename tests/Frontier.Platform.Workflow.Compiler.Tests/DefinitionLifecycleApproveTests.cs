@@ -136,6 +136,67 @@ public sealed class DefinitionLifecycleApproveTests
         VerifyPublished(d => d.Definition.DefinitionHash == "sha256:new" && d.DefinitionHash == "sha256:new");
     }
 
+    /// <summary>
+    /// S13.273: a new draft carries <c>definition_version</c> 0 and a draft from a version carries that
+    /// version's number, so publish stamps the version it allocates on the definition a run carries
+    /// inline (ADR-2), not only on the envelope, and runs record the version they ran.
+    /// </summary>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    public async Task ApproveAsync_StampsTheEnvelopesVersionOnThePublishedDefinition(int draftVersion)
+    {
+        ArrangeHappyPath(currentVersion: 1);
+        ArrangeDraftAt(draftVersion);
+
+        var published = await _service.ApproveAsync(ProposalId, "user:approver", CancellationToken.None);
+
+        Assert.Equal(2, published.DefinitionVersion);
+        VerifyPublished(d => d.DefinitionVersion == 2 && d.Definition.DefinitionVersion == 2);
+    }
+
+    /// <summary>S13.273: the hash is taken over the definition already carrying its version, once.</summary>
+    [Fact]
+    public async Task ApproveAsync_HashesTheDefinitionAfterStampingItsVersion()
+    {
+        ArrangeHappyPath(currentVersion: 1);
+        ArrangeDraftAt(0);
+
+        await _service.ApproveAsync(ProposalId, "user:approver", CancellationToken.None);
+
+        _compiler.Verify(c => c.ComputeDefinitionHash(It.IsAny<WorkflowDefinition>()), Times.Once);
+        _compiler.Verify(c => c.ComputeDefinitionHash(It.Is<WorkflowDefinition>(d => d.DefinitionVersion == 2)), Times.Once);
+    }
+
+    /// <summary>
+    /// S13.273, with the real hash: the stored definition hashes back to the envelope's hash, so the
+    /// hash covers the stamped <c>definition_version</c> and differs from the unstamped draft's.
+    /// </summary>
+    [Fact]
+    public async Task ApproveAsync_TheStoredDefinitionHashesBackToTheEnvelopesHash()
+    {
+        var validator = new DefinitionValidator([]);
+        ArrangeHappyPath(currentVersion: 1);
+        ArrangeDraftAt(0);
+        _compiler.Setup(c => c.ComputeDefinitionHash(It.IsAny<WorkflowDefinition>()))
+            .Returns((WorkflowDefinition d) => validator.ComputeDefinitionHash(d));
+        DefinitionVersionDocument? stored = null;
+        _store.Setup(s => s.ApproveAndPublishAsync(It.IsAny<PublishProposalDocument>(), It.IsAny<DefinitionVersionDocument>(), It.IsAny<CancellationToken>()))
+            .Callback((PublishProposalDocument _, DefinitionVersionDocument v, CancellationToken _) => stored = v)
+            .ReturnsAsync(true);
+
+        await _service.ApproveAsync(ProposalId, "user:approver", CancellationToken.None);
+
+        Assert.Equal(stored!.DefinitionHash, validator.ComputeDefinitionHash(stored.Definition));
+        Assert.Equal(stored.DefinitionHash, stored.Definition.DefinitionHash);
+        Assert.NotEqual(stored.DefinitionHash, validator.ComputeDefinitionHash(stored.Definition with { DefinitionVersion = 0 }));
+    }
+
+    /// <summary>Replaces the draft with one whose definition carries <paramref name="version"/>.</summary>
+    private void ArrangeDraftAt(int version) =>
+        _store.Setup(s => s.GetDraftAsync(WorkflowId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Draft() with { Definition = WorkflowDefinitionFixture.MinimalDefinition() with { DefinitionVersion = version } });
+
     /// <summary>ADR-E27 D15: publish embeds the contracts first, and hashes and stores the definition that carries them.</summary>
     [Fact]
     public async Task ApproveAsync_HashesAndStoresTheDefinitionWithItsContractsEmbedded()
