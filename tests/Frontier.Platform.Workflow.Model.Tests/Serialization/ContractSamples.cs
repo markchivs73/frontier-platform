@@ -141,7 +141,9 @@ internal static class ContractSamples
         WorkflowId = "wf-1",
         DefinitionVersion = 1,
         Sequence = 2,
+#pragma warning disable CS0618 // The legacy golden stays byte-stable and readable (ADR-PA47).
         Status = ExecutionStatus.PausedOnFailure,
+#pragma warning restore CS0618
         CurrentNodeId = "gen-scope",
         FailureClassification = "contract_violation",
         Artifacts = new Dictionary<string, ArtifactStatus>(),
@@ -161,6 +163,13 @@ internal static class ContractSamples
             Message = "ScopeSection: objectives must not be empty.",
         },
     };
+
+    /// <summary>
+    /// ADR-PA47: the checkpoint the orchestrator writes when a node fails — <c>failed</c>, carrying the
+    /// classification and failure detail the legacy paused-on-failure goldens above pin. New golden; those
+    /// stay untouched, which is the compatibility claim.
+    /// </summary>
+    public static ExecutionSnapshot ExecutionSnapshotFailed() => ExecutionSnapshotWithFailureDetail() with { Status = ExecutionStatus.Failed };
 
     /// <summary>A well-formed <see cref="WorkflowDefinition"/> exercising all eight <see cref="WorkflowNode"/> subtypes.</summary>
     public static WorkflowDefinition WorkflowDefinition() => new()

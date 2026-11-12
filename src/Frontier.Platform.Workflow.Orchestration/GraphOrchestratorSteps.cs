@@ -83,7 +83,7 @@ internal static class GraphOrchestratorSteps
     /// loop keeps each synchronous state mutation race-free, but not a read-then-write that
     /// spans an await, which siblings can interleave; history order keeps replay deterministic),
     /// gates run only at full quiescence (Decision 2), and a permanent failure lets
-    /// in-flight siblings finish before the walk pauses attributed (Decision 4).
+    /// in-flight siblings finish before the walk ends failed, attributed (Decision 4, ADR-PA47).
     /// <paramref name="runStartedAtUtc"/> is the orchestration's own start, which a failed run's audit
     /// record carries as the completed run's does (S13.240); absent, the walk's start stands in.
     /// </summary>
@@ -378,8 +378,8 @@ internal static class GraphOrchestratorSteps
     }
 
     /// <summary>
-    /// After a failure drain (ADR-5 Decision 4): writes the final
-    /// <see cref="ExecutionStatus.PausedOnFailure"/> checkpoint carrying the actually
+    /// After a failure drain (ADR-5 Decision 4, revised by ADR-PA47): writes the final
+    /// <see cref="ExecutionStatus.Failed"/> checkpoint carrying the actually
     /// failing node id, its doc 10 §3 classification — the real-execution half of the
     /// C-35 attribution fix — and, since S13.120, the failure itself (type and bounded
     /// message, <see cref="FailureDetailSummary"/>), consolidates and signs the run's
@@ -394,7 +394,7 @@ internal static class GraphOrchestratorSteps
         }
 
         var detail = FailureDetailSummary.Describe(walk.FailedNodeId!, failure);
-        await WriteSnapshotAsync(context, input, state, ExecutionStatus.PausedOnFailure, walk.FailedNodeId, policyProvider, failureClassification: ClassifyFailure(failure), failureDetail: detail);
+        await WriteSnapshotAsync(context, input, state, ExecutionStatus.Failed, walk.FailedNodeId, policyProvider, failureClassification: ClassifyFailure(failure), failureDetail: detail);
         await ConsolidateFailedAuditAsync(context, input, runStartedAtUtc, policyProvider);
         System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(failure).Throw();
     }
@@ -402,8 +402,7 @@ internal static class GraphOrchestratorSteps
     /// <summary>
     /// The failure path's <see cref="WorkflowActivityNames.ConsolidateAuditActivity"/> call (S13.240,
     /// ADR-PA46): the same activity the completed path ends with, attesting
-    /// <see cref="ExecutionStatus.Failed"/> over the <see cref="ExecutionStatus.PausedOnFailure"/>
-    /// checkpoint just written, so the record chains through the engagement's guarded append (ADR-PA31).
+    /// <see cref="ExecutionStatus.Failed"/> from the failed checkpoint just written, so the record chains through the engagement's guarded append (ADR-PA31).
     /// An audit activity that fails after its retries is swallowed: the run failed because of its node,
     /// and that is the failure DTF must record and the consumer classifies. The missing record is not
     /// hidden — the run's projection is terminal and has no <c>audit-records</c> entry, which is what a

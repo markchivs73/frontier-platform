@@ -125,7 +125,7 @@ public sealed class ExecutionFailureDetailTests
         WorkflowId = "wf-1",
         DefinitionVersion = 1,
         Sequence = 2,
-        Status = ExecutionStatus.PausedOnFailure,
+        Status = ExecutionStatus.Failed,
         CurrentNodeId = "commit",
         FailureClassification = "unclassified",
         Artifacts = new Dictionary<string, ArtifactStatus>(),

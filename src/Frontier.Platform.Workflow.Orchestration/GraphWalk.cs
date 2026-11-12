@@ -61,7 +61,7 @@ internal sealed class GraphWalk
     /// <summary>The first permanent failure observed, if any (ADR-5 Decision 4: no new node starts after this is set).</summary>
     internal Exception? FirstFailure { get; private set; }
 
-    /// <summary>The node whose task faulted first — the real failing node for <c>paused_on_failure</c> attribution.</summary>
+    /// <summary>The node whose task faulted first — the real failing node a <c>failed</c> run is attributed to (ADR-PA47).</summary>
     internal string? FailedNodeId { get; private set; }
 
     /// <summary>Whether the walk still has ready or in-flight work.</summary>
@@ -195,7 +195,7 @@ internal sealed class GraphWalk
 
     /// <summary>
     /// Records the first permanent failure (later sibling failures are absorbed — one
-    /// attributed pause per execution). A failed node's successors are never released.
+    /// attributed failure per execution). A failed node's successors are never released.
     /// </summary>
     internal void Fail(string nodeId, Exception exception)
     {

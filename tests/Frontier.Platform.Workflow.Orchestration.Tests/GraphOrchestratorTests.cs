@@ -119,7 +119,7 @@ public sealed class GraphOrchestratorTests
     /// <summary>
     /// S13.240 (ADR-PA46): only the node-failure drain writes a failed record. A run that fails anywhere
     /// else — its model-role pinning, an unsupported definition, its final checkpoint, or the
-    /// paused-on-failure checkpoint the record would read — consolidates nothing.
+    /// failed checkpoint the record would read — consolidates nothing.
     /// </summary>
     [Theory]
     [InlineData("pinning")]
@@ -147,7 +147,7 @@ public sealed class GraphOrchestratorTests
     {
         var context = new FakeTaskOrchestrationContext();
         var audits = new List<ConsolidateAuditInput>();
-        var failingStatus = failurePoint == "final-snapshot" ? ExecutionStatus.Completed : ExecutionStatus.PausedOnFailure;
+        var failingStatus = failurePoint == "final-snapshot" ? ExecutionStatus.Completed : ExecutionStatus.Failed;
         context.ActivityHandlers[WorkflowActivityNames.PinMappingsActivity] = _ => throw new InvalidOperationException("pinning failed.");
         context.ActivityHandlers[WorkflowActivityNames.AgentTaskActivity] = activityInput => (AgentTaskActivityInput)activityInput! is { NodeId: "approach-agent" } && failurePoint == "paused-checkpoint"
             ? throw new ContractViolationException(nameof(AgentTaskActivityInput), ["output failed validation."])

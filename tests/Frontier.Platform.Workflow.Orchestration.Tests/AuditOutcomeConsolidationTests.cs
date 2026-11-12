@@ -32,11 +32,16 @@ public sealed class AuditOutcomeConsolidationTests
         Assert.Equal("completed", record.OrchestrationEvents[^1].Details);
     }
 
-    /// <summary>The failure path: the checkpoint says paused_on_failure; the record attests failed and says why.</summary>
-    [Fact]
-    public async Task ConsolidateAsync_FailedRun_AttestsFailedOverThePausedCheckpointWithTheFailure()
+    /// <summary>
+    /// The failure path: the record attests failed and says why, whether the checkpoint is the failed one the
+    /// orchestrator writes since ADR-PA47 or the legacy paused_on_failure one a run recorded before it.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ConsolidateAsync_FailedRun_AttestsFailedWithTheFailure(bool legacyCheckpoint)
     {
-        var record = await ConsolidateAsync(PausedOnFailure(Detail), ExecutionStatus.Failed);
+        var record = await ConsolidateAsync(FailedCheckpoint(Detail, legacyCheckpoint), ExecutionStatus.Failed);
 
         Assert.Equal(ExecutionStatus.Failed, record.FinalStatus);
         Assert.Equal(new FailureRecord { Classification = "contract_violation", NodeId = Detail.NodeId, ExceptionType = Detail.ExceptionType, Message = Detail.Message }, record.Failure);
@@ -49,7 +54,7 @@ public sealed class AuditOutcomeConsolidationTests
     [Fact]
     public async Task ConsolidateAsync_FailedRunWithoutDetail_CarriesTheClassificationAlone()
     {
-        var record = await ConsolidateAsync(PausedOnFailure(detail: null), ExecutionStatus.Failed);
+        var record = await ConsolidateAsync(FailedCheckpoint(detail: null), ExecutionStatus.Failed);
 
         Assert.Equal(new FailureRecord { Classification = "contract_violation" }, record.Failure);
     }
@@ -126,9 +131,11 @@ public sealed class AuditOutcomeConsolidationTests
         }, CancellationToken.None);
     }
 
-    private static ExecutionSnapshot PausedOnFailure(ExecutionFailureDetail? detail) => WorkflowEventProjectorTests.Snapshot() with
+    private static ExecutionSnapshot FailedCheckpoint(ExecutionFailureDetail? detail, bool legacy = false) => WorkflowEventProjectorTests.Snapshot() with
     {
-        Status = ExecutionStatus.PausedOnFailure,
+#pragma warning disable CS0618 // The legacy checkpoint a run recorded before ADR-PA47.
+        Status = legacy ? ExecutionStatus.PausedOnFailure : ExecutionStatus.Failed,
+#pragma warning restore CS0618
         CurrentNodeId = "scope-agent",
         FailureClassification = "contract_violation",
         FailureDetail = detail,

@@ -13,13 +13,22 @@ public sealed class ExecutionStatus : SmartEnum<ExecutionStatus>
     /// <summary>Suspended awaiting a <c>HumanGateNode</c> decision.</summary>
     public static readonly ExecutionStatus PausedAtGate = new("paused_at_gate");
 
-    /// <summary>Suspended after a permanent step failure, awaiting resolution (doc 03 §9).</summary>
+    /// <summary>
+    /// Legacy (ADR-PA47): what a failed run's last checkpoint said before S13.272. Nothing resumed such a
+    /// run, so the status was never true; a failed run now ends <see cref="Failed"/>. The value stays so
+    /// snapshots and activity inputs recorded before the change still deserialize (ADR-E15: wire shapes
+    /// only grow); read it only to reconcile those snapshots, and never write it.
+    /// </summary>
+    [Obsolete("Deprecated in v0.57.0 (ADR-PA47): use Failed, which a failed run now ends on. Read this only to reconcile snapshots written before it.")]
     public static readonly ExecutionStatus PausedOnFailure = new("paused_on_failure");
 
     /// <summary>The graph ran to completion.</summary>
     public static readonly ExecutionStatus Completed = new("completed");
 
-    /// <summary>The execution terminated with an unrecoverable error.</summary>
+    /// <summary>
+    /// A node failed permanently and the run ended (ADR-PA47): terminal, nothing resumes it. The
+    /// orchestrator's last checkpoint carries the doc 10 §3 classification and the failing node.
+    /// </summary>
     public static readonly ExecutionStatus Failed = new("failed");
 
     /// <summary>The execution was cancelled before completion.</summary>

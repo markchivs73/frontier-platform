@@ -50,21 +50,28 @@ public sealed class ExecutionSnapshotTests
         snapshot.Validate();
     }
 
-    /// <summary>S9.45 (doc 03 §9/§10, doc 19 §B3).</summary>
-    [Fact]
-    public void Validate_PausedOnFailureWithoutClassification_Throws()
+    /// <summary>
+    /// S9.45 and ADR-PA47 (doc 03 §9/§10, doc 19 §B3): a run that ended on a failure says what kind, whether
+    /// its checkpoint is <c>failed</c> or the legacy <c>paused_on_failure</c>.
+    /// </summary>
+    [Theory]
+    [InlineData("failed")]
+    [InlineData("paused_on_failure")]
+    public void Validate_EndedOnFailureWithoutClassification_Throws(string status)
     {
-        var snapshot = Snapshot() with { Status = ExecutionStatus.PausedOnFailure, FailureClassification = null };
+        var snapshot = Snapshot() with { Status = ExecutionStatus.FromName(status), FailureClassification = null };
 
         var exception = Assert.Throws<ContractViolationException>(snapshot.Validate);
 
-        Assert.Contains("failure_classification is required when status is paused_on_failure.", exception.Violations);
+        Assert.Contains($"failure_classification is required when status is {status}.", exception.Violations);
     }
 
-    [Fact]
-    public void Validate_PausedOnFailureWithClassification_DoesNotThrow()
+    [Theory]
+    [InlineData("failed")]
+    [InlineData("paused_on_failure")]
+    public void Validate_EndedOnFailureWithClassification_DoesNotThrow(string status)
     {
-        var snapshot = Snapshot() with { Status = ExecutionStatus.PausedOnFailure, FailureClassification = "contract_violation" };
+        var snapshot = Snapshot() with { Status = ExecutionStatus.FromName(status), FailureClassification = "contract_violation" };
 
         snapshot.Validate();
     }

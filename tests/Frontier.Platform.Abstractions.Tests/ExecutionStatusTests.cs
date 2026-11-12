@@ -11,7 +11,9 @@ public sealed class ExecutionStatusTests
             [
                 ExecutionStatus.Running,
                 ExecutionStatus.PausedAtGate,
+#pragma warning disable CS0618 // The legacy value stays listed so old snapshots deserialize (ADR-PA47).
                 ExecutionStatus.PausedOnFailure,
+#pragma warning restore CS0618
                 ExecutionStatus.Completed,
                 ExecutionStatus.Failed,
                 ExecutionStatus.Cancelled,

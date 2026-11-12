@@ -100,7 +100,7 @@ A node with no output contract records the whole reply, unchanged.
 execution with no MCP step leaves the field out, so its record keeps the bytes it always had.
 
 **A run that does not complete still gets a signed record (ADR-PA46).** On a node failure the
-orchestrator writes the `paused_on_failure` checkpoint, then calls `ConsolidateAuditActivity` with
+orchestrator writes the `failed` checkpoint (ADR-PA47; before it, `paused_on_failure`), then calls `ConsolidateAuditActivity` with
 `ConsolidateAuditInput.FinalStatus = failed`, then rethrows the node's failure. The record attests
 `failed` and carries the checkpoint's failure fields. If that activity itself fails, the node's failure
 is still what the orchestration throws. A terminated orchestration runs no further activities, so

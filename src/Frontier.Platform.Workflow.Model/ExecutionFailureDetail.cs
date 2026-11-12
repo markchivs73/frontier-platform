@@ -3,13 +3,13 @@ using System.Text.Json.Serialization;
 namespace Frontier.Platform.Workflow.Model;
 
 /// <summary>
-/// Why an execution paused on a failure, as the orchestrator observed it (S13.120): the node
+/// Why an execution failed, as the orchestrator observed it (S13.120): the node
 /// whose task faulted first, the exception's type, and its message — bounded, and never a
 /// stack trace.
 /// <para>
 /// <see cref="ExecutionSnapshot.FailureClassification"/> says <em>what kind</em> of failure
-/// paused the run (doc 10 §3's taxonomy); this says <em>which</em> one. Without it the reason
-/// lived only in durable history and the worker's console, so diagnosing a paused run meant
+/// ended the run (doc 10 §3's taxonomy); this says <em>which</em> one. Without it the reason
+/// lived only in durable history and the worker's console, so diagnosing a failed run meant
 /// reading its artifacts by hand or reproducing the call.
 /// </para>
 /// <para>
@@ -26,7 +26,7 @@ public sealed record ExecutionFailureDetail
     /// <summary>The longest <see cref="Message"/> a detail may carry; a longer message is cut and ends in an ellipsis.</summary>
     public const int MaxMessageLength = 512;
 
-    /// <summary>The node whose task faulted first — the node <c>paused_on_failure</c> is attributed to.</summary>
+    /// <summary>The node whose task faulted first — the node a <c>failed</c> run is attributed to (ADR-PA47).</summary>
     [JsonPropertyOrder(0)]
     [JsonPropertyName("node_id")]
     public required string NodeId { get; init; }

@@ -17,7 +17,7 @@ internal static class WorkflowEventProjector
     /// <summary>
     /// Builds the ordered <see cref="WorkflowEvent"/> timeline for <paramref name="snapshot"/>. The closing
     /// bookend names <paramref name="finalStatus"/>, the status the record attests, when one is given
-    /// (S13.240: a failed run's last checkpoint is <c>paused_on_failure</c>), else the snapshot's own.
+    /// (S13.240: before ADR-PA47 a failed run's last checkpoint said <c>paused_on_failure</c>), else the snapshot's own.
     /// </summary>
     internal static IReadOnlyList<WorkflowEvent> Project(ExecutionSnapshot snapshot, DateTime startedAtUtc, ExecutionStatus? finalStatus = null)
     {

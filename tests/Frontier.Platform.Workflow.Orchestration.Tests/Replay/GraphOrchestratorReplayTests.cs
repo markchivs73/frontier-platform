@@ -138,7 +138,7 @@ public sealed class GraphOrchestratorReplayTests : IAsyncLifetime
 
     /// <summary>
     /// S13.240 (ADR-PA46): the failure path under real replay. One branch fails while its sibling is still
-    /// in flight, so the drain, the paused-on-failure checkpoint and the audit consolidation each run in a
+    /// in flight, so the drain, the failed checkpoint and the audit consolidation each run in a
     /// later episode that replays the ones before. The run ends failed with the node's own failure, after
     /// exactly one consolidation attesting <c>failed</c>, and no agent node runs twice.
     /// </summary>
@@ -158,7 +158,7 @@ public sealed class GraphOrchestratorReplayTests : IAsyncLifetime
         var audit = Assert.Single(recorder.Audits);
         Assert.Equal(ExecutionStatus.Failed, audit.Input.FinalStatus);
         var paused = recorder.Snapshots.MaxBy(s => s.Snapshot.Sequence)!;
-        Assert.Equal(ExecutionStatus.PausedOnFailure, paused.Snapshot.Status);
+        Assert.Equal(ExecutionStatus.Failed, paused.Snapshot.Status);
         Assert.Equal("b-booking", paused.Snapshot.CurrentNodeId);
         Assert.True(paused.RecordedAt <= audit.RecordedAt, "the audit was consolidated before the checkpoint it reads had landed");
         Assert.Equal(["a-entry", "b-ticket"], recorder.AgentCalls.Select(call => call.NodeId));
