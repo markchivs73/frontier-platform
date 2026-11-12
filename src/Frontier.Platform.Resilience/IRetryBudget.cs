@@ -4,7 +4,7 @@ namespace Frontier.Platform.Resilience;
 /// Per-execution sliding-window amplification guard (doc 10 §2, §5): bounds how many
 /// retries one execution can spend, independent of any single profile's own
 /// <c>maxAttempts</c>. Exhaustion converts a would-be retry into immediate escalation
-/// (<c>paused_on_failure</c> with <c>retry_budget_exhausted</c>).
+/// (the run ends <c>failed</c> with <c>retry_budget_exhausted</c>; ADR-PA47).
 /// </summary>
 public interface IRetryBudget
 {

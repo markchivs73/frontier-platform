@@ -3498,3 +3498,79 @@ its signature.
 
 The public API change is additive: two records, two members on each audit record shape and one on
 `ConsolidateAuditInput`. No interface gains a member, so the commit is not scoped `!`.
+
+## ADR-PA47 — a failed run ends `failed`; `paused_on_failure` is never written again
+
+**Revises** the consumer's ADR-5 Decision 4 (S13.7i), which ended a failed run on a `paused_on_failure`
+checkpoint. Consumer task S13.272, found in its S13.149 live check on 2026-11-10; Mark decided the same
+day that a failed run is honestly terminal.
+
+**Why the status was wrong.** `ThrowIfFailedAsync` wrote `paused_on_failure`, then rethrew, so the
+scheduler marked the instance Failed. Nothing resumes such a run: no resume route or event exists, and
+the orchestration has already ended. So the checkpoint described a run that could carry on when it could
+not. The consumer read the word literally: its live-runs projection and terminate route counted the run
+as live, its recovery sweep never looked at it again, and its start check asked the scheduler, which
+allowed a new start. Four local runs were stuck like this. Docs 03 §9 and 07 §5 promised a resume event;
+doc 02, ADR-5 D4 and doc 19 B3 described a failure with no user retry. The code matched the second set.
+
+**Decision.**
+1. *The orchestrator writes `failed`.* After the drain (ADR-5 D4's drain is unchanged: siblings finish,
+   no new node starts), the last checkpoint is `failed`, carrying what `paused_on_failure` carried: the
+   failing node as `current_node_id`, the doc 10 §3 `failure_classification`, and the `failure_detail`
+   of S13.120. ADR-PA46's audit call and the rethrow follow as before.
+2. *A failed snapshot must say what kind of failure.* `ExecutionSnapshot.Validate()` requires
+   `failure_classification` for `failed`, as it did for `paused_on_failure`. Nothing wrote a `failed`
+   snapshot before this change, so no stored snapshot starts failing validation.
+3. *`paused_on_failure` stays readable and is never written.* The value stays in `ExecutionStatus`, so
+   snapshots, live-runs documents and activity inputs recorded before this change still deserialize
+   (ADR-E15: wire shapes only grow). It is `[Obsolete]`, so new code that names it fails the build unless
+   it says, in a scoped pragma, that it is reading old data. Its removal waits for a phase boundary, after
+   the consumer's reconcile has rewritten every stored one.
+4. *Recovery is a new run.* A failed run is not resumed. To try again after the cause is fixed (a raised
+   budget, a lifted suspension, a corrected contract), the operator starts a new run, which the
+   one-live-run rule allows because the failed one is no longer live.
+5. *Readers treat both statuses as one fact.* `TestRunExecution` maps `failed` and the legacy status to
+   the same terminal outcome and message ("failed permanently at node … (classification)"). The node is
+   exact (`failure_node_attributed`) only when the checkpoint records its failure detail, which the
+   orchestrator writes from the failure it observed. A checkpoint a consumer heals from the scheduler's
+   view (its recovery sweep, or its sandbox poll) has no detail, and its node is only the last completed
+   one. This narrows S13.26 for legacy checkpoints: the status alone used to count as exact, but the
+   consumer's sandbox poll wrote it with the last completed node, so it never proved that.
+
+**What it does not change.** `ConsolidateAuditInput.final_status = failed` is still sent, so the
+activity's recorded bytes are unchanged; the record attests `failed`, now matching its checkpoint.
+Activity names, event names and wire shapes do not change (`activity-shapes.json` is untouched: the enum
+keeps its seven values). No schema version moves. The existing paused-on-failure goldens are unchanged,
+and `execution_snapshot_failed.json` pins the new checkpoint.
+
+**Replay and skew (ADR-E15).** The change is an activity *input* value, which replay does not compare:
+the snapshot activity is scheduled at the same point with the same name. A run already failed is complete
+and never replays. *Accepted and recorded:* a run that failed on an old worker keeps its
+`paused_on_failure` checkpoint; the consumer's reconcile rewrites it. The replay test's assertion on the
+final checkpoint's status changes from `paused_on_failure` to `failed`; that assertion records what the
+run wrote, and is not the replay-determinism check, which is unchanged.
+
+**The consumer's half (S13.272).** It drops `paused_on_failure` from its live sets and terminate route,
+writes `failed` from its recovery sweep, and runs a reconcile that rewrites each stored `paused_on_failure`
+checkpoint whose instance the scheduler reports ended, or has no record of, as `failed`.
+
+**Evidence (P1, accessed 2026-11-12).** Every durable-execution engine checked treats a failed run as
+closed, and recovers it by an explicit new action, not a resume:
+- Temporal: Failed is a *Closed* status, an execution that "cannot make further progress"; *reset* ends
+  the run and starts a new one from a chosen history point
+  (docs.temporal.io/workflow-execution, docs.temporal.io/kb/failures).
+- Azure Durable Functions / DTF: `Failed` is a final runtime status (the status API answers 200, "completed
+  or failed"); *rewind* back to running is still a preview
+  (learn.microsoft.com/azure/azure-functions/durable/durable-functions-http-api).
+- AWS Step Functions: a failed Standard execution stays FAILED; *redrive* is an explicit API that restarts
+  it from the failed step (docs.aws.amazon.com/step-functions/latest/dg/redrive-executions.html).
+None of them reports a failed run as paused. This platform has no rewind or redrive; if one is ever
+built, it is a new decision and a new status, not a revival of this one.
+
+The public API does not change: `[Obsolete]` adds an attribute, not a member, and the new
+`ExecutionFailureRule` is internal. So the commit is not scoped `!`, following #60, which shipped
+`[Obsolete]` members the same way: `!` marks a removed or changed member, and nothing is removed.
+Consumers that name `ExecutionStatus.PausedOnFailure` get a CS0618 warning on upgrade, which
+`-warnaserror` makes an error. That is the point, since each such site has to decide whether it is
+reading old data. The `[Obsolete]` message names the replacement (`Failed`) and the version (v0.57.0),
+as the deprecation policy above requires; the value is removed only in a major version.

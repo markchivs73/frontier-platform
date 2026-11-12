@@ -5,7 +5,7 @@ using Microsoft.DurableTask;
 namespace Frontier.Platform.Workflow.Orchestration;
 
 /// <summary>
-/// Builds the <see cref="ExecutionFailureDetail"/> a <c>paused_on_failure</c> checkpoint carries
+/// Builds the <see cref="ExecutionFailureDetail"/> a <c>failed</c> checkpoint carries
 /// (S13.120) from the exception <see cref="GraphWalk.FirstFailure"/> recorded — a pure function
 /// of that exception, so it is replay-safe inside the orchestrator body (hard invariant 2).
 /// <para>

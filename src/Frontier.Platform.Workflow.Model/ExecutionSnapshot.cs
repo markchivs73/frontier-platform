@@ -84,8 +84,8 @@ public sealed record ExecutionSnapshot : IVersionedContract
     /// <summary>
     /// The reason code (doc 10 §3's taxonomy, e.g. <c>"contract_violation"</c>,
     /// <c>"guardrail"</c>, <c>"unclassified"</c>) for the permanent step failure this
-    /// execution paused on, when <see cref="Status"/> is <see cref="ExecutionStatus.PausedOnFailure"/>
-    /// (S9.45, doc 03 §9/§10, doc 19 §B3's alert band). Additive (canonical-serialization
+    /// execution ended on. Required when <see cref="Status"/> is <see cref="ExecutionStatus.Failed"/>
+    /// (ADR-PA47) or the legacy <c>paused_on_failure</c> (S9.45, doc 03 §9/§10, doc 19 §B3's alert band). Additive (canonical-serialization
     /// minor-change rule): absent on every snapshot written before this field existed.
     /// </summary>
     [JsonPropertyOrder(14)]
@@ -198,7 +198,7 @@ public sealed record ExecutionSnapshot : IVersionedContract
     public string? WorkItemId { get; init; }
 
     /// <summary>
-    /// Why this execution paused on a failure (S13.120) — the first faulting node, the exception's
+    /// Why this execution failed (S13.120) — the first faulting node, the exception's
     /// type and its bounded, secret-free message — beside <see cref="FailureClassification"/>'s
     /// reason code. Written by the orchestrator from the failure it observed. Absent on snapshots
     /// written before this field existed, and on those a consumer's recovery sweep heals: the sweep
@@ -258,9 +258,9 @@ public sealed record ExecutionSnapshot : IVersionedContract
             violations.Add("paused_at_gate_id is required when status is paused_at_gate.");
         }
 
-        if (Status == ExecutionStatus.PausedOnFailure && string.IsNullOrWhiteSpace(FailureClassification))
+        if (ExecutionFailureRule.RequiresClassification(Status) && string.IsNullOrWhiteSpace(FailureClassification))
         {
-            violations.Add("failure_classification is required when status is paused_on_failure.");
+            violations.Add($"failure_classification is required when status is {Status.Name}.");
         }
 
         if (FailureDetail is not null)

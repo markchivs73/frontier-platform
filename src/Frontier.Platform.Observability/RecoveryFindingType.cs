@@ -18,7 +18,7 @@ public enum RecoveryFindingType
 
     /// <summary>
     /// An execution's DTF instance permanently faulted but its projection was still
-    /// <c>running</c>/<c>paused_at_gate</c> — healed to <c>paused_on_failure</c> with a
+    /// <c>running</c>/<c>paused_at_gate</c> — healed to <c>failed</c> (ADR-PA47) with a
     /// real doc 10 §3 reason code (S9.45, doc 03 §9/§10, doc 19 §B3).
     /// </summary>
     FailedExecutionHealed,

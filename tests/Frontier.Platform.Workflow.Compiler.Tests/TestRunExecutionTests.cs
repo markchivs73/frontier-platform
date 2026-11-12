@@ -168,7 +168,7 @@ public sealed class TestRunExecutionTests
     public void ToOutcome_Failure_SetsFailureNodeIdFromTheSnapshotsCurrentNode()
     {
         // C-35 (S9.53): the plain-failure canvas-link anchor is the snapshot's current node.
-        var failed = TestRunExecution.ToOutcome(Snapshot(ExecutionStatus.PausedOnFailure, currentNodeId: "gen-scope"));
+        var failed = TestRunExecution.ToOutcome(Snapshot(ExecutionStatus.Failed, currentNodeId: "gen-scope", failureClassification: "unclassified"));
         var completed = TestRunExecution.ToOutcome(Snapshot(ExecutionStatus.Completed, currentNodeId: "gen-scope"));
         var atGate = TestRunExecution.ToOutcome(Snapshot(ExecutionStatus.PausedAtGate, pausedAtGateId: "g1", currentNodeId: "gen-scope"));
 
@@ -231,22 +231,52 @@ public sealed class TestRunExecutionTests
         Assert.Contains("gate-1", outcome.ErrorMessage, StringComparison.Ordinal);
     }
 
-    /// <summary>S13.26: a permanent step failure records the node that failed, so the outcome says the anchor is exact.</summary>
+    /// <summary>
+    /// S13.26 and ADR-PA47: the orchestrator's failed checkpoint records its failure detail, so the outcome
+    /// anchors on that node and says it is exact — even when the snapshot's current node differs.
+    /// </summary>
     [Fact]
-    public void ToOutcome_PausedOnFailure_AttributesTheFailingNode()
+    public void ToOutcome_FailedWithFailureDetail_AttributesTheDetailsNode()
     {
-        var outcome = TestRunExecution.ToOutcome(Snapshot(ExecutionStatus.PausedOnFailure, currentNodeId: "match_developer"));
+        var snapshot = Snapshot(ExecutionStatus.Failed, currentNodeId: "gen-scope", failureClassification: "contract_violation") with
+        {
+            FailureDetail = new ExecutionFailureDetail { NodeId = "match_developer", ExceptionType = "Frontier.Platform.Abstractions.ContractViolationException", Message = "bad output." },
+        };
+
+        var outcome = TestRunExecution.ToOutcome(snapshot);
 
         Assert.Equal("match_developer", outcome.FailureNodeId);
         Assert.True(outcome.FailureNodeAttributed);
+        Assert.Equal("Test-run failed permanently at node 'match_developer' (contract_violation).", outcome.ErrorMessage);
     }
 
-    /// <summary>S13.26: an orchestration-level failure only knows the last snapshot's node — the last completed one — so the anchor is not exact.</summary>
+    /// <summary>
+    /// A legacy paused_on_failure checkpoint (before ADR-PA47) reads as a failure. Its node is exact only when it
+    /// records its failure detail: a consumer heal wrote the status with the last completed node.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void ToOutcome_LegacyPausedOnFailure_AttributesOnlyWithFailureDetail(bool withDetail)
+    {
+#pragma warning disable CS0618 // A test run recorded before ADR-PA47.
+        var snapshot = Snapshot(ExecutionStatus.PausedOnFailure, currentNodeId: "match_developer", failureClassification: "guardrail");
+#pragma warning restore CS0618
+        var detail = new ExecutionFailureDetail { NodeId = "match_developer", ExceptionType = "Frontier.Platform.Abstractions.GuardrailsSuspendedException", Message = "suspended." };
+
+        var outcome = TestRunExecution.ToOutcome(withDetail ? snapshot with { FailureDetail = detail } : snapshot);
+
+        Assert.Equal("match_developer", outcome.FailureNodeId);
+        Assert.Equal(withDetail, outcome.FailureNodeAttributed);
+        Assert.Equal("Test-run failed permanently at node 'match_developer' (guardrail).", outcome.ErrorMessage);
+    }
+
+    /// <summary>S13.26: a failed checkpoint with no failure detail (the recovery sweep's) only knows the last completed node, so the anchor is not exact.</summary>
     [Theory]
     [InlineData("failed")]
     [InlineData("completed")]
     [InlineData("paused_at_gate")]
-    public void ToOutcome_AnythingButPausedOnFailure_DoesNotAttribute(string status)
+    public void ToOutcome_NoFailureDetail_DoesNotAttribute(string status)
     {
         var snapshotStatus = status switch
         {
@@ -261,13 +291,12 @@ public sealed class TestRunExecutionTests
     }
 
     [Fact]
-    public void ToOutcome_PausedOnFailure_FailureNamingNodeAndClassification()
+    public void ToOutcome_FailedWithClassification_FailureNamingNodeAndClassification()
     {
-        var outcome = TestRunExecution.ToOutcome(Snapshot(ExecutionStatus.PausedOnFailure, currentNodeId: "gen-scope", failureClassification: "contract_violation"));
+        var outcome = TestRunExecution.ToOutcome(Snapshot(ExecutionStatus.Failed, currentNodeId: "gen-scope", failureClassification: "contract_violation"));
 
         Assert.False(outcome.Success);
-        Assert.Contains("gen-scope", outcome.ErrorMessage, StringComparison.Ordinal);
-        Assert.Contains("contract_violation", outcome.ErrorMessage, StringComparison.Ordinal);
+        Assert.Equal("Test-run failed permanently at node 'gen-scope' (contract_violation).", outcome.ErrorMessage);
         Assert.Null(outcome.PausedAtGateId);
     }
 

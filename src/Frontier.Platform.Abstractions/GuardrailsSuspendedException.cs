@@ -4,9 +4,8 @@ namespace Frontier.Platform.Abstractions;
 /// Thrown by Guardrails admission (doc 07 §5, §10) when the fleet kill switch is active: no new
 /// invocation is admitted until it is resumed. Per doc 10 §3 this is a permanent failure in the
 /// <c>guardrail</c> category, like <see cref="BudgetExceededException"/> — retrying while the switch is
-/// thrown burns nothing but time, so Resilience never retries it. The graph walk pauses on the failure
-/// (<c>paused_on_failure</c>, classified <c>guardrail</c>); resuming it once the switch is lifted is the
-/// consumer's resume route.
+/// thrown burns nothing but time, so Resilience never retries it. The run ends on the failure
+/// (<c>failed</c>, classified <c>guardrail</c>; ADR-PA47); once the switch is lifted, a new run is started.
 /// </summary>
 public sealed class GuardrailsSuspendedException : Exception
 {

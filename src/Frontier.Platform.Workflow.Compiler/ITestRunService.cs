@@ -70,7 +70,7 @@ public static class TestRunStatus
     /// <summary>Terminal: the run completed successfully.</summary>
     public const string Completed = "completed";
 
-    /// <summary>Terminal: the run failed (including permanent pause-on-failure and cancellation).</summary>
+    /// <summary>Terminal: the run failed (a permanent step failure, including the legacy paused-on-failure, or a cancellation).</summary>
     public const string Failed = "failed";
 }
 
@@ -134,7 +134,7 @@ public sealed record TestRunResult
 
     /// <summary>
     /// S13.26: <see langword="true"/> when <see cref="FailureNodeId"/> is the node that actually failed
-    /// (the run paused on a permanent step failure, which records its node exactly), so the A4 link can
+    /// (the run's failed checkpoint records its failure detail, ADR-PA47), so the A4 link can
     /// say "failing node". <see langword="false"/> when it is only the last completed node — the
     /// failure happened at or after it — or when there is no failure.
     /// </summary>

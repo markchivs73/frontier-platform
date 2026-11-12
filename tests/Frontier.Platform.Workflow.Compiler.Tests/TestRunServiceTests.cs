@@ -553,13 +553,16 @@ public sealed class TestRunServiceTests
         Assert.False(persisted()!.FailureNodeAttributed); // S13.26: not a step failure — no exact node
     }
 
-    [Fact]
-    public async Task ReconcileAsync_PausedOnFailure_PersistsFailedWithClassification()
+    /// <summary>A step failure — the failed checkpoint since ADR-PA47, or a legacy paused_on_failure one — persists as a failed run.</summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ReconcileAsync_StepFailure_PersistsFailedWithClassification(bool legacyCheckpoint)
     {
         var doc = RunDoc();
         _store.Setup(s => s.GetTestRunAsync(doc.TestRunId, It.IsAny<CancellationToken>())).ReturnsAsync(doc);
         _executor.Setup(e => e.GetSnapshotAsync(doc.TestRunId, "SANDBOX-abc", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Snapshot(ExecutionStatus.PausedOnFailure) with { CurrentNodeId = "node-1", FailureClassification = "contract_violation" });
+            .ReturnsAsync(StepFailure(legacyCheckpoint));
         _telemetry.Setup(t => t.GetCostMetricsAsync(doc.TestRunId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ZeroCostMetrics with { BudgetExceeded = true }); // e.g. the S9.38b sandbox fence tripped
         SetupPersistCapture(out var persisted);
@@ -572,10 +575,20 @@ public sealed class TestRunServiceTests
         Assert.Equal("true", persisted()!.CostMetrics["budget_exceeded"]);
         Assert.False(persisted()!.CostMetrics.ContainsKey("currency")); // unpriced run: no currency key written
 
-        // S13.26: a PausedOnFailure snapshot names the failing node exactly, and says so end to end.
+        // S13.26: a step failure names the failing node exactly, and says so end to end.
         Assert.True(persisted()!.FailureNodeAttributed);
         Assert.True(result!.FailureNodeAttributed);
     }
+
+    /// <summary>A step-failure checkpoint at node-1 with its failure detail: the orchestrator's failed one, or the legacy paused one.</summary>
+    private static ExecutionSnapshot StepFailure(bool legacy) => legacy
+#pragma warning disable CS0618 // A test run recorded before ADR-PA47.
+        ? Snapshot(ExecutionStatus.PausedOnFailure) with { CurrentNodeId = "node-1", FailureClassification = "contract_violation", FailureDetail = NodeOneDetail }
+#pragma warning restore CS0618
+        : Snapshot(ExecutionStatus.Failed) with { CurrentNodeId = "node-1", FailureClassification = "contract_violation", FailureDetail = NodeOneDetail };
+
+    /// <summary>The failure detail an orchestrator-written step failure at node-1 records.</summary>
+    private static readonly ExecutionFailureDetail NodeOneDetail = new() { NodeId = "node-1", ExceptionType = "Frontier.Platform.Abstractions.ContractViolationException", Message = "bad output." };
 
     // ── GetResultAsync ──
 

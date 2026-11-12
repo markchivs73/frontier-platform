@@ -5,7 +5,7 @@ namespace Frontier.Platform.Workflow.Model;
 /// <summary>
 /// The <see cref="ExecutionSnapshot.Validate"/> rule for a terminated run (S13.149, doc 20): a
 /// <see cref="ExecutionStatus.Terminated"/> snapshot says who ended the run, why and when, as a
-/// <see cref="ExecutionStatus.PausedOnFailure"/> one must say what kind of failure paused it. A snapshot
+/// <see cref="ExecutionStatus.Failed"/> one must say what kind of failure ended it (<see cref="ExecutionFailureRule"/>). A snapshot
 /// in any other status is not checked, so every snapshot written before the fields existed still validates.
 /// <para>
 /// There is no exemption for a terminate no person asked for: it must still give an actor, a reason and a

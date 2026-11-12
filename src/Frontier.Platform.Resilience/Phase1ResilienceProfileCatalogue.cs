@@ -57,7 +57,7 @@ public static class Phase1ResilienceProfileCatalogue
     /// with decorrelated jitter, 10 attempts, 5-minute max delay). The outer DTF loop
     /// makes a single attempt — the inner Polly pipeline already exhausts the full
     /// retry budget per doc 02 §5 ("Failures retry via the <c>snapshot-persistence</c>
-    /// Resilience profile... Exhaustion → step failure → <c>paused_on_failure</c>").
+    /// Resilience profile... Exhaustion → step failure → <c>paused_on_failure</c>", which ADR-PA47 makes <c>failed</c>).
     /// Circuit breaker and bulkhead use the same shape as <see cref="LlmDefault"/> with
     /// generous thresholds (PoC-grade — Cosmos availability is not the failure mode
     /// ADR-S3 targets); per-attempt timeout is 5s for a single document write.

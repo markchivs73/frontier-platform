@@ -94,7 +94,7 @@ public sealed class GraphConcurrentWalkTests
         // The sibling's work was kept and checkpointed; the join never started (ADR-5 D4).
         Assert.DoesNotContain("c-join", harness.StartedNodes);
         var final = harness.Snapshots[^1];
-        Assert.Equal(ExecutionStatus.PausedOnFailure, final.Status);
+        Assert.Equal(ExecutionStatus.Failed, final.Status);
         Assert.Equal("b-booking", final.CurrentNodeId);
         Assert.Equal("contract_violation", final.FailureClassification);
         Assert.Contains(final.CompletedSteps, step => step.NodeId == "b-ticket");
@@ -132,7 +132,7 @@ public sealed class GraphConcurrentWalkTests
         await Assert.ThrowsAsync<GuardrailsSuspendedException>(() => walk);
 
         var final = harness.Snapshots[^1];
-        Assert.Equal(ExecutionStatus.PausedOnFailure, final.Status);
+        Assert.Equal(ExecutionStatus.Failed, final.Status);
         Assert.Equal("b-ticket", final.CurrentNodeId);
         Assert.Equal("guardrail", final.FailureClassification);
         Assert.DoesNotContain("c-join", harness.StartedNodes);
@@ -371,7 +371,7 @@ public sealed class GraphConcurrentWalkTests
         Assert.Equal(
             [WorkflowActivityNames.SnapshotStateActivity, WorkflowActivityNames.ConsolidateAuditActivity],
             harness.Context.ActivityCalls.TakeLast(2).Select(call => call.Name));
-        Assert.Equal(ExecutionStatus.PausedOnFailure, harness.Snapshots[^1].Status);
+        Assert.Equal(ExecutionStatus.Failed, harness.Snapshots[^1].Status);
     }
 
     /// <summary>S13.240: the record carries the orchestration's own start, which the caller passes, as the completed path's does.</summary>
@@ -406,7 +406,7 @@ public sealed class GraphConcurrentWalkTests
 
         var thrown = await Assert.ThrowsAsync<ContractViolationException>(() => walk);
         Assert.Contains("output failed validation", thrown.Message, StringComparison.Ordinal);
-        Assert.Equal(ExecutionStatus.PausedOnFailure, harness.Snapshots[^1].Status);
+        Assert.Equal(ExecutionStatus.Failed, harness.Snapshots[^1].Status);
     }
 
     /// <summary>S13.240: a walk that completes consolidates nothing itself; the completed path's audit is the orchestrator's last step.</summary>

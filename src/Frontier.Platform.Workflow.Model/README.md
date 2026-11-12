@@ -86,7 +86,7 @@ exactly that.
 - `ExecutionSnapshot` — the read-optimised projection of an execution's state, with
   `ArtifactStatus` per artifact. The durable history remains the source of truth; a snapshot
   that disagrees with it is rebuilt, never trusted.
-- `ExecutionFailureDetail` — why a run paused on a failure: the first faulting node, the
+- `ExecutionFailureDetail` — why a run failed: the first faulting node, the
   exception's type and a bounded, secret-free message, beside the snapshot's reason code.
   Optional and additive — absent on snapshots written before it existed.
 - A terminated run (`status: terminated`, S13.149) carries `terminated_by`, `termination_reason`

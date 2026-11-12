@@ -87,11 +87,13 @@ public sealed class WorkflowEventProjectorTests
         Assert.Null(workflowEvent.Details);
     }
 
-    /// <summary>S13.240: the closing bookend names the status the record attests, not the paused checkpoint's.</summary>
+    /// <summary>S13.240: the closing bookend names the status the record attests, not a legacy paused checkpoint's (ADR-PA47).</summary>
     [Fact]
     public void Project_FinalStatusGiven_ClosingBookendNamesIt()
     {
+#pragma warning disable CS0618 // A run recorded before ADR-PA47 still consolidates from this checkpoint.
         var snapshot = Snapshot() with { Status = ExecutionStatus.PausedOnFailure, FailureClassification = "guardrail" };
+#pragma warning restore CS0618
 
         Assert.Equal("failed", WorkflowEventProjector.Project(snapshot, StartedAtUtc, ExecutionStatus.Failed)[^1].Details);
         Assert.Equal("paused_on_failure", WorkflowEventProjector.Project(snapshot, StartedAtUtc)[^1].Details);
