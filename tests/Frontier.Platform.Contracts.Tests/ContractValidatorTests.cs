@@ -47,7 +47,8 @@ public sealed class ContractValidatorTests
         var validator = new ContractValidator(engine, Engine.Rules(), Engine.Options());
         var payload = Json.Parse("\"" + new string('a', 5_000) + "!\"");
 
-        var result = validator.Validate(Snapshot("""{ "type": "string", "pattern": "^(a|aa)*$" }"""), payload);
+        // The backreference keeps the match on the backtracking engine; Corvus 5.8 matches plain alternations in linear time.
+        var result = validator.Validate(Snapshot("""{ "type": "string", "pattern": "^(a|aa)*(a)\\2$" }"""), payload);
 
         Assert.Equal([SchemaViolations.PatternTimeout], result.Violations);
         Assert.Equal(("pattern", ""), (SchemaViolations.PatternTimeout.Keyword, SchemaViolations.PatternTimeout.Location));
