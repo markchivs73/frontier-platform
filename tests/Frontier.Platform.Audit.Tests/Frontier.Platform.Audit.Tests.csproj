@@ -9,9 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" />
-    <!-- Aliased exactly as the Audit library does: Azure.Core and Azure.Identity both declare
-         DefaultAzureCredential, so an unaliased reference is ambiguous (CS0433). -->
-    <PackageReference Include="Azure.Identity" Aliases="identity" />
+    <PackageReference Include="Azure.Identity" />
     <PackageReference Include="Microsoft.Azure.Cosmos" />
     <PackageReference Include="Microsoft.Extensions.Configuration" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
