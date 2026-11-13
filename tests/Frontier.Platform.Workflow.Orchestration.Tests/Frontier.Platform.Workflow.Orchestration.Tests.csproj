@@ -7,6 +7,8 @@
   <ItemGroup>
     <PackageReference Include="coverlet.collector" />
     <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <!-- S13.192: the replay suite runs GraphOrchestrator on a real worker against the DTS emulator. -->
     <PackageReference Include="Microsoft.DurableTask.Client.AzureManaged" />
