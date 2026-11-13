@@ -13,6 +13,11 @@ Trunk-based. `main` is always green and always releasable.
 - **Squash merge** — one commit per unit of work on `main`.
 - CI must be green before merge: build, unit + architecture tests, coverage gate, integration
   tests, pack.
+- CodeQL (`codeql.yml`) runs weekly and on manual dispatch, never per PR, and gates nothing;
+  Dependabot opens grouped NuGet and GitHub Actions PRs weekly, titled `deps: …` (retitle one
+  that misses the commit-lint rules below). Weekly because Actions minutes are a paid budget
+  (Mark, 2026-11-13). A bumped `PackageVersion` is a floor in every published nuspec, so it
+  ships in the next release like any other change.
 
 ## Commit messages
 

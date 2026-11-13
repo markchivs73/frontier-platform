@@ -1,0 +1,51 @@
+# Weekly dependency updates (Mark, 2026-11-13; frontier-workflow S13.254). Grouped so a week's
+# bumps arrive as at most a few PRs — every PR push costs paid Actions minutes, so the open-PR
+# limits stay small.
+#
+# A PackageVersion here is a floor in every published nuspec, so a bump is a consumer-visible
+# change: it ships in the next release like any other commit.
+#
+# The "deps" prefix is a valid commit-lint scope; the lint also needs a capital after the colon
+# and at most 72 characters (with " (#N)"), so retitle a PR that misses either before merging.
+version: 2
+
+updates:
+  # Central package management: Dependabot edits the PackageVersion items in the root
+  # Directory.Packages.props. samples/ is excluded: the smoke consumer restores floating
+  # Frontier.Platform.* versions from a local ./artifacts folder that only exists after a pack.
+  - package-ecosystem: nuget
+    directory: "/"
+    exclude-paths:
+      - "samples/**"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Etc/UTC
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "deps"
+    ignore:
+      - dependency-name: "Frontier.Platform.*"
+    groups:
+      nuget-minor-and-patch:
+        update-types: [minor, patch]
+      nuget-major:
+        update-types: [major]
+
+  # Also covers the composite action under .github/actions/build-and-test.
+  - package-ecosystem: github-actions
+    directories:
+      - "/"
+      - "/.github/actions/build-and-test"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Etc/UTC
+    open-pull-requests-limit: 2
+    commit-message:
+      prefix: "deps"
+    groups:
+      github-actions:
+        patterns: ["*"]
