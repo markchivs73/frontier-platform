@@ -1,5 +1,3 @@
-extern alias identity;
-
 using System.Diagnostics.CodeAnalysis;
 using Azure.Storage.Blobs;
 using Frontier.Platform.Serialization;
@@ -105,7 +103,7 @@ public static class AuditServiceCollectionExtensions
         }
 
         return services
-            .AddSingleton<IKeyVaultSigningClient>(_ => new AzureKeyVaultSigningClient(keyIdentifier, new identity::Azure.Identity.DefaultAzureCredential()))
+            .AddSingleton<IKeyVaultSigningClient>(_ => new AzureKeyVaultSigningClient(keyIdentifier, new Azure.Identity.DefaultAzureCredential()))
             .AddSingleton<IKeyProvider, KeyVaultKeyProvider>()
             .AddSingleton<IAuditSigningService, KeyVaultAuditSigningService>();
     }
