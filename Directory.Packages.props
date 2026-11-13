@@ -18,11 +18,11 @@
 
   <!-- Test-framework packages -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.2" />
     <PackageVersion Include="xunit" Version="2.9.3" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
-    <PackageVersion Include="Moq" Version="4.20.70" />
+    <PackageVersion Include="Moq" Version="4.21.0" />
     <PackageVersion Include="NetArchTest.Rules" Version="1.3.2" />
   </ItemGroup>
 
@@ -30,76 +30,76 @@
        Newtonsoft.Json is not used in platform code: the Cosmos SDK's build targets
        mandate the explicit reference (S11.2/S11.3). -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.Azure.Cosmos" Version="3.61.0" />
+    <PackageVersion Include="Microsoft.Azure.Cosmos" Version="3.64.0" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
 
   <!-- Azure Blob Storage SDK (doc 02 §8): audit archival exports -->
   <ItemGroup>
-    <PackageVersion Include="Azure.Storage.Blobs" Version="12.29.0" />
+    <PackageVersion Include="Azure.Storage.Blobs" Version="12.30.1" />
   </ItemGroup>
 
   <!-- Key Vault keys + the one credential (ADR-SEC3, ADR-PA33): ES256 audit-record signing
        performed inside the vault, with the private key never leaving it. -->
   <ItemGroup>
-    <PackageVersion Include="Azure.Security.KeyVault.Keys" Version="4.10.1" />
-    <PackageVersion Include="Azure.Identity" Version="1.17.1" />
+    <PackageVersion Include="Azure.Security.KeyVault.Keys" Version="4.10.2" />
+    <PackageVersion Include="Azure.Identity" Version="1.21.0" />
   </ItemGroup>
 
   <!-- Durable Task abstractions: retry-policy translation in Platform.Resilience -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.DurableTask.Abstractions" Version="1.24.2" />
+    <PackageVersion Include="Microsoft.DurableTask.Abstractions" Version="1.28.0" />
     <!-- Test projects only (S13.192): the orchestration replay suite hosts a real worker and
          client against the Durable Task Scheduler emulator. No library references these — the
          consumer's composition root hosts the worker in production. Same version as the
          consumer's pin, so the replay under test is the one that ships. -->
-    <PackageVersion Include="Microsoft.DurableTask.Client.AzureManaged" Version="1.24.2" />
-    <PackageVersion Include="Microsoft.DurableTask.Worker.AzureManaged" Version="1.24.2" />
+    <PackageVersion Include="Microsoft.DurableTask.Client.AzureManaged" Version="1.28.0" />
+    <PackageVersion Include="Microsoft.DurableTask.Worker.AzureManaged" Version="1.28.0" />
   </ItemGroup>
 
   <!-- Microsoft.Extensions.AI + provider SDKs for context-assembly caching (TD-7) -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.Extensions.AI" Version="10.10.0" />
-    <PackageVersion Include="Microsoft.Extensions.AI.Abstractions" Version="10.10.0" />
-    <PackageVersion Include="Anthropic" Version="12.35.1" />
-    <PackageVersion Include="OpenAI" Version="2.5.0" />
+    <PackageVersion Include="Microsoft.Extensions.AI" Version="10.11.0" />
+    <PackageVersion Include="Microsoft.Extensions.AI.Abstractions" Version="10.11.0" />
+    <PackageVersion Include="Anthropic" Version="12.60.0" />
+    <PackageVersion Include="OpenAI" Version="2.15.0" />
   </ItemGroup>
 
   <!-- Polly v8 (TD-1) -->
   <ItemGroup>
-    <PackageVersion Include="Polly.Core" Version="8.7.0" />
-    <PackageVersion Include="Polly.RateLimiting" Version="8.7.0" />
+    <PackageVersion Include="Polly.Core" Version="8.9.1" />
+    <PackageVersion Include="Polly.RateLimiting" Version="8.9.1" />
   </ItemGroup>
 
   <!-- DI registration for platform libraries that don't reference Microsoft.AspNetCore.App
        (doc 00 §9: AddFrontierXxx() extensions, consumer-owned interfaces, no SDK types) -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.9" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.12" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.15" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.15" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.15" />
     <!-- Test projects only (S13.192): the generic host the replay suite runs the DTS worker in. -->
-    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.15" />
   </ItemGroup>
 
   <!-- Options pattern: bind + validate library-owned configuration sections (doc 12 §4) -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.9" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.15" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.15" />
     <!-- On-demand live gates read their location from the environment or user-secrets, never
          from a committed value (S13.107 live proof). Test projects only. -->
-    <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.9" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.9" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.12" />
-    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.9" />
-    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.9" />
-    <PackageVersion Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.15" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.15" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.15" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.15" />
+    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.15" />
+    <PackageVersion Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.15" />
   </ItemGroup>
 
   <!-- Contracts as data (ADR-E27, ADR-PA38): JSON Schema 2020-12 validation (TD-18) and CEL
        rules (TD-17). Both are pinned exactly and sit behind internal ports in
        Frontier.Platform.Contracts; no type from either appears on a public surface. -->
   <ItemGroup>
-    <PackageVersion Include="Corvus.Text.Json.Validator" Version="5.7.9" />
+    <PackageVersion Include="Corvus.Text.Json.Validator" Version="5.8.10" />
     <PackageVersion Include="Celly" Version="1.2.0" />
   </ItemGroup>
 
