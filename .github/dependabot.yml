@@ -7,6 +7,7 @@
 #
 # The "deps" prefix is a valid commit-lint scope; the lint also needs a capital after the colon
 # and at most 72 characters (with " (#N)"), so retitle a PR that misses either before merging.
+# On a Dependabot PR the lint checks only that title, since its commits cannot be renamed.
 version: 2
 
 updates:
@@ -27,6 +28,10 @@ updates:
       prefix: "deps"
     ignore:
       - dependency-name: "Frontier.Platform.*"
+      # Majors of these follow the .NET release line, which moves with the global.json SDK pin
+      # (Mark, 2026-11-13), not with Dependabot.
+      - dependency-name: "Microsoft.Extensions.*"
+        update-types: ["version-update:semver-major"]
     groups:
       nuget-minor-and-patch:
         update-types: [minor, patch]
