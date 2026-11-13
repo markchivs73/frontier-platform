@@ -1,0 +1,47 @@
+# CodeQL static analysis for C#, on a WEEKLY schedule plus on demand — never per PR (Mark,
+# 2026-11-13; frontier-workflow S13.254: Actions minutes are a paid hobby budget). Findings land
+# in the repository's Security > Code scanning tab; this workflow gates nothing, releases included.
+name: CodeQL
+
+on:
+  schedule:
+    - cron: "0 5 * * 1" # Mondays 05:00 UTC, before the Dependabot run
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: "true"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0  # MinVer walks tag history
+
+      # The SDK from global.json, so the analysed build is the one developers run.
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: csharp
+          build-mode: manual
+
+      # Manual build mode: CodeQL traces this exact build (the Release build that ships).
+      - name: Build
+        run: dotnet build FrontierPlatform.slnx -c Release
+
+      - uses: github/codeql-action/analyze@v4
+        with:
+          category: /language:csharp
