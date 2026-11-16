@@ -16,6 +16,16 @@ public sealed class ResilienceServiceCollectionExtensionsTests
         Assert.IsType<ResiliencePolicyProvider>(provider.GetRequiredService<IResiliencePolicyProvider>());
         Assert.IsType<CircuitStateProvider>(provider.GetRequiredService<ICircuitStateProvider>());
         Assert.IsType<RetryBudget>(provider.GetRequiredService<IRetryBudget>());
+        Assert.IsType<HttpResilienceHandlerFactory>(provider.GetRequiredService<IHttpResilienceHandlerFactory>());
+    }
+
+    /// <summary>ADR-PA48: the HTTP handler factory's pipelines live on the one policy provider, so every handler shares each server's breaker.</summary>
+    [Fact]
+    public void AddFrontierResilience_PolicyProviderIsOneInstance()
+    {
+        var provider = new ServiceCollection().AddFrontierResilience().BuildServiceProvider();
+
+        Assert.Same(provider.GetRequiredService<ResiliencePolicyProvider>(), provider.GetRequiredService<IResiliencePolicyProvider>());
     }
 
     /// <summary>S13.217: the circuit-state provider callers read is the one the policy provider's breakers report to.</summary>

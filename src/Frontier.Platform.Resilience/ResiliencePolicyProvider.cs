@@ -31,6 +31,7 @@ internal sealed class ResiliencePolicyProvider(IFailureClassifier classifier, Ci
     private readonly ConcurrentDictionary<string, Lazy<ResiliencePipeline>> profilePipelines = new();
     private readonly ConcurrentDictionary<(string Profile, string Provider, string ModelId), Lazy<ResiliencePipeline>> endpointPipelines = new();
     private readonly ConcurrentDictionary<(string Profile, string Provider), Lazy<RateLimiter>> bulkheads = new();
+    private readonly ConcurrentDictionary<(string Profile, string Client, string Authority), Lazy<ResiliencePipeline<HttpResponseMessage>>> httpPipelines = new();
 
     /// <summary>
     /// The pipeline for <paramref name="profileName"/> with no endpoint: built once and cached, so
@@ -79,12 +80,72 @@ internal sealed class ResiliencePolicyProvider(IFailureClassifier classifier, Ci
     /// <summary>The total pipeline timeout <see cref="Compose"/> applies: <see cref="TotalTimeoutMultiplier"/> per-attempt timeouts (doc 10 §7). <see cref="TimeoutHierarchyCheck"/> validates this value.</summary>
     internal static int TotalTimeoutMs(ResilienceProfile profile) => profile.TimeoutMs * TotalTimeoutMultiplier;
 
+    /// <summary>
+    /// The HTTP transport pipeline for requests <paramref name="clientName"/> sends to <paramref name="authority"/> under
+    /// <paramref name="profileName"/> (ADR-PA48): built once per (profile, client, authority) and kept for the worker's
+    /// lifetime, so each server has its own breaker and bulkhead whichever handler instance sends to it.
+    /// </summary>
+    internal ResiliencePipeline<HttpResponseMessage> GetHttpPipeline(string profileName, string clientName, string authority)
+    {
+        var profile = ResolveHttpTransportProfile(profileName);
+        return httpPipelines.GetOrAdd((profileName, clientName, authority), key => new(() => BuildHttpPipeline(profile, key.Client, key.Authority))).Value;
+    }
+
+    /// <summary>
+    /// Builds <paramref name="clientName"/>'s pipeline to <paramref name="authority"/> under <paramref name="profile"/>: a
+    /// bulkhead of its own (<see cref="ComposeHttp"/>), and a breaker tracked by <see cref="CircuitStateProvider"/> as (client name, authority), so its
+    /// transitions reach the same stream as the model breakers'.
+    /// </summary>
+    internal ResiliencePipeline<HttpResponseMessage> BuildHttpPipeline(ResilienceProfile profile, string clientName, string authority) =>
+        ComposeHttp(profile, circuits.Track(clientName, authority, BuildHttpCircuitBreakerOptions(profile.CircuitBreaker, classifier)));
+
+    /// <summary>
+    /// Doc 10 §4's order without the retry: <c>Timeout(total) → Bulkhead → CircuitBreaker → Timeout(per-attempt)</c>. The
+    /// total timeout bounds the wait in the bulkhead's queue as well as the attempt. The bulkhead is the pipeline's own,
+    /// one per server; like the pipeline, it lives for the worker's lifetime and is never disposed. There is no retry
+    /// strategy: every profile <see cref="ResolveHttpTransportProfile"/> resolves makes one attempt.
+    /// </summary>
+    internal ResiliencePipeline<HttpResponseMessage> ComposeHttp(ResilienceProfile profile, CircuitBreakerStrategyOptions<HttpResponseMessage> breaker) =>
+        new ResiliencePipelineBuilder<HttpResponseMessage> { TimeProvider = timeProvider }
+            .AddTimeout(TimeSpan.FromMilliseconds(TotalTimeoutMs(profile)))
+            .AddConcurrencyLimiter(BulkheadOptions(profile.Bulkhead))
+            .AddCircuitBreaker(breaker)
+            .AddTimeout(TimeSpan.FromMilliseconds(profile.TimeoutMs))
+            .Build();
+
+    /// <summary>
+    /// Looks up <paramref name="profileName"/> in <see cref="Phase1ResilienceProfileCatalogue.HttpTransportByProfileId"/>
+    /// (ADR-PA48). Node profiles are refused, so a profile that retries never reaches the HTTP layer, which cannot tell
+    /// an MCP write from a read.
+    /// </summary>
+    internal static ResilienceProfile ResolveHttpTransportProfile(string profileName) =>
+        Phase1ResilienceProfileCatalogue.HttpTransportByProfileId.TryGetValue(profileName, out var profile)
+            ? profile
+            : throw new ArgumentOutOfRangeException(nameof(profileName), profileName, "Unknown HTTP transport profile (ADR-PA48).");
+
+    /// <summary>
+    /// The HTTP transport breaker for <paramref name="spec"/>: it counts the outcomes <see cref="HttpTransportOutcome.IsFailure"/>
+    /// calls failures, so a transient status counts whether it was thrown or returned, and a returned one still reaches
+    /// the caller.
+    /// </summary>
+    internal static CircuitBreakerStrategyOptions<HttpResponseMessage> BuildHttpCircuitBreakerOptions(CircuitBreakerSpec spec, IFailureClassifier failureClassifier) => new()
+    {
+        FailureRatio = spec.FailureRatio,
+        MinimumThroughput = spec.MinThroughput,
+        SamplingDuration = TimeSpan.FromSeconds(spec.SamplingWindowSeconds),
+        BreakDuration = TimeSpan.FromSeconds(spec.BreakDurationSeconds),
+        ShouldHandle = args => ValueTask.FromResult(HttpTransportOutcome.IsFailure(args.Outcome, failureClassifier, args.Context.CancellationToken)),
+    };
+
     /// <summary>A new bulkhead for <paramref name="spec"/>: at most <see cref="BulkheadSpec.MaxConcurrent"/> calls in flight, <see cref="BulkheadSpec.MaxQueue"/> waiting.</summary>
-    internal static ConcurrencyLimiter NewBulkhead(BulkheadSpec spec) => new(new ConcurrencyLimiterOptions
+    internal static ConcurrencyLimiter NewBulkhead(BulkheadSpec spec) => new(BulkheadOptions(spec));
+
+    /// <summary>The limiter options for <paramref name="spec"/>, shared by <see cref="NewBulkhead"/> and the HTTP transport pipeline's own bulkhead.</summary>
+    internal static ConcurrencyLimiterOptions BulkheadOptions(BulkheadSpec spec) => new()
     {
         PermitLimit = spec.MaxConcurrent,
         QueueLimit = spec.MaxQueue,
-    });
+    };
 
     /// <inheritdoc />
     public TaskOptions GetTaskOptions(string profileName)

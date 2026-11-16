@@ -110,6 +110,37 @@ and when open once the break has elapsed (that call is the probe). It is false d
 while the probe runs (half-open), and while isolated. An open counts only once its `OnOpened`
 callback has published it, which Polly runs on a background task after the state changes. `GetState` still reports Polly's own state.
 
+**HTTP transport resilience (ADR-PA48)**
+
+`IHttpResilienceHandlerFactory.CreateHandler(profileName, clientName)` returns a `DelegatingHandler` for an
+HTTP client that must never retry — runtime MCP tool calls and A2A agent calls, where the handler cannot
+tell a write from a read and the loops above the call already retry:
+
+```csharp
+services.AddHttpClient("mcp-runtime", client => client.Timeout = Timeout.InfiniteTimeSpan)
+    .AddHttpMessageHandler(sp => sp.GetRequiredService<IHttpResilienceHandlerFactory>()
+        .CreateHandler("mcp-transport", "mcp-runtime"));
+```
+
+**Set `HttpClient.Timeout` to `Timeout.InfiniteTimeSpan`** (or at least the profile's total, 3× its per-attempt
+timeout) so the pipeline governs. `HttpClient`'s own timeout (100 s by default, under `a2a-transport`'s 240 s
+total) cancels the token the handler was given, so the breaker sees it as the caller's cancellation and never
+counts it.
+
+Each request runs `Timeout(total) → Bulkhead → CircuitBreaker → Timeout(per-attempt)` for its URI's
+authority, so every server has its own breaker and bulkhead. The pipelines are kept by the policy
+provider, not the handler, so a rotated handler keeps the breaker state; they live for the worker's
+lifetime and are never evicted. A response with a transient
+status (429, 500, 502, 503, 529 — the classifier's own list) is returned to the caller and counts toward
+the breaker; a transient exception counts and propagates; a caller's cancellation never counts. An open
+breaker throws `BrokenCircuitException` (`circuit_open`) and a full bulkhead `RateLimiterRejectedException`
+(`bulkhead_rejected`), both transient. Each breaker reports through `ICircuitStateProvider` with the client
+name as provider and the authority as model id. `mcp-transport` (30 s) and `a2a-transport` (80 s) make one
+attempt. They live in `Phase1ResilienceProfileCatalogue.HttpTransportByProfileId`, not `ByProfileId`: they are
+not node profiles, so `IResiliencePolicyProvider` refuses them, and the handler factory refuses every node
+profile. The per-attempt timeout covers the
+time to the response headers, not a streamed body.
+
 **The amplification guard**
 
 `IRetryBudget` bounds how many retries a *single execution* may spend across a sliding window,

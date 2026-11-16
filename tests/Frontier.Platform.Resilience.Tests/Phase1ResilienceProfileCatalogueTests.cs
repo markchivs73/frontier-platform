@@ -60,6 +60,43 @@ public sealed class Phase1ResilienceProfileCatalogueTests
         Assert.Equal(7, Phase1ResilienceProfileCatalogue.ByProfileId.Count);
     }
 
+    /// <summary>ADR-PA48: the transport profiles are a set of their own, and no node profile is in it.</summary>
+    [Fact]
+    public void HttpTransportByProfileId_HoldsOnlyTheTwoTransportProfiles_ApartFromTheNodeProfiles()
+    {
+        Assert.Same(Phase1ResilienceProfileCatalogue.McpTransport, Phase1ResilienceProfileCatalogue.HttpTransportByProfileId["mcp-transport"]);
+        Assert.Same(Phase1ResilienceProfileCatalogue.A2aTransport, Phase1ResilienceProfileCatalogue.HttpTransportByProfileId["a2a-transport"]);
+        Assert.Equal(2, Phase1ResilienceProfileCatalogue.HttpTransportByProfileId.Count);
+        Assert.Empty(Phase1ResilienceProfileCatalogue.HttpTransportByProfileId.Keys.Intersect(Phase1ResilienceProfileCatalogue.ByProfileId.Keys));
+        Assert.All(Phase1ResilienceProfileCatalogue.HttpTransportByProfileId.Values, profile => Assert.Equal(1, profile.InnerRetry.MaxAttempts));
+    }
+
+    /// <summary>ADR-PA48 (consumer S13.246): the HTTP transport profiles make one attempt, with mcp-read's breaker and bulkhead.</summary>
+    [Theory]
+    [InlineData("mcp-transport", 30_000)]
+    [InlineData("a2a-transport", 80_000)]
+    public void TransportProfiles_MakeOneAttempt_WithMcpReadsBreakerAndBulkhead(string profileId, int timeoutMs)
+    {
+        var profile = Phase1ResilienceProfileCatalogue.HttpTransportByProfileId[profileId];
+
+        Assert.Equal(profileId, profile.ProfileId);
+        Assert.Equal(1, profile.Version);
+        Assert.Equal(1, profile.InnerRetry.MaxAttempts);
+        Assert.Equal(timeoutMs, profile.TimeoutMs);
+        Assert.Equal(Phase1ResilienceProfileCatalogue.McpRead.CircuitBreaker, profile.CircuitBreaker);
+        Assert.Equal(Phase1ResilienceProfileCatalogue.McpRead.Bulkhead with { Scope = "authority" }, profile.Bulkhead);
+        Assert.Equal(1, profile.OuterRetry.MaxAttempts);
+    }
+
+    /// <summary>ADR-PA48: each transport profile's total timeout (3x per attempt) stays under the DTF activity timeout (doc 10 §7).</summary>
+    [Fact]
+    public void TransportProfiles_PassTheTimeoutHierarchyCheck()
+    {
+        var result = TimeoutHierarchyCheck.Evaluate(Phase1ResilienceProfileCatalogue.HttpTransportByProfileId.Values);
+
+        Assert.True(result.Passed, result.FailureReason);
+    }
+
     [Fact]
     public void LlmInteractive_MatchesDoc10Spec()
     {

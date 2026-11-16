@@ -36,6 +36,10 @@ internal sealed class CircuitStateProvider(TimeProvider timeProvider) : ICircuit
         return !breakers.TryGetValue((provider, modelId), out var tracked) || tracked.All(breaker => breaker.Admits(now));
     }
 
+    /// <summary>How many breakers are tracked for <paramref name="provider"/>/<paramref name="modelId"/>: one per profile the pair has been called under, so a second for one profile means a pipeline was built twice.</summary>
+    internal int TrackedCount(string provider, string modelId) =>
+        breakers.TryGetValue((provider, modelId), out var tracked) ? tracked.Count : 0;
+
     /// <inheritdoc />
     public IDisposable Subscribe(Action<CircuitTransition> onTransition)
     {
@@ -49,6 +53,17 @@ internal sealed class CircuitStateProvider(TimeProvider timeProvider) : ICircuit
     /// the breaker under <paramref name="provider"/>/<paramref name="modelId"/>. Returns the same options.
     /// </summary>
     internal CircuitBreakerStrategyOptions Track(string provider, string modelId, CircuitBreakerStrategyOptions options)
+    {
+        Track<object>(provider, modelId, options);
+        return options;
+    }
+
+    /// <summary>
+    /// <see cref="Track(string, string, CircuitBreakerStrategyOptions)"/> for a breaker over results of
+    /// <typeparamref name="TResult"/>, such as the HTTP transport pipeline's (ADR-PA48), which tracks its breakers under
+    /// (client name, request authority).
+    /// </summary>
+    internal CircuitBreakerStrategyOptions<TResult> Track<TResult>(string provider, string modelId, CircuitBreakerStrategyOptions<TResult> options)
     {
         var tracked = new TrackedBreaker(new CircuitBreakerStateProvider());
         options.StateProvider = tracked.StateProvider;
