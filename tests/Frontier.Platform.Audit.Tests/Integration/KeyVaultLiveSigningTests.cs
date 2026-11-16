@@ -1,5 +1,3 @@
-extern alias identity;
-
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 
@@ -175,7 +173,7 @@ public sealed class KeyVaultLiveSigningTests
 
     /// <summary>The live vault adapter, authenticated exactly as a deployment is (ADR-SEC3).</summary>
     private static AzureKeyVaultSigningClient CreateVault() =>
-        new AzureKeyVaultSigningClient(LiveKeyVault.KeyIdentifier!, new identity::Azure.Identity.DefaultAzureCredential());
+        new AzureKeyVaultSigningClient(LiveKeyVault.KeyIdentifier!, new Azure.Identity.DefaultAzureCredential());
 
     /// <summary>An engagement id unique to this run, so nothing collides and nothing is reused.</summary>
     private static string LiveEngagementId() => $"eng-live-{Guid.NewGuid():N}";
