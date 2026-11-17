@@ -1,5 +1,0 @@
-Frontier.Platform.Resilience.IHttpResilienceHandlerFactory
-Frontier.Platform.Resilience.IHttpResilienceHandlerFactory.CreateHandler(string! profileName, string! clientName) -> System.Net.Http.DelegatingHandler!
-static readonly Frontier.Platform.Resilience.Phase1ResilienceProfileCatalogue.A2aTransport -> Frontier.Platform.Resilience.ResilienceProfile!
-static readonly Frontier.Platform.Resilience.Phase1ResilienceProfileCatalogue.McpTransport -> Frontier.Platform.Resilience.ResilienceProfile!
-static readonly Frontier.Platform.Resilience.Phase1ResilienceProfileCatalogue.HttpTransportByProfileId -> System.Collections.Generic.IReadOnlyDictionary<string!, Frontier.Platform.Resilience.ResilienceProfile!>!

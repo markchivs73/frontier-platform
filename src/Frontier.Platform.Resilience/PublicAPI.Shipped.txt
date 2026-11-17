@@ -53,6 +53,8 @@ Frontier.Platform.Resilience.ICircuitStateProvider.GetState(string! provider, st
 Frontier.Platform.Resilience.ICircuitStateProvider.Subscribe(System.Action<Frontier.Platform.Resilience.CircuitTransition!>! onTransition) -> System.IDisposable!
 Frontier.Platform.Resilience.IFailureClassifier
 Frontier.Platform.Resilience.IFailureClassifier.Classify(System.Exception! exception) -> Frontier.Platform.Resilience.FailureClassification!
+Frontier.Platform.Resilience.IHttpResilienceHandlerFactory
+Frontier.Platform.Resilience.IHttpResilienceHandlerFactory.CreateHandler(string! profileName, string! clientName) -> System.Net.Http.DelegatingHandler!
 Frontier.Platform.Resilience.IResiliencePolicyProvider
 Frontier.Platform.Resilience.IResiliencePolicyProvider.GetPipeline(string! profileName) -> Polly.ResiliencePipeline!
 Frontier.Platform.Resilience.IResiliencePolicyProvider.GetPipeline(string! profileName, string! provider, string! modelId) -> Polly.ResiliencePipeline!
@@ -154,10 +156,13 @@ static Frontier.Platform.Resilience.RetryBudgetSnapshot.operator ==(Frontier.Pla
 static readonly Frontier.Platform.Resilience.FailureClass.Deferred -> Frontier.Platform.Resilience.FailureClass!
 static readonly Frontier.Platform.Resilience.FailureClass.Permanent -> Frontier.Platform.Resilience.FailureClass!
 static readonly Frontier.Platform.Resilience.FailureClass.Transient -> Frontier.Platform.Resilience.FailureClass!
+static readonly Frontier.Platform.Resilience.Phase1ResilienceProfileCatalogue.A2aTransport -> Frontier.Platform.Resilience.ResilienceProfile!
 static readonly Frontier.Platform.Resilience.Phase1ResilienceProfileCatalogue.ByProfileId -> System.Collections.Generic.IReadOnlyDictionary<string!, Frontier.Platform.Resilience.ResilienceProfile!>!
+static readonly Frontier.Platform.Resilience.Phase1ResilienceProfileCatalogue.HttpTransportByProfileId -> System.Collections.Generic.IReadOnlyDictionary<string!, Frontier.Platform.Resilience.ResilienceProfile!>!
 static readonly Frontier.Platform.Resilience.Phase1ResilienceProfileCatalogue.LlmDefault -> Frontier.Platform.Resilience.ResilienceProfile!
 static readonly Frontier.Platform.Resilience.Phase1ResilienceProfileCatalogue.LlmInteractive -> Frontier.Platform.Resilience.ResilienceProfile!
 static readonly Frontier.Platform.Resilience.Phase1ResilienceProfileCatalogue.McpRead -> Frontier.Platform.Resilience.ResilienceProfile!
+static readonly Frontier.Platform.Resilience.Phase1ResilienceProfileCatalogue.McpTransport -> Frontier.Platform.Resilience.ResilienceProfile!
 static readonly Frontier.Platform.Resilience.Phase1ResilienceProfileCatalogue.McpWrite -> Frontier.Platform.Resilience.ResilienceProfile!
 static readonly Frontier.Platform.Resilience.Phase1ResilienceProfileCatalogue.None -> Frontier.Platform.Resilience.ResilienceProfile!
 static readonly Frontier.Platform.Resilience.Phase1ResilienceProfileCatalogue.SnapshotPersistence -> Frontier.Platform.Resilience.ResilienceProfile!
