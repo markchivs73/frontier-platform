@@ -3574,3 +3574,91 @@ Consumers that name `ExecutionStatus.PausedOnFailure` get a CS0618 warning on up
 `-warnaserror` makes an error. That is the point, since each such site has to decide whether it is
 reading old data. The `[Obsolete]` message names the replacement (`Failed`) and the version (v0.57.0),
 as the deprecation policy above requires; the value is removed only in a major version.
+
+## ADR-PA48 — runtime HTTP clients get a timeout, a breaker and a bulkhead per server, and never retry
+
+Consumer task S13.246. Its runtime HTTP clients, `mcp-runtime` (MCP tool calls) and `a2a-agent` (A2A agent
+calls), had no timeout beyond .NET's 100 s default, no breaker and no concurrency limit. Mark decided on
+2026-11-12 that they get all three and **no HTTP retry**, and on 2026-11-16 that this lives here, not in
+`Microsoft.Extensions.Http.Resilience` in the consumer.
+
+**Why no retry.** An MCP connection carries writes as well as reads, and an HTTP handler cannot tell them
+apart; doc 10 §4 makes `mcp-write` refuse a write without an idempotency key, and an agent's writes carry
+none. A2A `SendMessage` is not idempotent, so a retry is a second paid run (consumer S13.81). And two loops
+already retry above the call: an `mcp_tool` node's activity retry and the agent loop's tool-error handling.
+A third loop would multiply attempts.
+
+**Why here and not `Microsoft.Extensions.Http.Resilience`.** That package brings its own outcome
+predicate (5xx, 408, 429, `HttpRequestException`, `TimeoutRejectedException`): a second taxonomy beside
+`FailureClassifier`, which doc 10 §1 forbids. Its options bind from configuration and reload, so a
+deployment could loosen a breaker or turn retry back on without a profile version, against K7 ("governance
+is data"): a policy change is a catalogue change here. And Polly is reached only through this library.
+
+**Decision.**
+1. *Two data-only profiles, which are not node profiles.* `mcp-transport` (30 s per attempt) and
+   `a2a-transport` (80 s), both v1, one inner attempt, one outer attempt, and `mcp-read`'s breaker (ratio
+   0.5, minimum 10, 30 s window, 60 s break) and bulkhead limits (24 concurrent, 48 queued) with the
+   bulkhead's scope `authority`, because that is where it applies. They live in
+   `Phase1ResilienceProfileCatalogue.HttpTransportByProfileId`, **not** in `ByProfileId`: a workflow node
+   cannot name one as its retry profile, `IResiliencePolicyProvider.GetPipeline`/`GetTaskOptions` refuse
+   them, and so does any rule that lists `ByProfileId` (the consumer's `resilience.profile-exists`). The
+   handler factory resolves only this set, so it refuses every node profile, all of which retry or (`none`)
+   were not designed for HTTP. `TimeoutHierarchyCheck` covers both sets; the transport totals, 90 s and
+   240 s, pass. `none` was not reused: its breaker (minimum throughput 1,000,000) never opens.
+2. *An HTTP pipeline without retry.* `ResiliencePipeline<HttpResponseMessage>`, composed as doc 10 §4's
+   order minus the retry: `Timeout(total) → Bulkhead → CircuitBreaker → Timeout(per-attempt)`. The total
+   timeout still earns its place: it bounds the wait in the bulkhead's queue. The bulkhead sits outside the
+   breaker, so saturation rejections never open it. No retry strategy exists to configure: every transport
+   profile makes one attempt (a test pins it), because a request body may not be replayable and the HTTP
+   layer must not repeat a write.
+3. *One taxonomy.* The breaker counts an exception `IFailureClassifier` calls retryable, or a response
+   whose status `FailureClassifier.IsTransientHttpStatus` lists — the doc 10 §3 row 2 statuses
+   `ClassifyHttp` already used (429, 500, 502, 503, 529), now one shared list. A counted response is
+   **returned** to the caller, not thrown; it only counts. A cancellation the caller asked for never counts.
+   A per-attempt timeout does (`TimeoutRejectedException`, transient `network`).
+4. *One breaker and one bulkhead per server.* A `DelegatingHandler` picks the pipeline by the request
+   URI's authority. Pipelines are cached in `ResiliencePolicyProvider` per (profile, client, authority), not
+   in the handler, so `IHttpClientFactory`'s handler rotation never resets a breaker.
+5. *Named outcomes.* An open breaker throws `BrokenCircuitException` (transient `circuit_open`) and a full
+   bulkhead `RateLimiterRejectedException` (transient `bulkhead_rejected`); the classifier already mapped
+   both, so neither is `unclassified`.
+6. *One transition stream.* Each server's breaker is tracked by `CircuitStateProvider` with the client
+   name as `provider` and the authority as `modelId`. `CircuitTransition`'s wire shape is unchanged; that
+   the consumer's S13.188/D4 metric labels the field "model" is the consumer's naming to settle.
+7. *The surface.* A sibling interface, `IHttpResilienceHandlerFactory.CreateHandler(profileName,
+   clientName) → DelegatingHandler`, registered by `AddFrontierResilience`. `DelegatingHandler` is a BCL
+   type, so Resilience takes no `Microsoft.Extensions.Http` dependency; the consumer adds it with
+   `AddHttpMessageHandler`. It is not a member of `IResiliencePolicyProvider`, which is consulted from
+   orchestrator bodies and has its own implementers; one capability per interface.
+
+**What it does not change.** No existing profile, pipeline or wire shape moves. `ClassifyHttp`'s results are
+identical. The node-facing `ByProfileId` keeps its seven profiles. The commit is additive (no `!`).
+
+**Known limits, accepted.** Pipelines, with their bulkheads and breakers, are cached per (profile, client,
+authority) for the worker's lifetime: the cache is never evicted and nothing is disposed, which is bounded by
+the registered servers. `HttpClient.Timeout` (100 s by default, under `a2a-transport`'s 240 s total) cancels
+the handler's token, so the breaker sees it as the caller's cancellation and never counts it; the README tells
+consumers to set it to `Timeout.InfiniteTimeSpan`. The per-attempt timeout bounds the time to the response headers: once the
+handler returns, a streamed body (an MCP `text/event-stream` reply, an A2A stream) is read outside the
+pipeline, and the activity timeout bounds it. 504 and 408 are not in doc 10 §3 row 2, so they do not count
+toward the breaker. The classifier does not walk inner exceptions, so a client SDK that wraps
+`BrokenCircuitException` would classify `unclassified`; the consumer checks its MCP and A2A clients.
+
+**Evidence (P1, accessed 2026-11-16).**
+- Microsoft, *Build resilient HTTP apps* (learn.microsoft.com/dotnet/core/resilience/http-resilience, ms.date
+  2026-02-24, updated 2026-03-30): "By default, the standard resilience handler is configured to make retries
+  for all HTTP methods", and "if a POST request inserts a new record to a database, then making retries for
+  such a request could lead to data duplication", offering `DisableForUnsafeHttpMethods`. The MCP Streamable HTTP transport
+  sends every client message as a POST (modelcontextprotocol.io/specification/2025-06-18/basic/transports:
+  "Every JSON-RPC message sent from the client MUST be a new HTTP POST request"), so that switch would
+  disable retry for all MCP traffic anyway; making one attempt is the same outcome, stated as data.
+- The same page's standard pipeline is rate limiter → total timeout → retry → circuit breaker → attempt
+  timeout; without a retry, its order and doc 10 §4's coincide.
+- Polly v8, *Circuit breaker* (pollydocs.org/strategies/circuit-breaker, undated): `ShouldHandle` may handle
+  results as well as exceptions; "The circuit breaker returns the result / exception during the sampling
+  period"; "Once the strategy opens the circuit, every subsequent call will be shortcut with a
+  BrokenCircuitException." Its anti-patterns prefer `SelectPipelineByAuthority`, by which "the resilience
+  handler caches and assigns" a pipeline to "each authority (scheme + host + port) that is extracted from
+  HTTP request message", over a hand-kept collection the caller must look up; the handler here does that lookup itself, keyed on
+  `Uri.Authority` (host, and port when not the default). Unlike Polly's key, the scheme is not part of it,
+  so `http` and `https` to one host share a breaker; registered servers use one scheme each.

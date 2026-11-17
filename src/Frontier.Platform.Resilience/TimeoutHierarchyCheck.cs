@@ -5,7 +5,7 @@ namespace Frontier.Platform.Resilience;
 /// <summary>
 /// Boot check (doc 12 §6, doc 10 §7): validates the timeout hierarchy
 /// "per-attempt provider timeout &lt; total pipeline timeout &lt; DTF activity timeout"
-/// holds for every compiled-in <see cref="Phase1ResilienceProfileCatalogue"/> profile.
+/// holds for every compiled-in <see cref="Phase1ResilienceProfileCatalogue"/> profile, node and HTTP transport alike.
 /// HITL escalation sits above the DTF activity timeout by construction (gate timeouts
 /// are orchestrator-level timers, not activity calls) and is out of scope here.
 /// </summary>
@@ -22,7 +22,7 @@ internal sealed class TimeoutHierarchyCheck : IStartupCheck
 
     /// <inheritdoc />
     public Task<StartupCheckResult> CheckAsync(CancellationToken cancellationToken) =>
-        Task.FromResult(Evaluate(Phase1ResilienceProfileCatalogue.ByProfileId.Values));
+        Task.FromResult(Evaluate(Phase1ResilienceProfileCatalogue.ByProfileId.Values.Concat(Phase1ResilienceProfileCatalogue.HttpTransportByProfileId.Values)));
 
     /// <summary>
     /// Checks each profile's pipeline timeout (<see cref="PipelineTimeoutMs"/>) against

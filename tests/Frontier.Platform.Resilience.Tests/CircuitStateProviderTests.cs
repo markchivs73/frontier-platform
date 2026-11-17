@@ -91,6 +91,17 @@ public sealed class CircuitStateProviderTests
         Assert.Empty(transitions);
     }
 
+    /// <summary>ADR-PA48: a pair no pipeline has been built for tracks no breaker; one built pipeline tracks one.</summary>
+    [Fact]
+    public void TrackedCount_CountsTheBreakersBuiltForThePair()
+    {
+        Assert.Equal(0, circuits.TrackedCount("anthropic", "claude-fable-5"));
+
+        _ = policies.GetPipeline("llm-default", "anthropic", "claude-fable-5");
+
+        Assert.Equal(1, circuits.TrackedCount("anthropic", "claude-fable-5"));
+    }
+
     /// <summary>S13.231: no call has reached the pair, so it has no breaker and admits.</summary>
     [Fact]
     public void AdmitsCalls_NoCallHasReachedThePair_Admits()

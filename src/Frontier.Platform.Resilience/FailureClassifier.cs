@@ -43,13 +43,21 @@ internal sealed class FailureClassifier : IFailureClassifier
     internal static FailureClassification ClassifyHttp(HttpRequestException exception) =>
         exception.StatusCode switch
         {
-            HttpStatusCode.TooManyRequests or HttpStatusCode.InternalServerError or HttpStatusCode.BadGateway
-                or HttpStatusCode.ServiceUnavailable or (HttpStatusCode)529 => Transient("provider_unavailable"),
+            { } status when IsTransientHttpStatus(status) => Transient("provider_unavailable"),
             HttpStatusCode.BadRequest or HttpStatusCode.RequestEntityTooLarge => Permanent("request_invalid"),
             HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden => Permanent("auth"),
             null => Transient("network"),
             _ => Permanent("unclassified"),
         };
+
+    /// <summary>
+    /// The HTTP statuses doc 10 §3 row 2 calls transient: 429, 500, 502, 503 and 529. <see cref="ClassifyHttp"/> classifies a
+    /// thrown status with it, and the HTTP transport pipeline (ADR-PA48) counts a returned response toward its breaker with
+    /// it, so a thrown 503 and a returned one are the same failure.
+    /// </summary>
+    internal static bool IsTransientHttpStatus(HttpStatusCode status) =>
+        status is HttpStatusCode.TooManyRequests or HttpStatusCode.InternalServerError or HttpStatusCode.BadGateway
+            or HttpStatusCode.ServiceUnavailable or (HttpStatusCode)529;
 
     /// <summary>Cosmos SDK failures (doc 10 §3 rows 10-11): 429 carries the SDK-supplied <see cref="CosmosException.RetryAfter"/>.</summary>
     internal static FailureClassification ClassifyCosmos(CosmosException exception) =>

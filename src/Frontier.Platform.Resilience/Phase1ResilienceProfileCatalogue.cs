@@ -12,6 +12,8 @@ namespace Frontier.Platform.Resilience;
 /// from these values field-for-value, mirroring the <c>model-role-config</c> pattern
 /// (S4.3); <see cref="ResiliencePolicyProvider"/> reads this catalogue directly rather
 /// than the store, so a cold start with the store down still has a working pipeline.
+/// <see cref="McpTransport"/> and <see cref="A2aTransport"/> (ADR-PA48) live in <see cref="HttpTransportByProfileId"/>,
+/// apart from the node-facing <see cref="ByProfileId"/>: only the HTTP transport handler resolves them, and the timeout hierarchy check validates them.
 /// </summary>
 public static class Phase1ResilienceProfileCatalogue
 {
@@ -280,6 +282,23 @@ public static class Phase1ResilienceProfileCatalogue
         },
     };
 
+    /// <summary>
+    /// The HTTP transport profile for runtime MCP tool calls (ADR-PA48, consumer S13.246): a 30s per-attempt timeout, the
+    /// <see cref="McpRead"/> breaker and bulkhead limits (the bulkhead per server), and <b>one</b> attempt. It is in
+    /// <see cref="HttpTransportByProfileId"/>, not <see cref="ByProfileId"/>: it is not a node profile. The HTTP layer never retries: an MCP connection
+    /// carries writes as well as reads and cannot tell them apart, so retrying stays with the agent loop and the node's
+    /// activity retry. Only the HTTP transport handler resolves it (the timeout hierarchy check also validates it); <see cref="OuterRetry"/> is one attempt because no
+    /// activity runs under it.
+    /// </summary>
+    public static readonly ResilienceProfile McpTransport = Transport("mcp-transport", timeoutMs: 30_000);
+
+    /// <summary>
+    /// The HTTP transport profile for runtime A2A agent calls (ADR-PA48, consumer S13.246): as <see cref="McpTransport"/>,
+    /// with an 80s per-attempt timeout for a remote agent's turn. A2A <c>SendMessage</c> is not idempotent, so a retry
+    /// would be a second paid run; it makes one attempt.
+    /// </summary>
+    public static readonly ResilienceProfile A2aTransport = Transport("a2a-transport", timeoutMs: 80_000);
+
     /// <summary>The catalogue keyed by <see cref="ResilienceProfile.ProfileId"/>, consumed by <see cref="ResiliencePolicyProvider"/>.</summary>
     public static readonly IReadOnlyDictionary<string, ResilienceProfile> ByProfileId =
         new Dictionary<string, ResilienceProfile>(StringComparer.Ordinal)
@@ -292,4 +311,33 @@ public static class Phase1ResilienceProfileCatalogue
             [Storage.ProfileId] = Storage,
             [None.ProfileId] = None,
         };
+
+    /// <summary>
+    /// The HTTP transport profiles keyed by <see cref="ResilienceProfile.ProfileId"/> (ADR-PA48), resolved only by
+    /// <see cref="IHttpResilienceHandlerFactory"/> and validated by <see cref="TimeoutHierarchyCheck"/>. They are <b>not node profiles</b>: they are kept out of
+    /// <see cref="ByProfileId"/>, so <see cref="IResiliencePolicyProvider"/> and any rule that lists the node-facing
+    /// catalogue refuse them as an activity's retry profile.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, ResilienceProfile> HttpTransportByProfileId =
+        new Dictionary<string, ResilienceProfile>(StringComparer.Ordinal)
+        {
+            [McpTransport.ProfileId] = McpTransport,
+            [A2aTransport.ProfileId] = A2aTransport,
+        };
+
+    /// <summary>
+    /// An HTTP transport profile (ADR-PA48): one inner attempt, <see cref="McpRead"/>'s breaker and bulkhead limits, and
+    /// the given per-attempt timeout. The bulkhead's scope is <c>authority</c>, because the HTTP transport applies it
+    /// per server. The retry delays are inert, since one attempt never waits.
+    /// </summary>
+    internal static ResilienceProfile Transport(string profileId, int timeoutMs) => new()
+    {
+        ProfileId = profileId,
+        Version = 1,
+        InnerRetry = McpRead.InnerRetry with { MaxAttempts = 1 },
+        TimeoutMs = timeoutMs,
+        CircuitBreaker = McpRead.CircuitBreaker,
+        Bulkhead = McpRead.Bulkhead with { Scope = "authority" },
+        OuterRetry = new OuterRetrySpec { MaxAttempts = 1 },
+    };
 }
