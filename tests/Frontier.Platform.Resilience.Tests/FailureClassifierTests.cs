@@ -50,6 +50,8 @@ public sealed class FailureClassifierTests
     [InlineData(HttpStatusCode.InternalServerError)]
     [InlineData(HttpStatusCode.BadGateway)]
     [InlineData(HttpStatusCode.ServiceUnavailable)]
+    [InlineData(HttpStatusCode.GatewayTimeout)]
+    [InlineData(HttpStatusCode.RequestTimeout)]
     [InlineData((HttpStatusCode)529)]
     public void Classify_HttpProviderUnavailableStatus_IsTransientProviderUnavailable(HttpStatusCode statusCode)
     {
@@ -85,6 +87,56 @@ public sealed class FailureClassifierTests
     public void Classify_HttpRequestExceptionWithNoStatusCode_IsTransientNetwork()
     {
         var result = classifier.Classify(new HttpRequestException("boom"));
+
+        Assert.Equal(FailureClass.Transient, result.Class);
+        Assert.Equal("network", result.ReasonCode);
+    }
+
+    /// <summary>Consumer S13.300: a network policy's refusal thrown bare is permanent <c>policy_refused</c>.</summary>
+    [Fact]
+    public void Classify_NetworkPolicyRefusedException_IsPermanentPolicyRefused()
+    {
+        var result = classifier.Classify(new NetworkPolicyRefusedException("10.0.0.1 is private"));
+
+        Assert.Equal(FailureClass.Permanent, result.Class);
+        Assert.Equal("policy_refused", result.ReasonCode);
+    }
+
+    /// <summary>
+    /// Consumer S13.300: <c>SocketsHttpHandler</c> wraps a <c>ConnectCallback</c>'s exception in an
+    /// <see cref="HttpRequestException"/> with no status code, which alone would be transient <c>network</c>; the refusal
+    /// inside makes it permanent <c>policy_refused</c>.
+    /// </summary>
+    [Fact]
+    public void Classify_HttpRequestExceptionWrappingAPolicyRefusal_IsPermanentPolicyRefused()
+    {
+        var wrapped = new HttpRequestException(HttpRequestError.ConnectionError, "refused (a.example:443)", new NetworkPolicyRefusedException("refused"));
+
+        var result = classifier.Classify(wrapped);
+
+        Assert.Equal(FailureClass.Permanent, result.Class);
+        Assert.Equal("policy_refused", result.ReasonCode);
+    }
+
+    /// <summary>The classifier looks one level inside the wrapper, no deeper: a refusal inside the consumer's own exception is not recognised.</summary>
+    [Fact]
+    public void Classify_PolicyRefusalTwoLevelsDown_IsTransientNetwork()
+    {
+        var ownWrapper = new InvalidOperationException("card fetch failed", new NetworkPolicyRefusedException("refused"));
+
+        var result = classifier.Classify(new HttpRequestException("refused", ownWrapper));
+
+        Assert.Equal(FailureClass.Transient, result.Class);
+        Assert.Equal("network", result.ReasonCode);
+    }
+
+    /// <summary>An ordinary connection failure, whose inner exception is not a refusal, stays transient <c>network</c>.</summary>
+    [Fact]
+    public void Classify_HttpRequestExceptionWrappingASocketError_IsTransientNetwork()
+    {
+        var wrapped = new HttpRequestException(HttpRequestError.ConnectionError, "connection refused", new System.Net.Sockets.SocketException(61));
+
+        var result = classifier.Classify(wrapped);
 
         Assert.Equal(FailureClass.Transient, result.Class);
         Assert.Equal("network", result.ReasonCode);

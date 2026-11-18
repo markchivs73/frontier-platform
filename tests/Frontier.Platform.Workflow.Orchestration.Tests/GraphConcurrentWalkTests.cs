@@ -293,7 +293,7 @@ public sealed class GraphConcurrentWalkTests
     public void ClassifyFailure_TaskFailedException_WalksTheDetailsChain()
     {
         // Real DTF activity failures arrive as TaskFailedException; the details chain is
-        // walked level by level (each IsCausedBy checks only itself).
+        // walked level by level (each level checks only itself).
         var contractViolation = new TaskFailureDetails(typeof(ContractViolationException).FullName!, "bad output", null, null, null);
         var wrapped = new TaskFailureDetails("WrapperException", "outer", null, contractViolation, null);
         var budget = new TaskFailureDetails(typeof(BudgetExceededException).FullName!, "over budget", null, null, null);
@@ -304,6 +304,35 @@ public sealed class GraphConcurrentWalkTests
         Assert.Equal("guardrail", GraphOrchestratorSteps.ClassifyFailureDetails(new TaskFailureDetails(typeof(GuardrailsSuspendedException).FullName!, "suspended", null, null, null)));
         Assert.Equal("unclassified", GraphOrchestratorSteps.ClassifyFailureDetails(new TaskFailureDetails("Other", "?", null, null, null)));
         Assert.Equal("unclassified", GraphOrchestratorSteps.ClassifyFailureDetails(null));
+    }
+
+    /// <summary>
+    /// ADR-PA48, amended 2026-11-17: an <see cref="HttpRequestException"/> level, which DTF's <c>IsCausedBy</c> threw on,
+    /// is matched by name and passed over; a network policy refusal inside it is <c>policy_refused</c>; a failure read
+    /// from the wire with no type name is unclassified.
+    /// </summary>
+    [Fact]
+    public void ClassifyFailureDetails_HttpRequestExceptionChains_ClassifyWithoutThrowing()
+    {
+        var bare = TaskFailureDetails.FromException(new HttpRequestException("connection refused"));
+        var refused = TaskFailureDetails.FromException(new HttpRequestException("refused (a.example:443)", new NetworkPolicyRefusedException("private address")));
+
+        Assert.Equal("unclassified", GraphOrchestratorSteps.ClassifyFailureDetails(bare));
+        Assert.Equal("policy_refused", GraphOrchestratorSteps.ClassifyFailureDetails(refused));
+        Assert.Equal("policy_refused", GraphOrchestratorSteps.ClassifyFailure(new NetworkPolicyRefusedException("private address")));
+        Assert.Equal("unclassified", GraphOrchestratorSteps.ClassifyFailureDetails(new TaskFailureDetails(string.Empty, "?", null, null, null)));
+    }
+
+    /// <summary>The name match is exact: a type derived from an unsealed target is not recognised (the replay-safe rule's accepted narrowing).</summary>
+    [Fact]
+    public void FailureTypeName_MatchesOnlyTheExactTypeName()
+    {
+        var exact = TaskFailureDetails.FromException(new ContractViolationException("X", ["bad"]));
+        var derived = new TaskFailureDetails("Some.DerivedViolationException", "bad", null, null, null);
+
+        Assert.True(FailureTypeName.Is<ContractViolationException>(exact));
+        Assert.False(FailureTypeName.Is<ContractViolationException>(derived));
+        Assert.False(FailureTypeName.Is<ContractViolationException>(new TaskFailureDetails(string.Empty, "?", null, null, null)));
     }
 
     [Fact]

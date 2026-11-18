@@ -1,1 +1,5 @@
 #nullable enable
+Frontier.Platform.Abstractions.NetworkPolicyRefusedException
+Frontier.Platform.Abstractions.NetworkPolicyRefusedException.NetworkPolicyRefusedException() -> void
+Frontier.Platform.Abstractions.NetworkPolicyRefusedException.NetworkPolicyRefusedException(string! message) -> void
+Frontier.Platform.Abstractions.NetworkPolicyRefusedException.NetworkPolicyRefusedException(string! message, System.Exception! innerException) -> void

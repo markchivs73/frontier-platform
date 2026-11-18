@@ -1,6 +1,7 @@
 using Frontier.Platform.Abstractions;
 using Frontier.Platform.Hitl;
 using Frontier.Platform.Workflow.Model;
+using Microsoft.DurableTask;
 
 namespace Frontier.Platform.Workflow.Orchestration.Tests;
 
@@ -114,6 +115,46 @@ public sealed class GraphOrchestratorTests
         var audit = Assert.Single(audits);
         Assert.Equal(approachFails ? ExecutionStatus.Failed : null, audit.FinalStatus);
         Assert.Equal(context.CurrentUtcDateTime, audit.StartedAtUtc);
+    }
+
+    /// <summary>
+    /// ADR-PA48, amended 2026-11-17 (consumer S13.300): an activity that fails with an <see cref="HttpRequestException"/>
+    /// reaches the body as a <see cref="TaskFailedException"/> whose details name that type, which DTF's
+    /// <c>IsCausedBy</c> could not classify without throwing. The run now ends on the failure path: a failed checkpoint
+    /// classified from the chain — <c>policy_refused</c> when a network policy refusal is its inner failure — and one
+    /// failed audit consolidation, then the node's failure is rethrown.
+    /// </summary>
+    [Theory]
+    [InlineData(false, "unclassified")]
+    [InlineData(true, "policy_refused")]
+    public async Task RunAsync_NodeFailsWithAnHttpRequestException_EndsFailedClassifiedAndAudited(bool refusedByPolicy, string classification)
+    {
+        var context = new FakeTaskOrchestrationContext();
+        var audits = new List<ConsolidateAuditInput>();
+        var snapshots = new List<ExecutionSnapshot>();
+        var http = new HttpRequestException("connect failed (a.example:443)", refusedByPolicy ? new NetworkPolicyRefusedException("a.example resolves to a private address.") : null);
+        context.ActivityHandlers[WorkflowActivityNames.AgentTaskActivity] = activityInput => (AgentTaskActivityInput)activityInput! is { NodeId: "approach-agent" }
+            ? throw new TaskFailedException(WorkflowActivityNames.AgentTaskActivity, 1, TaskFailureDetails.FromException(http))
+            : new AgentTaskActivity(new FakeAgentTaskActivityPipeline()).RunAsync(new FakeTaskActivityContext(), (AgentTaskActivityInput)activityInput!).GetAwaiter().GetResult();
+        context.ActivityHandlers[WorkflowActivityNames.SnapshotStateActivity] = activityInput =>
+        {
+            snapshots.Add((ExecutionSnapshot)activityInput!);
+            return new SnapshotActivityResponse { SnapshotId = $"{((ExecutionSnapshot)activityInput!).ExecutionId}:{((ExecutionSnapshot)activityInput!).Sequence:D6}" };
+        };
+        context.ActivityHandlers[WorkflowActivityNames.ArtifactStateActivity] = activityInput =>
+            new ArtifactStateActivityResponse { SectionRef = $"{((ArtifactStateActivityRequest)activityInput!).ExecutionId}:{((ArtifactStateActivityRequest)activityInput!).ArtifactKey}:v{((ArtifactStateActivityRequest)activityInput!).Version}" };
+        context.ActivityHandlers[WorkflowActivityNames.ConsolidateAuditActivity] = activityInput =>
+        {
+            audits.Add((ConsolidateAuditInput)activityInput!);
+            return AuditFixtures.SignedRecord((ConsolidateAuditInput)activityInput!);
+        };
+        var input = new GraphOrchestratorInput { Definition = OrchestrationFixtures.ThreeArtifactChain(), EngagementId = "eng-1" };
+
+        await Assert.ThrowsAsync<TaskFailedException>(() => orchestrator.RunAsync(context, input));
+
+        var final = snapshots[^1];
+        Assert.Equal((ExecutionStatus.Failed, "approach-agent", classification), (final.Status, final.CurrentNodeId, final.FailureClassification));
+        Assert.Equal(ExecutionStatus.Failed, Assert.Single(audits).FinalStatus);
     }
 
     /// <summary>

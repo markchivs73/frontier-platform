@@ -16,9 +16,9 @@ namespace Frontier.Platform.Resilience;
 /// failure ratio, and the bulkhead sits outside so saturation rejections don't trip it
 /// (doc 10 §4). The outer DTF <see cref="RetryPolicy"/> uses deterministic exponential
 /// backoff (no <see cref="Random"/> in an orchestrator body, dtf-determinism) and stops
-/// retrying on the permanent exception types <see cref="ContractViolationException"/>,
-/// <see cref="BudgetExceededException"/> and <see cref="GuardrailsSuspendedException"/> anywhere in the failure chain, via
-/// <see cref="TaskFailureDetails.IsCausedBy{T}"/> — the classifications the outer loop
+/// retrying on the permanent exception types <see cref="ContractViolationException"/>, <see cref="BudgetExceededException"/>,
+/// <see cref="GuardrailsSuspendedException"/> and <see cref="NetworkPolicyRefusedException"/> anywhere in the failure chain, via
+/// <see cref="TaskFailureCause.Is{T}"/> — the classifications the outer loop
 /// can enforce without a live exception instance (doc 10 §3, hard invariant 7).
 /// Pipelines are built once and cached — per profile, and per <c>(profile, provider, modelId)</c>
 /// endpoint — so breaker and bulkhead state accumulate across calls (doc 10 §6: in-process per worker).
@@ -173,17 +173,25 @@ internal sealed class ResiliencePolicyProvider(IFailureClassifier classifier, Ci
     internal static bool HandleOuterRetryFailure(TaskFailureDetails failure) => !IsPermanentCause(failure);
 
     /// <summary>
-    /// True when <paramref name="details"/> or any inner failure is a <see cref="ContractViolationException"/>,
-    /// <see cref="BudgetExceededException"/> or <see cref="GuardrailsSuspendedException"/> — all <c>Permanent</c>
-    /// in <see cref="FailureClassifier"/>.
-    /// Each <see cref="TaskFailureDetails.IsCausedBy{T}"/> checks only its own level, so the chain is walked.
+    /// True when <paramref name="details"/> or any inner failure is permanent by type (see <see cref="IsPermanentType"/>).
+    /// Each <see cref="TaskFailureCause.Is{T}"/> checks only its own level, so the chain is walked.
     /// </summary>
     internal static bool IsPermanentCause(TaskFailureDetails? details) => details switch
     {
         null => false,
-        { } d when d.IsCausedBy<ContractViolationException>() || d.IsCausedBy<BudgetExceededException>() || d.IsCausedBy<GuardrailsSuspendedException>() => true,
+        { } d when IsPermanentType(d) => true,
         _ => IsPermanentCause(details.InnerFailure),
     };
+
+    /// <summary>
+    /// Whether this one level of the chain is a <see cref="ContractViolationException"/>, <see cref="BudgetExceededException"/>,
+    /// <see cref="GuardrailsSuspendedException"/> or <see cref="NetworkPolicyRefusedException"/> — all <c>Permanent</c> in
+    /// <see cref="FailureClassifier"/>. A refusal wrapped in an <c>HttpRequestException</c> is that exception's inner failure,
+    /// which <see cref="IsPermanentCause"/> reaches.
+    /// </summary>
+    internal static bool IsPermanentType(TaskFailureDetails details) =>
+        TaskFailureCause.Is<ContractViolationException>(details) || TaskFailureCause.Is<BudgetExceededException>(details)
+            || TaskFailureCause.Is<GuardrailsSuspendedException>(details) || TaskFailureCause.Is<NetworkPolicyRefusedException>(details);
 
     /// <summary>Builds the inner-loop retry options: decorrelated-jitter exponential backoff, gated by <see cref="IFailureClassifier"/> (doc 10 §3).</summary>
     internal static RetryStrategyOptions BuildRetryOptions(InnerRetrySpec spec, IFailureClassifier failureClassifier) => new()
@@ -196,12 +204,16 @@ internal sealed class ResiliencePolicyProvider(IFailureClassifier classifier, Ci
         ShouldHandle = args => ValueTask.FromResult(args.Outcome.Exception is { } exception && failureClassifier.Classify(exception).Class.IsRetryable),
     };
 
-    /// <summary>Builds the circuit breaker options for a profile's <see cref="CircuitBreakerSpec"/> (doc 10 §6: granularity (provider, modelId)).</summary>
+    /// <summary>
+    /// Builds the circuit breaker options for a profile's <see cref="CircuitBreakerSpec"/> (doc 10 §6: granularity (provider,
+    /// modelId)); it counts what <see cref="NodeBreakerOutcome.IsFailure"/> calls a failure.
+    /// </summary>
     internal static CircuitBreakerStrategyOptions BuildCircuitBreakerOptions(CircuitBreakerSpec spec) => new()
     {
         FailureRatio = spec.FailureRatio,
         MinimumThroughput = spec.MinThroughput,
         SamplingDuration = TimeSpan.FromSeconds(spec.SamplingWindowSeconds),
         BreakDuration = TimeSpan.FromSeconds(spec.BreakDurationSeconds),
+        ShouldHandle = args => ValueTask.FromResult(NodeBreakerOutcome.IsFailure(args.Outcome)),
     };
 }

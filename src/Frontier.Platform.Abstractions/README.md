@@ -33,9 +33,16 @@ There is no `AddFrontier…()` call: this package is types only, with nothing to
 
 **Permanent-failure exceptions**
 
-- `ContractViolationException`, `BudgetExceededException` and `GuardrailsSuspendedException` (the
-  fleet kill switch is thrown). All signal failures that must never be retried, as distinct from
-  transient faults, which are retried per the policies in `Frontier.Platform.Resilience`.
+- `ContractViolationException`, `BudgetExceededException`, `GuardrailsSuspendedException` (the
+  fleet kill switch is thrown) and `NetworkPolicyRefusedException` (a consumer's connect-time
+  network policy refused the destination; ADR-PA48, amended 2026-11-17). All signal failures that
+  must never be retried, as distinct from transient faults, which are retried per the policies in
+  `Frontier.Platform.Resilience`.
+
+  Throw `NetworkPolicyRefusedException` itself from a `SocketsHttpHandler.ConnectCallback`, not
+  an exception of your own that wraps it: the handler wraps whatever the callback throws in an
+  `HttpRequestException` with no status code, and the classifier looks one level inside that,
+  no further. Thrown anywhere else, bare, it is classified the same way.
 
 **Execution identity**
 

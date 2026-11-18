@@ -57,12 +57,19 @@ fresh breaker and an empty bulkhead, so neither could ever trip. Each endpoint h
 profile (granularity `provider`). The workflow engine runs each agent invocation through the
 endpoint pipeline of the target it resolved to. Only the provider call runs inside it: the engine
 binds the reply afterwards, so a reply that fails its contract never counts toward the breaker.
-Every exception the invoker itself throws does count, permanent ones included.
+Every exception the invoker itself throws does count, permanent ones included, except a network
+policy refusal (below), which never reached the server.
 
 The outer loop sees only the failure's type names, not the exception object. It refuses to
-re-run when any level of the failure chain is a `ContractViolationException` or a
-`BudgetExceededException`. An HTTP 400/401/403 still re-runs there, because the status code
-does not survive into the durable-task failure details.
+re-run when any level of the failure chain is a `ContractViolationException`, a
+`BudgetExceededException`, a `GuardrailsSuspendedException` or a `NetworkPolicyRefusedException`.
+An HTTP 400/401/403 still re-runs there, because the status code does not survive into the
+durable-task failure details. It matches the exact recorded type name rather than calling
+`TaskFailureDetails.IsCausedBy<T>`, which resolves the name against the worker's loaded assemblies
+(not replay-safe) and throws `AmbiguousMatchException` for a type-forwarded BCL exception such as
+`HttpRequestException`. So a type *derived* from `ContractViolationException` is not recognised
+there: an activity throws `ContractViolationException` itself. An `HttpRequestException` is
+re-run like any other unmapped failure.
 
 **`ResiliencePipeline` and `TaskOptions` appear directly on the public interface.** That is
 deliberate: handing callers ready-to-use Polly and durable-task policy objects is this library's
@@ -79,7 +86,7 @@ delivered.
 |---|---|---|
 | `transient` | Yes, with jittered backoff | Provider 5xx, network blip, open circuit |
 | `deferred` | Yes, after the provider's stated delay | 429 with a `Retry-After`, Cosmos throttling |
-| `permanent` | **Never** | Contract violation, budget exceeded — and anything unmapped |
+| `permanent` | **Never** | Contract violation, budget exceeded, network policy refusal — and anything unmapped |
 
 `IFailureClassifier.Classify` returns a `FailureClassification`: the class, an optional
 provider-stated `RetryAfter`, and a stable snake_case reason code for telemetry and triage.
@@ -87,6 +94,16 @@ provider-stated `RetryAfter`, and a stable snake_case reason code for telemetry 
 **Unmapped exceptions classify `permanent`, with reason code `unclassified`.** That is the fail-safe
 direction: don't retry what you don't understand. The alternative default burns tokens on a call
 that was never going to succeed.
+
+**A network policy refusal is `permanent`, reason code `policy_refused`** (ADR-PA48, amended
+2026-11-17). A consumer's connect-time guard — a `SocketsHttpHandler.ConnectCallback` that refuses
+private or otherwise disallowed addresses — throws `Frontier.Platform.Abstractions.NetworkPolicyRefusedException`.
+`SocketsHttpHandler` wraps it in an `HttpRequestException` with no status code, which on its own
+classifies transient `network`; the classifier looks one level inside that wrapper and finds the
+refusal. Only one level: throw the platform type itself from the callback, not your own exception
+wrapping it. A refusal never counts toward a breaker, node profile or transport profile, because
+the server was never reached; ten of them would otherwise open the breaker for a server the
+policy will never let anyone call.
 
 **The profile**
 
@@ -131,8 +148,9 @@ Each request runs `Timeout(total) → Bulkhead → CircuitBreaker → Timeout(pe
 authority, so every server has its own breaker and bulkhead. The pipelines are kept by the policy
 provider, not the handler, so a rotated handler keeps the breaker state; they live for the worker's
 lifetime and are never evicted. A response with a transient
-status (429, 500, 502, 503, 529 — the classifier's own list) is returned to the caller and counts toward
-the breaker; a transient exception counts and propagates; a caller's cancellation never counts. An open
+status (408, 429, 500, 502, 503, 504, 529 — the classifier's own list) is returned to the caller and counts toward
+the breaker; a transient exception counts and propagates; a network policy refusal (`policy_refused`)
+propagates and never counts; a caller's cancellation never counts. An open
 breaker throws `BrokenCircuitException` (`circuit_open`) and a full bulkhead `RateLimiterRejectedException`
 (`bulkhead_rejected`), both transient. Each breaker reports through `ICircuitStateProvider` with the client
 name as provider and the authority as model id. `mcp-transport` (30 s) and `a2a-transport` (80 s) make one

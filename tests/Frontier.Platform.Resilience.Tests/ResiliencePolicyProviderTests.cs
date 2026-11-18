@@ -205,6 +205,26 @@ public sealed class ResiliencePolicyProviderTests
         Assert.False(ResiliencePolicyProvider.HandleOuterRetryFailure(failure));
     }
 
+    /// <summary>Consumer S13.300: the outer loop does not re-run an activity a network policy refused, bare or as SocketsHttpHandler wraps it.</summary>
+    [Fact]
+    public void HandleOuterRetryFailure_NetworkPolicyRefused_ReturnsFalse()
+    {
+        var bare = TaskFailureDetails.FromException(new NetworkPolicyRefusedException("refused"));
+        var wrapped = TaskFailureDetails.FromException(new HttpRequestException("refused (a.example:443)", new NetworkPolicyRefusedException("refused")));
+
+        Assert.False(ResiliencePolicyProvider.HandleOuterRetryFailure(bare));
+        Assert.False(ResiliencePolicyProvider.HandleOuterRetryFailure(wrapped));
+    }
+
+    /// <summary>An ordinary HTTP failure re-runs: the outer handler answers for it rather than throwing (see <see cref="TaskFailureCause"/>).</summary>
+    [Fact]
+    public void HandleOuterRetryFailure_HttpRequestException_ReturnsTrue()
+    {
+        var failure = TaskFailureDetails.FromException(new HttpRequestException("connection refused", new System.Net.Sockets.SocketException(61)));
+
+        Assert.True(ResiliencePolicyProvider.HandleOuterRetryFailure(failure));
+    }
+
     [Fact]
     public void HandleOuterRetryFailure_GuardrailsSuspendedWrapped_ReturnsFalse()
     {
@@ -313,6 +333,58 @@ public sealed class ResiliencePolicyProviderTests
         Assert.Equal(spec.MinThroughput, options.MinimumThroughput);
         Assert.Equal(TimeSpan.FromSeconds(spec.SamplingWindowSeconds), options.SamplingDuration);
         Assert.Equal(TimeSpan.FromSeconds(spec.BreakDurationSeconds), options.BreakDuration);
+    }
+
+    /// <summary>
+    /// Consumer S13.300: a node pipeline neither retries a network policy refusal (it is permanent) nor counts it toward
+    /// its breaker, so twenty refusals make twenty calls and leave the breaker closed.
+    /// </summary>
+    [Fact]
+    public async Task BuildEndpointPipeline_PolicyRefusals_AreNotRetriedAndLeaveTheBreakerClosed()
+    {
+        var circuits = new CircuitStateProvider(TimeProvider.System);
+        var pipeline = new ResiliencePolicyProvider(new FailureClassifier(), circuits, TimeProvider.System)
+            .BuildEndpointPipeline(FastProfile("refusals", maxConcurrent: 4), "mcp", "a.example");
+        var calls = 0;
+
+        for (var i = 0; i < 20; i++)
+        {
+            await Assert.ThrowsAsync<HttpRequestException>(async () => await pipeline.ExecuteAsync<string>(
+                _ => { calls++; throw new HttpRequestException("refused", new NetworkPolicyRefusedException("refused")); }, CancellationToken.None));
+        }
+
+        Assert.Equal(20, calls);
+        Assert.Equal(Polly.CircuitBreaker.CircuitState.Closed, circuits.GetState("mcp", "a.example"));
+    }
+
+    /// <summary>Every other exception still counts toward a node breaker, permanent ones included: only a refusal is exempt.</summary>
+    [Fact]
+    public async Task BuildEndpointPipeline_OtherPermanentFailures_StillOpenTheBreaker()
+    {
+        var circuits = new CircuitStateProvider(TimeProvider.System);
+        var profile = FastProfile("permanent", maxConcurrent: 4);
+        var pipeline = new ResiliencePolicyProvider(new FailureClassifier(), circuits, TimeProvider.System)
+            .BuildEndpointPipeline(profile, "anthropic", "claude-fable-5");
+        var minimum = profile.CircuitBreaker.MinThroughput;
+
+        for (var i = 0; i < minimum; i++)
+        {
+            await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+                await pipeline.ExecuteAsync<string>(_ => throw new InvalidOperationException("unclassified"), CancellationToken.None));
+        }
+
+        Assert.Equal(Polly.CircuitBreaker.CircuitState.Open, circuits.GetState("anthropic", "claude-fable-5"));
+    }
+
+    [Fact]
+    public void NodeBreakerOutcome_CountsEveryExceptionButACancellationOrARefusal()
+    {
+        Assert.False(NodeBreakerOutcome.IsFailure(Outcome.FromResult<object>("ok")));
+        Assert.False(NodeBreakerOutcome.IsFailure(Outcome.FromException<object>(new OperationCanceledException())));
+        Assert.False(NodeBreakerOutcome.IsFailure(Outcome.FromException<object>(new NetworkPolicyRefusedException("refused"))));
+        Assert.False(NodeBreakerOutcome.IsFailure(Outcome.FromException<object>(new HttpRequestException("refused", new NetworkPolicyRefusedException("refused")))));
+        Assert.True(NodeBreakerOutcome.IsFailure(Outcome.FromException<object>(new HttpRequestException("connection refused"))));
+        Assert.True(NodeBreakerOutcome.IsFailure(Outcome.FromException<object>(new ContractViolationException("ScopeSection", ["bad"]))));
     }
 
     /// <summary>An <see cref="IResiliencePolicyProvider"/> that implements only the profile-keyed members.</summary>

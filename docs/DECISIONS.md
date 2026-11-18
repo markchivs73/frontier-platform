@@ -2397,6 +2397,8 @@ the refusal's assembly being loadable in the worker — which it is, since the H
 Nothing in this library throws a refusal from inside a DTF activity today; if one ever does, this is
 the line to re-check.
 
+*Partly superseded by ADR-PA48's 2026-11-17 amendment:* the outer retry handler no longer calls `IsCausedBy<T>` (it threw `AmbiguousMatchException` for `HttpRequestException`). It now matches the recorded `ErrorType` by exact full name, which loads nothing and so stays deterministic. A *derived* refusal crossing an activity boundary is therefore no longer recognised as permanent: an activity must throw `ContractViolationException` itself. `FailureClassifier`, which classifies live exceptions, still honours derived types. No derived refusal is thrown from an activity today; this library's refusals reach only the consumer's governance controllers.
+
 **A defect fixed in passing, because the change exposed it.** `MappingProposalQueryBuilder` filtered on
 `c.proposal.state` and ordered by `c.proposal.proposed_at_utc`. Proposal documents are **flat** —
 `state` and `proposed_at_utc` sit at the root, as `FindUndecidedProposalAsync` already assumed — so
@@ -3641,8 +3643,11 @@ the handler's token, so the breaker sees it as the caller's cancellation and nev
 consumers to set it to `Timeout.InfiniteTimeSpan`. The per-attempt timeout bounds the time to the response headers: once the
 handler returns, a streamed body (an MCP `text/event-stream` reply, an A2A stream) is read outside the
 pipeline, and the activity timeout bounds it. 504 and 408 are not in doc 10 §3 row 2, so they do not count
-toward the breaker. The classifier does not walk inner exceptions, so a client SDK that wraps
-`BrokenCircuitException` would classify `unclassified`; the consumer checks its MCP and A2A clients.
+toward the breaker (*superseded by the 2026-11-17 amendment below: both are now transient and count*). The
+classifier does not walk inner exceptions, so a client SDK that wraps
+`BrokenCircuitException` would classify `unclassified`; the consumer checks its MCP and A2A clients
+(*partly superseded by the 2026-11-17 amendment: it now looks one level inside an `HttpRequestException` for a
+network policy refusal, and only for that; a wrapped `BrokenCircuitException` is still `unclassified`*).
 
 **Evidence (P1, accessed 2026-11-16).**
 - Microsoft, *Build resilient HTTP apps* (learn.microsoft.com/dotnet/core/resilience/http-resilience, ms.date
@@ -3662,3 +3667,128 @@ toward the breaker. The classifier does not walk inner exceptions, so a client S
   HTTP request message", over a hand-kept collection the caller must look up; the handler here does that lookup itself, keyed on
   `Uri.Authority` (host, and port when not the default). Unlike Polly's key, the scheme is not part of it,
   so `http` and `https` to one host share a breaker; registered servers use one scheme each.
+
+### ADR-PA48 — amended 2026-11-17: a network policy refusal is permanent and never counts; 504 and 408 are transient
+
+Consumer tasks S13.300 and S13.301 (Mark, 2026-11-17). Both revise this ADR's known limits.
+
+**S13.300 — a policy refusal is permanent.** The consumer's network guard (its Registry's
+`NetworkAddressPolicy`, run from a `SocketsHttpHandler.ConnectCallback`) refuses private and otherwise
+disallowed addresses. `SocketsHttpHandler` wraps whatever the callback throws in an `HttpRequestException`
+with `HttpRequestError.ConnectionError` and no status code, which the classifier called transient
+`network`; a probe on 2026-11-17 showed calls 0–9 classified `network` and call 10 `circuit_open`, so ten
+refusals opened the breaker of a server the policy will never let anyone reach, and the activity retried
+each one. A refusal is the same on every attempt and is not the server's failure.
+
+1. *A platform type.* `Frontier.Platform.Abstractions.NetworkPolicyRefusedException` (sealed, the three
+   CA1032 constructors). Abstractions, not Resilience: the library-boundaries ownership map puts the
+   permanent-failure exceptions there beside `ContractViolationException`, `BudgetExceededException` and
+   `GuardrailsSuspendedException`; the consumer library that throws it (its Registry) references
+   Serialization and Contracts but not Resilience, and every package carries Abstractions; and the outer
+   retry loop matches it by type name exactly as it matches the other three. The platform cannot name a
+   consumer type, so the consumer's guard throws this one.
+2. *Classification.* `FailureClassifier` returns permanent `policy_refused` for the type thrown bare, and
+   for an `HttpRequestException` whose **direct** inner exception is one (`PolicyRefusal`), checked before
+   the status-code rows. The walk stops at that one level: it is the only wrapping the BCL applies
+   (verified 2026-11-17 against .NET 10.0.8: a `SocketsHttpHandler` whose callback throws yields an
+   `HttpRequestException` with a null status and the callback's exception as its inner exception, and no
+   further nesting; `SendAsync_TwentyPolicyRefusals_AreNotRetriedAndLeaveTheBreakerClosed` pins it with a
+   real `SocketsHttpHandler`). A deeper walk would let any exception that happened to carry a refusal in
+   its chain skip retry, so a consumer that wraps the refusal in its own exception gets `network`, as a
+   test pins. The reason code follows doc 10 §3's snake_case vocabulary beside `contract_violation` and
+   `guardrail`; the class is `Permanent`, the existing permanent shape.
+3. *No breaker counts it.* The transport breaker counts what the classifier calls retryable, so it follows
+   from (2). A node profile's breaker counted every exception but a cancellation (Polly's default), so it
+   now has an explicit predicate (`NodeBreakerOutcome`) that is Polly's default minus a refusal; every
+   other exception, permanent ones included, still counts. The node retry is classifier-gated, so it stops
+   retrying a refusal. The outer DTF loop refuses to re-run a chain carrying the type at any level, as it
+   does for the other three permanent types; it sees only type names, so it walks the whole chain where the
+   inner classifier looks one level deep. A refusal a consumer nests deeper is therefore retried inside the
+   activity but not re-run across activities; throw it from the callback directly and both agree.
+4. *The orchestrator classifies it.* `GraphOrchestratorSteps.ClassifyFailure`, which names the failed
+   checkpoint's `failure_classification`, gains a `policy_refused` row beside `contract_violation` and
+   `guardrail`, for the type thrown in the body and for a details chain carrying it.
+5. *Found along the way, fixed: `IsCausedBy<T>` in the orchestrator body.* DTF's
+   `TaskFailureDetails.IsCausedBy<T>` resolves the recorded type name across the worker's loaded assemblies and
+   throws `AmbiguousMatchException` for a type-forwarded BCL type, because `System.Net.Http.HttpRequestException`
+   resolves through `netstandard` and through `System.Net.Http`. Two body paths called it on chains that can carry
+   one, and both threw for every activity failure that was an `HttpRequestException`, long before this change:
+   - the outer retry handler, `ResiliencePolicyProvider.HandleOuterRetryFailure`. DurableTask.Core 3.11.2's
+     `RetryInterceptor.ComputeNextDelay` catches a throwing handler and returns `TimeSpan.Zero` (per the
+     2026-11-17 PR verification of that package), so the failure was **never re-run**;
+   - the failure path's classification, `GraphOrchestratorSteps.ClassifyFailureDetails` (reached from
+     `ThrowIfFailedAsync`), so the run **faulted with `AmbiguousMatchException` before its `failed` checkpoint and
+     its signed failed-audit consolidation (ADR-PA46) were written**. A unit test and a DTS-emulator replay test
+     each reproduced that against the old code, and pass now.
+
+   Both now match by **exact full type name, ordinal, loading nothing** (`TaskFailureCause` in Resilience,
+   `FailureTypeName` in Workflow.Orchestration). That is deterministic: the answer is a pure function of the
+   recorded history, where `IsCausedBy`'s depends on which assemblies the worker happens to have loaded, which
+   no orchestrator-body decision may. An empty recorded type name (one a proto-sourced failure can carry)
+   matches nothing; DTF guards it the same way. Three of the four targets are sealed (`BudgetExceededException`,
+   `GuardrailsSuspendedException`, `NetworkPolicyRefusedException`), so for them the exact name is the whole
+   rule. **`ContractViolationException` is not** (ADR-PA34 opened it for derivation): a derived type crossing an
+   activity boundary is no longer recognised by the outer loop or the orchestrator's classification, so the
+   outer loop would re-run it and the checkpoint would say `unclassified`. The platform's only derived types are
+   ModelRoleConfig's governance refusals (`MappingGovernanceRefusalException` and its subclasses), and the
+   consumer reaches those services only from its API controllers (`ModelRolesController`,
+   `RoleDefinitionsController`), never from an activity, so nothing changes today. Recognising a derived type
+   would need its type loaded, which is exactly the dependency removed; an activity must throw
+   `ContractViolationException` itself. The live-exception classifier, `FailureClassifier`, still honours
+   derived types. A test pins DTF's own throw, so a fixed DTF shows up.
+
+   Two new behaviours follow, both orchestrator decisions:
+   - **An `HttpRequestException` activity failure is now re-run** up to the profile's `outerRetry.maxAttempts`
+     (it was never re-run). That is what doc 10 §3 states as built (frontier-workflow,
+     `docs/10-resilience-library.md`, the S13.247 correction): the outer loop refuses only the named permanent
+     types, and "every other failure, an unmapped one included, is re-run up to the profile's
+     `outerRetry.maxAttempts`". Not re-running it was the bug, not a design; Mark to confirm.
+   - **Such a run now ends on the failure path**, with its `failed` checkpoint and failed audit record, instead of
+     faulting without them.
+
+   *Skew (ADR-E15 style), accepted and recorded.* A run in flight when a worker upgrades, whose history already
+   holds an `HttpRequestException` `TaskFailed`, replays differently: the retry handler now asks for a retry timer
+   its history lacks, and the failure path now schedules the checkpoint and audit activities where the old run
+   faulted. Either can surface as a non-determinism failure on replay. No deployed environment exists (the
+   consumer is pre-production), so the exposure is local development runs only; drain or terminate those
+   before upgrading. Nothing else is version-gated.
+
+   **Not fixed here, latent the same way:** the consumer's `OrchestrationFactory.ClassifyFailure`
+   (frontier-workflow `src/Frontier.Reason.Workflow.Integration.Host/OrchestrationFactory.cs`, client side)
+   calls `IsCausedBy<T>` on a faulted orchestration's inner failure, and an `HttpRequestException` there throws.
+
+**S13.301 — 504 and 408 are transient.** `FailureClassifier.IsTransientHttpStatus` adds 504 (Gateway
+Timeout) and 408 (Request Timeout) to doc 10 §3 row 2's 429, 500, 502, 503 and 529. One list feeds both
+uses, so a thrown 504/408 classifies transient `provider_unavailable` (it was permanent `unclassified`) and
+the activity retries it, and a returned one counts toward the transport breaker (it did not). Both mean
+"the server, or one in front of it, timed out": the same request may succeed next time. 501 and 505 stay
+out: they say the request will never succeed there. Doc 10 §3 row 2 (frontier-workflow) needs the two
+statuses added; this amendment is the platform's record until it is.
+
+**Evidence (P1, accessed 2026-11-17).**
+- `Microsoft.Extensions.Http.Resilience` 10.7.0 (the package in the local NuGet cache), exercised directly:
+  `HttpClientResiliencePredicates.IsTransient` returns true for 408, 429, 500, 501, 502, 503, 504, 505 and
+  529, false for 400, 404 and 499, and true for an `HttpRequestException` with a null status, whatever its
+  inner exception. Its XML doc for `IsTransientHttpFailure` says it "uses approach proposed by Polly" and
+  links `Polly.Extensions.Http`'s `HttpPolicyExtensions.cs` (`HandleTransientHttpError`: 5xx and 408). So
+  Polly's HTTP transient set includes 408 and 504; we adopt those two and not the whole 5xx range, and we
+  do not adopt its "every `HttpRequestException`" rule, which is what would call a refusal transient.
+- The `SocketsHttpHandler` wrapping above, observed with the same probe on .NET 10.0.8.
+
+**What it does not change.** No profile, pipeline order or wire shape moves; `FailureClassification` and
+`ExecutionSnapshot` are unchanged (`policy_refused` is a new value of an existing string field); the only new
+public member is the exception type. **Behaviour changes**, all listed above: a refusal is permanent and never
+counts toward a breaker; 504/408 are transient and count; an `HttpRequestException` activity failure is
+re-run by the outer loop and its run ends failed with a checkpoint and an audit record rather than faulting;
+a type derived from `ContractViolationException` is no longer recognised across an activity boundary. Additive
+surface (no `!`); release **minor, v0.59.0 proposed**.
+
+**What the consumer does.** After bumping: its connect-time guard throws `NetworkPolicyRefusedException`
+(not `CardFetchException`) from the `ConnectCallback`, with a message naming the host and the rule; the
+registration-time card fetch (`HttpServerCardFetcher`, whose filter today is
+`ex.InnerException is CardFetchException`) matches an inner `NetworkPolicyRefusedException` instead and
+still maps it to its own `CardFetchException`. Its "resolved to no addresses" case is the consumer's to
+place: a DNS answer is not a policy decision, and left as it is it stays transient `network`. It adds tests that a refused runtime MCP/A2A call classifies `policy_refused`, that twenty leave the
+server's breaker closed and are not re-run by the activity, and that a returned 504/408 is retried; it moves
+`OrchestrationFactory.ClassifyFailure` to the same exact-name match and gives it a `policy_refused` row; and it
+amends doc 10 §3 (the two statuses in row 2, a `policy_refused` row, and the outer loop's fourth permanent type).
