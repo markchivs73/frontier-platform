@@ -129,6 +129,10 @@ Frontier.Platform.Abstractions.IContractSnapshotCatalog.ListAsync(System.Threadi
 Frontier.Platform.Abstractions.IVersionedContract
 Frontier.Platform.Abstractions.IVersionedContract.SchemaVersion.get -> string!
 Frontier.Platform.Abstractions.IVersionedContract.Validate() -> void
+Frontier.Platform.Abstractions.NetworkPolicyRefusedException
+Frontier.Platform.Abstractions.NetworkPolicyRefusedException.NetworkPolicyRefusedException() -> void
+Frontier.Platform.Abstractions.NetworkPolicyRefusedException.NetworkPolicyRefusedException(string! message) -> void
+Frontier.Platform.Abstractions.NetworkPolicyRefusedException.NetworkPolicyRefusedException(string! message, System.Exception! innerException) -> void
 Frontier.Platform.Abstractions.RegisteredContract
 Frontier.Platform.Abstractions.RegisteredContract.<Clone>$() -> Frontier.Platform.Abstractions.RegisteredContract!
 Frontier.Platform.Abstractions.RegisteredContract.Deconstruct(out Frontier.Platform.Abstractions.ContractSnapshot! Snapshot, out bool IsRetired) -> void
