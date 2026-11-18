@@ -11,7 +11,7 @@ namespace Frontier.Platform.Resilience;
 /// <see cref="IFailureClassifier"/> implementing doc 10 §3's mapping table. Rows for
 /// exception types that don't exist yet (<c>RateDeferredException</c> — Guardrails' rate
 /// limiter, deferred to S6.5) are not implemented; they will be added when those types land.
-/// <see cref="GuardrailsSuspendedException"/>, the kill switch's denial, landed with S13.187. Provider 429-with-<c>Retry-After</c> (Deferred/<c>provider_rate_limited</c>)
+/// <see cref="GuardrailsSuspendedException"/>, the kill switch's denial, landed with S13.187; <see cref="NetworkPolicyRefusedException"/>, a connect-time policy refusal, with consumer S13.300 (see <see cref="PolicyRefusal"/>). Provider 429-with-<c>Retry-After</c> (Deferred/<c>provider_rate_limited</c>)
 /// is not distinguishable from a plain <see cref="HttpRequestException"/>, which
 /// carries no response headers — that row is wired once S4.2's provider client
 /// surfaces a richer exception.
@@ -28,6 +28,7 @@ internal sealed class FailureClassifier : IFailureClassifier
             ContractViolationException => Permanent("contract_violation"),
             BudgetExceededException => Permanent("guardrail"),
             GuardrailsSuspendedException => Permanent("guardrail"),
+            _ when PolicyRefusal.IsRefusal(exception) => Permanent(PolicyRefusal.ReasonCode),
             HttpRequestException http => ClassifyHttp(http),
             CosmosException cosmos => ClassifyCosmos(cosmos),
             BrokenCircuitException => Transient("circuit_open"),
@@ -51,13 +52,14 @@ internal sealed class FailureClassifier : IFailureClassifier
         };
 
     /// <summary>
-    /// The HTTP statuses doc 10 §3 row 2 calls transient: 429, 500, 502, 503 and 529. <see cref="ClassifyHttp"/> classifies a
-    /// thrown status with it, and the HTTP transport pipeline (ADR-PA48) counts a returned response toward its breaker with
-    /// it, so a thrown 503 and a returned one are the same failure.
+    /// The HTTP statuses called transient: doc 10 §3 row 2's 429, 500, 502, 503 and 529, and 504 and 408 (ADR-PA48, amended
+    /// 2026-11-17). <see cref="ClassifyHttp"/> classifies a thrown status with it, and the HTTP transport pipeline (ADR-PA48)
+    /// counts a returned response toward its breaker with it, so a thrown 503 and a returned one are the same failure.
     /// </summary>
     internal static bool IsTransientHttpStatus(HttpStatusCode status) =>
         status is HttpStatusCode.TooManyRequests or HttpStatusCode.InternalServerError or HttpStatusCode.BadGateway
-            or HttpStatusCode.ServiceUnavailable or (HttpStatusCode)529;
+            or HttpStatusCode.ServiceUnavailable or HttpStatusCode.GatewayTimeout or HttpStatusCode.RequestTimeout
+            or (HttpStatusCode)529;
 
     /// <summary>Cosmos SDK failures (doc 10 §3 rows 10-11): 429 carries the SDK-supplied <see cref="CosmosException.RetryAfter"/>.</summary>
     internal static FailureClassification ClassifyCosmos(CosmosException exception) =>

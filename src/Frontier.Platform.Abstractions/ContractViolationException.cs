@@ -8,10 +8,13 @@ namespace Frontier.Platform.Abstractions;
 /// <b>Open for derivation (ADR-PA34), deliberately.</b> A library whose refusals a caller must
 /// tell apart — to map 400 from 403 from 404 from 409 — derives a typed refusal from this type
 /// rather than declaring a parallel hierarchy. Deriving keeps the permanent classification intact
-/// everywhere it is already made: <c>FailureClassifier</c>'s type pattern and DTF's
-/// <c>TaskFailureDetails.IsCausedBy&lt;T&gt;</c> both honour base types, and every existing
-/// <c>catch (ContractViolationException)</c> keeps catching. A refusal that did <i>not</i> derive
-/// from this type would silently become retryable, which is the failure this note exists to prevent.
+/// where a live exception is classified: <c>FailureClassifier</c>'s type pattern honours base types,
+/// and every existing <c>catch (ContractViolationException)</c> keeps catching. A refusal that did
+/// <i>not</i> derive from this type would silently become retryable, which is the failure this note
+/// exists to prevent. Across an activity boundary only the type <i>name</i> survives, and the outer
+/// DTF retry loop and the orchestrator's classification match it exactly so that their answers replay
+/// identically (ADR-PA48, amended 2026-11-17): there, a derived type is not recognised, so throw this
+/// type itself from an activity.
 /// </para>
 /// </summary>
 public class ContractViolationException : Exception

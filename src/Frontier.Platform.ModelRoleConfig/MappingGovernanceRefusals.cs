@@ -8,7 +8,9 @@ namespace Frontier.Platform.ModelRoleConfig;
 /// take; it is permanent and never retried (invariant 7), which is why it derives from
 /// <see cref="ContractViolationException"/> rather than standing beside it — every existing
 /// <c>catch (ContractViolationException)</c> keeps catching, and the permanent classification in
-/// <c>FailureClassifier</c> and DTF's <c>IsCausedBy&lt;T&gt;</c> (both honour base types) still holds.
+/// <c>FailureClassifier</c> (which honours base types) still holds. The outer DTF retry loop and the
+/// orchestrator's failure classification match exact type names (ADR-PA48, amended 2026-11-17), so a
+/// refusal thrown from an activity would be re-run there; refusals are raised on API paths only.
 /// <para>
 /// Before ADR-PA34 one exception type covered unknown proposal, illegal transition, distinct
 /// approver, proposer-only, already-pending and invalid input, so a caller could only tell them

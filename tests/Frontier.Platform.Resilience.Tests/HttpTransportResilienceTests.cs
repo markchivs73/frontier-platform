@@ -1,4 +1,5 @@
 using System.Net;
+using Frontier.Platform.Abstractions;
 using Polly;
 using Polly.CircuitBreaker;
 using Polly.RateLimiting;
@@ -109,6 +110,54 @@ public sealed class HttpTransportResilienceTests
         Assert.Equal(10, stub.Sends);
         Assert.Equal(CircuitState.Open, circuits.GetState(Client, "a.example"));
         AssertTransient(refused, "circuit_open");
+    }
+
+    /// <summary>Consumer S13.301: a returned 504 or 408 is transient, so ten of them open the breaker like ten 503s.</summary>
+    [Theory]
+    [InlineData(HttpStatusCode.GatewayTimeout)]
+    [InlineData(HttpStatusCode.RequestTimeout)]
+    public async Task SendAsync_TenReturned504sOr408s_OpenTheBreaker(HttpStatusCode status)
+    {
+        var stub = StubHttpHandler.Responding(status);
+        using var client = ClientOver(stub);
+
+        await SendAsync(client, "https://a.example/mcp", times: 10);
+
+        await Assert.ThrowsAsync<BrokenCircuitException>(() => client.GetAsync(new Uri("https://a.example/mcp")));
+        Assert.Equal(10, stub.Sends);
+    }
+
+    /// <summary>
+    /// Consumer S13.300: a real <see cref="SocketsHttpHandler"/> whose <c>ConnectCallback</c> refuses by policy. Each refusal
+    /// reaches the caller after one connect attempt, permanent <c>policy_refused</c>, and twenty of them leave the server's
+    /// breaker closed — before this, ten opened it. No socket is opened: the callback refuses before connecting.
+    /// </summary>
+    [Fact]
+    public async Task SendAsync_TwentyPolicyRefusals_AreNotRetriedAndLeaveTheBreakerClosed()
+    {
+        var connects = 0;
+        using var sockets = new SocketsHttpHandler
+        {
+            ConnectCallback = (_, _) => throw new NetworkPolicyRefusedException($"refused by policy ({Interlocked.Increment(ref connects)})"),
+        };
+        using var client = ClientOver(sockets);
+
+        for (var i = 0; i < 20; i++)
+        {
+            var refused = await Assert.ThrowsAsync<HttpRequestException>(() => client.GetAsync(new Uri("http://refused.example/mcp")));
+            AssertClassified(refused, FailureClass.Permanent, "policy_refused");
+        }
+
+        Assert.Equal(20, connects);
+        Assert.Equal(CircuitState.Closed, circuits.GetState(Client, "refused.example"));
+    }
+
+    [Fact]
+    public void IsFailure_PolicyRefusal_DoesNotCount()
+    {
+        var wrapped = new HttpRequestException("refused", new NetworkPolicyRefusedException("refused"));
+
+        Assert.False(HttpTransportOutcome.IsFailure(Outcome.FromException<HttpResponseMessage>(wrapped), classifier, CancellationToken.None));
     }
 
     /// <summary>A permanent status is the caller's to handle and does not count toward the breaker.</summary>
@@ -357,10 +406,13 @@ public sealed class HttpTransportResilienceTests
     [InlineData(HttpStatusCode.BadGateway, true)]
     [InlineData(HttpStatusCode.ServiceUnavailable, true)]
     [InlineData((HttpStatusCode)529, true)]
+    [InlineData(HttpStatusCode.GatewayTimeout, true)]
+    [InlineData(HttpStatusCode.RequestTimeout, true)]
     [InlineData(HttpStatusCode.OK, false)]
     [InlineData(HttpStatusCode.BadRequest, false)]
-    [InlineData(HttpStatusCode.GatewayTimeout, false)]
-    public void IsTransientHttpStatus_MatchesDoc10Row2(HttpStatusCode status, bool expected)
+    [InlineData(HttpStatusCode.NotImplemented, false)]
+    [InlineData(HttpStatusCode.HttpVersionNotSupported, false)]
+    public void IsTransientHttpStatus_MatchesDoc10Row2And504And408(HttpStatusCode status, bool expected)
     {
         Assert.Equal(expected, FailureClassifier.IsTransientHttpStatus(status));
     }
@@ -421,7 +473,7 @@ public sealed class HttpTransportResilienceTests
         Assert.Equal(CircuitState.Closed, circuits.GetState(Client, "a.example"));
     }
 
-    private HttpClient ClientOver(StubHttpHandler stub)
+    private HttpClient ClientOver(HttpMessageHandler stub)
     {
         var handler = factory.CreateHandler("mcp-transport", Client);
         handler.InnerHandler = stub;
@@ -442,10 +494,12 @@ public sealed class HttpTransportResilienceTests
         }
     }
 
-    private void AssertTransient(Exception exception, string reasonCode)
+    private void AssertTransient(Exception exception, string reasonCode) => AssertClassified(exception, FailureClass.Transient, reasonCode);
+
+    private void AssertClassified(Exception exception, FailureClass expected, string reasonCode)
     {
         var classification = classifier.Classify(exception);
-        Assert.Equal(FailureClass.Transient, classification.Class);
+        Assert.Equal(expected, classification.Class);
         Assert.Equal(reasonCode, classification.ReasonCode);
     }
 

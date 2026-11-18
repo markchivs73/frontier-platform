@@ -7,13 +7,15 @@ namespace Frontier.Platform.Workflow.Orchestration.Tests.Replay;
 /// no cost, no network. Each node answers after its scripted <c>delays</c> entry (zero when absent)
 /// with the same stable payload <see cref="FakeAgentTaskActivityPipeline"/> produces, and every call
 /// is recorded with the worker it ran on, so a test can tell a replayed step from a re-run one. A node
-/// in <c>failing</c> fails its reply's validation instead, a permanent failure (S13.240).
+/// in <c>failing</c> fails its reply's validation instead, a permanent failure (S13.240), or throws
+/// <c>failure</c> when one is given (ADR-PA48, amended 2026-11-17).
 /// </summary>
 internal sealed class ScriptedAgentTaskActivityPipeline(
     string worker,
     ReplayRecorder recorder,
     IReadOnlyDictionary<string, TimeSpan> delays,
-    IReadOnlySet<string>? failing = null) : IAgentTaskActivityPipeline
+    IReadOnlySet<string>? failing = null,
+    Func<Exception>? failure = null) : IAgentTaskActivityPipeline
 {
     private readonly FakeAgentTaskActivityPipeline _answers = new();
 
@@ -27,7 +29,7 @@ internal sealed class ScriptedAgentTaskActivityPipeline(
         await Task.Delay(delays.GetValueOrDefault(input.NodeId, TimeSpan.Zero), ct);
         if (failing?.Contains(input.NodeId) == true)
         {
-            throw new ContractViolationException(nameof(AgentTaskActivityInput), ["scripted reply failed validation."]);
+            throw failure?.Invoke() ?? new ContractViolationException(nameof(AgentTaskActivityInput), ["scripted reply failed validation."]);
         }
 
         var result = await _answers.RunAsync(input, ct);

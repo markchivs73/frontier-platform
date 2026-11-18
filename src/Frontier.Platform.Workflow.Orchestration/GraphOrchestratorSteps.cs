@@ -433,16 +433,22 @@ internal static class GraphOrchestratorSteps
     {
         ContractViolationException => "contract_violation",
         BudgetExceededException or GuardrailsSuspendedException => "guardrail",
+        NetworkPolicyRefusedException => "policy_refused",
         TaskFailedException failed => ClassifyFailureDetails(failed.FailureDetails),
         _ => "unclassified",
     };
 
-    /// <summary>Walks a <see cref="TaskFailureDetails"/> chain for the doc 10 §3 reason code (each level checks only itself, so recurse).</summary>
+    /// <summary>
+    /// Walks a <see cref="TaskFailureDetails"/> chain for the doc 10 §3 reason code (each level checks only itself, so
+    /// recurse). Types match by exact name (<see cref="FailureTypeName"/>), so the walk is replay-safe and answers for an
+    /// <c>HttpRequestException</c>; a network policy refusal is found as that exception's inner failure (ADR-PA48, amended 2026-11-17).
+    /// </summary>
     internal static string ClassifyFailureDetails(TaskFailureDetails? details) => details switch
     {
         null => "unclassified",
-        { } d when d.IsCausedBy<ContractViolationException>() => "contract_violation",
-        { } d when d.IsCausedBy<BudgetExceededException>() || d.IsCausedBy<GuardrailsSuspendedException>() => "guardrail",
+        { } d when FailureTypeName.Is<ContractViolationException>(d) => "contract_violation",
+        { } d when FailureTypeName.Is<BudgetExceededException>(d) || FailureTypeName.Is<GuardrailsSuspendedException>(d) => "guardrail",
+        { } d when FailureTypeName.Is<NetworkPolicyRefusedException>(d) => "policy_refused",
         _ => ClassifyFailureDetails(details.InnerFailure),
     };
 

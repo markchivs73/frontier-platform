@@ -166,6 +166,36 @@ public sealed class GraphOrchestratorReplayTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// ADR-PA48, amended 2026-11-17 (consumer S13.300), under real replay: an agent node fails with an
+    /// <see cref="HttpRequestException"/>, the shape <c>SocketsHttpHandler</c> gives a connect-time refusal. With a
+    /// <see cref="NetworkPolicyRefusedException"/> inside, the outer retry handler refuses to re-run it, so the node
+    /// starts once; bare, it is re-run to <c>llm-default</c>'s two outer attempts. Either way the handler and the
+    /// failure classification answer instead of throwing, so the run ends failed with a classified checkpoint and one
+    /// failed audit consolidation.
+    /// </summary>
+    [Theory]
+    [InlineData(true, "policy_refused", 1)]
+    [InlineData(false, "unclassified", 2)]
+    public async Task NodeFailsWithAnHttpRequestException_RunEndsFailedClassifiedAndAudited(bool refusedByPolicy, string classification, int bookingStarts)
+    {
+        var recorder = new ReplayRecorder();
+        var instanceId = NewInstanceId();
+
+        await using var worker = await ReplayWorkerHost.StartAsync(
+            "worker-a", recorder, failingNodes: new HashSet<string>(["b-booking"], StringComparer.Ordinal),
+            nodeFailure: () => new HttpRequestException("connect failed (a.example:443)", refusedByPolicy ? new NetworkPolicyRefusedException("private address") : null));
+        await worker.Client.ScheduleNewOrchestrationInstanceAsync(WorkflowActivityNames.GraphOrchestrator, Input(OrchestrationFixtures.FanOutJoin()), new StartOrchestrationOptions { InstanceId = instanceId });
+        var metadata = await FinishAsync(worker.Client, instanceId);
+
+        Assert.Equal(OrchestrationRuntimeStatus.Failed, metadata.RuntimeStatus);
+        Assert.Equal(typeof(HttpRequestException).FullName, metadata.FailureDetails?.InnerFailure?.ErrorType);
+        var final = recorder.Snapshots.MaxBy(s => s.Snapshot.Sequence)!.Snapshot;
+        Assert.Equal((ExecutionStatus.Failed, "b-booking", classification), (final.Status, final.CurrentNodeId, final.FailureClassification));
+        Assert.Equal(ExecutionStatus.Failed, Assert.Single(recorder.Audits).Input.FinalStatus);
+        Assert.Equal(bookingStarts, recorder.StartedNodes.Count(node => node == "b-booking"));
+    }
+
+    /// <summary>
     /// S13.247 under the real SDK: each section's first artifact write throws a passing fault. The
     /// storage profile's outer retry re-runs the write, so the run completes and every section was
     /// written exactly twice.
