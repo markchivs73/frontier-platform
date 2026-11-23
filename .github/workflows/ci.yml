@@ -117,14 +117,26 @@ jobs:
 
       - run: dotnet build FrontierPlatform.slnx -c Release -warnaserror
 
-      # vnext-preview emulator — plain HTTP, dramatically lighter than the :latest image,
+      # vnext emulator — plain HTTP, dramatically lighter than the :latest image,
       # which crashed (ExitCode 1) on 2-CPU runners. Started via `docker run` rather than
       # `services:` so we can poll readiness with a real data-plane request (an /_explorer
       # probe passes while the data plane is still dead).
-      - name: Start Cosmos DB emulator (vnext-preview)
+      #
+      # Pinned, not the floating vnext-preview tag: the tag moves under CI. EN20260907 is the
+      # build frontier-workflow's CI pins (its S13.64), so both repos test against one emulator.
+      # Bump deliberately, with the integration tests.
+      - name: Start Cosmos DB emulator (pinned vnext-EN20260907)
         run: |
+          # The image's entrypoint runs `tdnf distro-sync -y` in the background on every start,
+          # which since Azure Linux 3.0.20261116 upgrades PostgreSQL 16.15 → 16.16 under the
+          # running server. The emulator then fails requests with 500s (seen here as "cannot
+          # drop portal … while it is being set up") and 400s, from the v0.59.0 release run
+          # (2026-11-18) on. frontier-workflow hit the same thing (E58P01) and fixed it in its
+          # #610. Pointing the package repository at localhost makes the sync a no-op, so the
+          # emulator runs exactly the pinned image's packages.
           docker run -d --name cosmos-emulator -p 8081:8081 \
-            mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview \
+            --add-host packages.microsoft.com:127.0.0.1 \
+            mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-EN20260907 \
             --protocol http
 
       - name: Wait for Cosmos DB emulator (data-plane gate)
