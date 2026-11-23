@@ -36,7 +36,7 @@
 
   <!-- Azure Blob Storage SDK (doc 02 §8): audit archival exports -->
   <ItemGroup>
-    <PackageVersion Include="Azure.Storage.Blobs" Version="12.30.1" />
+    <PackageVersion Include="Azure.Storage.Blobs" Version="12.30.2" />
   </ItemGroup>
 
   <!-- Key Vault keys + the one credential (ADR-SEC3, ADR-PA33): ES256 audit-record signing
@@ -59,8 +59,8 @@
 
   <!-- Microsoft.Extensions.AI + provider SDKs for context-assembly caching (TD-7) -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.Extensions.AI" Version="10.11.0" />
-    <PackageVersion Include="Microsoft.Extensions.AI.Abstractions" Version="10.11.0" />
+    <PackageVersion Include="Microsoft.Extensions.AI" Version="10.11.1" />
+    <PackageVersion Include="Microsoft.Extensions.AI.Abstractions" Version="10.11.1" />
     <PackageVersion Include="Anthropic" Version="13.12.0" />
     <PackageVersion Include="OpenAI" Version="2.15.0" />
   </ItemGroup>
@@ -99,7 +99,7 @@
        rules (TD-17). Both are pinned exactly and sit behind internal ports in
        Frontier.Platform.Contracts; no type from either appears on a public surface. -->
   <ItemGroup>
-    <PackageVersion Include="Corvus.Text.Json.Validator" Version="5.8.11" />
+    <PackageVersion Include="Corvus.Text.Json.Validator" Version="5.8.12" />
     <PackageVersion Include="Celly" Version="1.2.0" />
   </ItemGroup>
 
