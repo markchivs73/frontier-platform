@@ -51,6 +51,18 @@ public sealed class ContractRulesTests
     }
 
     [Fact]
+    public async Task SchemaRefResolves_UnregisteredRefOnADataEdge_IsReportedAsNotRegistered()
+    {
+        var definition = Definition(
+            [Agent("a", "ScopeSection", "ScopeSection"), Agent("b", "ScopeSection", "ScopeSection")],
+            [new WorkflowEdge { FromNodeId = "a", ToNodeId = "b", Kind = EdgeKind.Data, ContractType = "acme/brief/1.0" }]);
+
+        var finding = Assert.Single(await new DataSchemaRefResolvesRule(Mock.Of<IContractSnapshotCatalog>()).EvaluateAsync(Context(definition), CancellationToken.None));
+
+        Assert.Equal("contract 'acme/brief/1.0' is not registered. Register it, or name a contract that is.", finding.Message);
+    }
+
+    [Fact]
     public async Task NoEdgeFromGate_RequiresTheGateDecisionContract()
     {
         var definition = Definition(

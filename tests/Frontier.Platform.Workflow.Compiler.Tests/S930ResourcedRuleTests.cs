@@ -51,6 +51,17 @@ public sealed class S930ResourcedRuleTests
         }
 
         [Fact]
+        public async Task DataEdgeSchemaRef_IsLeftToSchemaRefResolves_NoFinding()
+        {
+            var rule = new DataContractTypesResolveRule(new FakeContracts("BriefArtifact", "SummaryArtifact"));
+            var definition = S930Fixtures.Build(
+                [S930Fixtures.Agent("a"), S930Fixtures.Agent("b")],
+                [S930Fixtures.Data("a", "b", "acme/brief/1.0")]);
+
+            Assert.Empty(await rule.EvaluateAsync(new DefinitionValidationContext(definition), CancellationToken.None));
+        }
+
+        [Fact]
         public async Task ControlEdge_CarriesNoContract_IsNotChecked()
         {
             var rule = new DataContractTypesResolveRule(new FakeContracts("BriefArtifact", "SummaryArtifact"));
