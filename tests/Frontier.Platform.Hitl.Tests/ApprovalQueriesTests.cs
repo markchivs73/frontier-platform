@@ -45,7 +45,7 @@ public sealed class ApprovalQueriesTests
     public void DecidedBy_FiltersOnDecidedStatusDeciderAndWindow_NewestDecisionFirstInPages()
     {
         var query = ApprovalQueries.DecidedBy("oid-1", new DateTime(2026, 11, 24, 9, 30, 0, DateTimeKind.Utc));
-        var options = ApprovalQueries.DecidedByOptions();
+        var options = ApprovalQueries.ByStatusOptions();
 
         Assert.Equal(
             "SELECT * FROM c WHERE c.status = @decided AND c.decision.approver_id = @approverId"

@@ -3813,8 +3813,8 @@ every inbox load and every `ApprovalDecided` event.
    a stable order breaks ties itself. A blank approver, or a `sinceUtc` that is not UTC, is refused.
 2. *Cross-partition, and accepted.* One approver's decisions span engagements, so the read cannot be
    single-partition. It is accepted because three things bound it: the decider and the window cut the read
-   down through the index, it runs only on C1's loads and decisions (the same paths as the scan it
-   replaces), and the alternative is worse for now. That alternative, a per-approver projection, would be
+   down through the index, it is intended for the consumer's C1 "Decided by you" read (its only planned
+   caller, on the same paths as the scan it replaces), and the alternative is worse for now. That alternative, a per-approver projection, would be
    a new container whose partition key breaks ADR-S1 (`/engagementId` on every hot container). It is
    deferred until C1 proves hot. The read needs only the default `/*` range index. The `approvals`
    composite index (`/status`, `/requested_at_utc`) neither serves nor blocks it.

@@ -35,14 +35,15 @@ internal static class ApprovalQueries
         new QueryDefinition("SELECT * FROM c WHERE c.status = @status ORDER BY c._ts DESC")
             .WithParameter("@status", status.Name);
 
-    /// <summary>Request options for <see cref="ByStatus"/>: paged at <see cref="StatusPageSize"/>.</summary>
+    /// <summary>Request options for <see cref="ByStatus"/> and <see cref="DecidedBy"/>: across engagements, paged at <see cref="StatusPageSize"/>.</summary>
     internal static QueryRequestOptions ByStatusOptions() => new() { MaxItemCount = StatusPageSize };
 
     /// <summary>
     /// The requests <paramref name="approverId"/> decided at or after <paramref name="sinceUtc"/> and still
     /// <c>decided</c>, newest decision first (S13.312's bounded read for C1's "Decided by you"). Cross-partition
     /// by nature, because one approver's decisions span engagements; it is accepted because the decider and the
-    /// window bound it through the index, it runs only on C1's loads and decisions, and the single-partition
+    /// window bound it through the index, it is intended for the consumer's C1 "Decided by you" read (its only
+    /// planned caller), and the single-partition
     /// alternative (a per-approver projection) is deferred (docs/DECISIONS.md ADR-PA49). Equal
     /// <c>decided_at_utc</c> values have no defined order across partitions: the query names no second sort key,
     /// so a caller that needs a stable order breaks ties itself.
@@ -68,9 +69,6 @@ internal static class ApprovalQueries
             .WithParameter("@approverId", approverId)
             .WithParameter("@since", WireTime(sinceUtc));
     }
-
-    /// <summary>Request options for <see cref="DecidedBy"/>: across engagements, paged at <see cref="StatusPageSize"/>.</summary>
-    internal static QueryRequestOptions DecidedByOptions() => new() { MaxItemCount = StatusPageSize };
 
     /// <summary><paramref name="value"/> exactly as the canonical profile writes it, without the JSON quotes.</summary>
     private static string WireTime(DateTime value) => JsonSerializer.Deserialize<string>(JsonSerializer.Serialize(value, CanonicalProfile.Options))!;
