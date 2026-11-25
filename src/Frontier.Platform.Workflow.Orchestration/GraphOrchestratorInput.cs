@@ -111,9 +111,9 @@ public sealed record GraphOrchestratorInput
     public ContractBudgets? ContractBudgets { get; init; }
 
     /// <summary>
-    /// The version of the governed contract-budgets record <see cref="ContractBudgets"/> came from (consumer S13.147),
-    /// set by the Host factory at start and moved with the budgets at each dispatcher generation boundary. Optional:
-    /// inputs recorded before it existed replay as null.
+    /// The version of the governed contract-budgets record <see cref="ContractBudgets"/> came from (consumer S13.147).
+    /// The platform moves it with the budgets at each dispatcher generation boundary; setting it at start is the
+    /// consumer's Host factory's job (S13.147's consumer half). Optional: inputs recorded before it existed replay as null.
     /// </summary>
     [JsonPropertyOrder(10)]
     [JsonPropertyName("contract_budgets_version")]
@@ -121,7 +121,8 @@ public sealed record GraphOrchestratorInput
 
     /// <summary>
     /// The version of the governed dispatcher-settings record <see cref="DispatcherRolloverThreshold"/> came from
-    /// (consumer S13.146), moved with the threshold at each generation boundary. Optional, as above.
+    /// (consumer S13.146). The platform moves it with the threshold at each generation boundary; setting it at start is
+    /// the consumer's. Optional, as above.
     /// </summary>
     [JsonPropertyOrder(11)]
     [JsonPropertyName("dispatcher_settings_version")]

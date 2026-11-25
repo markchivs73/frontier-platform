@@ -62,6 +62,36 @@ public sealed class DispatcherGenerationSettingsTests
         Assert.Equal((3, 2), (next.ContractBudgetsVersion, next.DispatcherSettingsVersion));
     }
 
+    /// <summary>Through the orchestrator itself: what the boundary activity re-read is what <c>ContinueAsNew</c> carries.</summary>
+    [Fact]
+    public void Rollover_TheReReadSettingsAndVersions_ReachTheNextGenerationsInput()
+    {
+        var harness = new DispatcherSpawnTests.DispatcherHarness();
+        harness.Context.ActivityHandlers[WorkflowActivityNames.ResolveDispatcherVersionActivity] = _ => new ResolveDispatcherVersionResult
+        {
+            ContractBudgets = New, ContractBudgetsVersion = 4, DispatcherRolloverThreshold = 250, DispatcherSettingsVersion = 5,
+        };
+        harness.Start();
+
+        harness.RaiseWorkItems(DispatcherOrchestrator.DefaultContinueAsNewThreshold);
+
+        var next = Assert.IsType<GraphOrchestratorInput>(Assert.Single(harness.Context.ContinueAsNewCalls).Input);
+        Assert.Equal((New, 4, 250, 5), (next.ContractBudgets, next.ContractBudgetsVersion, next.DispatcherRolloverThreshold, next.DispatcherSettingsVersion));
+    }
+
+    /// <summary>The two S13.146/S13.147 input slots on the wire: omitted when null, and orders 10 and 11 after <c>contract_budgets</c>.</summary>
+    [Fact]
+    public void InputVersionSlots_AreOmittedWhenNull_AndFollowContractBudgetsInOrder()
+    {
+        var without = System.Text.Encoding.UTF8.GetString(CanonicalProfile.SerializeCanonical(DispatcherFixtures.Input() with { ContractBudgets = Old }));
+        var with = System.Text.Encoding.UTF8.GetString(CanonicalProfile.SerializeCanonical(DispatcherFixtures.Input() with { ContractBudgets = Old, ContractBudgetsVersion = 3, DispatcherSettingsVersion = 2 }));
+
+        Assert.DoesNotContain("contract_budgets_version", without, StringComparison.Ordinal);
+        Assert.DoesNotContain("dispatcher_settings_version", without, StringComparison.Ordinal);
+        Assert.EndsWith(",\"contract_budgets_version\":3,\"dispatcher_settings_version\":2}", with, StringComparison.Ordinal);
+        Assert.Equal(without[..^1], with[..with.LastIndexOf(",\"contract_budgets_version\"", StringComparison.Ordinal)]);
+    }
+
     [Fact]
     public void BuildChildInput_CarriesTheBudgetsAndTheirVersion_NotTheSettingsVersion()
     {
