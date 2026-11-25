@@ -166,7 +166,8 @@ the chain `unverified`, never valid; a recomputed hash that does not match, or a
 
 **The deployment tenant is inside the signed record (ADR-PA54).** Set `Audit:Tenant` and every execution and
 governance record is signed with a `tenant`, so its origin survives an export and editing it breaks the chain. Unset
-writes no field, exactly as before. A record claiming a different tenant is refused. Roll out with it unset, and set
+writes no field, exactly as before. A record claiming a tenant the deployment does not have (a different one, or any
+one when the option is unset) is refused. Roll out with it unset, and set
 it only once no older binary reads the chain: an older binary hashes without the field and reads a stamped record as
 broken.
 

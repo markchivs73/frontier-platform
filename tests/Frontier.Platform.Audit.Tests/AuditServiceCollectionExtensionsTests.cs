@@ -99,6 +99,25 @@ public sealed class AuditServiceCollectionExtensionsTests
         using var provider = services.BuildServiceProvider();
 
         Assert.Equal("contoso", provider.GetRequiredService<IOptions<AuditTenantOptions>>().Value.Tenant);
+        Assert.Equal("contoso", Assert.IsType<AuditSigner>(provider.GetRequiredService<IAuditSigner>()).DeploymentTenant);
+        Assert.Equal("contoso", Assert.IsType<GovernanceAuditService>(provider.GetRequiredService<IGovernanceAuditService>()).DeploymentTenant);
+    }
+
+    /// <summary>S13.293: a tenant longer than 128 characters is refused when the options are validated, so the process does not start.</summary>
+    [Fact]
+    public void AddFrontierAudit_OverLongTenant_FailsOptionsValidation()
+    {
+        var services = new ServiceCollection();
+        services.AddFrontierAudit(BuildConfiguration(new Dictionary<string, string?>
+        {
+            ["Cosmos:Endpoint"] = "https://localhost:8081",
+            ["Cosmos:Database"] = "frontier-workflow",
+            ["Cosmos:Key"] = EmulatorKey,
+            ["Audit:Tenant"] = new string('t', 129),
+        }));
+        using var provider = services.BuildServiceProvider();
+
+        Assert.Throws<OptionsValidationException>(() => provider.GetRequiredService<IOptions<AuditTenantOptions>>().Value);
     }
 
     [Fact]

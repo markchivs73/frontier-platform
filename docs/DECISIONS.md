@@ -3857,9 +3857,12 @@ tamper-evident. Execution stays one tenant per deployment (ADR-SEC2).
    body. Workers sign at execution close and hold no token, so the platform stamps a deployment constant; the consumer
    binds it to the same value its claims transformation mints as `frontier:tenant`, which ADR-SEC2 makes a deployment
    constant too.
-3. *The rules.* Unset, empty or whitespace stamps nothing, and the bytes are exactly as before. Set: a record carrying
-   no tenant is stamped; one carrying the same tenant is accepted; one carrying a different tenant is a permanent
-   `ContractViolationException`, thrown before anything is hashed, signed or stored.
+3. *The rules.* Null, empty and whitespace mean "no tenant" on both the option and the record. With the option unset,
+   nothing is stamped and the bytes are exactly as before; a record that itself carries a tenant is refused, because
+   the deployment cannot vouch for it. With the option set, a record carrying no tenant is stamped and one carrying the
+   same tenant is accepted. A different tenant, or one longer than 128 characters on either side, is a permanent
+   `ContractViolationException`, thrown before the signing service is called or anything is stored. An over-long
+   option also fails options validation at start.
 4. *Old records.* A null tenant is omitted before hashing (and the governance chain is JCS-sorted), so every record
    signed before the field existed recomputes its stored hash and verifies. `AuditChainGuardRegressionTests` pins this
    for the execution golden unchanged, and `TheStoredGoldenRecord_StillHashesToItsStoredRecordHash` for the governance

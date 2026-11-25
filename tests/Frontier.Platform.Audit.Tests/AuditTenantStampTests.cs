@@ -15,14 +15,55 @@ public sealed class AuditTenantStampTests
     [InlineData(null, "  ", null)]
     [InlineData(null, "contoso", "contoso")]
     [InlineData("contoso", "contoso", "contoso")]
-    [InlineData("contoso", null, "contoso")]
-    [InlineData("contoso", " ", "contoso")]
+    [InlineData("", "contoso", "contoso")]
+    [InlineData(" ", null, null)]
     public void Resolve_StampsTheDeploymentTenant_AndKeepsAnEqualOne(string? recordTenant, string? deploymentTenant, string? expected) =>
         Assert.Equal(expected, AuditTenantStamp.Resolve(recordTenant, deploymentTenant));
 
+    /// <summary>A record may not claim a different tenant, nor any tenant when the deployment has none, nor an over-long one.</summary>
+    [Theory]
+    [InlineData("fabrikam", "contoso")]
+    [InlineData("contoso", null)]
+    [InlineData("contoso", "")]
+    public void Resolve_ATenantTheDeploymentCannotVouchFor_IsAContractViolation(string recordTenant, string? deploymentTenant) =>
+        Assert.Throws<ContractViolationException>(() => AuditTenantStamp.Resolve(recordTenant, deploymentTenant));
+
     [Fact]
-    public void Resolve_AnotherTenant_IsAContractViolation() =>
-        Assert.Throws<ContractViolationException>(() => AuditTenantStamp.Resolve("fabrikam", "contoso"));
+    public void Resolve_OverLongTenantOnEitherSide_IsAContractViolation()
+    {
+        var tooLong = new string('t', AuditTenantStamp.MaxLength + 1);
+
+        Assert.Throws<ContractViolationException>(() => AuditTenantStamp.Resolve(tooLong, null));
+        Assert.Throws<ContractViolationException>(() => AuditTenantStamp.Resolve(null, tooLong));
+        Assert.Equal(new string('t', AuditTenantStamp.MaxLength), AuditTenantStamp.Resolve(null, new string('t', AuditTenantStamp.MaxLength)));
+    }
+
+    /// <summary>A refused tenant is refused before the signing service is ever asked to sign.</summary>
+    [Fact]
+    public async Task SignAsync_ARefusedTenant_NeverReachesTheSigningService()
+    {
+        var store = new FakeAuditRecordStore();
+        var signing = new CountingSigningService(new HmacAuditSigningService(KeyProvider));
+        var signer = new AuditSigner(store, store, KeyProvider, signing,
+            Options.Create(new ExecutionAuditOptions { AppendBaseDelayMs = 0, AppendMaxDelayMs = 0 }), Options.Create(new AuditTenantOptions()));
+
+        await Assert.ThrowsAsync<ContractViolationException>(() => signer.SignAsync(AuditRecordHasherTests.Sample() with { Tenant = "fabrikam" }, CancellationToken.None));
+
+        Assert.Equal(0, signing.Calls);
+    }
+
+    private sealed class CountingSigningService(IAuditSigningService inner) : IAuditSigningService
+    {
+        internal int Calls { get; private set; }
+
+        public Task<string> GetCurrentKeyIdAsync(CancellationToken cancellationToken) => inner.GetCurrentKeyIdAsync(cancellationToken);
+
+        public Task<AuditSignature> SignAsync(string recordHash, CancellationToken cancellationToken)
+        {
+            Calls++;
+            return inner.SignAsync(recordHash, cancellationToken);
+        }
+    }
 
     [Fact]
     public async Task SignAsync_WithTheOption_StampsTheTenant_AndTheChainVerifies()
@@ -95,6 +136,17 @@ public sealed class AuditTenantStampTests
 
         Assert.Equal(record.RecordHash, GovernanceAuditHasher.ComputeRecordHash(record));
         Assert.NotEqual(record.RecordHash, GovernanceAuditHasher.ComputeRecordHash(record with { Tenant = "fabrikam" }));
+    }
+
+    /// <summary>Built without the option (as older composition roots do), neither service stamps.</summary>
+    [Fact]
+    public void BuiltWithoutTheOption_NeitherServiceHasADeploymentTenant()
+    {
+        var store = new FakeAuditRecordStore();
+        var keys = new FakeRotatingKeyProvider();
+
+        Assert.Null(new AuditSigner(store, store, KeyProvider, new HmacAuditSigningService(KeyProvider), Options.Create(new ExecutionAuditOptions())).DeploymentTenant);
+        Assert.Null(new GovernanceAuditService(new FakeGovernanceAuditStore(), new SharedSigningKeyRing(keys, new HmacAuditSigningService(keys)), Options.Create(new GovernanceAuditOptions())).DeploymentTenant);
     }
 
     private static AuditSigner Signer(FakeAuditRecordStore store, string? tenant) =>

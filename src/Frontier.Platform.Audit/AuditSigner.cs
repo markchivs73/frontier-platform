@@ -27,6 +27,9 @@ internal sealed class AuditSigner(
     IOptions<ExecutionAuditOptions> options,
     IOptions<AuditTenantOptions>? tenant = null) : IAuditSigner
 {
+    /// <summary>The deployment tenant this instance stamps (S13.293), as the composition root gave it.</summary>
+    internal string? DeploymentTenant => tenant?.Value.Tenant;
+
     /// <inheritdoc />
     public async Task<SignedAuditRecord> SignAsync(AuditRecord record, CancellationToken cancellationToken)
     {

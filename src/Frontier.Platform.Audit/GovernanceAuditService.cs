@@ -15,6 +15,9 @@ internal sealed class GovernanceAuditService(
     IOptions<GovernanceAuditOptions> options,
     IOptions<AuditTenantOptions>? tenant = null) : IGovernanceAuditService
 {
+    /// <summary>The deployment tenant this instance stamps (S13.293), as the composition root gave it.</summary>
+    internal string? DeploymentTenant => tenant?.Value.Tenant;
+
     /// <inheritdoc />
     public async Task<SignedGovernanceAuditRecord> AppendAsync(GovernanceAuditEntry entry, CancellationToken cancellationToken)
     {
