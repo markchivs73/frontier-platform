@@ -700,12 +700,42 @@ public sealed class CosmosDefinitionStore : IDefinitionStore
     {
         ValidateWorkflowId(workflowId);
 
-        var turns = await GetAllDesignTurnsAsync(workflowId, ct);
-        foreach (var id in DesignConversationDrop.TurnIdsToDelete(turns))
+        var deleted = DesignConversationDrop.TurnIdsToDelete(await GetAllDesignTurnsAsync(workflowId, ct));
+        foreach (var id in deleted)
             await TryDeleteItemAsync<DesignTurnDocument>(id, workflowId, ct);
 
-        if (DesignConversationDrop.KeptHistory(await GetChatHistoryAsync(workflowId, ct), turns) is { } kept)
-            await CreateOrUpdateChatHistoryAsync(kept, ct);
+        await DesignConversationDrop.RewriteHistoryAsync(
+            () => ReadChatHistoryVersionAsync(workflowId, ct),
+            (history, version) => TryReplaceChatHistoryAsync(history, version, ct),
+            deleted);
+    }
+
+    /// <summary>The chat-history index with its ETag; null when the draft has none.</summary>
+    private async Task<(ChatHistoryDocument History, string Version)?> ReadChatHistoryVersionAsync(string workflowId, CancellationToken ct)
+    {
+        try
+        {
+            var response = await _container.ReadItemAsync<ChatHistoryDocument>($"{workflowId}:chat-history", new PartitionKey(workflowId), cancellationToken: ct);
+            return (response.Resource, response.ETag);
+        }
+        catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Replaces the chat-history index only if it is still at <paramref name="version"/>; false when another write landed first.</summary>
+    private async Task<bool> TryReplaceChatHistoryAsync(ChatHistoryDocument history, string version, CancellationToken ct)
+    {
+        try
+        {
+            await _container.ReplaceItemAsync(history, history.Id, new PartitionKey(history.WorkflowId), new ItemRequestOptions { IfMatchEtag = version }, ct);
+            return true;
+        }
+        catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.PreconditionFailed)
+        {
+            return false;
+        }
     }
 
     /// <summary>Deletes an item by id, tolerating a concurrent/prior delete (S9.42's own draft/chat-history/turn/test-run cleanup is idempotent by construction).</summary>
