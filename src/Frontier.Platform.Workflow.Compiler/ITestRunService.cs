@@ -44,10 +44,16 @@ public interface ITestRunService
     /// the real execution, then reconciles once and returns the run's current state (it does
     /// <b>not</b> wait for the orchestration to process the decision; the caller's next poll
     /// observes what happens next). Returns <c>null</c> if <paramref name="testRunId"/> is unknown.
+    /// <paramref name="approverId"/> is the resolved identity of the human who decided; it is recorded as the
+    /// decision's <c>ApproverId</c> on the approval record and the raised event, as a published run's gate
+    /// decision is (ADR-E8: <c>system:*</c> ids are for machine actions; not enforced here). ADR-PA17, amended
+    /// 2026-11-25.
     /// </summary>
+    /// <exception cref="ArgumentException"><paramref name="approverId"/> is null, empty or whitespace.</exception>
     Task<TestRunResult?> DecideGateAsync(
         string testRunId,
         string gateId,
+        string approverId,
         DecisionKind decision,
         string? note,
         CancellationToken ct);

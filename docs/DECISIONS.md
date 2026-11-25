@@ -808,6 +808,32 @@ published run's gate does; `null` for a test-run document from before the engage
 Breaking for implementors of `ITestRunExecutor`; the consumer's adapter is the only one, and it
 hard-coded occurrence `1` where every first visit is `0`.
 
+### ADR-PA17 — amended 2026-11-25: a sandbox gate decision names the human who decided
+
+Consumer task S13.338, from its run-2 security review (2026-11-20), decided in its 2026-11-24 triage
+(option a). `TestRunService.DecideGateAsync` stamped the fixed `system:sandbox-designer` on every
+interactive sandbox decision, so the approval record and the raised event named a placeholder, not the
+person. The consumer's ADR-E8 D1 reserves `system:*` for machine actions, and `GateDecision.ApproverId`
+is documented as the resolved identity of the human who decided.
+
+`ITestRunService.DecideGateAsync` now takes `approverId` after `gateId`, the same order as
+`ITestRunExecutor.RaiseGateDecisionAsync`, and passes it through unchanged. A null, empty or whitespace
+id is refused before the run is read or anything is raised. The service does not police the `system:`
+prefix: nothing specifies such a rule. The `system:sandbox-designer` constant is gone. The auto-approve
+path (reconcile and the finalizer sweep) is machine action and keeps `system:sandbox-auto-approve`.
+No stored data changes, and no recovery path read the removed value.
+
+Breaking for every caller and implementer of `ITestRunService`, changed in place as the 2026-10-22
+amendment changed `RaiseGateDecisionAsync`, so the commit is scoped `workflow.compiler!`. No
+`[Obsolete]` overload: it would still be a new interface member, and it would keep the placeholder
+reachable. The consumer has one caller (the sandbox decide route, which passes the caller's object id
+and answers 403 `no_principal` without one) and three test doubles.
+
+Forward flags. In a sandbox the designer both starts the run and plays approver (the consumer's doc 13
+§5), so sandbox records now show initiator equal to approver by design; separation-of-duties checks and
+decision reports must exclude `SANDBOX-` engagements. Two designers deciding the same sandbox gate, and
+a retry after a lost raise naming a different person, are left as they were.
+
 
 ---
 

@@ -16,6 +16,9 @@ namespace Frontier.Platform.Workflow.Compiler.Tests;
 /// </summary>
 public sealed class TestRunServiceTests
 {
+    /// <summary>The human who decides an interactive sandbox gate (ADR-PA17, amended 2026-11-25): an Entra object id, never a <c>system:</c> placeholder.</summary>
+    private const string Approver = "7f1c2a9e-0b4d-4e61-9a3f-5c8d2e1b7a40";
+
     private readonly Mock<IDefinitionStore> _store = new();
     private readonly Mock<IDefinitionCompiler> _compiler = new();
     private readonly Mock<ITestRunExecutor> _executor = new();
@@ -483,7 +486,7 @@ public sealed class TestRunServiceTests
         var doc = RunDoc(gateMode: "Interactive", status: TestRunStatus.PausedAtGate, pausedAtGateId: "gate-1");
         var decision = new HitlDecision
         {
-            GateId = "gate-1", RequestId = "req-1", ApproverId = TestRunService.DesignerApproverId,
+            GateId = "gate-1", RequestId = "req-1", ApproverId = Approver,
             Kind = DecisionKind.Reject, DecidedAtUtc = DateTime.UtcNow,
         };
         _store.Setup(s => s.GetTestRunAsync(doc.TestRunId, It.IsAny<CancellationToken>())).ReturnsAsync(doc);
@@ -702,19 +705,31 @@ public sealed class TestRunServiceTests
     [Fact]
     public async Task DecideGateAsync_NullTestRunId_Throws()
     {
-        await Assert.ThrowsAsync<ArgumentNullException>(() => _service.DecideGateAsync(null!, "gate-1", DecisionKind.Approve, null, CancellationToken.None));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => _service.DecideGateAsync(null!, "gate-1", Approver, DecisionKind.Approve, null, CancellationToken.None));
     }
 
     [Fact]
     public async Task DecideGateAsync_NullGateId_Throws()
     {
-        await Assert.ThrowsAsync<ArgumentNullException>(() => _service.DecideGateAsync("SANDBOX-abc::wf-test", null!, DecisionKind.Approve, null, CancellationToken.None));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => _service.DecideGateAsync("SANDBOX-abc::wf-test", null!, Approver, DecisionKind.Approve, null, CancellationToken.None));
     }
 
     [Fact]
     public async Task DecideGateAsync_NullDecision_Throws()
     {
-        await Assert.ThrowsAsync<ArgumentNullException>(() => _service.DecideGateAsync("SANDBOX-abc::wf-test", "gate-1", null!, null, CancellationToken.None));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => _service.DecideGateAsync("SANDBOX-abc::wf-test", "gate-1", Approver, null!, null, CancellationToken.None));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("  ")]
+    public async Task DecideGateAsync_BlankApprover_ThrowsBeforeReadingOrRaising(string? approverId)
+    {
+        await Assert.ThrowsAnyAsync<ArgumentException>(() => _service.DecideGateAsync("SANDBOX-abc::wf-test", "gate-1", approverId!, DecisionKind.Approve, null, CancellationToken.None));
+
+        _store.Verify(s => s.GetTestRunAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _executor.Verify(e => e.RaiseGateDecisionAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DecisionKind>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -722,14 +737,14 @@ public sealed class TestRunServiceTests
     {
         _store.Setup(s => s.GetTestRunAsync("SANDBOX-abc::wf-test", It.IsAny<CancellationToken>())).ReturnsAsync((TestRunDocument?)null);
 
-        var result = await _service.DecideGateAsync("SANDBOX-abc::wf-test", "gate-1", DecisionKind.Approve, null, CancellationToken.None);
+        var result = await _service.DecideGateAsync("SANDBOX-abc::wf-test", "gate-1", Approver, DecisionKind.Approve, null, CancellationToken.None);
 
         Assert.Null(result);
         _executor.Verify(e => e.RaiseGateDecisionAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DecisionKind>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
-    public async Task DecideGateAsync_PausedRun_RaisesDesignerDecisionThenReturnsCurrentState()
+    public async Task DecideGateAsync_PausedRun_RaisesTheDecidersDecisionThenReturnsCurrentState()
     {
         // The decision is raised and the run reconciled ONCE — if the orchestration hasn't
         // processed the event yet the run is still paused; the caller's next poll observes the
@@ -740,9 +755,9 @@ public sealed class TestRunServiceTests
         _executor.Setup(e => e.GetSnapshotAsync(doc.TestRunId, "SANDBOX-abc", It.IsAny<CancellationToken>()))
             .ReturnsAsync(Snapshot(ExecutionStatus.PausedAtGate, pausedAtGateId: "gate-1"));
 
-        var result = await _service.DecideGateAsync(doc.TestRunId, "gate-1", DecisionKind.Approve, "looks good", CancellationToken.None);
+        var result = await _service.DecideGateAsync(doc.TestRunId, "gate-1", Approver, DecisionKind.Approve, "looks good", CancellationToken.None);
 
-        _executor.Verify(e => e.RaiseGateDecisionAsync(doc.TestRunId, doc.EngagementId, "gate-1", TestRunService.DesignerApproverId, DecisionKind.Approve, "looks good", It.IsAny<CancellationToken>()), Times.Once);
+        _executor.Verify(e => e.RaiseGateDecisionAsync(doc.TestRunId, doc.EngagementId, "gate-1", Approver, DecisionKind.Approve, "looks good", It.IsAny<CancellationToken>()), Times.Once);
         Assert.Equal(TestRunStatus.PausedAtGate, result!.Status); // not yet processed — the poll observes what happens next
     }
 
@@ -755,7 +770,7 @@ public sealed class TestRunServiceTests
             .ReturnsAsync(Snapshot(ExecutionStatus.Completed));
         SetupPersistCapture(out var persisted);
 
-        var result = await _service.DecideGateAsync(doc.TestRunId, "gate-1", DecisionKind.Approve, null, CancellationToken.None);
+        var result = await _service.DecideGateAsync(doc.TestRunId, "gate-1", Approver, DecisionKind.Approve, null, CancellationToken.None);
 
         Assert.True(persisted()!.Success);
         Assert.Equal(TestRunStatus.Completed, persisted()!.Status);
@@ -772,7 +787,7 @@ public sealed class TestRunServiceTests
             .ReturnsAsync(Snapshot(ExecutionStatus.PausedAtGate, pausedAtGateId: "gate-1"));
         SetupPersistCapture(out var persisted);
 
-        await _service.DecideGateAsync(doc.TestRunId, "gate-0", DecisionKind.Approve, null, CancellationToken.None);
+        await _service.DecideGateAsync(doc.TestRunId, "gate-0", Approver, DecisionKind.Approve, null, CancellationToken.None);
 
         Assert.Equal("gate-1", persisted()!.PausedAtGateId);
         Assert.Equal(GateKind.Business.Name, persisted()!.GateKind);
@@ -788,7 +803,7 @@ public sealed class TestRunServiceTests
             .ReturnsAsync(Snapshot(ExecutionStatus.PausedAtGate, pausedAtGateId: "gate-2"));
         SetupPersistCapture(out var persisted);
 
-        await _service.DecideGateAsync(doc.TestRunId, "gate-1", DecisionKind.Reject, null, CancellationToken.None);
+        await _service.DecideGateAsync(doc.TestRunId, "gate-1", Approver, DecisionKind.Reject, null, CancellationToken.None);
 
         Assert.Equal("gate-2", persisted()!.PausedAtGateId);
         Assert.Null(persisted()!.GateKind);
@@ -809,7 +824,7 @@ public sealed class TestRunServiceTests
             .ReturnsAsync(Snapshot(ExecutionStatus.Completed));
         SetupPersistCapture(out var persisted);
 
-        await _service.DecideGateAsync(doc.TestRunId, "gate-1", DecisionKind.Approve, null, CancellationToken.None);
+        await _service.DecideGateAsync(doc.TestRunId, "gate-1", Approver, DecisionKind.Approve, null, CancellationToken.None);
 
         Assert.True(persisted()!.Success);
         _executor.Verify(e => e.GetSnapshotAsync(doc.TestRunId, "SANDBOX-abc", It.IsAny<CancellationToken>()), Times.Once);
