@@ -22,7 +22,7 @@ internal sealed class SigningProfileCheck(IOptions<AuditSigningOptions> signingO
 
     /// <inheritdoc />
     public Task<StartupCheckResult> CheckAsync(CancellationToken cancellationToken) =>
-        Task.FromResult(Evaluate(signingOptions.Value.UsesKeyVault, LocalProfile.IsLocalEndpoint(cosmosOptions.Value.Endpoint)));
+        Task.FromResult(Evaluate(signingOptions.Value.UsesKeyVault, LocalEndpoint.IsLoopback(cosmosOptions.Value.Endpoint)));
 
     /// <summary>Fails when no Key Vault signing key is configured and the profile is not local.</summary>
     internal static StartupCheckResult Evaluate(bool usesKeyVault, bool isLocalProfile) =>
