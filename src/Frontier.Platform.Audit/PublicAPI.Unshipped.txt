@@ -1,1 +1,26 @@
 #nullable enable
+Frontier.Platform.Audit.AuditChainHeadMismatch
+Frontier.Platform.Audit.AuditChainHeadMismatch.<Clone>$() -> Frontier.Platform.Audit.AuditChainHeadMismatch!
+Frontier.Platform.Audit.AuditChainHeadMismatch.AuditChainHeadMismatch() -> void
+Frontier.Platform.Audit.AuditChainHeadMismatch.Equals(Frontier.Platform.Audit.AuditChainHeadMismatch? other) -> bool
+Frontier.Platform.Audit.AuditChainHeadMismatch.HeadRecordHash.get -> string!
+Frontier.Platform.Audit.AuditChainHeadMismatch.HeadRecordHash.init -> void
+Frontier.Platform.Audit.AuditChainHeadMismatch.HeadSequence.get -> long
+Frontier.Platform.Audit.AuditChainHeadMismatch.HeadSequence.init -> void
+Frontier.Platform.Audit.AuditChainHeadMismatch.WalkedCount.get -> int
+Frontier.Platform.Audit.AuditChainHeadMismatch.WalkedCount.init -> void
+Frontier.Platform.Audit.AuditChainHeadMismatch.WalkedRecordHash.get -> string?
+Frontier.Platform.Audit.AuditChainHeadMismatch.WalkedRecordHash.init -> void
+Frontier.Platform.Audit.AuditChainVerdict
+Frontier.Platform.Audit.VerificationResult.HeadMismatch.get -> Frontier.Platform.Audit.AuditChainHeadMismatch?
+Frontier.Platform.Audit.VerificationResult.HeadMismatch.init -> void
+Frontier.Platform.Audit.VerificationResult.Verdict.get -> Frontier.Platform.Audit.AuditChainVerdict!
+Frontier.Platform.Audit.VerificationResult.Verdict.init -> void
+override Frontier.Platform.Audit.AuditChainHeadMismatch.Equals(object? obj) -> bool
+override Frontier.Platform.Audit.AuditChainHeadMismatch.GetHashCode() -> int
+override Frontier.Platform.Audit.AuditChainHeadMismatch.ToString() -> string!
+static Frontier.Platform.Audit.AuditChainHeadMismatch.operator !=(Frontier.Platform.Audit.AuditChainHeadMismatch? left, Frontier.Platform.Audit.AuditChainHeadMismatch? right) -> bool
+static Frontier.Platform.Audit.AuditChainHeadMismatch.operator ==(Frontier.Platform.Audit.AuditChainHeadMismatch? left, Frontier.Platform.Audit.AuditChainHeadMismatch? right) -> bool
+static readonly Frontier.Platform.Audit.AuditChainVerdict.Broken -> Frontier.Platform.Audit.AuditChainVerdict!
+static readonly Frontier.Platform.Audit.AuditChainVerdict.Unverified -> Frontier.Platform.Audit.AuditChainVerdict!
+static readonly Frontier.Platform.Audit.AuditChainVerdict.Valid -> Frontier.Platform.Audit.AuditChainVerdict!

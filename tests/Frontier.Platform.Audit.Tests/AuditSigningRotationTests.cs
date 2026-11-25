@@ -51,7 +51,7 @@ public sealed class AuditSigningRotationTests
     }
 
     [Fact]
-    public async Task VerifyAsync_VersionDestroyed_FailsClosedAndNamesTheUnresolvedVersion()
+    public async Task VerifyAsync_VersionDestroyed_FailsClosedNamesTheVersionAndIsUnverified()
     {
         var store = new FakeAuditRecordStore();
         var vault = new FakeKeyVaultSigningClient();
@@ -69,8 +69,9 @@ public sealed class AuditSigningRotationTests
         Assert.False(result.SignatureValid);
         Assert.Equal(FakeKeyVaultSigningClient.V1, Assert.Single(result.UnresolvedKeyIds!));
 
-        // A missing key version is not a broken chain — hash continuity needs no key (ADR-PA22).
-        Assert.True(result.ChainValid);
+        // S13.334 (ADR-PA22 C revised): a missing key version is not a break, but the chain is unverified, never valid.
+        Assert.Equal(AuditChainVerdict.Unverified, result.Verdict);
+        Assert.False(result.ChainValid);
     }
 
     [Fact]

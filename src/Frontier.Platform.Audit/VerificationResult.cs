@@ -15,7 +15,10 @@ public sealed record VerificationResult
     [JsonPropertyName("signature_valid")]
     public required bool SignatureValid { get; init; }
 
-    /// <summary>Whether the engagement's hash chain is unbroken back to genesis.</summary>
+    /// <summary>
+    /// Whether the chain is proven: exactly <c><see cref="Verdict"/> == <see cref="AuditChainVerdict.Valid"/></c>. Since
+    /// S13.334 an unresolvable key version makes this false (the chain is unverified), never true (ADR-PA22 C revised).
+    /// </summary>
     [JsonPropertyOrder(1)]
     [JsonPropertyName("chain_valid")]
     public required bool ChainValid { get; init; }
@@ -53,8 +56,8 @@ public sealed record VerificationResult
     /// not be resolved to a key version, in chain order; <see langword="null"/> when every id
     /// resolved. A record whose key id is listed here fails signature verification (fail closed),
     /// but being listed distinguishes "the key version is gone" from "the signature is forged".
-    /// The chain's hash continuity needs no key and is still reported through
-    /// <see cref="ChainValid"/> and <see cref="BrokenLinkAt"/> (ADR-PA22).
+    /// A non-null list with no evidence of damage makes <see cref="Verdict"/> <see cref="AuditChainVerdict.Unverified"/>
+    /// (S13.334; ADR-PA22 C revised).
     /// </summary>
     [JsonPropertyOrder(4)]
     [JsonPropertyName("unresolved_key_ids")]
@@ -84,4 +87,17 @@ public sealed record VerificationResult
     [JsonPropertyOrder(6)]
     [JsonPropertyName("unreachable_records")]
     public IReadOnlyList<string>? UnreachableRecords { get; init; }
+
+    /// <summary>The three-way conclusion (S13.334 B1): valid, broken or unverified. Alert on this, not only on <see cref="ChainValid"/>.</summary>
+    [JsonPropertyOrder(7)]
+    [JsonPropertyName("verdict")]
+    public required AuditChainVerdict Verdict { get; init; }
+
+    /// <summary>
+    /// Set when the engagement's chain head is not on the walk where it says it is (S13.334 B2); null when it is,
+    /// when there is no head, or when a fork or unreachable record already explains the shape.
+    /// </summary>
+    [JsonPropertyOrder(8)]
+    [JsonPropertyName("head_mismatch")]
+    public AuditChainHeadMismatch? HeadMismatch { get; init; }
 }

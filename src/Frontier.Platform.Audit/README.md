@@ -159,6 +159,11 @@ altered. A fork reaching past that boundary is `guarded_fork`, which the platfor
 which warrants investigation. Either kind makes `chain_valid` false: the kind explains a finding, it
 never clears one. Nothing forked is ever re-signed or rewritten.
 
+**A verdict, not just a flag (ADR-PA22, amended 2026-11-25).** `VerificationResult.Verdict` is `valid`, `broken`
+or `unverified`, and `chain_valid` is exactly `verdict == valid`. A record whose key version cannot be resolved makes
+the chain `unverified`, never valid; a recomputed hash that does not match, or a chain head the walk does not reach
+(`head_mismatch`), makes it `broken`. Alert on `unverified` too: a store writer can produce it.
+
 **Verification recomputes; it does not re-hash the stored bytes.** `AuditChainVerifier` rehydrates
 each record and re-serializes it through `CanonicalProfile`. That is why this package is one of
 the two hardest constraints on canonical serialization in the platform: a change to the profile,

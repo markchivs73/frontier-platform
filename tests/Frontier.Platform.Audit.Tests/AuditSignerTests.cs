@@ -169,7 +169,7 @@ public sealed class AuditSignerTests
     }
 
     [Fact]
-    public async Task VerifyAsync_TargetKeyVersionDestroyed_FailsClosedAndReportsTheUnresolvedId()
+    public async Task VerifyAsync_TargetKeyVersionDestroyed_FailsClosedReportsTheIdAndIsUnverified()
     {
         // Decision (A): indistinguishable-from-forgery is not acceptable — the id is reported;
         // decision (C): hash continuity is key-free, so the chain is still walked and still valid.
@@ -188,12 +188,13 @@ public sealed class AuditSignerTests
         Assert.False(result.SignatureValid);
         Assert.Equal(FakeRotatingKeyProvider.V1.KeyId, result.VerifiedAgainstKeyId);
         Assert.Equal([FakeRotatingKeyProvider.V1.KeyId], result.UnresolvedKeyIds);
-        Assert.True(result.ChainValid);
+        Assert.Equal(AuditChainVerdict.Unverified, result.Verdict); // S13.334: ADR-PA22 C revised
+        Assert.False(result.ChainValid);
         Assert.Null(result.BrokenLinkAt);
     }
 
     [Fact]
-    public async Task VerifyAsync_OtherRecordsKeyDestroyed_TargetStillVerifiesAndTheIdIsReported()
+    public async Task VerifyAsync_OtherRecordsKeyDestroyed_TargetVerifiesButTheChainIsUnverified()
     {
         var store = new FakeAuditRecordStore();
         var provider = new FakeRotatingKeyProvider();
@@ -210,7 +211,26 @@ public sealed class AuditSignerTests
         Assert.True(result.SignatureValid);
         Assert.Equal(FakeRotatingKeyProvider.V2.KeyId, result.VerifiedAgainstKeyId);
         Assert.Equal([FakeRotatingKeyProvider.V1.KeyId], result.UnresolvedKeyIds);
-        Assert.True(result.ChainValid);
+        Assert.Equal(AuditChainVerdict.Unverified, result.Verdict); // S13.334: the whole chain, not only the target
+        Assert.False(result.ChainValid);
+    }
+
+    /// <summary>S13.334 B2: a record appended while a verify runs (after its head read) leaves the chain valid, not truncated.</summary>
+    [Fact]
+    public async Task VerifyAsync_RecordAppendedDuringTheVerify_IsStillValid()
+    {
+        var store = new FakeAuditRecordStore();
+        var signer = Signer(store);
+        var first = await signer.SignAsync(AuditRecordHasherTests.Sample(), CancellationToken.None);
+        store.AfterHeadRead = () => signer.SignAsync(
+            AuditRecordHasherTests.Sample() with { ExecutionId = "eng-1::wf-2", WorkflowId = "wf-2", ClosedAtUtc = first.ClosedAtUtc.AddMinutes(1) },
+            CancellationToken.None);
+
+        var result = await signer.VerifyAsync(first.ExecutionId, first.EngagementId, CancellationToken.None);
+
+        Assert.Equal(2, (await store.GetChainAsync(first.EngagementId, CancellationToken.None)).Count);
+        Assert.Equal(AuditChainVerdict.Valid, result.Verdict);
+        Assert.Null(result.HeadMismatch);
     }
 
     [Fact]

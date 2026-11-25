@@ -1042,6 +1042,50 @@ Release: **minor, v0.24.0** (major version 0, so a breaking change may ship in a
 implement `GetKeyAsync`; the in-repo `DevKeyProvider` resolves its own key id and returns `null`
 for anything else. Tracked as S13.66.
 
+### ADR-PA22 — amended 2026-11-25: an unresolvable key makes the chain unverified, never valid
+
+Consumer task S13.334 (B1, Mark ✅ 2026-11-24; B2 accepted with the triage block), from its run-2 audit-trail
+security review (AUD-1, AUD-2). It revises the paragraph above, "An unresolvable key does not stop the walk",
+which let a missing key version leave `chain_valid` true. This engages K6, the consumer's position that the signed,
+chained audit trail is evidence.
+
+**Why decision C was a hole.** `record_hash` is an unkeyed SHA-256. A writer with data-plane access to
+`audit-records` can edit a record, recompute its hash, relink and rehash every later record, give each one a bogus
+`signing_key_id`, and rewrite the chain head. The walk skipped every unresolvable record and reported
+`chain_valid = true`; the only trace was `unresolved_key_ids`, which read as "a key version was destroyed", not "this
+chain was rewritten". The signature is the only part of a record such a writer cannot forge, because the signing key
+never leaves Key Vault (ADR-PA33). So no verdict that skips an unchecked signature can be trusted.
+
+**Decision.**
+1. *A three-way verdict.* `VerificationResult.Verdict` (`verdict`, order 7) is `valid`, `broken` or `unverified`.
+   Any evidence of damage is `broken`: a signature that fails against a resolved key, a recomputed hash that does not
+   match, a broken or unreachable link, a fork, or a head mismatch. Otherwise a non-empty chain-wide
+   `unresolved_key_ids` is `unverified`. Otherwise `valid`. `chain_valid` is now exactly `verdict == valid`, so
+   existing readers fail safe.
+2. *The hash is checked without a key.* Every walked record's `record_hash` is recomputed, whether or not its key
+   resolves, so an edit that left the stored hash alone is `broken` even under a bogus key id.
+3. *The head must be on the walk.* `head_mismatch` (order 8) is set when the record at the head's `sequence` on the
+   walk does not carry the head's `record_hash`, so a truncated tail or an edited head is `broken`. The walk may be
+   longer than the head: verify now reads the head **before** the chain, so a record appended in between only extends
+   the walk. The check is skipped when a fork or unreachable record exists (they already explain the shape, and a
+   legacy fork leaves the head on the untaken arm) and when there is no head.
+
+**`unverified` is not benign.** A store writer can turn a `broken` chain into an `unverified` one by giving records
+bogus key ids, so consumers should alert on `verdict`, not only on `chain_valid = false`. Rotation never produces it,
+because old versions are disabled, never destroyed (S13.107). **Costs:** an engagement whose key version really was
+destroyed reads `unverified` permanently, which is the truth about it; and because the Key Vault client (`AzureKeyVaultSigningClient`) maps a 403
+to "unresolvable", an RBAC regression on the vault would make every chain read `unverified` until it is fixed.
+
+**Limits.** The head is mutable, unsigned bookkeeping: a writer who also rewrites it defeats the head check, which
+forces a coordinated two-document edit and proves nothing about completeness. Completeness needs an external anchor
+the store writer cannot rewrite (B3, Phase 2). `GovernanceAuditService.VerifyAsync` still reads its records before
+its head; the same ordering fix applies there and is left to a follow-up.
+
+**Surface.** A breaking change, scoped `audit!`: behavioural (`chain_valid` goes from true to false for an
+unresolvable key) and a source break (the required `Verdict` member breaks object initialisers; the consumer's test
+fakes `AdminFakes.cs` and `ApiFixtures.cs` construct `VerificationResult`). New public types `AuditChainVerdict` and
+`AuditChainHeadMismatch`; a new golden `verification_result_head_mismatch.json`. No stored record changes.
+
 ## ADR-PA23 — a draft says when it predates the schema it is read with
 
 `MigratingWorkflowDefinitionConverter.Read` adapted only stored versions with a registered adapter.
