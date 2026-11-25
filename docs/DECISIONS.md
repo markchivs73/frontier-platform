@@ -812,8 +812,8 @@ hard-coded occurrence `1` where every first visit is `0`.
 
 Consumer task S13.338, from its run-2 security review (2026-11-20), decided in its 2026-11-24 triage
 (option a). `TestRunService.DecideGateAsync` stamped the fixed `system:sandbox-designer` on every
-interactive sandbox decision, so the approval record and the raised event named a placeholder, not the
-person. The consumer's ADR-E8 D1 reserves `system:*` for machine actions, and `GateDecision.ApproverId`
+interactive sandbox decision it passed to `ITestRunExecutor.RaiseGateDecisionAsync`, so the decision
+(and what the consumer's executor recorded from it) named a placeholder, not the person. The consumer's ADR-E8 D1 reserves `system:*` for machine actions, and `GateDecision.ApproverId`
 is documented as the resolved identity of the human who decided.
 
 `ITestRunService.DecideGateAsync` now takes `approverId` after `gateId`, the same order as
@@ -826,12 +826,15 @@ No stored data changes, and no recovery path read the removed value.
 Breaking for every caller and implementer of `ITestRunService`, changed in place as the 2026-10-22
 amendment changed `RaiseGateDecisionAsync`, so the commit is scoped `workflow.compiler!`. No
 `[Obsolete]` overload: it would still be a new interface member, and it would keep the placeholder
-reachable. The consumer has one caller (the sandbox decide route, which passes the caller's object id
-and answers 403 `no_principal` without one) and three test doubles.
+reachable. The consumer has one caller, the sandbox decide route, and three test doubles. After the
+tag, the consumer will pass the caller's object id from that route and answer 403 `no_principal` when
+there is none (its half of S13.338).
 
 Forward flags. In a sandbox the designer both starts the run and plays approver (the consumer's doc 13
 §5), so sandbox records now show initiator equal to approver by design; separation-of-duties checks and
-decision reports must exclude `SANDBOX-` engagements. Two designers deciding the same sandbox gate, and
+decision reports must exclude `SANDBOX-` engagements. That exclusion is not enforced here: the
+separation-of-duties check (the consumer's S13.131) is not built, and which engagements a report scans is
+the consumer's concern, not this service's. Two designers deciding the same sandbox gate, and
 a retry after a lost raise naming a different person, are left as they were.
 
 
