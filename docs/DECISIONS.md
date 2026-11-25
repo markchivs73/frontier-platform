@@ -3802,6 +3802,8 @@ amends doc 10 §3 (the two statuses in row 2, a `policy_refused` row, and the ou
 - It runs on `CancellationToken.None` and catches everything, so even a cancellation is treated as an SDK timeout. The catch-all is under a justified `SuppressMessage(CA1031)`.
 - A failure is logged at **Critical**, because it is data loss that needs an operator, with its exception. Fault text was scrubbed from responses and records, not from logs. The log names the record id and event type, and at a race site it says the uncompensated first record now stands beside the retry's record.
 - The change's own exception still rethrows, and the retry still runs.
+- A recorder failure never escapes the guard. Logging is assumed not to throw, per the `ILogger` contract; the logger is not wrapped.
+- The services pass `CancellationToken.None`. All eight sites are tested, each with both a synchronous throw and a faulted task, and a source scan pins the guard as the only caller.
 - The port's doc comment says this.
 - The services now take a required `ILogger<T>`; they are internal and container-built.
 

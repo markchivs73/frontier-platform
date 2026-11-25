@@ -13,6 +13,10 @@ namespace Frontier.Platform.ModelRoleConfig;
 /// until a durable retry or a reconciliation exists (S13.328 (b)/(c)). Until then this Critical log is the only signal, and
 /// it carries the exception: S13.330 scrubbed fault text from responses and records, not from logs.
 /// </para>
+/// <para>
+/// A recorder failure never escapes the guard. Logging is assumed not to throw, per the <see cref="ILogger"/> contract; the
+/// logger is not wrapped.
+/// </para>
 /// </summary>
 internal static partial class CompensationGuard
 {
@@ -21,13 +25,13 @@ internal static partial class CompensationGuard
     /// The catch takes every exception: no caller token is involved, so even an <see cref="OperationCanceledException"/>
     /// is an SDK timeout, a fault like any other.
     /// </summary>
-    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "S13.328 (a2): a compensation that does not land must never replace the change's own outcome, whatever the recorder throws; the failure is logged at Critical with its exception.")]
     /// <param name="recorder">The decision recorder.</param>
     /// <param name="decision">The decision whose record is compensated.</param>
     /// <param name="recordId">The record being compensated.</param>
     /// <param name="reason">Why the change did not happen.</param>
     /// <param name="logger">Where a lost compensation is reported.</param>
     /// <param name="beforeRetry">True at a lost race the service retries: the log then says the retry's record will stand beside the uncompensated one.</param>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "S13.328 (a2): a compensation that does not land must never replace the change's own outcome, whatever the recorder throws; the failure is logged at Critical with its exception.")]
     internal static async Task TryCompensateAsync(IMappingDecisionRecorder recorder, MappingGovernanceDecision decision, string recordId, string reason, ILogger logger, bool beforeRetry = false)
     {
         try

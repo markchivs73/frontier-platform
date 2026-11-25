@@ -282,8 +282,9 @@ ETag guard by each decision.
   needs it.
 - **A compensation that does not land never replaces the change's own outcome** (consumer S13.328 (a2)). Both
   governance services contain it, log it at Critical with its exception, and let the store's failure or the retry
-  proceed. This stops the cascade; it does not repair the audit trail, which keeps an uncompensated decision record
-  until a durable retry exists (consumer S13.328 (b)/(c)).
+  proceed. This stops the cascade; it does not repair the audit trail: K6 (every governance fact on the HMAC-chained
+  audit) stays unmet for that record, an uncompensated decision record, until a durable retry or reconciliation
+  exists (consumer S13.328 (b)/(c)).
 - **Costs are decimals at a declared scale**, serialized as strings by the canonical profile. They
   feed budget arithmetic; a float here is a rounding bug in a ledger.
 

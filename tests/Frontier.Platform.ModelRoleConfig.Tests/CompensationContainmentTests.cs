@@ -168,6 +168,57 @@ public sealed class CompensationContainmentTests
 
         Assert.Equal(RoleDefinitionProposalSamples.FastRetry.DecisionMaxAttempts, recorder.CompensationAttempts.Count);
         Assert.All(logger.Definition.Entries, e => Assert.Equal(LogLevel.Critical, e.Level));
+        Assert.Equal(recorder.CompensationAttempts.Count, logger.Definition.Entries.Count);
+    }
+
+    // ---- the decide race sites (reject / withdraw) ----
+
+    /// <summary>A mapping reject loses its first replace to another decision (DecideAsync's race): the retry lands.</summary>
+    [Theory]
+    [MemberData(nameof(HowItFails))]
+    public async Task Mapping_RejectLosesOnce_TheRetrysRecordLands(bool synchronously)
+    {
+        var store = new FakeMappingProposalStore().WithProposal(MappingProposalSamples.Pending());
+        store.ReplacesToLose = 1;
+        var (recorder, logger) = Failing(synchronously);
+
+        var rejected = await MappingProposalSamples.Service(store, recorder, logger: logger.Mapping)
+            .RejectAsync(MappingProposalSamples.RoleId, "p-1", MappingProposalSamples.Approver, "no", null, CancellationToken.None);
+
+        Assert.Equal(MappingProposalState.Rejected, rejected.State);
+        Assert.Equal(2, recorder.Decisions.Count);   // the retry's RecordAsync landed
+        AssertOneCriticalNaming(logger.Mapping, recorder, "record-1", beforeRetry: true);
+    }
+
+    /// <summary>A definition withdraw loses its first replace to another decision (DecideAsync's race): the retry lands.</summary>
+    [Theory]
+    [MemberData(nameof(HowItFails))]
+    public async Task Definition_WithdrawLosesOnce_TheRetrysRecordLands(bool synchronously)
+    {
+        var store = new FakeRoleDefinitionStore().WithProposal(RoleDefinitionProposalSamples.Pending());
+        store.ReplacesToLose = 1;
+        var (recorder, logger) = Failing(synchronously);
+
+        var withdrawn = await RoleDefinitionProposalSamples.Service(store, recorder, logger: logger.Definition)
+            .WithdrawAsync(RoleDefinitionProposalSamples.AgentRoleId, "d-1", RoleDefinitionProposalSamples.Proposer, "changed my mind", null, CancellationToken.None);
+
+        Assert.Equal(MappingProposalState.Withdrawn, withdrawn.State);
+        Assert.Equal(2, recorder.Decisions.Count);   // the retry's RecordAsync landed
+        AssertOneCriticalNaming(logger.Definition, recorder, "record-1", beforeRetry: true);
+    }
+
+    /// <summary>Every compensation is attempted uncancellably: the services hand the recorder <see cref="CancellationToken.None"/>.</summary>
+    [Fact]
+    public async Task EveryCompensation_IsGivenAnUncancellableToken()
+    {
+        var store = new FakeMappingProposalStore().WithProposal(MappingProposalSamples.Pending());
+        store.ReplacesToLose = 1;
+        var recorder = new FakeMappingDecisionRecorder();
+        using var caller = new CancellationTokenSource();
+
+        await MappingProposalSamples.Service(store, recorder).RejectAsync(MappingProposalSamples.RoleId, "p-1", MappingProposalSamples.Approver, "no", null, caller.Token);
+
+        Assert.Equal([false], recorder.CompensationTokensCancellable);
     }
 
     // ---- the guard itself ----
@@ -196,6 +247,31 @@ public sealed class CompensationContainmentTests
 
         var entry = Assert.Single(logger.Entries);
         Assert.Equal((LogLevel.Critical, timeout), (entry.Level, entry.Exception));
+    }
+
+    /// <summary>
+    /// Only the guard calls the recorder's compensation: a source scan of the library, so a new call site cannot skip
+    /// containment (S13.328 (a2)).
+    /// </summary>
+    [Fact]
+    public void OnlyTheGuard_CallsRecordCompensationAsync()
+    {
+        var library = Path.Combine(RepositoryRoot(), "src", "Frontier.Platform.ModelRoleConfig");
+        var callers = Directory.EnumerateFiles(library, "*.cs", SearchOption.AllDirectories)
+            .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+            .Where(path => File.ReadAllText(path).Contains(".RecordCompensationAsync(", StringComparison.Ordinal))
+            .Select(Path.GetFileName)
+            .ToList();
+
+        Assert.Equal(["CompensationGuard.cs"], callers);
+    }
+
+    private static string RepositoryRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "Directory.Packages.props")))
+            directory = directory.Parent;
+        return directory?.FullName ?? throw new InvalidOperationException("The repository root was not found above the test output.");
     }
 
     private static (FakeMappingDecisionRecorder Recorder, Loggers Logger) Failing(bool synchronously) =>

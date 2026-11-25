@@ -100,10 +100,19 @@ internal sealed class FakeMappingProposalStore : IMappingProposalStore
         }
     }
 
+    /// <summary>S13.328 (a2): how many of the next proposal replaces lose, as if another decision got there first. Zero by default.</summary>
+    internal int ReplacesToLose { get; set; }
+
     public Task<string?> TryReplaceProposalAsync(MappingChangeProposal proposal, string expectedETag, CancellationToken cancellationToken)
     {
         lock (gate)
         {
+            if (ReplacesToLose > 0)
+            {
+                ReplacesToLose--;
+                return Task.FromResult<string?>(null);
+            }
+
             return Task.FromResult(TryReplace(proposal, expectedETag));
         }
     }
@@ -241,9 +250,13 @@ internal sealed class FakeMappingDecisionRecorder : IMappingDecisionRecorder
     /// <summary>S13.328 (a2): makes <see cref="RecordCompensationAsync"/> return a faulted task instead.</summary>
     internal Exception? CompensationFaults { get; set; }
 
+    /// <summary>S13.328 (a2): whether each compensation's token could be cancelled, in call order (the services pass <see cref="CancellationToken.None"/>).</summary>
+    internal List<bool> CompensationTokensCancellable { get; } = [];
+
     public Task RecordCompensationAsync(MappingGovernanceDecision decision, string recordId, string failureReason, CancellationToken cancellationToken)
     {
         CompensationAttempts.Add((recordId, decision.EventType));
+        CompensationTokensCancellable.Add(cancellationToken.CanBeCanceled);
         if (CompensationThrows is { } thrown)
         {
             throw thrown;
