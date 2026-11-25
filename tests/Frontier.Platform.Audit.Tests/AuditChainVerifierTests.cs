@@ -207,7 +207,7 @@ public sealed class AuditChainVerifierTests
         var first = Sign(AuditRecordHasherTests.Sample(), AuditRecordHasher.ComputeGenesisHash("eng-1"), V1);
         var second = Sign(AuditRecordHasherTests.Sample() with { ExecutionId = "eng-1::wf-2", WorkflowId = "wf-2" }, first.RecordHash, V1);
 
-        Assert.Null(AuditChainVerifier.FindBrokenLink([first, second], "eng-1", Keys(V1)));
+        Assert.Null(BrokenLinkAt([first, second], Keys(V1)));
     }
 
     [Fact]
@@ -217,7 +217,7 @@ public sealed class AuditChainVerifierTests
         var first = Sign(AuditRecordHasherTests.Sample(), AuditRecordHasher.ComputeGenesisHash("eng-1"), V1);
         var second = Sign(AuditRecordHasherTests.Sample() with { ExecutionId = "eng-1::wf-2", WorkflowId = "wf-2" }, first.RecordHash, V2);
 
-        Assert.Null(AuditChainVerifier.FindBrokenLink([first, second], "eng-1", Keys(V1, V2)));
+        Assert.Null(BrokenLinkAt([first, second], Keys(V1, V2)));
     }
 
     [Fact]
@@ -227,18 +227,18 @@ public sealed class AuditChainVerifierTests
         var second = Sign(AuditRecordHasherTests.Sample() with { ExecutionId = "eng-1::wf-2", WorkflowId = "wf-2" }, first.RecordHash, V2);
         var tampered = second with { Signature = "0000000000000000000000000000000000000000000000000000000000000" };
 
-        Assert.Equal(second.ExecutionId, AuditChainVerifier.FindBrokenLink([first, tampered], "eng-1", Keys(V1, V2)));
+        Assert.Equal(second.ExecutionId, BrokenLinkAt([first, tampered], Keys(V1, V2)));
     }
 
     [Fact]
     public void FindBrokenLink_RecordWhoseKeyIsMissing_IsNotABreak()
     {
-        // S13.66 decision (C): hash-chain continuity needs no key, so an unresolvable key does not
-        // break the chain — it is reported through SignatureValid/UnresolvedKeyIds instead.
+        // S13.66 decision (C), still true of the link: hash-chain continuity needs no key, so an unresolvable key
+        // is no broken link. Since S13.334 it makes the verdict unverified instead.
         var first = Sign(AuditRecordHasherTests.Sample(), AuditRecordHasher.ComputeGenesisHash("eng-1"), V1);
         var second = Sign(AuditRecordHasherTests.Sample() with { ExecutionId = "eng-1::wf-2", WorkflowId = "wf-2" }, first.RecordHash, V2);
 
-        Assert.Null(AuditChainVerifier.FindBrokenLink([first, second], "eng-1", Keys(V2)));
+        Assert.Null(BrokenLinkAt([first, second], Keys(V2)));
     }
 
     [Fact]
@@ -247,7 +247,7 @@ public sealed class AuditChainVerifierTests
         var first = Sign(AuditRecordHasherTests.Sample(), AuditRecordHasher.ComputeGenesisHash("eng-1"), V1);
         var second = Sign(AuditRecordHasherTests.Sample() with { ExecutionId = "eng-1::wf-2", WorkflowId = "wf-2" }, "not-the-first-records-hash", V2);
 
-        Assert.Equal(second.ExecutionId, AuditChainVerifier.FindBrokenLink([first, second], "eng-1", Keys(V2)));
+        Assert.Equal(second.ExecutionId, BrokenLinkAt([first, second], Keys(V2)));
     }
 
     [Fact]
@@ -255,7 +255,7 @@ public sealed class AuditChainVerifierTests
     {
         var record = Sign(AuditRecordHasherTests.Sample(), "not-the-genesis-hash", V1);
 
-        Assert.Equal(record.ExecutionId, AuditChainVerifier.FindBrokenLink([record], "eng-1", Keys(V1)));
+        Assert.Equal(record.ExecutionId, BrokenLinkAt([record], Keys(V1)));
     }
 
     [Fact]
@@ -264,7 +264,7 @@ public sealed class AuditChainVerifierTests
         var first = Sign(AuditRecordHasherTests.Sample(), AuditRecordHasher.ComputeGenesisHash("eng-1"), V1);
         var second = Sign(AuditRecordHasherTests.Sample() with { ExecutionId = "eng-1::wf-2", WorkflowId = "wf-2" }, "not-the-first-records-hash", V1);
 
-        Assert.Equal(second.ExecutionId, AuditChainVerifier.FindBrokenLink([first, second], "eng-1", Keys(V1)));
+        Assert.Equal(second.ExecutionId, BrokenLinkAt([first, second], Keys(V1)));
     }
 
     [Fact]
@@ -539,6 +539,20 @@ public sealed class AuditChainVerifierTests
         Assert.Equal(AuditChainVerdict.Broken, result.Verdict);
     }
 
+    /// <summary>An unreachable record already explains the shape, so the head is not checked even when it disagrees.</summary>
+    [Fact]
+    public void Verify_HeadPresentAndAnUnreachableRecord_ReportsNoHeadMismatch()
+    {
+        var chain = Linear(V1);
+        var orphan = Sign(AuditRecordHasherTests.Sample() with { ExecutionId = "eng-1::wf-orphan", WorkflowId = "wf-orphan" }, "not-on-the-chain", V1);
+
+        var result = AuditChainVerifier.Verify([.. chain, orphan], chain[0].ExecutionId, "eng-1", Keys(V1), Head(4, orphan, 0));
+
+        Assert.Equal(["eng-1::wf-orphan"], result.UnreachableRecords);
+        Assert.Null(result.HeadMismatch);
+        Assert.Equal(AuditChainVerdict.Broken, result.Verdict);
+    }
+
     [Fact]
     public void Verify_NoHead_ChecksNoHead() =>
         Assert.Null(AuditChainVerifier.Verify(Linear(V1)[..2], "eng-1::wf-1", "eng-1", Keys(V1), head: null).HeadMismatch);
@@ -585,6 +599,10 @@ public sealed class AuditChainVerifierTests
     /// <summary>A chain head naming <paramref name="last"/>, with <paramref name="unguarded"/> records predating it.</summary>
     private static AuditChainHead Head(long sequence, SignedAuditRecord last, long unguarded) =>
         new("eng-1", sequence, last.RecordHash, last.ExecutionId, unguarded);
+
+    /// <summary>Where <see cref="AuditChainVerifier.Verify"/> says the chain broke, verifying its first record.</summary>
+    private static string? BrokenLinkAt(IReadOnlyList<SignedAuditRecord> chain, IReadOnlyDictionary<string, SigningKey> keys) =>
+        AuditChainVerifier.Verify(chain, chain[0].ExecutionId, "eng-1", keys).BrokenLinkAt;
 
     /// <summary>The key map the verifier now takes, indexed as <c>SignedAuditRecord.SigningKeyId</c> is.</summary>
     internal static IReadOnlyDictionary<string, SigningKey> Keys(params SigningKey[] keys) =>

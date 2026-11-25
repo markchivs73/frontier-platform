@@ -133,19 +133,6 @@ internal static class AuditChainVerifier
         return unresolved.Length > 0 ? unresolved : null;
     }
 
-    /// <summary>
-    /// Where verification stopped trusting the chain: the first record on the walk whose signature
-    /// fails against an available key, or failing that the first record the links cannot reach.
-    /// <see langword="null"/> when the chain is whole. Retained as the single-answer form of
-    /// <see cref="Verify"/>'s walk.
-    /// </summary>
-    internal static string? FindBrokenLink(IReadOnlyList<SignedAuditRecord> chain, string engagementId, IReadOnlyDictionary<string, SigningKey> keys)
-    {
-        var walk = WalkFromGenesis(chain, engagementId, keys);
-        var unreachable = FindUnreachable(chain, walk.Visited);
-
-        return walk.TamperedAt ?? (unreachable is null ? null : unreachable[0]);
-    }
 
     /// <summary>
     /// Follows <paramref name="chain"/>'s hash links from the engagement's genesis, recording which

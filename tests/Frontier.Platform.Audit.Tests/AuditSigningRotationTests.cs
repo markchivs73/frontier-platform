@@ -50,6 +50,25 @@ public sealed class AuditSigningRotationTests
         Assert.True((await signer.VerifyAsync("exec-2", second.EngagementId, CancellationToken.None)).SignatureValid);
     }
 
+    /// <summary>S13.334: rotation keeps every version resolvable, so a rotated chain is valid, never unverified.</summary>
+    [Fact]
+    public async Task VerifyAsync_AfterARotation_TheChainIsValid()
+    {
+        var store = new FakeAuditRecordStore();
+        var vault = new FakeKeyVaultSigningClient();
+        var provider = new KeyVaultKeyProvider(vault);
+        await Signer(store, provider, new KeyVaultAuditSigningService(vault)).SignAsync(AuditRecordHasherTests.Sample() with { ExecutionId = "exec-1" }, CancellationToken.None);
+        vault.RotateTo(FakeKeyVaultSigningClient.V2);
+        var signer = Signer(store, provider, new KeyVaultAuditSigningService(vault));
+        await signer.SignAsync(AuditRecordHasherTests.Sample() with { ExecutionId = "exec-2" }, CancellationToken.None);
+
+        var result = await signer.VerifyAsync("exec-1", AuditRecordHasherTests.Sample().EngagementId, CancellationToken.None);
+
+        Assert.Equal(AuditChainVerdict.Valid, result.Verdict);
+        Assert.True(result.ChainValid);
+        Assert.Null(result.UnresolvedKeyIds);
+    }
+
     [Fact]
     public async Task VerifyAsync_VersionDestroyed_FailsClosedNamesTheVersionAndIsUnverified()
     {

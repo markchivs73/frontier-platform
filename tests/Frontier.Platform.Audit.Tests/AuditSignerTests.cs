@@ -172,7 +172,7 @@ public sealed class AuditSignerTests
     public async Task VerifyAsync_TargetKeyVersionDestroyed_FailsClosedReportsTheIdAndIsUnverified()
     {
         // Decision (A): indistinguishable-from-forgery is not acceptable — the id is reported;
-        // decision (C): hash continuity is key-free, so the chain is still walked and still valid.
+        // decision (C), revised by S13.334: the chain is still walked, but it is unverified, never valid.
         var store = new FakeAuditRecordStore();
         var provider = new FakeRotatingKeyProvider();
         var signer = Signer(store, provider);
@@ -215,22 +215,30 @@ public sealed class AuditSignerTests
         Assert.False(result.ChainValid);
     }
 
-    /// <summary>S13.334 B2: a record appended while a verify runs (after its head read) leaves the chain valid, not truncated.</summary>
+    /// <summary>
+    /// S13.334 B2: a record appended between a verify's chain read and the moment its head would have been read.
+    /// Verify reads the head first, so the head it holds is older than the chain and the chain is valid. Had it
+    /// read the chain first, the newer head would sit past the walk and read as a truncated tail, as the second
+    /// assertion shows with the same three values.
+    /// </summary>
     [Fact]
-    public async Task VerifyAsync_RecordAppendedDuringTheVerify_IsStillValid()
+    public async Task VerifyAsync_RecordAppendedAfterTheChainRead_IsStillValid()
     {
         var store = new FakeAuditRecordStore();
         var signer = Signer(store);
         var first = await signer.SignAsync(AuditRecordHasherTests.Sample(), CancellationToken.None);
-        store.AfterHeadRead = () => signer.SignAsync(
+        var chainAsRead = await store.GetChainAsync(first.EngagementId, CancellationToken.None);
+        store.AfterChainRead = () => signer.SignAsync(
             AuditRecordHasherTests.Sample() with { ExecutionId = "eng-1::wf-2", WorkflowId = "wf-2", ClosedAtUtc = first.ClosedAtUtc.AddMinutes(1) },
             CancellationToken.None);
 
         var result = await signer.VerifyAsync(first.ExecutionId, first.EngagementId, CancellationToken.None);
 
-        Assert.Equal(2, (await store.GetChainAsync(first.EngagementId, CancellationToken.None)).Count);
         Assert.Equal(AuditChainVerdict.Valid, result.Verdict);
-        Assert.Null(result.HeadMismatch);
+        var headAfterTheAppend = (await store.ReadHeadAsync(first.EngagementId, CancellationToken.None))!.Head;
+        Assert.Equal(2, headAfterTheAppend.Sequence);
+        Assert.Equal(AuditChainVerdict.Broken,
+            AuditChainVerifier.Verify(chainAsRead, first.ExecutionId, first.EngagementId, AuditChainVerifierTests.Keys(await KeyProvider.GetCurrentKeyAsync(CancellationToken.None)), headAfterTheAppend).Verdict);
     }
 
     [Fact]

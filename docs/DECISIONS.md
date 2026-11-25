@@ -1084,7 +1084,9 @@ its head; the same ordering fix applies there and is left to a follow-up.
 **Surface.** A breaking change, scoped `audit!`: behavioural (`chain_valid` goes from true to false for an
 unresolvable key) and a source break (the required `Verdict` member breaks object initialisers; the consumer's test
 fakes `AdminFakes.cs` and `ApiFixtures.cs` construct `VerificationResult`). New public types `AuditChainVerdict` and
-`AuditChainHeadMismatch`; a new golden `verification_result_head_mismatch.json`. No stored record changes.
+`AuditChainHeadMismatch`; a new golden `verification_result_head_mismatch.json`. No stored record changes. The internal
+`FindBrokenLink`, named above but with no caller outside tests since ADR-PA31, is removed; its tests now read
+`Verify(...).BrokenLinkAt`.
 
 ## ADR-PA23 — a draft says when it predates the schema it is read with
 
