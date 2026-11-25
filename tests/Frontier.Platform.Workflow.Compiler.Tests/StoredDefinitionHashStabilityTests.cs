@@ -33,4 +33,36 @@ public sealed class StoredDefinitionHashStabilityTests
 
         Assert.Equal(HashRecordedBeforeTheChange, new DefinitionValidator([]).ComputeDefinitionHash(definition));
     }
+
+    /// <summary>
+    /// S13.238: description and tags are inside the hash when present. An empty string or an empty list is
+    /// written, so it hashes differently from an absent one; null is absent and hashes as before.
+    /// </summary>
+    [Fact]
+    public void DescriptionAndTags_AbsentHashAsBefore_EmptyOrPresentHashDifferently()
+    {
+        var definition = JsonSerializer.Deserialize<WorkflowDefinition>(StoredBeforeTheChange, CanonicalProfile.Options)!;
+        var hasher = new DefinitionValidator([]);
+
+        Assert.Equal(HashRecordedBeforeTheChange, hasher.ComputeDefinitionHash(definition with { Description = null, Tags = null }));
+        Assert.Equal(4, new[]
+        {
+            HashRecordedBeforeTheChange,
+            hasher.ComputeDefinitionHash(definition with { Description = "" }),
+            hasher.ComputeDefinitionHash(definition with { Tags = [] }),
+            hasher.ComputeDefinitionHash(definition with { Tags = ["support"] }),
+        }.Distinct().Count());
+    }
+
+    /// <summary>S13.238: tags are hashed in the order given; nothing sorts them.</summary>
+    [Fact]
+    public void Tags_InADifferentOrder_HashDifferently()
+    {
+        var definition = JsonSerializer.Deserialize<WorkflowDefinition>(StoredBeforeTheChange, CanonicalProfile.Options)!;
+        var hasher = new DefinitionValidator([]);
+
+        Assert.NotEqual(
+            hasher.ComputeDefinitionHash(definition with { Tags = ["a", "b"] }),
+            hasher.ComputeDefinitionHash(definition with { Tags = ["b", "a"] }));
+    }
 }

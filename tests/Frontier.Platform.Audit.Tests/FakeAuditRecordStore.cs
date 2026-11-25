@@ -54,15 +54,23 @@ internal sealed class FakeAuditRecordStore : IAuditRecordStore, IAuditChainHeadS
     }
 
     /// <inheritdoc />
-    public Task<IReadOnlyList<SignedAuditRecord>> GetChainAsync(string engagementId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<SignedAuditRecord>> GetChainAsync(string engagementId, CancellationToken cancellationToken)
     {
+        IReadOnlyList<SignedAuditRecord> read;
         lock (gate)
         {
-            return Task.FromResult<IReadOnlyList<SignedAuditRecord>>([.. records
-                .Where(record => record.EngagementId == engagementId)
-                .OrderBy(record => record.ClosedAtUtc)]);
+            read = [.. records.Where(record => record.EngagementId == engagementId).OrderBy(record => record.ClosedAtUtc)];
         }
+
+        // S13.334: lets a test land an append after a verify's chain read. Runs once.
+        var hook = AfterChainRead;
+        AfterChainRead = null;
+        if (hook is not null) await hook();
+        return read;
     }
+
+    /// <summary>Runs once, after the next chain read has taken its snapshot (S13.334's append-during-verify test).</summary>
+    internal Func<Task>? AfterChainRead { get; set; }
 
     /// <inheritdoc />
     public Task CreateAsync(SignedAuditRecord record, CancellationToken cancellationToken)

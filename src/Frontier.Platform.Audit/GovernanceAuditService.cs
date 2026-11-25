@@ -12,8 +12,12 @@ namespace Frontier.Platform.Audit;
 internal sealed class GovernanceAuditService(
     IGovernanceAuditStore store,
     ISigningKeyRing keyRing,
-    IOptions<GovernanceAuditOptions> options) : IGovernanceAuditService
+    IOptions<GovernanceAuditOptions> options,
+    IOptions<AuditTenantOptions>? tenant = null) : IGovernanceAuditService
 {
+    /// <summary>The deployment tenant this instance stamps (S13.293), as the composition root gave it.</summary>
+    internal string? DeploymentTenant => tenant?.Value.Tenant;
+
     /// <inheritdoc />
     public async Task<SignedGovernanceAuditRecord> AppendAsync(GovernanceAuditEntry entry, CancellationToken cancellationToken)
     {
@@ -84,7 +88,7 @@ internal sealed class GovernanceAuditService(
         var keyId = await signing.GetCurrentKeyIdAsync(cancellationToken);
         var sequence = (head?.Head.Sequence ?? 0) + 1;
         var previousHash = head?.Head.RecordHash ?? GovernanceAuditHasher.ComputeGenesisHash(entry.Scope);
-        var prepared = GovernanceAuditHasher.Prepare(entry, recordId, sequence, previousHash, keyId);
+        var prepared = GovernanceAuditHasher.Prepare(entry, recordId, sequence, previousHash, keyId, AuditTenantStamp.Resolve(null, tenant?.Value.Tenant));
         var record = GovernanceAuditHasher.Attach(prepared, await signing.SignAsync(prepared.RecordHash, cancellationToken));
 
         return await store.TryAppendAsync(record, head?.ETag, cancellationToken) ? record : null;

@@ -361,6 +361,71 @@ public sealed class ValidationRulesTests
             Assert.All(findings, f => Assert.Equal(ValidationSeverity.Error, f.Severity));
         }
 
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("  ")]
+        public async Task RequiredFields_DescriptionMissingOrBlank_ReturnsAWarningOnDescription(string? description)
+        {
+            var finding = Assert.Single(await EvaluateAsync(MinimalValidDefinition() with { Description = description }));
+
+            Assert.Equal(("structure.required-fields", ValidationSeverity.Warning, "description"), (finding.RuleId, finding.Severity, finding.FieldPath));
+        }
+
+        [Fact]
+        public async Task RequiredFields_WellFormedTags_ReturnsEmpty() =>
+            Assert.Empty(await EvaluateAsync(MinimalValidDefinition() with { Tags = ["support", "ticket-triage", "v2", new string('a', 32)] }));
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData(0)]
+        public async Task RequiredFields_NoTags_ReturnsEmpty(int? count) =>
+            Assert.Empty(await EvaluateAsync(MinimalValidDefinition() with { Tags = count is null ? null : [] }));
+
+        [Theory]
+        [InlineData("Support", "not kebab-case")]
+        [InlineData("ticket_triage", "not kebab-case")]
+        [InlineData("ticket triage", "not kebab-case")]
+        [InlineData("-triage", "not kebab-case")]
+        [InlineData("triage-", "not kebab-case")]
+        [InlineData("ticket--triage", "not kebab-case")]
+        [InlineData("support\n", "not kebab-case")]
+        [InlineData("\nsupport", "not kebab-case")]
+        [InlineData("", "is empty")]
+        [InlineData("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "longer than 32")]
+        public async Task RequiredFields_MalformedTag_ReturnsAnErrorOnThatTag(string tag, string expected)
+        {
+            var finding = Assert.Single(await EvaluateAsync(MinimalValidDefinition() with { Tags = ["support", tag] }));
+
+            Assert.Equal((ValidationSeverity.Error, "tags[1]"), (finding.Severity, finding.FieldPath));
+            Assert.Contains(expected, finding.Message, StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public async Task RequiredFields_ANullTag_ReturnsAnErrorOnThatTag() =>
+            Assert.Equal("tags[0]", Assert.Single(await EvaluateAsync(MinimalValidDefinition() with { Tags = [null!] })).FieldPath);
+
+        [Fact]
+        public async Task RequiredFields_TenTags_ReturnsEmpty() =>
+            Assert.Empty(await EvaluateAsync(MinimalValidDefinition() with { Tags = [.. Enumerable.Range(0, 10).Select(i => $"tag-{i}")] }));
+
+        [Fact]
+        public async Task RequiredFields_ElevenTags_ReturnsOneErrorOnTags()
+        {
+            var finding = Assert.Single(await EvaluateAsync(MinimalValidDefinition() with { Tags = [.. Enumerable.Range(0, 11).Select(i => $"tag-{i}")] }));
+
+            Assert.Equal((ValidationSeverity.Error, "tags"), (finding.Severity, finding.FieldPath));
+        }
+
+        [Theory]
+        [InlineData("structure.required-fields", "tags", true)]
+        [InlineData("structure.required-fields", "tags[3]", true)]
+        [InlineData("structure.required-fields", "name", false)]
+        [InlineData("structure.required-fields", null, false)]
+        [InlineData("structure.unique-node-ids", "tags", false)]
+        public void IsTagFinding_OnlyThisRulesTagPaths(string ruleId, string? fieldPath, bool expected) =>
+            Assert.Equal(expected, StructureRequiredFieldsRule.IsTagFinding(new ValidationFinding(ruleId, ValidationSeverity.Error, "m", FieldPath: fieldPath)));
+
         private static Task<IReadOnlyList<ValidationFinding>> EvaluateAsync(WorkflowDefinition definition) =>
             new StructureRequiredFieldsRule().EvaluateAsync(new DefinitionValidationContext(definition), CancellationToken.None);
 
@@ -423,6 +488,7 @@ public sealed class ValidationRulesTests
             DefinitionVersion = 1,
             EngagementType = "advisory-sow",
             Name = "Test Workflow",
+            Description = "Drafts a scope, then summarises it.",
             Nodes = new WorkflowNode[]
             {
                 new AgentTaskNode

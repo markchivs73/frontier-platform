@@ -52,18 +52,12 @@ public static class HitlServiceCollectionExtensions
             UseSystemTextJsonSerializerWithOptions = CanonicalProfile.Options,
             ConnectionMode = ConnectionMode.Gateway,
             // The Cosmos emulator uses a self-signed TLS cert that is not in the OS trust
-            // store. Bypass validation when connecting to localhost (emulator only).
-            HttpClientFactory = IsLocalEmulator(options.Endpoint)
+            // store. Bypass validation only for a parsed loopback host (emulator only; S13.349).
+            HttpClientFactory = LocalEndpoint.IsLoopback(options.Endpoint)
                 ? () => new HttpClient(new HttpClientHandler { CheckCertificateRevocationList = true, ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator })
                 : null
         };
 
         return new CosmosClient(options.Endpoint, options.Key, clientOptions);
     }
-
-    private static bool IsLocalEmulator(string endpoint) =>
-        endpoint.StartsWith("https://localhost", StringComparison.OrdinalIgnoreCase) ||
-        endpoint.StartsWith("https://127.0.0.1", StringComparison.OrdinalIgnoreCase) ||
-        endpoint.StartsWith("http://localhost", StringComparison.OrdinalIgnoreCase) ||
-        endpoint.StartsWith("http://127.0.0.1", StringComparison.OrdinalIgnoreCase);
 }

@@ -808,6 +808,35 @@ published run's gate does; `null` for a test-run document from before the engage
 Breaking for implementors of `ITestRunExecutor`; the consumer's adapter is the only one, and it
 hard-coded occurrence `1` where every first visit is `0`.
 
+### ADR-PA17 — amended 2026-11-25: a sandbox gate decision names the human who decided
+
+Consumer task S13.338, from its run-2 security review (2026-11-20), decided in its 2026-11-24 triage
+(option a). `TestRunService.DecideGateAsync` stamped the fixed `system:sandbox-designer` on every
+interactive sandbox decision it passed to `ITestRunExecutor.RaiseGateDecisionAsync`, so the decision
+(and what the consumer's executor recorded from it) named a placeholder, not the person. The consumer's ADR-E8 D1 reserves `system:*` for machine actions, and `GateDecision.ApproverId`
+is documented as the resolved identity of the human who decided.
+
+`ITestRunService.DecideGateAsync` now takes `approverId` after `gateId`, the same order as
+`ITestRunExecutor.RaiseGateDecisionAsync`, and passes it through unchanged. A null, empty or whitespace
+id is refused before the run is read or anything is raised. The service does not police the `system:`
+prefix: nothing specifies such a rule. The `system:sandbox-designer` constant is gone. The auto-approve
+path (reconcile and the finalizer sweep) is machine action and keeps `system:sandbox-auto-approve`.
+No stored data changes, and no recovery path read the removed value.
+
+Breaking for every caller and implementer of `ITestRunService`, changed in place as the 2026-10-22
+amendment changed `RaiseGateDecisionAsync`, so the commit is scoped `workflow.compiler!`. No
+`[Obsolete]` overload: it would still be a new interface member, and it would keep the placeholder
+reachable. The consumer has one caller, the sandbox decide route, and three test doubles. After the
+tag, the consumer will pass the caller's object id from that route and answer 403 `no_principal` when
+there is none (its half of S13.338).
+
+Forward flags. In a sandbox the designer both starts the run and plays approver (the consumer's doc 13
+§5), so sandbox records now show initiator equal to approver by design; separation-of-duties checks and
+decision reports must exclude `SANDBOX-` engagements. That exclusion is not enforced here: the
+separation-of-duties check (the consumer's S13.131) is not built, and which engagements a report scans is
+the consumer's concern, not this service's. Two designers deciding the same sandbox gate, and
+a retry after a lost raise naming a different person, are left as they were.
+
 
 ---
 
@@ -1041,6 +1070,52 @@ Release: **minor, v0.24.0** (major version 0, so a breaking change may ship in a
 "Versioning"). Breaking for any out-of-repo `IKeyProvider` implementation, which must now
 implement `GetKeyAsync`; the in-repo `DevKeyProvider` resolves its own key id and returns `null`
 for anything else. Tracked as S13.66.
+
+### ADR-PA22 — amended 2026-11-25: an unresolvable key makes the chain unverified, never valid
+
+Consumer task S13.334 (B1, Mark ✅ 2026-11-24; B2 accepted with the triage block), from its run-2 audit-trail
+security review (AUD-1, AUD-2). It revises the paragraph above, "An unresolvable key does not stop the walk",
+which let a missing key version leave `chain_valid` true. This engages K6, the consumer's position that the signed,
+chained audit trail is evidence.
+
+**Why decision C was a hole.** `record_hash` is an unkeyed SHA-256. A writer with data-plane access to
+`audit-records` can edit a record, recompute its hash, relink and rehash every later record, give each one a bogus
+`signing_key_id`, and rewrite the chain head. The walk skipped every unresolvable record and reported
+`chain_valid = true`; the only trace was `unresolved_key_ids`, which read as "a key version was destroyed", not "this
+chain was rewritten". The signature is the only part of a record such a writer cannot forge, because the signing key
+never leaves Key Vault (ADR-PA33). So no verdict that skips an unchecked signature can be trusted.
+
+**Decision.**
+1. *A three-way verdict.* `VerificationResult.Verdict` (`verdict`, order 7) is `valid`, `broken` or `unverified`.
+   Any evidence of damage is `broken`: a signature that fails against a resolved key, a recomputed hash that does not
+   match, a broken or unreachable link, a fork, or a head mismatch. Otherwise a non-empty chain-wide
+   `unresolved_key_ids` is `unverified`. Otherwise `valid`. `chain_valid` is now exactly `verdict == valid`, so
+   existing readers fail safe.
+2. *The hash is checked without a key.* Every walked record's `record_hash` is recomputed, whether or not its key
+   resolves, so an edit that left the stored hash alone is `broken` even under a bogus key id.
+3. *The head must be on the walk.* `head_mismatch` (order 8) is set when the record at the head's `sequence` on the
+   walk does not carry the head's `record_hash`, so a truncated tail or an edited head is `broken`. The walk may be
+   longer than the head: verify now reads the head **before** the chain, so a record appended in between only extends
+   the walk. The check is skipped when a fork or unreachable record exists (they already explain the shape, and a
+   legacy fork leaves the head on the untaken arm) and when there is no head.
+
+**`unverified` is not benign.** A store writer can turn a `broken` chain into an `unverified` one by giving records
+bogus key ids, so consumers should alert on `verdict`, not only on `chain_valid = false`. Rotation never produces it,
+because old versions are disabled, never destroyed (S13.107). **Costs:** an engagement whose key version really was
+destroyed reads `unverified` permanently, which is the truth about it; and because the Key Vault client (`AzureKeyVaultSigningClient`) maps a 403
+to "unresolvable", an RBAC regression on the vault would make every chain read `unverified` until it is fixed.
+
+**Limits.** The head is mutable, unsigned bookkeeping: a writer who also rewrites it defeats the head check, which
+forces a coordinated two-document edit and proves nothing about completeness. Completeness needs an external anchor
+the store writer cannot rewrite (B3, Phase 2). `GovernanceAuditService.VerifyAsync` still reads its records before
+its head; the same ordering fix applies there and is left to a follow-up.
+
+**Surface.** A breaking change, scoped `audit!`: behavioural (`chain_valid` goes from true to false for an
+unresolvable key) and a source break (the required `Verdict` member breaks object initialisers; the consumer's test
+fakes `AdminFakes.cs` and `ApiFixtures.cs` construct `VerificationResult`). New public types `AuditChainVerdict` and
+`AuditChainHeadMismatch`; a new golden `verification_result_head_mismatch.json`. No stored record changes. The internal
+`FindBrokenLink`, named above but with no caller outside tests since ADR-PA31, is removed; its tests now read
+`Verify(...).BrokenLinkAt`.
 
 ## ADR-PA23 — a draft says when it predates the schema it is read with
 
@@ -2297,6 +2372,25 @@ was created or modified in the vault — the only operations are public-key read
 surprises: the code needed no change to work against real Azure.** The one thing the fake could not
 have told us is now pinned by an assertion — Key Vault returns ES256 signatures as raw `r ‖ s`
 (IEEE P1363), not DER, and `AuditSignatureVerifier` was already right about it.
+
+### ADR-PA33 — amended 2026-11-25: "local" is the parsed loopback host, decided once
+
+Consumer task S13.349 (AUTHN-1) with S13.334 item 3, accepted in its 2026-11-24 triage. `SigningProfileCheck`
+allowed the committed dev signing key, and the four Cosmos client factories (Audit, Hitl, ModelRoleConfig,
+ContextAssembly) skipped TLS validation, whenever the endpoint *started with* `http(s)://localhost` or
+`http(s)://127.0.0.1`. `https://localhost.evil.example`, `https://localhostfrontier.documents.azure.com`,
+`https://127.0.0.1.nip.io` and `https://localhost:8081@evil.example` all passed. All four now call one public rule,
+`Frontier.Platform.Serialization.LocalEndpoint.IsLoopback`: an absolute http/https URI whose parsed host is exactly
+`localhost` or a loopback IP. It judges the host `System.Uri` parses, which is the host a client built from the same
+string dials, so userinfo cannot fool it and the parser's own normalisation (`loopback` to `localhost`, `0x7f.1` to
+`127.0.0.1`) is followed rather than second-guessed. A trailing-dot `localhost.` is refused. `LocalProfile` and the
+three private copies are removed.
+
+Behaviour change, not a surface break: a process configured with a prefix-only "local" endpoint now refuses the dev
+key at boot and validates the server certificate. The consumer's own copy of the rule
+(`CredentialProfileCheck.IsLocalEndpoint`) can collapse onto this one; its test rows are copied into
+`LocalEndpointTests` so that is a known change (only `localhost.` tightens). Giving each head one explicit
+`CosmosClient` is the consumer's part.
 
 ## ADR-PA34 — the mapping governance surface says who changed what, refuses staleness by name, and answers across roles
 
@@ -3826,3 +3920,238 @@ place: a DNS answer is not a policy decision, and left as it is it stays transie
 server's breaker closed and are not re-run by the activity, and that a returned 504/408 is retried; it moves
 `OrchestrationFactory.ClassifyFailure` to the same exact-name match and gives it a `policy_refused` row; and it
 amends doc 10 §3 (the two statuses in row 2, a `policy_refused` row, and the outer loop's fourth permanent type).
+
+## ADR-PA49 — a bounded read of what one approver decided, as a new member on `IApprovalQueryService`
+
+Consumer task S13.312, found 2026-11-20 while building S13.124. Settled in the consumer's triage of
+2026-11-24 ("bounded decided-by query in the platform Hitl").
+
+**Why.** The consumer's C1 inbox shows a "Decided by you (24h)" section. Its only source was
+`IApprovalStore.GetDecidedAsync`, the recovery sweep's cross-partition read of every `decided` request
+ever, with no time bound. The consumer filtered that list down to the caller's last day, and it read it on
+every inbox load and every `ApprovalDecided` event.
+
+**Decision.**
+1. *The read.* `IApprovalQueryService.GetDecidedByAsync(approverId, sinceUtc, ct)` returns the requests
+   still `decided` whose `decision.approver_id` is `approverId` and whose `decision.decided_at_utc` is at
+   or after `sinceUtc`, newest decision first, paged at 100. `@since` is passed as the string the canonical
+   profile writes (doc 01 §3.2: fixed-width UTC to the millisecond, truncated). The comparison is therefore
+   a string comparison over the stored bytes, and it orders as the dates do. Requests decided at the same
+   millisecond come back in no defined order, because no second sort key is named, so a caller that needs
+   a stable order breaks ties itself. A blank approver, or a `sinceUtc` that is not UTC, is refused.
+2. *Cross-partition, and accepted.* One approver's decisions span engagements, so the read cannot be
+   single-partition. It is accepted because three things bound it: the decider and the window cut the read
+   down through the index, it is intended for the consumer's C1 "Decided by you" read (its only planned
+   caller, on the same paths as the scan it replaces), and the alternative is worse for now. That alternative, a per-approver projection, would be
+   a new container whose partition key breaks ADR-S1 (`/engagementId` on every hot container). It is
+   deferred until C1 proves hot. The read needs only the default `/*` range index. The `approvals`
+   composite index (`/status`, `/requested_at_utc`) neither serves nor blocks it.
+3. *A new member on a shipped interface, so `hitl!`.* Every implementation of `IApprovalQueryService` must
+   add it, and the consumer's ten test doubles are the implementations affected. This follows ADR-PA41,
+   ADR-PA43 and the `IApprovalStore` change of #177. ADR-PA34 D4 and ADR-PA29 chose a new interface instead
+   for roles that consumers double, and that was considered here. It was not chosen because approval reads
+   would then be split across two interfaces, while the consumer's change is ten one-line fakes in a single
+   bump. The release is still a minor under the 0.x rule.
+
+**What it does not change.** `GetDecidedAsync` and the recovery sweep are unchanged. No wire shape,
+container or index moves.
+
+**What the consumer does.** After bumping, it implements the member on its doubles. It reads C1's
+decided rows through `GetDecidedByAsync(callerId, now - 24h)`, skips the call when the caller has no id,
+and keeps its exact filter (sandbox engagements, the millisecond edge and the tie-break) over the result.
+
+## ADR-PA50 — a publish whose supersede fails is reported as published, by its own exception type
+
+Consumer task S13.350a, found 2026-11-20 in the consumer's run-2 review of S13.350. Decided in the consumer's
+triage of 2026-11-24 (option B: a distinct typed exception, and the consumer skips compensation).
+
+**Why.** `DefinitionLifecycleService.ApproveAsync` marks the versions a new one replaces `superseded` (GOV-14)
+only after `IDefinitionStore.ApproveAndPublishAsync` has published the new version and moved the pointer. Until
+now a failure there surfaced as whatever the store threw. The consumer's governance path appends
+`definition_publish_approved` before the change and compensates it when the change throws, so the trail then
+said the approval did not happen while the version was live and pinnable. A plain `InvalidOperationException`
+from the store was worse: the consumer's `LifecycleRefusal` exact-matches that type as a lifecycle refusal, so
+it answered 409 *and* compensated.
+
+**Decision.**
+1. *A failure of the supersede, and only that, is wrapped.* Any exception from the supersede loop, cancellation
+   included, becomes `PublishedButNotSupersededException`. It carries the `PublishedVersion` that `ApproveAsync`
+   would have returned and the versions not confirmed superseded (the ones already done are not named), and its
+   inner exception is what stopped the loop. A failure of `ApproveAndPublishAsync` itself is never wrapped.
+   A store's `false` ("changed concurrently") still counts as done.
+2. *Not an `InvalidOperationException`.* With the Cosmos store's atomic publish, `ApproveAsync` throws that
+   type only when nothing was written (`PublishRevalidationException` derives from it for that reason); a store
+   keeping `IDefinitionStore.ApproveAndPublishAsync`'s non-atomic default may throw it after the approval landed,
+   as the interface remark says. The new type derives from `Exception`, so
+   a caller's "refused / did not happen" mapping cannot catch it by accident.
+3. *Retry, not repair.* The next publish of the workflow retries every older published or retired version that
+   records no successor (`SupersessionTargets`). Until then there is a window: a retired predecessor with no
+   successor recorded that is un-retired becomes `published` beside the new version, the state GOV-14 exists to
+   prevent. Durable after-commit supersession (retried or swept) is the consumer's S13.328 (a), not this.
+
+**Surface.** One new public type; no interface member changes and nothing is removed, so the commit is not
+scoped `!` (as #181 shipped `PublishRevalidationException`). The behaviour change: a caller that caught the
+store's own exception type from a failed supersede now gets this type instead.
+
+**Not closed here.** Cancellation or a timeout inside `ApproveAndPublishAsync` after its batch committed still
+looks like a failed publish to the caller and is compensated falsely. That is the same shape as the consumer's
+S13.328 (c), and belongs with it. Likewise a store that keeps the non-atomic default
+`ApproveAndPublishAsync` and fails after approving the proposal surfaces an `InvalidOperationException` (or
+the store's own exception) although the approval landed; the platform's Cosmos store overrides it atomically,
+so only a third-party store is exposed, and this change does not cover it.
+
+**What the consumer does.** After bumping: inside the approve mutation it catches this type, logs at Error for a
+store fault (Warning when the inner exception is the caller's cancellation), does not rethrow, so no
+compensation is appended, and still sends `ProposalStateChanged` and answers as for a publish. Whether an
+incomplete supersede deserves its own signed record (a new event type) is a question for Mark.
+
+## ADR-PA51 — the design-history kill switch drops the conversation before the publish write
+
+Consumer task S13.294, from its S13.285 review (2026-11-16), accepted in its 2026-11-24 triage. The consumer's
+doc 14 §2 and ADR-CD1 (chat history is persistent and draft-scoped), and its doc 15 §10, give sectors that must
+not retain design conversations a deployment flag, `chatDesigner.historyEnabled`. Neither repository had it.
+
+**What existed.** A `DesignTurnDocument` carries no `publishedVersion` and no `ttl`, nothing stamps turns at
+publish, and no housekeeping TTL is set. Turns live until the draft is deleted, and the draft stays open after
+publish, so every published version's conversation stayed on the draft indefinitely. The enabled half of
+ADR-CD1 (stamp at publish, exemption from a housekeeping TTL) is the consumer's S13.383, not this.
+
+**Decision.**
+1. *One setting.* `ChatDesignerHistoryOptions.HistoryEnabled`, default `true`, bound from the `ChatDesigner`
+   section by `AddFrontierWorkflowCompiler(configuration)` like `CosmosOptions`. No library reads raw
+   configuration, and nothing reads it in an orchestrator body.
+2. *No per-turn TTL.* Doc 14 §9's "draft-lifetime TTL" has no derivable value: drafts carry no TTL, and a Cosmos
+   TTL counts from each item's last write, so it would erode a live draft's conversation from its oldest turn.
+   Deleting the draft already deletes its turns. Bounding abandoned drafts belongs with S13.383's housekeeping TTL.
+3. *Dropped at publish, before the write.* With the setting off, `ApproveAsync` calls
+   `IDefinitionStore.DeleteDesignConversationAsync` as its last step before `ApproveAndPublishAsync`, after
+   re-validation and contract pinning. A failed drop publishes nothing: the approval is refused before its
+   write, and an approver can approve again. The drop itself is not atomic: if it fails part-way, the turns
+   already deleted stay deleted, and the re-approval deletes the rest.
+   **Accepted loss:** if the publish write then fails (a lost race, a transient batch failure), the approval
+   was not written and the conversation is already gone, so the approver no longer sees it beside the diff
+   (consumer doc 15 §10) when approving again. With the Cosmos store's atomic publish the proposal is then still
+   in review; a store keeping the non-atomic default write makes no such promise. Dropping after the write would
+   instead leave a landed publish failing on its privacy step.
+4. *The welcome turn stays, and a concurrent turn is not lost.* Doc 14 §2 says turn 0 is not deletable, so the
+   drop deletes every turn numbered above 0 that it read, then rewrites the chat-history index without exactly
+   those turns. The rewrite is a replace guarded by the index's ETag: a turn appended in between (whose number is
+   at or above the read's next turn number, so it was not deleted) makes the replace fail, and the index is
+   re-read and rewritten keeping it, at most three times before the approval is refused with nothing published.
+   That turn's document and its index entry both survive until the next publish. The next turn number is kept,
+   so a turn id is never reused.
+
+**Surface.** Additive. `DeleteDesignConversationAsync` is a default-implemented `IDefinitionStore` member that
+throws `NotSupportedException`, as `SupersedeVersionAsync` does, so implementers do not break; it is reached only
+by a deployment that turns history off. `DefinitionLifecycleService` gains a constructor taking the options; the
+existing four-argument constructor stays, losing only its default value as the PublicAPI analyzer's
+optional-parameter rule (RS0027) requires. Every existing call still compiles: a four-argument call binds to it
+as before, and a three-argument call now binds to the new five-argument overload with the same behaviour.
+Points 2 and 4 are proposed and wait on Mark.
+## ADR-PA52 — a definition may carry a description and tags
+
+Consumer task S13.238, split from S13.206 (Mark, 2026-11-06), with picks accepted in the consumer's 2026-11-24
+triage. The consumer's doc 13 §4.2 first had `structure.required-fields` check a description and well-formed
+tags, but `WorkflowDefinition` had neither.
+
+**Decision.**
+1. *Two optional members, inside the hash.* `description` (order 10) and `tags` (order 11) follow `contracts`,
+   omitted when null. A definition without them serializes to the same canonical bytes, so its hash is
+   unchanged (`StoredDefinitionHashStabilityTests`' existing tests are untouched and pass; one test is added). When present they are hashed like any
+   other member, in the order given: re-tagging changes the hash, so (reasoned from immutability, not tested here) it needs a new publish. An empty string and an
+   empty list are written and hashed, so writers send null for "none". No `schema_version` bump: the members
+   are optional (ADR-E15). The activity-shape snapshot grows additively (`EvaluateCascadeActivity` input,
+   `ResolveDispatcherVersionActivity` output).
+2. *The checks* (triage picks). A missing or blank description is a **Warning**. Each tag must be kebab-case,
+   read strictly as `\A[a-z0-9]+(-[a-z0-9]+)*\z` (so a trailing newline is refused), and at most 32 characters (length checked first); each bad tag
+   is an Error on `tags[i]`. More than ten tags is an Error on `tags`. The checks are in the rule, not in
+   `WorkflowDefinition.Validate()`, which throws.
+3. *Proposals are not blocked by tags.* The chat designer's Apply (the granular merge) applies only nodes and
+   edges, so a proposal's tags never reach the draft. Tag findings therefore neither drive the repair pass nor
+   block Apply; they still block a publish. The designer's prompt and schema text are unchanged, so (reasoned, not tested) the prompt bytes
+   for a definition without the members are identical. The schema's unknown-key check no longer flags
+   `description` or `tags` on a proposal.
+
+**Health effect, for Mark.** Because a missing description is a Warning, every draft without one validates
+`PassWithWarnings`, and the consumer's health sweep reports every published version without one as
+`warning`. A published version is immutable, so it stays `warning` until it is republished with a
+description. The alternatives are to keep the Warning, make it Info, or have the sweep ignore this finding.
+
+**Pending Mark (proposed).** Duplicate tags are not checked; tag order is hashed and nothing sorts. No
+description length cap is set, although the description rides inline as orchestration input and in the
+designer prompt on every turn.
+## ADR-PA53 — a human decision records the role and scope it was made under
+
+Consumer S13.282 (review-01 GOV-58; K5, every human decision attributed; K6, governance signed): a gate decision
+named who decided (`approver_id`) but not by what right, so an audit could not say which role and which binding
+scope admitted the approver. The consumer decided (triage 2026-11-24, accepted block) to stamp the most specific
+matching binding's scope, falling back to the first role in resolution order on a tie. The platform carries it.
+
+**Additive, omit-null members (ADR-E15's additive rule).**
+- `DecisionAuthority { role_id, scope: DecisionScope { kind, id? } }` (Abstractions).
+- `HitlDecision.authority` (order 7) and `HumanDecisionRecord.authority` (order 6); `HumanDecisionProjector` copies
+  it, so it is inside `record_hash` and signed.
+- Null when the caller supplied none: decisions recorded before the member existed, or not made through a binding.
+  Omitted from the wire then, so every older record, snapshot and gate event serializes byte-identically; the
+  existing goldens are unchanged and `RecordSignedBeforeDecisionAuthority_RecomputesToItsStoredBytes` holds over them.
+
+**`kind` is a string, not a smart enum.** It is consumer-defined and opaque to the platform. A smart enum would make an
+older worker throw inside `WaitForExternalEvent<HitlDecision>` on a kind a newer consumer added, which is a replay
+hazard; a string carries it through. Doc 15 §4's `deployment`, `client`, `engagement` are examples, not a list.
+
+**The authority is consumer-asserted and unverified**, exactly as `approver_id` is: the platform signs what it is
+given. Verifying it would mean the platform reading the consumer's bindings, which it does not own.
+
+**`GateDecision` (`frontier/gate-decision/1.0`) is deliberately untouched.** `GateDecision.From` does not copy the
+authority, so a gate's node output and its downstream bytes are unchanged; exposing it to nodes would be a 1.1
+contract, which nothing asks for.
+
+**Skew.** An older worker reading a new gate event drops the unknown member (the canonical profile skips
+undeclared members), so it records the decision without its authority; a newer worker reads an old event as
+null. **Verifiers adopt this release no later than the workers that write it**, for the reason ADR-PA45 gives: a
+verifier whose contract predates the member would read a new record without it and fail the signature.
+
+**Activity shapes.** `ConsolidateAuditActivity`, `RequestApprovalActivity`, `EscalateApprovalActivity` and
+`SnapshotStateActivity` gain optional `authority` paths; `activity-shapes.json` is updated in place (an additive
+change, generation unchanged).
+
+**What the consumer does.** After bumping: derive the authority from the same resolution pass that admits the caller
+(`ApprovalsController` already resolves the gate's approvers), not a second lookup; stamp `Authority` on the
+`HitlDecision` it records; test the most-specific-scope rule and the tie rule; amend doc 06 §9 and doc 15 §4.
+Additive surface; release **minor**.
+
+## ADR-PA54 — the deployment tenant is stamped inside signed audit records
+
+Consumer task S13.293, from its S13.285 review (2026-11-16); decided by Mark on 2026-11-17 (S13.285 Q4). The
+consumer's doc 15 §6 says tokens, audit records and exported documents are tenant-stamped, but no audit or export
+code carried a tenant. Mark's reason: audit provenance must survive records leaving their deployment (a tenant
+migration, an archive merge, a regulator export), and a field inside the signed record makes the origin
+tamper-evident. Execution stays one tenant per deployment (ADR-SEC2).
+
+**Decision.**
+1. *Where it lives.* An optional `tenant` on `AuditRecord` (order 21) and `SignedAuditRecord` (order 25), copied by
+   the hasher, and on `SignedGovernanceAuditRecord` (order 22). It is inside the hashed and signed bytes, so editing it
+   breaks the chain. It is **not** on `GovernanceAuditEntry`, because a governance record id is hashed from the entry
+   and stamping the entry would change ids and break idempotent re-append across the change.
+2. *Where the value comes from.* One deployment option, `AuditTenantOptions.Tenant` (section `Audit`, at most 128
+   characters), read by the execution signer and the governance service at the signing step, never in an orchestrator
+   body. Workers sign at execution close and hold no token, so the platform stamps a deployment constant; the consumer
+   binds it to the same value its claims transformation mints as `frontier:tenant`, which ADR-SEC2 makes a deployment
+   constant too.
+3. *The rules.* Null, empty and whitespace mean "no tenant" on both the option and the record. With the option unset,
+   nothing is stamped and the bytes are exactly as before; a record that itself carries a tenant is refused, because
+   the deployment cannot vouch for it. With the option set, a record carrying no tenant is stamped and one carrying the
+   same tenant is accepted. A different tenant, or one longer than 128 characters on either side, is a permanent
+   `ContractViolationException`, thrown before the signing service is called or anything is stored. An over-long
+   option also fails options validation at start.
+4. *Old records.* A null tenant is omitted before hashing (and the governance chain is JCS-sorted), so every record
+   signed before the field existed recomputes its stored hash and verifies. `AuditChainGuardRegressionTests` pins this
+   for the execution golden unchanged, and `TheStoredGoldenRecord_StillHashesToItsStoredRecordHash` for the governance
+   golden. Exports write the signed record's bytes, so the tenant rides inside them with no exporter change.
+
+**Rollout order.** A binary from before this change recomputes a record's hash without the field, so it reads a
+stamped record as broken. Deploy with the option unset first; set it only once no older binary reads the chain.
+Rolling back after stamping has begun has the same effect.
+
+**Surface.** Additive, not `!`: optional members, a new options type, no new required member (ADR-E15). The
+`ConsolidateAuditActivity` output shape grows by one optional member. New golden `signed_audit_record_tenant.json`.

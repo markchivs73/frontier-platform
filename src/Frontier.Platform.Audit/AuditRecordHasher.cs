@@ -58,6 +58,7 @@ internal static class AuditRecordHasher
         Generation = record.Generation,
         Failure = record.Failure,
         Termination = record.Termination,
+        Tenant = record.Tenant,
         PreviousRecordHash = previousRecordHash,
         RecordHash = recordHash,
         Signature = signature,
@@ -88,5 +89,6 @@ internal static class AuditRecordHasher
         Generation = record.Generation,
         Failure = record.Failure,
         Termination = record.Termination,
+        Tenant = record.Tenant,
     };
 }

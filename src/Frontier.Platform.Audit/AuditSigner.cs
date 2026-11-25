@@ -24,12 +24,18 @@ internal sealed class AuditSigner(
     IAuditChainHeadStore headStore,
     IKeyProvider keyProvider,
     IAuditSigningService signingService,
-    IOptions<ExecutionAuditOptions> options) : IAuditSigner
+    IOptions<ExecutionAuditOptions> options,
+    IOptions<AuditTenantOptions>? tenant = null) : IAuditSigner
 {
+    /// <summary>The deployment tenant this instance stamps (S13.293), as the composition root gave it.</summary>
+    internal string? DeploymentTenant => tenant?.Value.Tenant;
+
     /// <inheritdoc />
     public async Task<SignedAuditRecord> SignAsync(AuditRecord record, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(record);
+        // S13.293: stamped before any hashing, so a tenant that is not this deployment's is refused before anything is signed.
+        record = record with { Tenant = AuditTenantStamp.Resolve(record.Tenant, tenant?.Value.Tenant) };
 
         var retry = options.Value;
         for (var attempt = 1; attempt <= retry.AppendMaxAttempts; attempt++)
@@ -62,8 +68,10 @@ internal sealed class AuditSigner(
     /// <inheritdoc />
     public async Task<VerificationResult> VerifyAsync(string executionId, string engagementId, CancellationToken cancellationToken)
     {
-        var chain = await recordStore.GetChainAsync(engagementId, cancellationToken);
+        // S13.334 B2: the head is read before the chain, so a record appended in between only lengthens the walk
+        // past the head's position and never reads as a truncated tail.
         var head = await headStore.ReadHeadAsync(engagementId, cancellationToken);
+        var chain = await recordStore.GetChainAsync(engagementId, cancellationToken);
         var keys = await new SigningKeyResolver(keyProvider).ResolveAsync(chain, cancellationToken);
 
         return AuditChainVerifier.Verify(chain, executionId, engagementId, keys, head?.Head);

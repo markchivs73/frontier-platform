@@ -147,6 +147,17 @@ internal static class AuditContractSamples
         ChainValid = true,
         BrokenLinkAt = null,
         VerifiedAgainstKeyId = "audit-hmac/v1",
+        Verdict = AuditChainVerdict.Valid,
+    };
+
+    /// <summary>S13.334: a truncated tail, reported as a broken verdict with the head mismatch beside it.</summary>
+    public static VerificationResult VerificationResultHeadMismatch() => new()
+    {
+        SignatureValid = true,
+        ChainValid = false,
+        VerifiedAgainstKeyId = "audit-hmac/v1",
+        Verdict = AuditChainVerdict.Broken,
+        HeadMismatch = new AuditChainHeadMismatch { HeadSequence = 3, HeadRecordHash = "hash-3", WalkedCount = 2, WalkedRecordHash = "hash-2" },
     };
 
     /// <summary>A well-formed <see cref="AuditRecord"/> (doc 05 §3 fields 0-13) covering one Gate-3-style execution.</summary>
@@ -244,6 +255,15 @@ internal static class AuditContractSamples
         Reason = "Parked on a failure that will not be fixed.",
         TerminatedAtUtc = new DateTime(2026, 1, 1, 2, 0, 0, DateTimeKind.Utc),
     };
+
+    /// <summary>ADR-PA53: the role and scope a human decision was made under.</summary>
+    public static DecisionAuthority DecisionAuthority() => new() { RoleId = "finance-lead", Scope = new DecisionScope { Kind = "engagement", Id = "eng-1" } };
+
+    /// <summary>ADR-PA53: an audit record whose human decision names the authority it was made under.</summary>
+    public static AuditRecord AuditRecordWithDecisionAuthority() => AuditRecord() with { HumanDecisions = [HumanDecisionRecord() with { Authority = DecisionAuthority() }] };
+
+    /// <summary>ADR-PA53: the signed shape of <see cref="AuditRecordWithDecisionAuthority"/>.</summary>
+    public static SignedAuditRecord SignedAuditRecordWithDecisionAuthority() => SignedAuditRecord() with { HumanDecisions = [HumanDecisionRecord() with { Authority = DecisionAuthority() }] };
 
     /// <summary>S13.240: a failed run's record.</summary>
     public static AuditRecord AuditRecordFailed() => AuditRecord() with { FinalStatus = ExecutionStatus.Failed, Failure = FailureRecord() };

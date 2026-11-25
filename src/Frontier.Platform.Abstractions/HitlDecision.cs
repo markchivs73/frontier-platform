@@ -44,4 +44,12 @@ public sealed record HitlDecision
     [JsonPropertyOrder(6)]
     [JsonPropertyName("decided_at_utc")]
     public required DateTime DecidedAtUtc { get; init; }
+
+    /// <summary>
+    /// The role and scope the approver decided under (ADR-PA53), as the consumer asserts them. Null when the caller
+    /// supplied none (decisions recorded before the member existed, or not made through a binding).
+    /// </summary>
+    [JsonPropertyOrder(7)]
+    [JsonPropertyName("authority")]
+    public DecisionAuthority? Authority { get; init; }
 }
