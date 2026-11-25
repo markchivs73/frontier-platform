@@ -62,8 +62,10 @@ internal sealed class AuditSigner(
     /// <inheritdoc />
     public async Task<VerificationResult> VerifyAsync(string executionId, string engagementId, CancellationToken cancellationToken)
     {
-        var chain = await recordStore.GetChainAsync(engagementId, cancellationToken);
+        // S13.334 B2: the head is read before the chain, so a record appended in between only lengthens the walk
+        // past the head's position and never reads as a truncated tail.
         var head = await headStore.ReadHeadAsync(engagementId, cancellationToken);
+        var chain = await recordStore.GetChainAsync(engagementId, cancellationToken);
         var keys = await new SigningKeyResolver(keyProvider).ResolveAsync(chain, cancellationToken);
 
         return AuditChainVerifier.Verify(chain, executionId, engagementId, keys, head?.Head);

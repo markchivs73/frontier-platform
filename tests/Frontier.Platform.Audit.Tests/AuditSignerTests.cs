@@ -169,10 +169,10 @@ public sealed class AuditSignerTests
     }
 
     [Fact]
-    public async Task VerifyAsync_TargetKeyVersionDestroyed_FailsClosedAndReportsTheUnresolvedId()
+    public async Task VerifyAsync_TargetKeyVersionDestroyed_FailsClosedReportsTheIdAndIsUnverified()
     {
         // Decision (A): indistinguishable-from-forgery is not acceptable — the id is reported;
-        // decision (C): hash continuity is key-free, so the chain is still walked and still valid.
+        // decision (C), revised by S13.334: the chain is still walked, but it is unverified, never valid.
         var store = new FakeAuditRecordStore();
         var provider = new FakeRotatingKeyProvider();
         var signer = Signer(store, provider);
@@ -188,12 +188,13 @@ public sealed class AuditSignerTests
         Assert.False(result.SignatureValid);
         Assert.Equal(FakeRotatingKeyProvider.V1.KeyId, result.VerifiedAgainstKeyId);
         Assert.Equal([FakeRotatingKeyProvider.V1.KeyId], result.UnresolvedKeyIds);
-        Assert.True(result.ChainValid);
+        Assert.Equal(AuditChainVerdict.Unverified, result.Verdict); // S13.334: ADR-PA22 C revised
+        Assert.False(result.ChainValid);
         Assert.Null(result.BrokenLinkAt);
     }
 
     [Fact]
-    public async Task VerifyAsync_OtherRecordsKeyDestroyed_TargetStillVerifiesAndTheIdIsReported()
+    public async Task VerifyAsync_OtherRecordsKeyDestroyed_TargetVerifiesButTheChainIsUnverified()
     {
         var store = new FakeAuditRecordStore();
         var provider = new FakeRotatingKeyProvider();
@@ -210,7 +211,34 @@ public sealed class AuditSignerTests
         Assert.True(result.SignatureValid);
         Assert.Equal(FakeRotatingKeyProvider.V2.KeyId, result.VerifiedAgainstKeyId);
         Assert.Equal([FakeRotatingKeyProvider.V1.KeyId], result.UnresolvedKeyIds);
-        Assert.True(result.ChainValid);
+        Assert.Equal(AuditChainVerdict.Unverified, result.Verdict); // S13.334: the whole chain, not only the target
+        Assert.False(result.ChainValid);
+    }
+
+    /// <summary>
+    /// S13.334 B2: a record appended between a verify's chain read and the moment its head would have been read.
+    /// Verify reads the head first, so the head it holds is older than the chain and the chain is valid. Had it
+    /// read the chain first, the newer head would sit past the walk and read as a truncated tail, as the second
+    /// assertion shows with the same three values.
+    /// </summary>
+    [Fact]
+    public async Task VerifyAsync_RecordAppendedAfterTheChainRead_IsStillValid()
+    {
+        var store = new FakeAuditRecordStore();
+        var signer = Signer(store);
+        var first = await signer.SignAsync(AuditRecordHasherTests.Sample(), CancellationToken.None);
+        var chainAsRead = await store.GetChainAsync(first.EngagementId, CancellationToken.None);
+        store.AfterChainRead = () => signer.SignAsync(
+            AuditRecordHasherTests.Sample() with { ExecutionId = "eng-1::wf-2", WorkflowId = "wf-2", ClosedAtUtc = first.ClosedAtUtc.AddMinutes(1) },
+            CancellationToken.None);
+
+        var result = await signer.VerifyAsync(first.ExecutionId, first.EngagementId, CancellationToken.None);
+
+        Assert.Equal(AuditChainVerdict.Valid, result.Verdict);
+        var headAfterTheAppend = (await store.ReadHeadAsync(first.EngagementId, CancellationToken.None))!.Head;
+        Assert.Equal(2, headAfterTheAppend.Sequence);
+        Assert.Equal(AuditChainVerdict.Broken,
+            AuditChainVerifier.Verify(chainAsRead, first.ExecutionId, first.EngagementId, AuditChainVerifierTests.Keys(await KeyProvider.GetCurrentKeyAsync(CancellationToken.None)), headAfterTheAppend).Verdict);
     }
 
     [Fact]
