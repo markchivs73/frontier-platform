@@ -28,6 +28,22 @@ public sealed class GovernanceAuditGoldenFileTests
         Assert.NotEqual(bytes, hashed);
     }
 
+    /// <summary>S13.293: a governance record signed before the tenant field existed still hashes to its stored record hash.</summary>
+    [Fact]
+    public void TheStoredGoldenRecord_StillHashesToItsStoredRecordHash()
+    {
+        var bytes = File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "GoldenFiles", "signed_governance_audit_record.json"));
+        var stored = System.Text.Json.JsonSerializer.Deserialize<SignedGovernanceAuditRecord>(bytes, Frontier.Platform.Serialization.CanonicalProfile.Options)!;
+
+        Assert.Null(stored.Tenant);
+        Assert.Equal(stored.RecordHash, GovernanceAuditHasher.ComputeRecordHash(stored));
+    }
+
+    /// <summary>S13.293: a stamped governance record is byte-stable and round-trips, tenant included.</summary>
+    [Fact]
+    public void SignedGovernanceAuditRecordWithTenant_IsByteStableAndRoundTrips() =>
+        ContractRoundTripAssertions.AssertByteStableAndRoundTrips(Sample() with { Tenant = "contoso" });
+
     /// <summary>The golden record: a compensating entry at sequence 2, so every optional field is present.</summary>
     private static SignedGovernanceAuditRecord Sample() =>
         Seal(Entry() with { CompensatesRecordId = "9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08" }, 2, Genesis, FakeRotatingKeyProvider.V1);

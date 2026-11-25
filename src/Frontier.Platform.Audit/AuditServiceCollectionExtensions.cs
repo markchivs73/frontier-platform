@@ -53,6 +53,11 @@ public static class AuditServiceCollectionExtensions
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        services.AddOptions<AuditTenantOptions>()
+            .Bind(configuration.GetSection(AuditTenantOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
         services.AddOptions<AuditSigningOptions>()
             .Bind(configuration.GetSection(AuditSigningOptions.SectionName))
             .ValidateDataAnnotations()
