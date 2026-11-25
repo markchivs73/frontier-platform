@@ -163,6 +163,9 @@ engineServices.AddSingleton<IMcpEndpointResolver, SmokeEndpointResolver>();
 engineServices.AddSingleton<IMcpWriteClassifier, SmokeWriteClassifier>();
 engineServices.AddSingleton<IExecutionSnapshotReader, SmokeSnapshotReader>();
 engineServices.AddSingleton<IEntryPayloadBuilder, SmokeEntryPayloadBuilder>();
+// S13.146: the dispatcher's two generation-boundary ports; the DispatcherPorts boot check refuses a host without them.
+engineServices.AddSingleton<IDispatcherVersionResolver, SmokeVersionResolver>();
+engineServices.AddSingleton<IDispatcherGenerationSettingsResolver, SmokeGenerationSettingsResolver>();
 engineServices.AddSingleton<IContractTypeSet>(new ContractTypeSet([typeof(WorkflowDefinition)]));
 // S13.182: the stamp names the worker's own build, so the consumer passes its entry assembly.
 engineServices.AddSingleton(HostBuildStamp.FromAssembly(typeof(SmokeAgentInvoker).Assembly));
@@ -171,6 +174,7 @@ using var engineProvider = engineServices.BuildServiceProvider();
 var orchestrator = engineProvider.GetRequiredService<GraphOrchestrator>();
 var pipeline = engineProvider.GetRequiredService<IAgentTaskActivityPipeline>();
 var consolidator = engineProvider.GetRequiredService<IAuditConsolidator>();
+_ = engineProvider.GetRequiredService<ResolveDispatcherVersionActivity>();
 
 Console.WriteLine($"  engine resolves : {orchestrator.GetType().Name}, {pipeline.GetType().Name}, {consolidator.GetType().Name}");
 

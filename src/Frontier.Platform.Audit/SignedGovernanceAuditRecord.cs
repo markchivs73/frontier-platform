@@ -124,6 +124,15 @@ public sealed record SignedGovernanceAuditRecord : IVersionedContract
     [JsonPropertyName("signing_key_id")]
     public required string SigningKeyId { get; init; }
 
+    /// <summary>
+    /// The deployment's tenant (S13.293, ADR-PA54), stamped at append from <see cref="AuditTenantOptions"/>. It is on
+    /// the signed record only, never on the <see cref="GovernanceAuditEntry"/>, so record ids (hashed from the entry)
+    /// do not change. Omitted when null, so a record signed before the field existed hashes as it did.
+    /// </summary>
+    [JsonPropertyOrder(22)]
+    [JsonPropertyName("tenant")]
+    public string? Tenant { get; init; }
+
     /// <inheritdoc />
     public void Validate()
     {

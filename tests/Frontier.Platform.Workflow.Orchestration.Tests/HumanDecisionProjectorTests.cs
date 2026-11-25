@@ -29,6 +29,48 @@ public sealed class HumanDecisionProjectorTests
         Assert.Equal(decision.DecidedAtUtc, record.DecidedAtUtc);
     }
 
+    /// <summary>ADR-PA53: the decision's authority reaches the signed record; a decision with none projects none.</summary>
+    [Fact]
+    public void ToHumanDecisionRecord_CopiesTheAuthority_AndNoneStaysNone()
+    {
+        var plain = WorkflowEventProjectorTests.Snapshot().Decisions[0];
+        var authority = new DecisionAuthority { RoleId = "finance-lead", Scope = new DecisionScope { Kind = "engagement", Id = "eng-1" } };
+
+        Assert.Equal(authority, HumanDecisionProjector.ToHumanDecisionRecord(plain with { Authority = authority }).Authority);
+        Assert.Null(HumanDecisionProjector.ToHumanDecisionRecord(plain).Authority);
+    }
+
+    /// <summary>
+    /// ADR-PA53: a gate event recorded in DTF history before the member existed deserializes with no authority, so a
+    /// replay reads the same decision; a newer payload read by this contract keeps it.
+    /// </summary>
+    [Fact]
+    public void RecordedGateEvent_WithoutTheAuthority_DeserializesToNone_AndWithIt_KeepsIt()
+    {
+        const string recorded = """{"gate_id":"human-gate","request_id":"exec-1:human-gate:1","approver_id":"approver-1","kind":"approve","decided_at_utc":"2026-01-01T01:00:00.000Z"}""";
+        const string newer = """{"gate_id":"human-gate","request_id":"exec-1:human-gate:1","approver_id":"approver-1","kind":"approve","decided_at_utc":"2026-01-01T01:00:00.000Z","authority":{"role_id":"finance-lead","scope":{"kind":"deployment"}}}""";
+
+        var old = System.Text.Json.JsonSerializer.Deserialize<HitlDecision>(recorded, Frontier.Platform.Serialization.CanonicalProfile.Options)!;
+        var current = System.Text.Json.JsonSerializer.Deserialize<HitlDecision>(newer, Frontier.Platform.Serialization.CanonicalProfile.Options)!;
+
+        Assert.Null(old.Authority);
+        Assert.Equal(recorded, System.Text.Encoding.UTF8.GetString(Frontier.Platform.Serialization.CanonicalProfile.SerializeCanonical(old)));
+        Assert.Equal(new DecisionAuthority { RoleId = "finance-lead", Scope = new DecisionScope { Kind = "deployment" } }, current.Authority);
+        Assert.Equal(newer, System.Text.Encoding.UTF8.GetString(Frontier.Platform.Serialization.CanonicalProfile.SerializeCanonical(current)));
+    }
+
+    /// <summary>ADR-PA53: the scope kind is consumer-defined, so a kind the platform has never heard of round-trips unchanged.</summary>
+    [Fact]
+    public void RecordedGateEvent_WithAnUnknownScopeKind_RoundTripsUnchanged()
+    {
+        const string payload = """{"gate_id":"human-gate","request_id":"exec-1:human-gate:1","approver_id":"approver-1","kind":"approve","decided_at_utc":"2026-01-01T01:00:00.000Z","authority":{"role_id":"finance-lead","scope":{"kind":"region","id":"emea"}}}""";
+
+        var decision = System.Text.Json.JsonSerializer.Deserialize<HitlDecision>(payload, Frontier.Platform.Serialization.CanonicalProfile.Options)!;
+
+        Assert.Equal("region", decision.Authority!.Scope.Kind);
+        Assert.Equal(payload, System.Text.Encoding.UTF8.GetString(Frontier.Platform.Serialization.CanonicalProfile.SerializeCanonical(decision)));
+    }
+
     [Fact]
     public void Project_MapsEveryDecision()
     {

@@ -37,7 +37,7 @@ internal static class GovernanceAuditHasher
     /// <summary>
     /// Allocates <paramref name="entry"/> at <paramref name="sequence"/> after
     /// <paramref name="previousRecordHash"/> and hashes it, ready to be signed under
-    /// <paramref name="signingKeyId"/>.
+    /// <paramref name="signingKeyId"/>, stamped with <paramref name="tenant"/> when there is one (S13.293).
     ///
     /// <para>
     /// Sealing is two steps rather than one because this chain hashes <c>signing_key_id</c> — unlike
@@ -46,9 +46,9 @@ internal static class GovernanceAuditHasher
     /// gap by refusing a signature from a different version.
     /// </para>
     /// </summary>
-    internal static SignedGovernanceAuditRecord Prepare(GovernanceAuditEntry entry, string recordId, long sequence, string previousRecordHash, string signingKeyId)
+    internal static SignedGovernanceAuditRecord Prepare(GovernanceAuditEntry entry, string recordId, long sequence, string previousRecordHash, string signingKeyId, string? tenant = null)
     {
-        var unsigned = ToUnsignedRecord(entry, recordId, sequence, previousRecordHash, signingKeyId);
+        var unsigned = ToUnsignedRecord(entry, recordId, sequence, previousRecordHash, signingKeyId) with { Tenant = tenant };
 
         return unsigned with { RecordHash = ComputeRecordHash(unsigned) };
     }

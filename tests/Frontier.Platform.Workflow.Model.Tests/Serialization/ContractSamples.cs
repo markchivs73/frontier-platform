@@ -292,6 +292,12 @@ internal static class ContractSamples
     /// <summary>ADR-PA26: a dispatcher child's snapshot — the mode it runs under and the work item it serves.</summary>
     public static ExecutionSnapshot ExecutionSnapshotDispatcherChild() => ExecutionSnapshot() with { ExecutionMode = ExecutionMode.Dispatcher, WorkItemId = "TICKET-1" };
 
+    /// <summary>ADR-PA53: a snapshot whose recorded decision names the role and scope it was made under.</summary>
+    public static ExecutionSnapshot ExecutionSnapshotWithDecisionAuthority() => ExecutionSnapshot() with
+    {
+        Decisions = [ExecutionSnapshot().Decisions[0] with { Authority = new DecisionAuthority { RoleId = "finance-lead", Scope = new DecisionScope { Kind = "deployment" } } }],
+    };
+
     /// <summary>S13.149: a run ended through the governed terminate, saying who, why and when — new golden; every older snapshot golden is untouched, which is the compatibility claim.</summary>
     public static ExecutionSnapshot ExecutionSnapshotTerminated() => ExecutionSnapshotPausedOnFailure() with
     {
@@ -462,6 +468,13 @@ internal static class ContractSamples
                 ],
             },
         ],
+    };
+
+    /// <summary>S13.238: the pinned-writes definition with a description and tags, which follow <c>mode</c> (and <c>contracts</c>).</summary>
+    public static WorkflowDefinition WorkflowDefinitionWithDescriptionAndTags() => WorkflowDefinitionWithPinnedWrites() with
+    {
+        Description = "Reads a ticket, then updates it.",
+        Tags = ["support", "ticket-triage"],
     };
 
     /// <summary>

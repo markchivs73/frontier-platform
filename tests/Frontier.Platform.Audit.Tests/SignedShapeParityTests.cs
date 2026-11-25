@@ -26,7 +26,7 @@ public sealed class SignedShapeParityTests
     [Fact]
     public void ToSignedShape_ThenToAuditRecord_RoundTripsEveryContentProperty()
     {
-        var original = AuditContractSamples.AuditRecordWithMcpToolInvocations() with { Sandbox = true, DynamicContextEpoch = 3, DynamicContextHash = "h", Generation = 2, Failure = AuditContractSamples.FailureRecord(), Termination = AuditContractSamples.TerminationRecord() };
+        var original = AuditContractSamples.AuditRecordWithMcpToolInvocations() with { Sandbox = true, DynamicContextEpoch = 3, DynamicContextHash = "h", Generation = 2, Failure = AuditContractSamples.FailureRecord(), Termination = AuditContractSamples.TerminationRecord(), Tenant = "contoso" };
 
         var signed = AuditRecordHasher.ToSignedShape(original, "prev", "hash", "sig", "key");
         var back = AuditRecordHasher.ToAuditRecord(signed);
@@ -42,6 +42,8 @@ public sealed class SignedShapeParityTests
         Assert.Equal(original.Generation, back.Generation);
         Assert.Equal(original.Failure, back.Failure);
         Assert.Equal(original.Termination, back.Termination);
+        Assert.Equal("contoso", signed.Tenant);
+        Assert.Equal(original.Tenant, back.Tenant);
         Assert.Same(original.McpToolInvocations, signed.McpToolInvocations);
         Assert.Same(original.McpToolInvocations, back.McpToolInvocations);
     }

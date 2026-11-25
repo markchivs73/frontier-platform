@@ -22,12 +22,24 @@ namespace Frontier.Platform.Workflow.Orchestration;
 public sealed class ResolveDispatcherVersionActivity : TaskActivity<ResolveDispatcherVersionRequest, ResolveDispatcherVersionResult>
 {
     private readonly IDispatcherVersionResolver resolver;
+    private readonly IDispatcherGenerationSettingsResolver? settings;
 
-    /// <summary>Constructs the activity over the consumer's version resolver.</summary>
+    /// <summary>Constructs the activity over the consumer's version resolver only; every generation carries its settings forward.</summary>
+    [Obsolete("Register IDispatcherGenerationSettingsResolver so the container uses the two-port constructor and a running dispatcher re-reads its governed settings at each rollover (consumer S13.146, v0.6x). Removed at the next phase boundary.")]
     public ResolveDispatcherVersionActivity(IDispatcherVersionResolver resolver)
+        : this(resolver, null)
+    {
+    }
+
+    /// <summary>
+    /// Constructs the activity over the consumer's version resolver and its generation-settings resolver (consumer
+    /// S13.146): each rollover then also reads the current contract budgets and rollover threshold, with their versions.
+    /// </summary>
+    public ResolveDispatcherVersionActivity(IDispatcherVersionResolver resolver, IDispatcherGenerationSettingsResolver? settings)
     {
         ArgumentNullException.ThrowIfNull(resolver);
         this.resolver = resolver;
+        this.settings = settings;
     }
 
     /// <inheritdoc />
@@ -37,7 +49,15 @@ public sealed class ResolveDispatcherVersionActivity : TaskActivity<ResolveDispa
 
         var resolved = await resolver.ResolveAsync(
             input.EngagementId, input.WorkflowId, input.CurrentDefinitionVersion, CancellationToken.None);
+        var current = settings is null ? new DispatcherGenerationSettings() : await settings.ResolveAsync(input.EngagementId, input.WorkflowId, CancellationToken.None);
 
-        return new ResolveDispatcherVersionResult { Definition = resolved };
+        return new ResolveDispatcherVersionResult
+        {
+            Definition = resolved,
+            ContractBudgets = current.ContractBudgets,
+            ContractBudgetsVersion = current.ContractBudgetsVersion,
+            DispatcherRolloverThreshold = current.DispatcherRolloverThreshold,
+            DispatcherSettingsVersion = current.DispatcherSettingsVersion,
+        };
     }
 }

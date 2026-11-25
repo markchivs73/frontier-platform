@@ -50,6 +50,25 @@ public sealed class ArchivalAuditChangeFeedHandlerTests
         Assert.NotNull(exportedJson["record"]);
     }
 
+    /// <summary>S13.293: a stamped record's tenant rides into the export unchanged, inside the signed record.</summary>
+    [Fact]
+    public async Task ExportAsync_CarriesTheRecordsTenant()
+    {
+        var exporter = new FakeAuditRecordExporter();
+        var handler = new ArchivalAuditChangeFeedHandler(exporter, "archive");
+        var document = new JsonObject
+        {
+            ["id"] = "eng-1::audit",
+            ["engagement_id"] = "eng-1",
+            ["record"] = JsonNode.Parse(CanonicalProfile.SerializeCanonical(AuditContractSamples.SignedAuditRecord() with { Tenant = "contoso" })),
+        };
+
+        await handler.ExportAsync(document, CancellationToken.None);
+
+        var exported = JsonNode.Parse(exporter.ExportedBlobs[0].Bytes.ToArray())!;
+        Assert.Equal("contoso", exported["record"]!["tenant"]!.GetValue<string>());
+    }
+
     [Fact]
     public async Task HandleChangesAsync_ExportsMultipleDocuments()
     {

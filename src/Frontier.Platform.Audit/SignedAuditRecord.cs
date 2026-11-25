@@ -144,6 +144,11 @@ public sealed record SignedAuditRecord : IVersionedContract
     [JsonPropertyName("termination")]
     public TerminationRecord? Termination { get; init; }
 
+    /// <summary><see cref="AuditRecord.Tenant"/>, carried through and covered by <see cref="RecordHash"/> (S13.293); omitted when null.</summary>
+    [JsonPropertyOrder(25)]
+    [JsonPropertyName("tenant")]
+    public string? Tenant { get; init; }
+
     /// <inheritdoc />
     public void Validate()
     {

@@ -1,3 +1,4 @@
+using Frontier.Platform.Serialization;
 using Frontier.Platform.Workflow.Model;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,7 +31,9 @@ public static class OrchestrationServiceCollectionExtensions
     ///
     /// <para>An activity needs <b>two</b> registrations to work: this one, and an entry in the
     /// consumer's DTF task registry. Missing either resolves cleanly and fails only at runtime —
-    /// the <see cref="RefreshDynamicContextActivity"/> lesson (S10.4).</para>
+    /// the <see cref="RefreshDynamicContextActivity"/> lesson (S10.4). The dispatcher's two ports are the exception:
+    /// since consumer S13.146 a boot check (<c>DispatcherPorts</c>) fails startup unless both
+    /// <see cref="IDispatcherVersionResolver"/> and <see cref="IDispatcherGenerationSettingsResolver"/> are registered.</para>
     /// </summary>
     public static IServiceCollection AddFrontierWorkflowOrchestration(this IServiceCollection services, IConfiguration configuration)
     {
@@ -54,6 +57,7 @@ public static class OrchestrationServiceCollectionExtensions
             .AddTransient<RefreshDynamicContextActivity>()
             .AddTransient<ResolveDispatcherVersionActivity>()
             .AddTransient<PinMappingsActivity>()
+            .AddSingleton<IStartupCheck, DispatcherPortsCheck>()
             .AddSingleton<IAuditConsolidator, AuditConsolidator>()
             .AddTransient<IAgentTaskActivityPipeline, AgentTaskActivityPipeline>()
             .AddTransient<IMcpToolInvocationPipeline, McpToolInvocationPipeline>()

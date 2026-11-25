@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Frontier.Platform.Abstractions;
 using Frontier.Platform.Workflow.Model;
 
 namespace Frontier.Platform.Workflow.Orchestration;
@@ -20,4 +21,27 @@ public sealed record ResolveDispatcherVersionResult
     [JsonPropertyName("definition")]
     [JsonConverter(typeof(MigratingWorkflowDefinitionConverter))]
     public WorkflowDefinition? Definition { get; init; }
+
+    /// <summary>
+    /// The current governed contract budgets for the next generation (consumer S13.146), or null to carry the input's
+    /// forward. Taken together with <see cref="ContractBudgetsVersion"/>, never apart.
+    /// </summary>
+    [JsonPropertyOrder(1)]
+    [JsonPropertyName("contract_budgets")]
+    public ContractBudgets? ContractBudgets { get; init; }
+
+    /// <summary>The version of <see cref="ContractBudgets"/> (S13.147).</summary>
+    [JsonPropertyOrder(2)]
+    [JsonPropertyName("contract_budgets_version")]
+    public int? ContractBudgetsVersion { get; init; }
+
+    /// <summary>The current governed rollover threshold, or null to carry the input's forward. Taken with <see cref="DispatcherSettingsVersion"/>.</summary>
+    [JsonPropertyOrder(3)]
+    [JsonPropertyName("dispatcher_rollover_threshold")]
+    public int? DispatcherRolloverThreshold { get; init; }
+
+    /// <summary>The version of the dispatcher-settings record <see cref="DispatcherRolloverThreshold"/> came from.</summary>
+    [JsonPropertyOrder(4)]
+    [JsonPropertyName("dispatcher_settings_version")]
+    public int? DispatcherSettingsVersion { get; init; }
 }

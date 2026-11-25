@@ -67,6 +67,24 @@ public sealed record WorkflowDefinition : IVersionedContract
     [JsonPropertyName("contracts")]
     public IReadOnlyList<ContractSnapshot>? Contracts { get; init; }
 
+    /// <summary>
+    /// What the workflow is for, in a sentence or two (S13.238, doc 13 §4.2). Optional: null means none, and
+    /// writers send null rather than an empty string, which would be written and hashed. Part of the
+    /// definition, so it is inside the hash when present; a definition without it hashes as before.
+    /// </summary>
+    [JsonPropertyOrder(10)]
+    [JsonPropertyName("description")]
+    public string? Description { get; init; }
+
+    /// <summary>
+    /// Labels for finding the workflow (S13.238): kebab-case, at most 32 characters each and 10 in all, checked
+    /// by <c>structure.required-fields</c> at publish, not here. Optional: null means none, and writers send
+    /// null rather than an empty list. Inside the hash when present, in the order given.
+    /// </summary>
+    [JsonPropertyOrder(11)]
+    [JsonPropertyName("tags")]
+    public IReadOnlyList<string>? Tags { get; init; }
+
     /// <inheritdoc />
     public void Validate()
     {

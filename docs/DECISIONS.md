@@ -1071,6 +1071,52 @@ Release: **minor, v0.24.0** (major version 0, so a breaking change may ship in a
 implement `GetKeyAsync`; the in-repo `DevKeyProvider` resolves its own key id and returns `null`
 for anything else. Tracked as S13.66.
 
+### ADR-PA22 — amended 2026-11-25: an unresolvable key makes the chain unverified, never valid
+
+Consumer task S13.334 (B1, Mark ✅ 2026-11-24; B2 accepted with the triage block), from its run-2 audit-trail
+security review (AUD-1, AUD-2). It revises the paragraph above, "An unresolvable key does not stop the walk",
+which let a missing key version leave `chain_valid` true. This engages K6, the consumer's position that the signed,
+chained audit trail is evidence.
+
+**Why decision C was a hole.** `record_hash` is an unkeyed SHA-256. A writer with data-plane access to
+`audit-records` can edit a record, recompute its hash, relink and rehash every later record, give each one a bogus
+`signing_key_id`, and rewrite the chain head. The walk skipped every unresolvable record and reported
+`chain_valid = true`; the only trace was `unresolved_key_ids`, which read as "a key version was destroyed", not "this
+chain was rewritten". The signature is the only part of a record such a writer cannot forge, because the signing key
+never leaves Key Vault (ADR-PA33). So no verdict that skips an unchecked signature can be trusted.
+
+**Decision.**
+1. *A three-way verdict.* `VerificationResult.Verdict` (`verdict`, order 7) is `valid`, `broken` or `unverified`.
+   Any evidence of damage is `broken`: a signature that fails against a resolved key, a recomputed hash that does not
+   match, a broken or unreachable link, a fork, or a head mismatch. Otherwise a non-empty chain-wide
+   `unresolved_key_ids` is `unverified`. Otherwise `valid`. `chain_valid` is now exactly `verdict == valid`, so
+   existing readers fail safe.
+2. *The hash is checked without a key.* Every walked record's `record_hash` is recomputed, whether or not its key
+   resolves, so an edit that left the stored hash alone is `broken` even under a bogus key id.
+3. *The head must be on the walk.* `head_mismatch` (order 8) is set when the record at the head's `sequence` on the
+   walk does not carry the head's `record_hash`, so a truncated tail or an edited head is `broken`. The walk may be
+   longer than the head: verify now reads the head **before** the chain, so a record appended in between only extends
+   the walk. The check is skipped when a fork or unreachable record exists (they already explain the shape, and a
+   legacy fork leaves the head on the untaken arm) and when there is no head.
+
+**`unverified` is not benign.** A store writer can turn a `broken` chain into an `unverified` one by giving records
+bogus key ids, so consumers should alert on `verdict`, not only on `chain_valid = false`. Rotation never produces it,
+because old versions are disabled, never destroyed (S13.107). **Costs:** an engagement whose key version really was
+destroyed reads `unverified` permanently, which is the truth about it; and because the Key Vault client (`AzureKeyVaultSigningClient`) maps a 403
+to "unresolvable", an RBAC regression on the vault would make every chain read `unverified` until it is fixed.
+
+**Limits.** The head is mutable, unsigned bookkeeping: a writer who also rewrites it defeats the head check, which
+forces a coordinated two-document edit and proves nothing about completeness. Completeness needs an external anchor
+the store writer cannot rewrite (B3, Phase 2). `GovernanceAuditService.VerifyAsync` still reads its records before
+its head; the same ordering fix applies there and is left to a follow-up.
+
+**Surface.** A breaking change, scoped `audit!`: behavioural (`chain_valid` goes from true to false for an
+unresolvable key) and a source break (the required `Verdict` member breaks object initialisers; the consumer's test
+fakes `AdminFakes.cs` and `ApiFixtures.cs` construct `VerificationResult`). New public types `AuditChainVerdict` and
+`AuditChainHeadMismatch`; a new golden `verification_result_head_mismatch.json`. No stored record changes. The internal
+`FindBrokenLink`, named above but with no caller outside tests since ADR-PA31, is removed; its tests now read
+`Verify(...).BrokenLinkAt`.
+
 ## ADR-PA23 — a draft says when it predates the schema it is read with
 
 `MigratingWorkflowDefinitionConverter.Read` adapted only stored versions with a registered adapter.
@@ -2327,6 +2373,25 @@ surprises: the code needed no change to work against real Azure.** The one thing
 have told us is now pinned by an assertion — Key Vault returns ES256 signatures as raw `r ‖ s`
 (IEEE P1363), not DER, and `AuditSignatureVerifier` was already right about it.
 
+### ADR-PA33 — amended 2026-11-25: "local" is the parsed loopback host, decided once
+
+Consumer task S13.349 (AUTHN-1) with S13.334 item 3, accepted in its 2026-11-24 triage. `SigningProfileCheck`
+allowed the committed dev signing key, and the four Cosmos client factories (Audit, Hitl, ModelRoleConfig,
+ContextAssembly) skipped TLS validation, whenever the endpoint *started with* `http(s)://localhost` or
+`http(s)://127.0.0.1`. `https://localhost.evil.example`, `https://localhostfrontier.documents.azure.com`,
+`https://127.0.0.1.nip.io` and `https://localhost:8081@evil.example` all passed. All four now call one public rule,
+`Frontier.Platform.Serialization.LocalEndpoint.IsLoopback`: an absolute http/https URI whose parsed host is exactly
+`localhost` or a loopback IP. It judges the host `System.Uri` parses, which is the host a client built from the same
+string dials, so userinfo cannot fool it and the parser's own normalisation (`loopback` to `localhost`, `0x7f.1` to
+`127.0.0.1`) is followed rather than second-guessed. A trailing-dot `localhost.` is refused. `LocalProfile` and the
+three private copies are removed.
+
+Behaviour change, not a surface break: a process configured with a prefix-only "local" endpoint now refuses the dev
+key at boot and validates the server certificate. The consumer's own copy of the rule
+(`CredentialProfileCheck.IsLocalEndpoint`) can collapse onto this one; its test rows are copied into
+`LocalEndpointTests` so that is a known change (only `localhost.` tightens). Giving each head one explicit
+`CosmosClient` is the consumer's part.
+
 ## ADR-PA34 — the mapping governance surface says who changed what, refuses staleness by name, and answers across roles
 
 frontier-workflow's S13.101 API slice stopped: doc 20's model-role endpoints and doc 19's D3 screen
@@ -2564,6 +2629,33 @@ spawn. Pinned by `ContinueAsNew_FiresAtTheInputsThreshold`,
 `ContinueAsNew_CarriesTheThreshold_AndChildrenDoNotInheritIt`,
 `RolloverThreshold_IsTheDefault_WhenTheInputNamesNoneOrANonPositiveOne` and
 `RolloverThreshold_IsOmittedWhenNull_AndLastWhenSet`.
+
+### ADR-PA37 — amended 2026-11-25: the threshold and the budgets are re-read at each rollover
+
+Consumer tasks S13.146 and S13.147, decided in the consumer's 2026-11-24 triage (option A: the threshold is a governed
+`dispatcher-settings` record; the budgets version rides in the same release). The threshold is still pinned on the input
+at start, but it is no longer fixed for a dispatcher's lifetime, and neither are the contract budgets (ADR-PA43).
+
+1. *At the boundary, in the activity.* `ResolveDispatcherVersionActivity` now also asks a second consumer-owned port,
+   `IDispatcherGenerationSettingsResolver`, and returns `contract_budgets`, `contract_budgets_version`,
+   `dispatcher_rollover_threshold` and `dispatcher_settings_version` beside the definition (all optional). Nothing is
+   read in an orchestrator body (hard invariant 2), and the schedule is unchanged (same activity, same point), so the
+   compatibility generation stays 1 and the activity-shape snapshot grows additively.
+2. *Carry-forward, value with version.* `BuildNextGenerationInput` takes each value the result names and carries
+   forward each it leaves null. A value moves **with its version**: a new value whose version is null clears the
+   version, and a version without its value is ignored, so a version never labels a value it did not come with. A
+   result recorded before these members existed names none of them and replays to byte-identical input.
+   `GraphOrchestratorInput` gains `contract_budgets_version` (order 10) and `dispatcher_settings_version` (order 11);
+   children inherit the budgets and their version, not the settings version.
+3. *The port is enforced at boot.* A new `DispatcherPorts` startup check, registered by
+   `AddFrontierWorkflowOrchestration`, fails startup unless both `IDispatcherVersionResolver` and
+   `IDispatcherGenerationSettingsResolver` are registered. It probes the container (`IServiceProviderIsService`) rather
+   than injecting the ports, so a missing port fails this one check instead of making every startup check
+   unresolvable. **Behaviour at boot:** any host that runs the platform's startup checks now refuses to start without
+   both ports, including the existing `IDispatcherVersionResolver`, which was never enforced before. The consumer's
+   version bump and its adapter for the new port must land in one PR.
+4. *Additive surface.* The activity's one-port constructor stays, `[Obsolete]`, carrying every setting forward; the
+   container picks the two-port constructor when both ports are registered.
 
 ## ADR-PA38 — contracts as data get their own library, and the checks they pass are fixed here
 
@@ -3395,6 +3487,13 @@ validator and registration tests: one compilation across two budgets, the iterat
 violation cap per call, no ceiling at run time, an unbounded rule still refused, and the ceiling and
 iteration budget applied at registration.
 
+### ADR-PA43 — amended 2026-11-25: a dispatcher's budgets are pinned per generation
+
+For a dispatcher, "pinned per run" becomes "pinned per generation" (consumer S13.146). The Host factory still pins the
+current budgets at start; each `ContinueAsNew` boundary then takes the budgets `ResolveDispatcherVersionActivity`
+returns, with their version (`contract_budgets_version`, consumer S13.147), or carries the generation's own forward
+(ADR-PA37 as amended the same day). A one-shot run is unchanged: pinned once at start.
+
 ## ADR-PA44 — the host build stamp is the worker's, through a port the consumer must register
 
 ADR-E15 D1/D3 (the consumer's record of which code ran each step) stamps every agent and tool
@@ -3949,6 +4048,113 @@ existing four-argument constructor stays, losing only its default value as the P
 optional-parameter rule (RS0027) requires. Every existing call still compiles: a four-argument call binds to it
 as before, and a three-argument call now binds to the new five-argument overload with the same behaviour.
 Points 2 and 4 are proposed and wait on Mark.
+## ADR-PA52 — a definition may carry a description and tags
+
+Consumer task S13.238, split from S13.206 (Mark, 2026-11-06), with picks accepted in the consumer's 2026-11-24
+triage. The consumer's doc 13 §4.2 first had `structure.required-fields` check a description and well-formed
+tags, but `WorkflowDefinition` had neither.
+
+**Decision.**
+1. *Two optional members, inside the hash.* `description` (order 10) and `tags` (order 11) follow `contracts`,
+   omitted when null. A definition without them serializes to the same canonical bytes, so its hash is
+   unchanged (`StoredDefinitionHashStabilityTests`' existing tests are untouched and pass; one test is added). When present they are hashed like any
+   other member, in the order given: re-tagging changes the hash, so (reasoned from immutability, not tested here) it needs a new publish. An empty string and an
+   empty list are written and hashed, so writers send null for "none". No `schema_version` bump: the members
+   are optional (ADR-E15). The activity-shape snapshot grows additively (`EvaluateCascadeActivity` input,
+   `ResolveDispatcherVersionActivity` output).
+2. *The checks* (triage picks). A missing or blank description is a **Warning**. Each tag must be kebab-case,
+   read strictly as `\A[a-z0-9]+(-[a-z0-9]+)*\z` (so a trailing newline is refused), and at most 32 characters (length checked first); each bad tag
+   is an Error on `tags[i]`. More than ten tags is an Error on `tags`. The checks are in the rule, not in
+   `WorkflowDefinition.Validate()`, which throws.
+3. *Proposals are not blocked by tags.* The chat designer's Apply (the granular merge) applies only nodes and
+   edges, so a proposal's tags never reach the draft. Tag findings therefore neither drive the repair pass nor
+   block Apply; they still block a publish. The designer's prompt and schema text are unchanged, so (reasoned, not tested) the prompt bytes
+   for a definition without the members are identical. The schema's unknown-key check no longer flags
+   `description` or `tags` on a proposal.
+
+**Health effect, for Mark.** Because a missing description is a Warning, every draft without one validates
+`PassWithWarnings`, and the consumer's health sweep reports every published version without one as
+`warning`. A published version is immutable, so it stays `warning` until it is republished with a
+description. The alternatives are to keep the Warning, make it Info, or have the sweep ignore this finding.
+
+**Pending Mark (proposed).** Duplicate tags are not checked; tag order is hashed and nothing sorts. No
+description length cap is set, although the description rides inline as orchestration input and in the
+designer prompt on every turn.
+## ADR-PA53 — a human decision records the role and scope it was made under
+
+Consumer S13.282 (review-01 GOV-58; K5, every human decision attributed; K6, governance signed): a gate decision
+named who decided (`approver_id`) but not by what right, so an audit could not say which role and which binding
+scope admitted the approver. The consumer decided (triage 2026-11-24, accepted block) to stamp the most specific
+matching binding's scope, falling back to the first role in resolution order on a tie. The platform carries it.
+
+**Additive, omit-null members (ADR-E15's additive rule).**
+- `DecisionAuthority { role_id, scope: DecisionScope { kind, id? } }` (Abstractions).
+- `HitlDecision.authority` (order 7) and `HumanDecisionRecord.authority` (order 6); `HumanDecisionProjector` copies
+  it, so it is inside `record_hash` and signed.
+- Null when the caller supplied none: decisions recorded before the member existed, or not made through a binding.
+  Omitted from the wire then, so every older record, snapshot and gate event serializes byte-identically; the
+  existing goldens are unchanged and `RecordSignedBeforeDecisionAuthority_RecomputesToItsStoredBytes` holds over them.
+
+**`kind` is a string, not a smart enum.** It is consumer-defined and opaque to the platform. A smart enum would make an
+older worker throw inside `WaitForExternalEvent<HitlDecision>` on a kind a newer consumer added, which is a replay
+hazard; a string carries it through. Doc 15 §4's `deployment`, `client`, `engagement` are examples, not a list.
+
+**The authority is consumer-asserted and unverified**, exactly as `approver_id` is: the platform signs what it is
+given. Verifying it would mean the platform reading the consumer's bindings, which it does not own.
+
+**`GateDecision` (`frontier/gate-decision/1.0`) is deliberately untouched.** `GateDecision.From` does not copy the
+authority, so a gate's node output and its downstream bytes are unchanged; exposing it to nodes would be a 1.1
+contract, which nothing asks for.
+
+**Skew.** An older worker reading a new gate event drops the unknown member (the canonical profile skips
+undeclared members), so it records the decision without its authority; a newer worker reads an old event as
+null. **Verifiers adopt this release no later than the workers that write it**, for the reason ADR-PA45 gives: a
+verifier whose contract predates the member would read a new record without it and fail the signature.
+
+**Activity shapes.** `ConsolidateAuditActivity`, `RequestApprovalActivity`, `EscalateApprovalActivity` and
+`SnapshotStateActivity` gain optional `authority` paths; `activity-shapes.json` is updated in place (an additive
+change, generation unchanged).
+
+**What the consumer does.** After bumping: derive the authority from the same resolution pass that admits the caller
+(`ApprovalsController` already resolves the gate's approvers), not a second lookup; stamp `Authority` on the
+`HitlDecision` it records; test the most-specific-scope rule and the tie rule; amend doc 06 §9 and doc 15 §4.
+Additive surface; release **minor**.
+
+## ADR-PA54 — the deployment tenant is stamped inside signed audit records
+
+Consumer task S13.293, from its S13.285 review (2026-11-16); decided by Mark on 2026-11-17 (S13.285 Q4). The
+consumer's doc 15 §6 says tokens, audit records and exported documents are tenant-stamped, but no audit or export
+code carried a tenant. Mark's reason: audit provenance must survive records leaving their deployment (a tenant
+migration, an archive merge, a regulator export), and a field inside the signed record makes the origin
+tamper-evident. Execution stays one tenant per deployment (ADR-SEC2).
+
+**Decision.**
+1. *Where it lives.* An optional `tenant` on `AuditRecord` (order 21) and `SignedAuditRecord` (order 25), copied by
+   the hasher, and on `SignedGovernanceAuditRecord` (order 22). It is inside the hashed and signed bytes, so editing it
+   breaks the chain. It is **not** on `GovernanceAuditEntry`, because a governance record id is hashed from the entry
+   and stamping the entry would change ids and break idempotent re-append across the change.
+2. *Where the value comes from.* One deployment option, `AuditTenantOptions.Tenant` (section `Audit`, at most 128
+   characters), read by the execution signer and the governance service at the signing step, never in an orchestrator
+   body. Workers sign at execution close and hold no token, so the platform stamps a deployment constant; the consumer
+   binds it to the same value its claims transformation mints as `frontier:tenant`, which ADR-SEC2 makes a deployment
+   constant too.
+3. *The rules.* Null, empty and whitespace mean "no tenant" on both the option and the record. With the option unset,
+   nothing is stamped and the bytes are exactly as before; a record that itself carries a tenant is refused, because
+   the deployment cannot vouch for it. With the option set, a record carrying no tenant is stamped and one carrying the
+   same tenant is accepted. A different tenant, or one longer than 128 characters on either side, is a permanent
+   `ContractViolationException`, thrown before the signing service is called or anything is stored. An over-long
+   option also fails options validation at start.
+4. *Old records.* A null tenant is omitted before hashing (and the governance chain is JCS-sorted), so every record
+   signed before the field existed recomputes its stored hash and verifies. `AuditChainGuardRegressionTests` pins this
+   for the execution golden unchanged, and `TheStoredGoldenRecord_StillHashesToItsStoredRecordHash` for the governance
+   golden. Exports write the signed record's bytes, so the tenant rides inside them with no exporter change.
+
+**Rollout order.** A binary from before this change recomputes a record's hash without the field, so it reads a
+stamped record as broken. Deploy with the option unset first; set it only once no older binary reads the chain.
+Rolling back after stamping has begun has the same effect.
+
+**Surface.** Additive, not `!`: optional members, a new options type, no new required member (ADR-E15). The
+`ConsolidateAuditActivity` output shape grows by one optional member. New golden `signed_audit_record_tenant.json`.
 
 ## Consumer S13.328 (a2) — a lost compensation is contained, not repaired (2026-11-25 run 3; triage 2026-11-24, accepted block)
 

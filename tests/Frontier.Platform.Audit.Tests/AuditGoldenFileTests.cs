@@ -23,6 +23,11 @@ public sealed class AuditGoldenFileTests
     public void SignedAuditRecord_SerializesStablyAndRoundTrips() =>
         ContractRoundTripAssertions.AssertStableAndRoundTrips(AuditContractSamples.SignedAuditRecord(), "signed_audit_record.json");
 
+    /// <summary>S13.293: the tenant follows <c>termination</c> (order 25). New golden; every older signed-record golden is unchanged.</summary>
+    [Fact]
+    public void SignedAuditRecordWithTenant_SerializesStablyAndRoundTrips() =>
+        ContractRoundTripAssertions.AssertStableAndRoundTrips(AuditContractSamples.SignedAuditRecord() with { Tenant = "contoso" }, "signed_audit_record_tenant.json");
+
     [Fact]
     public void SignedAuditRecordWithOptionalFields_IsByteStableAndRoundTrips() =>
         ContractRoundTripAssertions.AssertStableAndRoundTrips(AuditContractSamples.SignedAuditRecordWithOptionalFields(), "signed_audit_record_optional_fields.json");
@@ -125,6 +130,37 @@ public sealed class AuditGoldenFileTests
 
         Assert.Null(record.Failure);
         Assert.Null(record.Termination);
+        Assert.Equal(stored, CanonicalProfile.SerializeCanonical(recomputed));
+    }
+
+    /// <summary>ADR-PA53: a human decision carries the role and scope it was made under. New goldens; every older audit golden is unchanged.</summary>
+    [Fact]
+    public void AuditRecordWithDecisionAuthority_IsByteStableAndRoundTrips() =>
+        ContractRoundTripAssertions.AssertStableAndRoundTrips(AuditContractSamples.AuditRecordWithDecisionAuthority(), "audit_record_decision_authority.json");
+
+    [Fact]
+    public void SignedAuditRecordWithDecisionAuthority_IsByteStableAndRoundTrips() =>
+        ContractRoundTripAssertions.AssertStableAndRoundTrips(AuditContractSamples.SignedAuditRecordWithDecisionAuthority(), "signed_audit_record_decision_authority.json");
+
+    /// <summary>
+    /// ADR-PA53: a record signed before human decisions carried their authority must recompute to exactly its stored
+    /// bytes, or verification would read the new member as tampering.
+    /// </summary>
+    [Theory]
+    [InlineData("signed_audit_record.json")]
+    [InlineData("signed_audit_record_optional_fields.json")]
+    [InlineData("signed_audit_record_mcp_tool_invocations.json")]
+    [InlineData("signed_audit_record_host_build_generation.json")]
+    [InlineData("signed_audit_record_failed.json")]
+    [InlineData("signed_audit_record_terminated.json")]
+    public void RecordSignedBeforeDecisionAuthority_RecomputesToItsStoredBytes(string goldenFileName)
+    {
+        var stored = File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "GoldenFiles", goldenFileName));
+        var record = JsonSerializer.Deserialize<SignedAuditRecord>(stored, CanonicalProfile.Options)!;
+
+        var recomputed = AuditRecordHasher.ToSignedShape(AuditRecordHasher.ToAuditRecord(record), record.PreviousRecordHash, record.RecordHash, record.Signature, record.SigningKeyId);
+
+        Assert.All(record.HumanDecisions, decision => Assert.Null(decision.Authority));
         Assert.Equal(stored, CanonicalProfile.SerializeCanonical(recomputed));
     }
 }

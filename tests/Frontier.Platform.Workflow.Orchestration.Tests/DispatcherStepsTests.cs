@@ -72,7 +72,7 @@ public sealed class DispatcherStepsTests
     [Fact]
     public void BuildNextGenerationInput_CarriesThePinAndNoWorkItem()
     {
-        var next = DispatcherSteps.BuildNextGenerationInput(DispatcherFixtures.Input(), resolved: null);
+        var next = DispatcherSteps.BuildNextGenerationInput(DispatcherFixtures.Input(), new ResolveDispatcherVersionResult());
 
         Assert.Null(next.WorkItemId);
         Assert.Equal(DispatcherFixtures.Epoch, next.DynamicContextEpoch);
@@ -85,7 +85,7 @@ public sealed class DispatcherStepsTests
     {
         var resolved = OrchestrationFixtures.ThreeArtifactChain(ExecutionMode.Dispatcher) with { DefinitionVersion = 5 };
 
-        var next = DispatcherSteps.BuildNextGenerationInput(DispatcherFixtures.Input(), resolved);
+        var next = DispatcherSteps.BuildNextGenerationInput(DispatcherFixtures.Input(), new ResolveDispatcherVersionResult { Definition = resolved });
 
         Assert.Equal(5, next.Definition.DefinitionVersion);
         Assert.Equal(DispatcherFixtures.DispatcherRunId, next.RunId);

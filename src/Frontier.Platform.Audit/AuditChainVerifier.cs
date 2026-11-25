@@ -35,18 +35,63 @@ internal static class AuditChainVerifier
         var unreachable = FindUnreachable(chain, walk.Visited);
         var forks = FindForks(chain, head);
         var brokenLinkAt = walk.TamperedAt ?? (unreachable is null ? null : unreachable[0]);
+        var headMismatch = forks is null && unreachable is null ? InspectHead(walk.Path, head) : null;
+        var unresolved = FindUnresolvedKeyIds(chain, keys);
+        var verdict = VerdictOf(brokenLinkAt is not null || forks is not null || headMismatch is not null, unresolved);
 
         return new VerificationResult
         {
             SignatureValid = IsSignatureValid(target, keys),
-            ChainValid = brokenLinkAt is null && forks is null,
+            ChainValid = verdict == AuditChainVerdict.Valid,
             BrokenLinkAt = brokenLinkAt,
             VerifiedAgainstKeyId = target.SigningKeyId,
-            UnresolvedKeyIds = FindUnresolvedKeyIds(chain, keys),
+            UnresolvedKeyIds = unresolved,
             Forks = forks,
             UnreachableRecords = unreachable,
+            Verdict = verdict,
+            HeadMismatch = headMismatch,
         };
     }
+
+    /// <summary>
+    /// The three-way verdict (S13.334 B1, ADR-PA22 C revised): any evidence of damage is
+    /// <see cref="AuditChainVerdict.Broken"/>; otherwise any unresolvable key id anywhere in the chain is
+    /// <see cref="AuditChainVerdict.Unverified"/>, because those records' signatures were never checked.
+    /// </summary>
+    internal static AuditChainVerdict VerdictOf(bool damaged, IReadOnlyList<string>? unresolvedKeyIds) =>
+        damaged ? AuditChainVerdict.Broken
+        : unresolvedKeyIds is not null ? AuditChainVerdict.Unverified
+        : AuditChainVerdict.Valid;
+
+    /// <summary>
+    /// Whether the chain head is on the walk where it says it is (S13.334 B2): the record at position
+    /// <see cref="AuditChainHead.Sequence"/> must carry the head's record hash. The walk may be longer, because the
+    /// head is read before the chain and a record appended in between extends it. Null when the head agrees or there
+    /// is none. The caller skips this when a fork or unreachable record exists, since those leave records off the walk.
+    /// </summary>
+    internal static AuditChainHeadMismatch? InspectHead(IReadOnlyList<SignedAuditRecord> path, AuditChainHead? head)
+    {
+        if (head is null) return null;
+
+        var atHead = head.Sequence >= 1 && head.Sequence <= path.Count ? path[(int)head.Sequence - 1] : null;
+        if (atHead is not null && string.Equals(atHead.RecordHash, head.RecordHash, StringComparison.Ordinal)) return null;
+
+        return new AuditChainHeadMismatch
+        {
+            HeadSequence = head.Sequence,
+            HeadRecordHash = head.RecordHash,
+            WalkedCount = path.Count,
+            WalkedRecordHash = (atHead ?? (path.Count > 0 ? path[^1] : null))?.RecordHash,
+        };
+    }
+
+    /// <summary>
+    /// Whether <paramref name="record"/>'s stored <c>RecordHash</c> matches a recomputation over its content and
+    /// predecessor (S13.334 item 1(a)). Needs no key, so it runs on every walked record: an edit that left the stored
+    /// hash alone is broken even when the record's key version cannot be resolved.
+    /// </summary>
+    internal static bool HashMatches(SignedAuditRecord record) =>
+        AuditRecordHasher.ComputeRecordHash(AuditRecordHasher.ToAuditRecord(record), record.PreviousRecordHash) == record.RecordHash;
 
     /// <summary>
     /// Whether <paramref name="record"/>'s <c>RecordHash</c> and <c>Signature</c> match a
@@ -88,47 +133,36 @@ internal static class AuditChainVerifier
         return unresolved.Length > 0 ? unresolved : null;
     }
 
-    /// <summary>
-    /// Where verification stopped trusting the chain: the first record on the walk whose signature
-    /// fails against an available key, or failing that the first record the links cannot reach.
-    /// <see langword="null"/> when the chain is whole. Retained as the single-answer form of
-    /// <see cref="Verify"/>'s walk.
-    /// </summary>
-    internal static string? FindBrokenLink(IReadOnlyList<SignedAuditRecord> chain, string engagementId, IReadOnlyDictionary<string, SigningKey> keys)
-    {
-        var walk = WalkFromGenesis(chain, engagementId, keys);
-        var unreachable = FindUnreachable(chain, walk.Visited);
-
-        return walk.TamperedAt ?? (unreachable is null ? null : unreachable[0]);
-    }
 
     /// <summary>
     /// Follows <paramref name="chain"/>'s hash links from the engagement's genesis, recording which
     /// records lie on the chain and the first whose signature fails against a key that <em>is</em>
-    /// available. An unresolvable key version is not a break — hash continuity needs no key, so the
-    /// walk continues and the missing version is reported through
-    /// <see cref="VerificationResult.UnresolvedKeyIds"/> instead (ADR-PA22). A record that links back
-    /// to one already walked ends the walk rather than looping forever.
+    /// available, or whose recomputed hash does not match its stored one (S13.334 item 1(a), checked on every
+    /// record). An unresolvable key version is not itself a break: the walk continues and the version is
+    /// reported through <see cref="VerificationResult.UnresolvedKeyIds"/>, which makes the verdict unverified
+    /// (ADR-PA22 C revised). A record that links back to one already walked ends the walk rather than looping.
     /// </summary>
     internal static ChainWalk WalkFromGenesis(IReadOnlyList<SignedAuditRecord> chain, string engagementId, IReadOnlyDictionary<string, SigningKey> keys)
     {
         var byPredecessor = BuildPredecessorIndex(chain);
         var visited = new HashSet<string>(StringComparer.Ordinal);
+        var path = new List<SignedAuditRecord>();
         var cursor = AuditRecordHasher.ComputeGenesisHash(engagementId);
         string? tamperedAt = null;
 
         while (byPredecessor.TryGetValue(cursor, out var next) && visited.Add(next.ExecutionId))
         {
-            if (tamperedAt is null && keys.ContainsKey(next.SigningKeyId) && !IsSignatureValid(next, keys))
-            {
-                tamperedAt = next.ExecutionId;
-            }
-
+            path.Add(next);
+            if (tamperedAt is null && IsTampered(next, keys)) tamperedAt = next.ExecutionId;
             cursor = next.RecordHash;
         }
 
-        return new ChainWalk(visited, tamperedAt);
+        return new ChainWalk(visited, tamperedAt, path);
     }
+
+    /// <summary>A recomputed-hash mismatch, or a signature that fails against a key version that is available.</summary>
+    internal static bool IsTampered(SignedAuditRecord record, IReadOnlyDictionary<string, SigningKey> keys) =>
+        !HashMatches(record) || (keys.ContainsKey(record.SigningKeyId) && !IsSignatureValid(record, keys));
 
     /// <summary>
     /// Indexes <paramref name="chain"/> by each record's predecessor hash. Where a fork puts two
@@ -207,6 +241,6 @@ internal static class AuditChainVerifier
 
 /// <summary>
 /// What following the hash links from genesis found (ADR-PA31): the execution ids lying on the
-/// chain, and the first record on it whose signature failed against an available key.
+/// chain, the first record on it whose hash or signature failed, and the records in walk order.
 /// </summary>
-internal sealed record ChainWalk(IReadOnlySet<string> Visited, string? TamperedAt);
+internal sealed record ChainWalk(IReadOnlySet<string> Visited, string? TamperedAt, IReadOnlyList<SignedAuditRecord> Path);

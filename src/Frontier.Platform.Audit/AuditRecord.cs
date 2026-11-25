@@ -145,6 +145,15 @@ public sealed record AuditRecord : IVersionedContract
     [JsonPropertyName("termination")]
     public TerminationRecord? Termination { get; init; }
 
+    /// <summary>
+    /// The deployment's tenant (S13.293, ADR-PA54), stamped by the signer from <see cref="AuditTenantOptions"/>.
+    /// Inside the signed bytes, so the record's origin is tamper-evident; omitted when null, so a record signed
+    /// before the field existed hashes as it did.
+    /// </summary>
+    [JsonPropertyOrder(21)]
+    [JsonPropertyName("tenant")]
+    public string? Tenant { get; init; }
+
     /// <inheritdoc />
     public void Validate()
     {
