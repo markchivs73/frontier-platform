@@ -61,9 +61,12 @@ public interface IDefinitionLifecycleService
     /// <exception cref="PublishRevalidationException">The revision no longer passes validation; nothing was written.</exception>
     /// <exception cref="InvalidOperationException">
     /// The proposal cannot be approved (missing, decided, stale, or lost a race); nothing was written. Also
-    /// thrown when superseding the earlier versions fails, which happens after the new version is current,
-    /// and when a store that keeps <see cref="Storage.IDefinitionStore.ApproveAndPublishAsync"/>'s
+    /// thrown when a store that keeps <see cref="Storage.IDefinitionStore.ApproveAndPublishAsync"/>'s
     /// non-atomic default fails after the approval landed.
+    /// </exception>
+    /// <exception cref="PublishedButNotSupersededException">
+    /// The version is published and current, but marking the versions it replaces superseded failed or was
+    /// cancelled. The approval happened: the caller must not treat this as "did not happen" (ADR-PA50).
     /// </exception>
     Task<PublishedVersion> ApproveAsync(
         string proposalId,
