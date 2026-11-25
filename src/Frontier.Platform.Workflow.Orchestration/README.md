@@ -45,10 +45,12 @@ There is no reference here to a model provider or a tool transport — no Anthro
 | `IContractTypeSet` (from `…Workflow.Model`) | This deployment's contract types |
 | `IDynamicContextContentProducer` | Rendering an engagement's dynamic-context components on a refresh |
 | `IDispatcherVersionResolver` | Which definition version a dispatcher's next generation runs |
+| `IDispatcherGenerationSettingsResolver` | The current contract budgets and rollover threshold, with their versions, for a dispatcher's next generation (S13.146). Both dispatcher ports are required at boot (`DispatcherPorts` check). |
 
-The last two are reached only from their activities, and neither is registered by
+The last three are reached only from their activities, and none is registered by
 `AddFrontierWorkflowOrchestration` — deliberately. A default would let a misconfigured deployment
-run on, quietly, instead of failing to start. Note that an activity needs **two** registrations to
+run on, quietly, instead of failing to start; for the two dispatcher ports the `DispatcherPorts` boot check makes
+that failure happen at startup (S13.146). Note that an activity needs **two** registrations to
 work: the DI one this package performs, and an entry in the consumer's durable task registry.
 Missing either resolves cleanly and fails only at runtime.
 

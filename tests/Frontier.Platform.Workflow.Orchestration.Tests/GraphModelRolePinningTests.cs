@@ -220,7 +220,7 @@ public sealed class GraphModelRolePinningTests
         var input = DispatcherFixtures.Input() with { PinModelRoles = pinModelRoles };
 
         Assert.Equal(pinModelRoles, DispatcherSteps.BuildChildInput(new FakeTaskOrchestrationContext(), input, DispatcherFixtures.Item("wi-1")).PinModelRoles);
-        Assert.Equal(pinModelRoles, DispatcherSteps.BuildNextGenerationInput(input, resolved: null).PinModelRoles);
+        Assert.Equal(pinModelRoles, DispatcherSteps.BuildNextGenerationInput(input, new ResolveDispatcherVersionResult()).PinModelRoles);
     }
 
     private static GraphOrchestratorInput Input(bool? pinModelRoles, string engagementId = "eng-1")

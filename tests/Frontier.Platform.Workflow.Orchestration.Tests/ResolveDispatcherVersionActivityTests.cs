@@ -45,7 +45,7 @@ public sealed class ResolveDispatcherVersionActivityTests
     {
         var resolved = OrchestrationFixtures.ThreeArtifactChain(ExecutionMode.Dispatcher) with { DefinitionVersion = 7 };
         var resolver = new FakeVersionResolver(resolved);
-        var activity = new ResolveDispatcherVersionActivity(resolver);
+        var activity = new ResolveDispatcherVersionActivity(resolver, null);
 
         var result = await activity.RunAsync(new FakeTaskActivityContext(), Request());
 
@@ -64,7 +64,7 @@ public sealed class ResolveDispatcherVersionActivityTests
     [Fact]
     public async Task RunAsync_RetiredWithNoSuccessor_ResolvesToNull()
     {
-        var activity = new ResolveDispatcherVersionActivity(new FakeVersionResolver(null));
+        var activity = new ResolveDispatcherVersionActivity(new FakeVersionResolver(null), null);
 
         var result = await activity.RunAsync(new FakeTaskActivityContext(), Request());
 
@@ -74,14 +74,14 @@ public sealed class ResolveDispatcherVersionActivityTests
     [Fact]
     public async Task RunAsync_NullInput_Throws()
     {
-        var activity = new ResolveDispatcherVersionActivity(new FakeVersionResolver(null));
+        var activity = new ResolveDispatcherVersionActivity(new FakeVersionResolver(null), null);
 
         await Assert.ThrowsAsync<ArgumentNullException>(() => activity.RunAsync(new FakeTaskActivityContext(), null!));
     }
 
     [Fact]
     public void Constructor_NullResolver_Throws() =>
-        Assert.Throws<ArgumentNullException>(() => new ResolveDispatcherVersionActivity(null!));
+        Assert.Throws<ArgumentNullException>(() => new ResolveDispatcherVersionActivity(null!, null));
 
     /// <summary>The engine registers the activity but never the port behind it (the S13.62 precedent).</summary>
     [Fact]
@@ -167,7 +167,7 @@ public sealed class ResolveDispatcherVersionActivityTests
     }
 
     /// <summary>Records what the engine asked for and returns a fixed resolution.</summary>
-    private sealed class FakeVersionResolver(WorkflowDefinition? resolved) : IDispatcherVersionResolver
+    internal sealed class FakeVersionResolver(WorkflowDefinition? resolved) : IDispatcherVersionResolver
     {
         public string? ReceivedEngagementId { get; private set; }
         public string? ReceivedWorkflowId { get; private set; }
