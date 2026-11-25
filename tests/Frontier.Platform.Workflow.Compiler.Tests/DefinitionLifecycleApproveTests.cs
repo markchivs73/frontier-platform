@@ -388,20 +388,160 @@ public sealed class DefinitionLifecycleApproveTests
     }
 
     /// <summary>
-    /// A store failure while superseding surfaces to the caller, but only after the new version is
-    /// stored and current: the old versions stay published, never the new one left unreachable.
+    /// S13.350a: a store failure while superseding surfaces only after the new version is stored and
+    /// current, as <see cref="PublishedButNotSupersededException"/> carrying the published version and the
+    /// store's failure, and never as an <see cref="InvalidOperationException"/> ("nothing was written").
     /// </summary>
     [Fact]
-    public async Task ApproveAsync_SupersedeFails_AfterTheNewVersionIsCurrent()
+    public async Task ApproveAsync_SupersedeFails_ThrowsPublishedButNotSuperseded_WithThePublishedVersionAndTheStoreFailure()
     {
         ArrangeHappyPath(currentVersion: 1);
-        _store.Setup(s => s.SupersedeVersionAsync(WorkflowId, 1, 2, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new InvalidOperationException("store down"));
+        var storeFailure = new InvalidOperationException("store down");
+        _store.Setup(s => s.SupersedeVersionAsync(WorkflowId, 1, 2, It.IsAny<CancellationToken>())).ThrowsAsync(storeFailure);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(
+        var ex = await Assert.ThrowsAsync<PublishedButNotSupersededException>(
             () => _service.ApproveAsync(ProposalId, "user:approver", CancellationToken.None));
 
+        Assert.IsNotAssignableFrom<InvalidOperationException>(ex);
+        Assert.Same(storeFailure, ex.InnerException);
+        Assert.Equal((WorkflowId, 2, "user:approver"), (ex.Published!.WorkflowId, ex.Published.DefinitionVersion, ex.Published.ApprovedBy));
+        Assert.Equal([1], ex.UnsupersededVersions);
         VerifyPublished(d => d.DefinitionVersion == 2);
+    }
+
+    /// <summary>S13.294: the service the deployment builds with design conversations not kept across a publish.</summary>
+    private DefinitionLifecycleService HistoryOffService() =>
+        new(_store.Object, _compiler.Object, NoRegistryContracts.Embedder, null, new ChatDesignerHistoryOptions { HistoryEnabled = false });
+
+    /// <summary>S13.294: with history kept (the default), approving never touches the conversation.</summary>
+    [Fact]
+    public async Task ApproveAsync_HistoryEnabled_NeverDropsTheConversation()
+    {
+        ArrangeHappyPath(currentVersion: 1);
+
+        await _service.ApproveAsync(ProposalId, "user:approver", CancellationToken.None);
+
+        _store.Verify(s => s.DeleteDesignConversationAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>S13.294 (doc 14 §2): with history off, the conversation is dropped, and only then is the version written.</summary>
+    [Fact]
+    public async Task ApproveAsync_HistoryDisabled_DropsTheConversationBeforeThePublishWrite()
+    {
+        ArrangeHappyPath(currentVersion: 1);
+        var order = new List<string>();
+        _store.Setup(s => s.DeleteDesignConversationAsync(WorkflowId, It.IsAny<CancellationToken>()))
+            .Callback(() => order.Add("drop")).Returns(Task.CompletedTask);
+        _store.Setup(s => s.ApproveAndPublishAsync(It.IsAny<PublishProposalDocument>(), It.IsAny<DefinitionVersionDocument>(), It.IsAny<CancellationToken>()))
+            .Callback(() => order.Add("publish")).ReturnsAsync(true);
+
+        var published = await HistoryOffService().ApproveAsync(ProposalId, "user:approver", CancellationToken.None);
+
+        Assert.Equal(["drop", "publish"], order);
+        Assert.Equal(2, published.DefinitionVersion);
+    }
+
+    /// <summary>S13.294: a drop that fails publishes nothing, so a re-run can approve the proposal still in review.</summary>
+    [Fact]
+    public async Task ApproveAsync_HistoryDisabled_DropFails_PublishesNothing()
+    {
+        ArrangeHappyPath(currentVersion: 1);
+        var failure = new TimeoutException("store slow");
+        _store.Setup(s => s.DeleteDesignConversationAsync(WorkflowId, It.IsAny<CancellationToken>())).ThrowsAsync(failure);
+
+        var ex = await Assert.ThrowsAsync<TimeoutException>(() => HistoryOffService().ApproveAsync(ProposalId, "user:approver", CancellationToken.None));
+
+        Assert.Same(failure, ex);
+        _store.Verify(s => s.ApproveAndPublishAsync(It.IsAny<PublishProposalDocument>(), It.IsAny<DefinitionVersionDocument>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    /// S13.294, the accepted loss: when the publish write then loses its race, the proposal stays in review and
+    /// its conversation is already gone.
+    /// </summary>
+    [Fact]
+    public async Task ApproveAsync_HistoryDisabled_PublishLosesItsRace_TheConversationIsAlreadyDropped()
+    {
+        ArrangeHappyPath(currentVersion: 1);
+        _store.Setup(s => s.ApproveAndPublishAsync(It.IsAny<PublishProposalDocument>(), It.IsAny<DefinitionVersionDocument>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => HistoryOffService().ApproveAsync(ProposalId, "user:approver", CancellationToken.None));
+
+        _store.Verify(s => s.DeleteDesignConversationAsync(WorkflowId, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>S13.294: a contract that cannot be pinned refuses the approval before the drop, so nothing is dropped.</summary>
+    [Fact]
+    public async Task ApproveAsync_HistoryDisabled_ContractPinningFails_DropsNothing()
+    {
+        ArrangeHappyPath(currentVersion: 1);
+        var embedder = new Mock<IDefinitionContractEmbedder>();
+        embedder.Setup(e => e.EmbedAsync(It.IsAny<WorkflowDefinition>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("contract acme/x/1.0 is not registered"));
+        var service = new DefinitionLifecycleService(_store.Object, _compiler.Object, embedder.Object, null, new ChatDesignerHistoryOptions { HistoryEnabled = false });
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.ApproveAsync(ProposalId, "user:approver", CancellationToken.None));
+
+        _store.Verify(s => s.DeleteDesignConversationAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>S13.294: a refusal before the publish point (a stale revision) drops nothing.</summary>
+    [Fact]
+    public async Task ApproveAsync_HistoryDisabled_RevalidationRefuses_DropsNothing()
+    {
+        ArrangeHappyPath(currentVersion: 1);
+        ArrangeRevalidation(ValidationOutcome.Fail, new ValidationFinding("graph.single-entry-reachable", ValidationSeverity.Error, "no entry"));
+
+        await Assert.ThrowsAsync<PublishRevalidationException>(() => HistoryOffService().ApproveAsync(ProposalId, "user:approver", CancellationToken.None));
+
+        _store.Verify(s => s.DeleteDesignConversationAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>A failure part-way names only the versions not yet superseded: the ones done stay done.</summary>
+    [Fact]
+    public async Task ApproveAsync_SupersedeFailsPartWay_ReportsOnlyTheVersionsLeft()
+    {
+        ArrangeHappyPath(currentVersion: 3);
+        _store.Setup(s => s.SupersedeVersionAsync(WorkflowId, 1, 4, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _store.Setup(s => s.SupersedeVersionAsync(WorkflowId, 2, 4, It.IsAny<CancellationToken>())).ThrowsAsync(new TimeoutException("slow"));
+
+        var ex = await Assert.ThrowsAsync<PublishedButNotSupersededException>(
+            () => _service.ApproveAsync(ProposalId, "user:approver", CancellationToken.None));
+
+        Assert.Equal([2, 3], ex.UnsupersededVersions);
+        _store.Verify(s => s.SupersedeVersionAsync(WorkflowId, 3, 4, It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>Cancellation after the publish landed is still reported as a landed publish, never as "did not happen".</summary>
+    [Fact]
+    public async Task ApproveAsync_CancelledWhileSuperseding_StillReportsThePublish()
+    {
+        ArrangeHappyPath(currentVersion: 1);
+        var cancelled = new OperationCanceledException("request aborted");
+        _store.Setup(s => s.SupersedeVersionAsync(WorkflowId, 1, 2, It.IsAny<CancellationToken>())).ThrowsAsync(cancelled);
+
+        var ex = await Assert.ThrowsAsync<PublishedButNotSupersededException>(
+            () => _service.ApproveAsync(ProposalId, "user:approver", CancellationToken.None));
+
+        Assert.Same(cancelled, ex.InnerException);
+        Assert.Equal(2, ex.Published!.DefinitionVersion);
+    }
+
+    /// <summary>Only the supersede is wrapped: a failure of the publish write itself propagates as it is, since nothing landed.</summary>
+    [Fact]
+    public async Task ApproveAsync_PublishWriteThrows_PropagatesUnwrapped_AndSupersedesNothing()
+    {
+        ArrangeHappyPath(currentVersion: 1);
+        var writeFailure = new OperationCanceledException("cancelled before commit");
+        _store.Setup(s => s.ApproveAndPublishAsync(It.IsAny<PublishProposalDocument>(), It.IsAny<DefinitionVersionDocument>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(writeFailure);
+
+        var ex = await Assert.ThrowsAsync<OperationCanceledException>(
+            () => _service.ApproveAsync(ProposalId, "user:approver", CancellationToken.None));
+
+        Assert.Same(writeFailure, ex);
+        _store.Verify(s => s.SupersedeVersionAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

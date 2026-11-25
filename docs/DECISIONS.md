@@ -808,6 +808,35 @@ published run's gate does; `null` for a test-run document from before the engage
 Breaking for implementors of `ITestRunExecutor`; the consumer's adapter is the only one, and it
 hard-coded occurrence `1` where every first visit is `0`.
 
+### ADR-PA17 — amended 2026-11-25: a sandbox gate decision names the human who decided
+
+Consumer task S13.338, from its run-2 security review (2026-11-20), decided in its 2026-11-24 triage
+(option a). `TestRunService.DecideGateAsync` stamped the fixed `system:sandbox-designer` on every
+interactive sandbox decision it passed to `ITestRunExecutor.RaiseGateDecisionAsync`, so the decision
+(and what the consumer's executor recorded from it) named a placeholder, not the person. The consumer's ADR-E8 D1 reserves `system:*` for machine actions, and `GateDecision.ApproverId`
+is documented as the resolved identity of the human who decided.
+
+`ITestRunService.DecideGateAsync` now takes `approverId` after `gateId`, the same order as
+`ITestRunExecutor.RaiseGateDecisionAsync`, and passes it through unchanged. A null, empty or whitespace
+id is refused before the run is read or anything is raised. The service does not police the `system:`
+prefix: nothing specifies such a rule. The `system:sandbox-designer` constant is gone. The auto-approve
+path (reconcile and the finalizer sweep) is machine action and keeps `system:sandbox-auto-approve`.
+No stored data changes, and no recovery path read the removed value.
+
+Breaking for every caller and implementer of `ITestRunService`, changed in place as the 2026-10-22
+amendment changed `RaiseGateDecisionAsync`, so the commit is scoped `workflow.compiler!`. No
+`[Obsolete]` overload: it would still be a new interface member, and it would keep the placeholder
+reachable. The consumer has one caller, the sandbox decide route, and three test doubles. After the
+tag, the consumer will pass the caller's object id from that route and answer 403 `no_principal` when
+there is none (its half of S13.338).
+
+Forward flags. In a sandbox the designer both starts the run and plays approver (the consumer's doc 13
+§5), so sandbox records now show initiator equal to approver by design; separation-of-duties checks and
+decision reports must exclude `SANDBOX-` engagements. That exclusion is not enforced here: the
+separation-of-duties check (the consumer's S13.131) is not built, and which engagements a report scans is
+the consumer's concern, not this service's. Two designers deciding the same sandbox gate, and
+a retry after a lost raise naming a different person, are left as they were.
+
 
 ---
 
@@ -3793,6 +3822,133 @@ server's breaker closed and are not re-run by the activity, and that a returned 
 `OrchestrationFactory.ClassifyFailure` to the same exact-name match and gives it a `policy_refused` row; and it
 amends doc 10 §3 (the two statuses in row 2, a `policy_refused` row, and the outer loop's fourth permanent type).
 
+## ADR-PA49 — a bounded read of what one approver decided, as a new member on `IApprovalQueryService`
+
+Consumer task S13.312, found 2026-11-20 while building S13.124. Settled in the consumer's triage of
+2026-11-24 ("bounded decided-by query in the platform Hitl").
+
+**Why.** The consumer's C1 inbox shows a "Decided by you (24h)" section. Its only source was
+`IApprovalStore.GetDecidedAsync`, the recovery sweep's cross-partition read of every `decided` request
+ever, with no time bound. The consumer filtered that list down to the caller's last day, and it read it on
+every inbox load and every `ApprovalDecided` event.
+
+**Decision.**
+1. *The read.* `IApprovalQueryService.GetDecidedByAsync(approverId, sinceUtc, ct)` returns the requests
+   still `decided` whose `decision.approver_id` is `approverId` and whose `decision.decided_at_utc` is at
+   or after `sinceUtc`, newest decision first, paged at 100. `@since` is passed as the string the canonical
+   profile writes (doc 01 §3.2: fixed-width UTC to the millisecond, truncated). The comparison is therefore
+   a string comparison over the stored bytes, and it orders as the dates do. Requests decided at the same
+   millisecond come back in no defined order, because no second sort key is named, so a caller that needs
+   a stable order breaks ties itself. A blank approver, or a `sinceUtc` that is not UTC, is refused.
+2. *Cross-partition, and accepted.* One approver's decisions span engagements, so the read cannot be
+   single-partition. It is accepted because three things bound it: the decider and the window cut the read
+   down through the index, it is intended for the consumer's C1 "Decided by you" read (its only planned
+   caller, on the same paths as the scan it replaces), and the alternative is worse for now. That alternative, a per-approver projection, would be
+   a new container whose partition key breaks ADR-S1 (`/engagementId` on every hot container). It is
+   deferred until C1 proves hot. The read needs only the default `/*` range index. The `approvals`
+   composite index (`/status`, `/requested_at_utc`) neither serves nor blocks it.
+3. *A new member on a shipped interface, so `hitl!`.* Every implementation of `IApprovalQueryService` must
+   add it, and the consumer's ten test doubles are the implementations affected. This follows ADR-PA41,
+   ADR-PA43 and the `IApprovalStore` change of #177. ADR-PA34 D4 and ADR-PA29 chose a new interface instead
+   for roles that consumers double, and that was considered here. It was not chosen because approval reads
+   would then be split across two interfaces, while the consumer's change is ten one-line fakes in a single
+   bump. The release is still a minor under the 0.x rule.
+
+**What it does not change.** `GetDecidedAsync` and the recovery sweep are unchanged. No wire shape,
+container or index moves.
+
+**What the consumer does.** After bumping, it implements the member on its doubles. It reads C1's
+decided rows through `GetDecidedByAsync(callerId, now - 24h)`, skips the call when the caller has no id,
+and keeps its exact filter (sandbox engagements, the millisecond edge and the tie-break) over the result.
+
+## ADR-PA50 — a publish whose supersede fails is reported as published, by its own exception type
+
+Consumer task S13.350a, found 2026-11-20 in the consumer's run-2 review of S13.350. Decided in the consumer's
+triage of 2026-11-24 (option B: a distinct typed exception, and the consumer skips compensation).
+
+**Why.** `DefinitionLifecycleService.ApproveAsync` marks the versions a new one replaces `superseded` (GOV-14)
+only after `IDefinitionStore.ApproveAndPublishAsync` has published the new version and moved the pointer. Until
+now a failure there surfaced as whatever the store threw. The consumer's governance path appends
+`definition_publish_approved` before the change and compensates it when the change throws, so the trail then
+said the approval did not happen while the version was live and pinnable. A plain `InvalidOperationException`
+from the store was worse: the consumer's `LifecycleRefusal` exact-matches that type as a lifecycle refusal, so
+it answered 409 *and* compensated.
+
+**Decision.**
+1. *A failure of the supersede, and only that, is wrapped.* Any exception from the supersede loop, cancellation
+   included, becomes `PublishedButNotSupersededException`. It carries the `PublishedVersion` that `ApproveAsync`
+   would have returned and the versions not confirmed superseded (the ones already done are not named), and its
+   inner exception is what stopped the loop. A failure of `ApproveAndPublishAsync` itself is never wrapped.
+   A store's `false` ("changed concurrently") still counts as done.
+2. *Not an `InvalidOperationException`.* With the Cosmos store's atomic publish, `ApproveAsync` throws that
+   type only when nothing was written (`PublishRevalidationException` derives from it for that reason); a store
+   keeping `IDefinitionStore.ApproveAndPublishAsync`'s non-atomic default may throw it after the approval landed,
+   as the interface remark says. The new type derives from `Exception`, so
+   a caller's "refused / did not happen" mapping cannot catch it by accident.
+3. *Retry, not repair.* The next publish of the workflow retries every older published or retired version that
+   records no successor (`SupersessionTargets`). Until then there is a window: a retired predecessor with no
+   successor recorded that is un-retired becomes `published` beside the new version, the state GOV-14 exists to
+   prevent. Durable after-commit supersession (retried or swept) is the consumer's S13.328 (a), not this.
+
+**Surface.** One new public type; no interface member changes and nothing is removed, so the commit is not
+scoped `!` (as #181 shipped `PublishRevalidationException`). The behaviour change: a caller that caught the
+store's own exception type from a failed supersede now gets this type instead.
+
+**Not closed here.** Cancellation or a timeout inside `ApproveAndPublishAsync` after its batch committed still
+looks like a failed publish to the caller and is compensated falsely. That is the same shape as the consumer's
+S13.328 (c), and belongs with it. Likewise a store that keeps the non-atomic default
+`ApproveAndPublishAsync` and fails after approving the proposal surfaces an `InvalidOperationException` (or
+the store's own exception) although the approval landed; the platform's Cosmos store overrides it atomically,
+so only a third-party store is exposed, and this change does not cover it.
+
+**What the consumer does.** After bumping: inside the approve mutation it catches this type, logs at Error for a
+store fault (Warning when the inner exception is the caller's cancellation), does not rethrow, so no
+compensation is appended, and still sends `ProposalStateChanged` and answers as for a publish. Whether an
+incomplete supersede deserves its own signed record (a new event type) is a question for Mark.
+
+## ADR-PA51 — the design-history kill switch drops the conversation before the publish write
+
+Consumer task S13.294, from its S13.285 review (2026-11-16), accepted in its 2026-11-24 triage. The consumer's
+doc 14 §2 and ADR-CD1 (chat history is persistent and draft-scoped), and its doc 15 §10, give sectors that must
+not retain design conversations a deployment flag, `chatDesigner.historyEnabled`. Neither repository had it.
+
+**What existed.** A `DesignTurnDocument` carries no `publishedVersion` and no `ttl`, nothing stamps turns at
+publish, and no housekeeping TTL is set. Turns live until the draft is deleted, and the draft stays open after
+publish, so every published version's conversation stayed on the draft indefinitely. The enabled half of
+ADR-CD1 (stamp at publish, exemption from a housekeeping TTL) is the consumer's S13.383, not this.
+
+**Decision.**
+1. *One setting.* `ChatDesignerHistoryOptions.HistoryEnabled`, default `true`, bound from the `ChatDesigner`
+   section by `AddFrontierWorkflowCompiler(configuration)` like `CosmosOptions`. No library reads raw
+   configuration, and nothing reads it in an orchestrator body.
+2. *No per-turn TTL.* Doc 14 §9's "draft-lifetime TTL" has no derivable value: drafts carry no TTL, and a Cosmos
+   TTL counts from each item's last write, so it would erode a live draft's conversation from its oldest turn.
+   Deleting the draft already deletes its turns. Bounding abandoned drafts belongs with S13.383's housekeeping TTL.
+3. *Dropped at publish, before the write.* With the setting off, `ApproveAsync` calls
+   `IDefinitionStore.DeleteDesignConversationAsync` as its last step before `ApproveAndPublishAsync`, after
+   re-validation and contract pinning. A failed drop publishes nothing: the approval is refused before its
+   write, and an approver can approve again. The drop itself is not atomic: if it fails part-way, the turns
+   already deleted stay deleted, and the re-approval deletes the rest.
+   **Accepted loss:** if the publish write then fails (a lost race, a transient batch failure), the approval
+   was not written and the conversation is already gone, so the approver no longer sees it beside the diff
+   (consumer doc 15 §10) when approving again. With the Cosmos store's atomic publish the proposal is then still
+   in review; a store keeping the non-atomic default write makes no such promise. Dropping after the write would
+   instead leave a landed publish failing on its privacy step.
+4. *The welcome turn stays, and a concurrent turn is not lost.* Doc 14 §2 says turn 0 is not deletable, so the
+   drop deletes every turn numbered above 0 that it read, then rewrites the chat-history index without exactly
+   those turns. The rewrite is a replace guarded by the index's ETag: a turn appended in between (whose number is
+   at or above the read's next turn number, so it was not deleted) makes the replace fail, and the index is
+   re-read and rewritten keeping it, at most three times before the approval is refused with nothing published.
+   That turn's document and its index entry both survive until the next publish. The next turn number is kept,
+   so a turn id is never reused.
+
+**Surface.** Additive. `DeleteDesignConversationAsync` is a default-implemented `IDefinitionStore` member that
+throws `NotSupportedException`, as `SupersedeVersionAsync` does, so implementers do not break; it is reached only
+by a deployment that turns history off. `DefinitionLifecycleService` gains a constructor taking the options; the
+existing four-argument constructor stays, losing only its default value as the PublicAPI analyzer's
+optional-parameter rule (RS0027) requires. Every existing call still compiles: a four-argument call binds to it
+as before, and a three-argument call now binds to the new five-argument overload with the same behaviour.
+Points 2 and 4 are proposed and wait on Mark.
 ## ADR-PA52 — a definition may carry a description and tags
 
 Consumer task S13.238, split from S13.206 (Mark, 2026-11-06), with picks accepted in the consumer's 2026-11-24
