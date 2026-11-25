@@ -433,8 +433,15 @@ internal sealed class ChatDesignerService : IChatDesignerService
         // The proposal is a fresh definition, not the stored draft, so it carries no stored schema
         // version: passing the draft's would pin an old-schema finding on a brand-new proposal.
         var report = await _compiler.ValidateAsync(proposed, draft.DraftRevision, storedSchemaVersion: null, ct);
-        return [.. UnknownKeyFindings(result.UnknownKeys), .. report.Findings.Where(f => f.Severity == ValidationSeverity.Error)];
+        return [.. UnknownKeyFindings(result.UnknownKeys), .. report.Findings.Where(BlocksProposal)];
     }
+
+    /// <summary>
+    /// Whether a finding on a model proposal drives the repair pass and blocks Apply: every Error except a tag
+    /// finding, since the merge never applies a proposal's tags (S13.238).
+    /// </summary>
+    internal static bool BlocksProposal(ValidationFinding finding) =>
+        finding.Severity == ValidationSeverity.Error && !Rules.StructureRequiredFieldsRule.IsTagFinding(finding);
 
     /// <summary>Rule id for a proposal key the schema does not define (S13.210).</summary>
     internal const string UnknownKeyRuleId = "proposal.unknown-key";
@@ -484,7 +491,7 @@ internal sealed class ChatDesignerService : IChatDesignerService
 
         var changes = ProposalChangeSetBuilder.Build(_diffService.Compute(draft.Definition, proposed), draft.Definition, proposed);
         List<ValidationFinding> blocking =
-            [.. UnknownKeyFindings(unknownKeys), .. _compiler.ValidateStructural(proposed).Where(f => f.Severity == ValidationSeverity.Error)];
+            [.. UnknownKeyFindings(unknownKeys), .. _compiler.ValidateStructural(proposed).Where(BlocksProposal)];
         var blockReason = blocking.Count == 0
             ? null
             : string.Join("; ", blocking.Select(f => $"{f.RuleId}: {f.Message}"));

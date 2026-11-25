@@ -49,6 +49,22 @@ public sealed class ProposalMergeServiceTests
         Assert.Equal("designer-1", merged.UpdatedDraft.LastEditedBy);
     }
 
+    /// <summary>
+    /// S13.238: the granular merge (the one the chat designer's Apply uses) applies nodes and edges only, so a
+    /// proposal cannot change or clear the draft's description and tags.
+    /// </summary>
+    [Fact]
+    public void ApplyApproved_ProposalChangesDescriptionAndTags_TheDraftKeepsItsOwn()
+    {
+        var current = CreateMinimalDraft("wf-test").Definition with { Description = "The draft's own.", Tags = ["kept"] };
+        var proposed = current with { Description = "The model's.", Tags = null };
+
+        var merged = ProposalMergeService.ApplyApproved(current, proposed, []);
+
+        Assert.Equal("The draft's own.", merged.Description);
+        Assert.Equal(["kept"], merged.Tags);
+    }
+
     [Fact]
     public async Task ApplyProposalAsync_MalformedJson_ReturnsValidationBlocked()
     {

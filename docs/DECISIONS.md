@@ -3949,3 +3949,35 @@ existing four-argument constructor stays, losing only its default value as the P
 optional-parameter rule (RS0027) requires. Every existing call still compiles: a four-argument call binds to it
 as before, and a three-argument call now binds to the new five-argument overload with the same behaviour.
 Points 2 and 4 are proposed and wait on Mark.
+## ADR-PA52 — a definition may carry a description and tags
+
+Consumer task S13.238, split from S13.206 (Mark, 2026-11-06), with picks accepted in the consumer's 2026-11-24
+triage. The consumer's doc 13 §4.2 first had `structure.required-fields` check a description and well-formed
+tags, but `WorkflowDefinition` had neither.
+
+**Decision.**
+1. *Two optional members, inside the hash.* `description` (order 10) and `tags` (order 11) follow `contracts`,
+   omitted when null. A definition without them serializes to the same canonical bytes, so its hash is
+   unchanged (`StoredDefinitionHashStabilityTests`' existing tests are untouched and pass; one test is added). When present they are hashed like any
+   other member, in the order given: re-tagging changes the hash, so (reasoned from immutability, not tested here) it needs a new publish. An empty string and an
+   empty list are written and hashed, so writers send null for "none". No `schema_version` bump: the members
+   are optional (ADR-E15). The activity-shape snapshot grows additively (`EvaluateCascadeActivity` input,
+   `ResolveDispatcherVersionActivity` output).
+2. *The checks* (triage picks). A missing or blank description is a **Warning**. Each tag must be kebab-case,
+   read strictly as `\A[a-z0-9]+(-[a-z0-9]+)*\z` (so a trailing newline is refused), and at most 32 characters (length checked first); each bad tag
+   is an Error on `tags[i]`. More than ten tags is an Error on `tags`. The checks are in the rule, not in
+   `WorkflowDefinition.Validate()`, which throws.
+3. *Proposals are not blocked by tags.* The chat designer's Apply (the granular merge) applies only nodes and
+   edges, so a proposal's tags never reach the draft. Tag findings therefore neither drive the repair pass nor
+   block Apply; they still block a publish. The designer's prompt and schema text are unchanged, so (reasoned, not tested) the prompt bytes
+   for a definition without the members are identical. The schema's unknown-key check no longer flags
+   `description` or `tags` on a proposal.
+
+**Health effect, for Mark.** Because a missing description is a Warning, every draft without one validates
+`PassWithWarnings`, and the consumer's health sweep reports every published version without one as
+`warning`. A published version is immutable, so it stays `warning` until it is republished with a
+description. The alternatives are to keep the Warning, make it Info, or have the sweep ignore this finding.
+
+**Pending Mark (proposed).** Duplicate tags are not checked; tag order is hashed and nothing sorts. No
+description length cap is set, although the description rides inline as orchestration input and in the
+designer prompt on every turn.
