@@ -2373,6 +2373,25 @@ surprises: the code needed no change to work against real Azure.** The one thing
 have told us is now pinned by an assertion — Key Vault returns ES256 signatures as raw `r ‖ s`
 (IEEE P1363), not DER, and `AuditSignatureVerifier` was already right about it.
 
+### ADR-PA33 — amended 2026-11-25: "local" is the parsed loopback host, decided once
+
+Consumer task S13.349 (AUTHN-1) with S13.334 item 3, accepted in its 2026-11-24 triage. `SigningProfileCheck`
+allowed the committed dev signing key, and the four Cosmos client factories (Audit, Hitl, ModelRoleConfig,
+ContextAssembly) skipped TLS validation, whenever the endpoint *started with* `http(s)://localhost` or
+`http(s)://127.0.0.1`. `https://localhost.evil.example`, `https://localhostfrontier.documents.azure.com`,
+`https://127.0.0.1.nip.io` and `https://localhost:8081@evil.example` all passed. All four now call one public rule,
+`Frontier.Platform.Serialization.LocalEndpoint.IsLoopback`: an absolute http/https URI whose parsed host is exactly
+`localhost` or a loopback IP. It judges the host `System.Uri` parses, which is the host a client built from the same
+string dials, so userinfo cannot fool it and the parser's own normalisation (`loopback` to `localhost`, `0x7f.1` to
+`127.0.0.1`) is followed rather than second-guessed. A trailing-dot `localhost.` is refused. `LocalProfile` and the
+three private copies are removed.
+
+Behaviour change, not a surface break: a process configured with a prefix-only "local" endpoint now refuses the dev
+key at boot and validates the server certificate. The consumer's own copy of the rule
+(`CredentialProfileCheck.IsLocalEndpoint`) can collapse onto this one; its test rows are copied into
+`LocalEndpointTests` so that is a known change (only `localhost.` tightens). Giving each head one explicit
+`CosmosClient` is the consumer's part.
+
 ## ADR-PA34 — the mapping governance surface says who changed what, refuses staleness by name, and answers across roles
 
 frontier-workflow's S13.101 API slice stopped: doc 20's model-role endpoints and doc 19's D3 screen

@@ -62,6 +62,11 @@ libraries use this (`SigningKeyCheck`, `CosmosTopologyCheck`, `RoleCatalogueChec
 `TimeoutHierarchyCheck`, `OtelPipelineCheck`), which is why the two tiny types live in the one
 package everything already depends on.
 
+**The local-emulator rule** — `LocalEndpoint.IsLoopback(endpoint)`. The one test every platform library uses for
+"this endpoint is a local emulator": an absolute http/https URI whose parsed host is `localhost` or a loopback IP.
+It gates the committed dev signing key and the emulator's TLS relaxation, so a lookalike host
+(`localhost.evil.example`) or userinfo (`https://localhost@evil.example`) is never local.
+
 This package registers its own: **`CanonicalProfileCheck`** serializes a committed fixture through
 the profile and compares the SHA-256 against a known-good constant. A mismatch means the profile —
 naming, ordering, omit-null, converters — has drifted from what definition hashing, cache keys and
