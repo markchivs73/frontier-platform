@@ -8,3 +8,14 @@ Frontier.Platform.Workflow.Compiler.ChatDesignerHistoryOptions.HistoryEnabled.ge
 Frontier.Platform.Workflow.Compiler.ChatDesignerHistoryOptions.HistoryEnabled.init -> void
 Frontier.Platform.Workflow.Compiler.Storage.CosmosDefinitionStore.DeleteDesignConversationAsync(string! workflowId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task!
 Frontier.Platform.Workflow.Compiler.Storage.IDefinitionStore.DeleteDesignConversationAsync(string! workflowId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task!
+*REMOVED*Frontier.Platform.Workflow.Compiler.ITestRunService.DecideGateAsync(string! testRunId, string! gateId, Frontier.Platform.Abstractions.DecisionKind! decision, string? note, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.TestRunResult?>!
+*REMOVED*Frontier.Platform.Workflow.Compiler.TestRunService.DecideGateAsync(string! testRunId, string! gateId, Frontier.Platform.Abstractions.DecisionKind! decision, string? note, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.TestRunResult?>!
+Frontier.Platform.Workflow.Compiler.ITestRunService.DecideGateAsync(string! testRunId, string! gateId, string! approverId, Frontier.Platform.Abstractions.DecisionKind! decision, string? note, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.TestRunResult?>!
+Frontier.Platform.Workflow.Compiler.TestRunService.DecideGateAsync(string! testRunId, string! gateId, string! approverId, Frontier.Platform.Abstractions.DecisionKind! decision, string? note, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.TestRunResult?>!
+Frontier.Platform.Workflow.Compiler.PublishedButNotSupersededException
+Frontier.Platform.Workflow.Compiler.PublishedButNotSupersededException.Published.get -> Frontier.Platform.Workflow.Compiler.PublishedVersion?
+Frontier.Platform.Workflow.Compiler.PublishedButNotSupersededException.PublishedButNotSupersededException() -> void
+Frontier.Platform.Workflow.Compiler.PublishedButNotSupersededException.PublishedButNotSupersededException(Frontier.Platform.Workflow.Compiler.PublishedVersion! published, System.Collections.Generic.IReadOnlyList<int>! unsupersededVersions, System.Exception! innerException) -> void
+Frontier.Platform.Workflow.Compiler.PublishedButNotSupersededException.PublishedButNotSupersededException(string! message) -> void
+Frontier.Platform.Workflow.Compiler.PublishedButNotSupersededException.PublishedButNotSupersededException(string! message, System.Exception! innerException) -> void
+Frontier.Platform.Workflow.Compiler.PublishedButNotSupersededException.UnsupersededVersions.get -> System.Collections.Generic.IReadOnlyList<int>!

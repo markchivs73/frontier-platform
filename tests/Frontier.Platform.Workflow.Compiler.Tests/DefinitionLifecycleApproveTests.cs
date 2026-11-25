@@ -388,19 +388,24 @@ public sealed class DefinitionLifecycleApproveTests
     }
 
     /// <summary>
-    /// A store failure while superseding surfaces to the caller, but only after the new version is
-    /// stored and current: the old versions stay published, never the new one left unreachable.
+    /// S13.350a: a store failure while superseding surfaces only after the new version is stored and
+    /// current, as <see cref="PublishedButNotSupersededException"/> carrying the published version and the
+    /// store's failure, and never as an <see cref="InvalidOperationException"/> ("nothing was written").
     /// </summary>
     [Fact]
-    public async Task ApproveAsync_SupersedeFails_AfterTheNewVersionIsCurrent()
+    public async Task ApproveAsync_SupersedeFails_ThrowsPublishedButNotSuperseded_WithThePublishedVersionAndTheStoreFailure()
     {
         ArrangeHappyPath(currentVersion: 1);
-        _store.Setup(s => s.SupersedeVersionAsync(WorkflowId, 1, 2, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new InvalidOperationException("store down"));
+        var storeFailure = new InvalidOperationException("store down");
+        _store.Setup(s => s.SupersedeVersionAsync(WorkflowId, 1, 2, It.IsAny<CancellationToken>())).ThrowsAsync(storeFailure);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(
+        var ex = await Assert.ThrowsAsync<PublishedButNotSupersededException>(
             () => _service.ApproveAsync(ProposalId, "user:approver", CancellationToken.None));
 
+        Assert.IsNotAssignableFrom<InvalidOperationException>(ex);
+        Assert.Same(storeFailure, ex.InnerException);
+        Assert.Equal((WorkflowId, 2, "user:approver"), (ex.Published!.WorkflowId, ex.Published.DefinitionVersion, ex.Published.ApprovedBy));
+        Assert.Equal([1], ex.UnsupersededVersions);
         VerifyPublished(d => d.DefinitionVersion == 2);
     }
 
@@ -491,6 +496,52 @@ public sealed class DefinitionLifecycleApproveTests
         await Assert.ThrowsAsync<PublishRevalidationException>(() => HistoryOffService().ApproveAsync(ProposalId, "user:approver", CancellationToken.None));
 
         _store.Verify(s => s.DeleteDesignConversationAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>A failure part-way names only the versions not yet superseded: the ones done stay done.</summary>
+    [Fact]
+    public async Task ApproveAsync_SupersedeFailsPartWay_ReportsOnlyTheVersionsLeft()
+    {
+        ArrangeHappyPath(currentVersion: 3);
+        _store.Setup(s => s.SupersedeVersionAsync(WorkflowId, 1, 4, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _store.Setup(s => s.SupersedeVersionAsync(WorkflowId, 2, 4, It.IsAny<CancellationToken>())).ThrowsAsync(new TimeoutException("slow"));
+
+        var ex = await Assert.ThrowsAsync<PublishedButNotSupersededException>(
+            () => _service.ApproveAsync(ProposalId, "user:approver", CancellationToken.None));
+
+        Assert.Equal([2, 3], ex.UnsupersededVersions);
+        _store.Verify(s => s.SupersedeVersionAsync(WorkflowId, 3, 4, It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>Cancellation after the publish landed is still reported as a landed publish, never as "did not happen".</summary>
+    [Fact]
+    public async Task ApproveAsync_CancelledWhileSuperseding_StillReportsThePublish()
+    {
+        ArrangeHappyPath(currentVersion: 1);
+        var cancelled = new OperationCanceledException("request aborted");
+        _store.Setup(s => s.SupersedeVersionAsync(WorkflowId, 1, 2, It.IsAny<CancellationToken>())).ThrowsAsync(cancelled);
+
+        var ex = await Assert.ThrowsAsync<PublishedButNotSupersededException>(
+            () => _service.ApproveAsync(ProposalId, "user:approver", CancellationToken.None));
+
+        Assert.Same(cancelled, ex.InnerException);
+        Assert.Equal(2, ex.Published!.DefinitionVersion);
+    }
+
+    /// <summary>Only the supersede is wrapped: a failure of the publish write itself propagates as it is, since nothing landed.</summary>
+    [Fact]
+    public async Task ApproveAsync_PublishWriteThrows_PropagatesUnwrapped_AndSupersedesNothing()
+    {
+        ArrangeHappyPath(currentVersion: 1);
+        var writeFailure = new OperationCanceledException("cancelled before commit");
+        _store.Setup(s => s.ApproveAndPublishAsync(It.IsAny<PublishProposalDocument>(), It.IsAny<DefinitionVersionDocument>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(writeFailure);
+
+        var ex = await Assert.ThrowsAsync<OperationCanceledException>(
+            () => _service.ApproveAsync(ProposalId, "user:approver", CancellationToken.None));
+
+        Assert.Same(writeFailure, ex);
+        _store.Verify(s => s.SupersedeVersionAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
