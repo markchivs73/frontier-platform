@@ -36,6 +36,21 @@ public sealed class ContractRulesTests
     }
 
     [Fact]
+    public async Task SchemaRefResolves_MalformedRefOnANodeOffAnyEdge_IsReportedAsNotRegistered()
+    {
+        var definition = Definition([Agent("a", "a/b", "c/d")], []);
+
+        var findings = await new DataSchemaRefResolvesRule(Mock.Of<IContractSnapshotCatalog>()).EvaluateAsync(Context(definition), CancellationToken.None);
+
+        Assert.Equal(
+            [
+                "contract 'a/b' is not registered. Register it, or name a contract that is.",
+                "contract 'c/d' is not registered. Register it, or name a contract that is.",
+            ],
+            findings.Select(f => f.Message));
+    }
+
+    [Fact]
     public async Task NoEdgeFromGate_RequiresTheGateDecisionContract()
     {
         var definition = Definition(

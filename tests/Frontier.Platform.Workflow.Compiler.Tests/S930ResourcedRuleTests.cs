@@ -51,6 +51,52 @@ public sealed class S930ResourcedRuleTests
         }
 
         [Fact]
+        public async Task ControlEdge_CarriesNoContract_IsNotChecked()
+        {
+            var rule = new DataContractTypesResolveRule(new FakeContracts("BriefArtifact", "SummaryArtifact"));
+            var definition = S930Fixtures.Build(
+                [S930Fixtures.Agent("a"), S930Fixtures.Agent("b")],
+                [S930Fixtures.Control("a", "b")]);
+
+            Assert.Empty(await rule.EvaluateAsync(new DefinitionValidationContext(definition), CancellationToken.None));
+        }
+
+        [Theory]
+        [InlineData("acme/brief/1.0", "SummaryArtifact")]
+        [InlineData("BriefArtifact", "acme/summary/1.0")]
+        [InlineData("acme/brief/1.0", "acme/summary/1.0")]
+        public async Task AgentNodeSchemaRef_IsLeftToSchemaRefResolves_NoFinding(string input, string output)
+        {
+            var rule = new DataContractTypesResolveRule(new FakeContracts("BriefArtifact", "SummaryArtifact"));
+            var definition = S930Fixtures.Build([S930Fixtures.Agent("a", inputContract: input, outputContract: output)]);
+
+            Assert.Empty(await rule.EvaluateAsync(new DefinitionValidationContext(definition), CancellationToken.None));
+        }
+
+        [Theory]
+        [InlineData("GhostInput", "acme/summary/1.0", "input_contract_type")]
+        [InlineData("acme/brief/1.0", "GhostOutput", "output_contract_type")]
+        public async Task AgentNodeMixingAnUnresolvedClrNameAndASchemaRef_FlagsOnlyTheClrField(string input, string output, string flagged)
+        {
+            var rule = new DataContractTypesResolveRule(new FakeContracts());
+            var definition = S930Fixtures.Build([S930Fixtures.Agent("a", inputContract: input, outputContract: output)]);
+
+            var finding = Assert.Single(await rule.EvaluateAsync(new DefinitionValidationContext(definition), CancellationToken.None));
+
+            Assert.Equal(flagged, finding.FieldPath);
+            Assert.Equal("a", finding.NodeId);
+        }
+
+        [Fact]
+        public async Task AgentNodeMalformedSchemaRef_OnBothFields_IsLeftToSchemaRefResolves()
+        {
+            var rule = new DataContractTypesResolveRule(new FakeContracts());
+            var definition = S930Fixtures.Build([S930Fixtures.Agent("a", inputContract: "a/b", outputContract: "c/d")]);
+
+            Assert.Empty(await rule.EvaluateAsync(new DefinitionValidationContext(definition), CancellationToken.None));
+        }
+
+        [Fact]
         public async Task UnresolvableNodeContracts_ReturnFindingsPerField()
         {
             var rule = new DataContractTypesResolveRule(new FakeContracts());

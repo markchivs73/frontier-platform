@@ -7,7 +7,8 @@ namespace Frontier.Platform.Workflow.Compiler.Rules;
 /// data.schema-ref-resolves (doc 13 §4.2; ADR-E27 D15): every schema ref a node or data edge names
 /// resolves to a registered contract that is not retired, or to an engine-owned contract. Without
 /// it a well-formed but unknown ref passes validation and fails at publish, when the contracts are
-/// pinned. Malformed refs are <c>data.schema-ref-match</c>'s.
+/// pinned. A malformed ref on a schema-ref data edge is also reported by <c>data.schema-ref-match</c>;
+/// off such an edge (a node field alone) this rule is the one that catches it, as "not registered".
 /// </summary>
 public sealed class DataSchemaRefResolvesRule : IDefinitionValidationRule
 {
