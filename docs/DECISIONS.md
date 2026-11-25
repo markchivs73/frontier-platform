@@ -3792,3 +3792,42 @@ place: a DNS answer is not a policy decision, and left as it is it stays transie
 server's breaker closed and are not re-run by the activity, and that a returned 504/408 is retried; it moves
 `OrchestrationFactory.ClassifyFailure` to the same exact-name match and gives it a `policy_refused` row; and it
 amends doc 10 §3 (the two statuses in row 2, a `policy_refused` row, and the outer loop's fourth permanent type).
+
+## ADR-PA49 — a bounded read of what one approver decided, as a new member on `IApprovalQueryService`
+
+Consumer task S13.312, found 2026-11-20 while building S13.124. Settled in the consumer's triage of
+2026-11-24 ("bounded decided-by query in the platform Hitl").
+
+**Why.** The consumer's C1 inbox shows a "Decided by you (24h)" section. Its only source was
+`IApprovalStore.GetDecidedAsync`, the recovery sweep's cross-partition read of every `decided` request
+ever, with no time bound. The consumer filtered that list down to the caller's last day, and it read it on
+every inbox load and every `ApprovalDecided` event.
+
+**Decision.**
+1. *The read.* `IApprovalQueryService.GetDecidedByAsync(approverId, sinceUtc, ct)` returns the requests
+   still `decided` whose `decision.approver_id` is `approverId` and whose `decision.decided_at_utc` is at
+   or after `sinceUtc`, newest decision first, paged at 100. `@since` is passed as the string the canonical
+   profile writes (doc 01 §3.2: fixed-width UTC to the millisecond, truncated). The comparison is therefore
+   a string comparison over the stored bytes, and it orders as the dates do. Requests decided at the same
+   millisecond come back in no defined order, because no second sort key is named, so a caller that needs
+   a stable order breaks ties itself. A blank approver, or a `sinceUtc` that is not UTC, is refused.
+2. *Cross-partition, and accepted.* One approver's decisions span engagements, so the read cannot be
+   single-partition. It is accepted because three things bound it: the decider and the window cut the read
+   down through the index, it is intended for the consumer's C1 "Decided by you" read (its only planned
+   caller, on the same paths as the scan it replaces), and the alternative is worse for now. That alternative, a per-approver projection, would be
+   a new container whose partition key breaks ADR-S1 (`/engagementId` on every hot container). It is
+   deferred until C1 proves hot. The read needs only the default `/*` range index. The `approvals`
+   composite index (`/status`, `/requested_at_utc`) neither serves nor blocks it.
+3. *A new member on a shipped interface, so `hitl!`.* Every implementation of `IApprovalQueryService` must
+   add it, and the consumer's ten test doubles are the implementations affected. This follows ADR-PA41,
+   ADR-PA43 and the `IApprovalStore` change of #177. ADR-PA34 D4 and ADR-PA29 chose a new interface instead
+   for roles that consumers double, and that was considered here. It was not chosen because approval reads
+   would then be split across two interfaces, while the consumer's change is ten one-line fakes in a single
+   bump. The release is still a minor under the 0.x rule.
+
+**What it does not change.** `GetDecidedAsync` and the recovery sweep are unchanged. No wire shape,
+container or index moves.
+
+**What the consumer does.** After bumping, it implements the member on its doubles. It reads C1's
+decided rows through `GetDecidedByAsync(callerId, now - 24h)`, skips the call when the caller has no id,
+and keeps its exact filter (sandbox engagements, the millisecond edge and the tie-break) over the result.

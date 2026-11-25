@@ -44,6 +44,10 @@ internal sealed class ApprovalQueryService(CosmosClient client, IOptions<CosmosO
     public Task<IReadOnlyList<ApprovalRequest>> GetEscalatedAsync(CancellationToken cancellationToken) =>
         DrainAsync(ApprovalQueries.ByStatus(ApprovalRequestStatus.Escalated), ApprovalQueries.ByStatusOptions(), cancellationToken);
 
+    /// <inheritdoc />
+    public Task<IReadOnlyList<ApprovalRequest>> GetDecidedByAsync(string approverId, DateTime sinceUtc, CancellationToken cancellationToken) =>
+        DrainAsync(ApprovalQueries.DecidedBy(approverId, sinceUtc), ApprovalQueries.ByStatusOptions(), cancellationToken);
+
     /// <summary>Runs <paramref name="definition"/> and collects every page.</summary>
     private async Task<IReadOnlyList<ApprovalRequest>> DrainAsync(QueryDefinition definition, QueryRequestOptions requestOptions, CancellationToken cancellationToken)
     {
