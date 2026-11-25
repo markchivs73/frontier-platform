@@ -50,7 +50,7 @@ the shared `CanonicalProfile`, the approval store and query service, the rollbac
 | Interface | What it does |
 |---|---|
 | `IApprovalStore` | Convergent upsert of an approval request; the ETag-guarded `pending → decided` transition (`DecideAsync`, doc 06 §9 — exactly one decision wins, the loser is told who won); the ETag-guarded `WithdrawAsync` and `EscalateAsync` (S13.149 — refused, with the stored record, once the request is decided, expired or withdrawn); and the recovery sweep's read of every decided request across engagements |
-| `IApprovalQueryService` | Point-read by id, list by engagement, list pending across engagements, list escalated |
+| `IApprovalQueryService` | Point-read by id, list by engagement, list pending across engagements, list escalated, and list what one approver decided since a given time (`GetDecidedByAsync`, bounded by decider and window) |
 | `IRollbackPlanner` | Splits a rejected gate's downstream set into what is regenerated and what is restored |
 
 **The pure helpers**

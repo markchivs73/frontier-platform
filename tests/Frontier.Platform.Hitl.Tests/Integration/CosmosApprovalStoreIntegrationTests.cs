@@ -22,6 +22,7 @@ public sealed class CosmosApprovalStoreIntegrationTests : IAsyncLifetime, IDispo
 
     private CosmosClient client = null!;
     private CosmosApprovalStore store = null!;
+    private ApprovalQueryService queries = null!;
 
     /// <summary>Creates a canonical-profile-wired <see cref="CosmosClient"/> against the emulator and provisions the <c>approvals</c> container.</summary>
     public async Task InitializeAsync()
@@ -43,6 +44,7 @@ public sealed class CosmosApprovalStoreIntegrationTests : IAsyncLifetime, IDispo
         var cosmosOptions = Options.Create(new CosmosOptions { Database = DatabaseId });
         var decidedQuery = new DecidedApprovalQuery(client, cosmosOptions);
         store = new CosmosApprovalStore(client, cosmosOptions, decidedQuery);
+        queries = new ApprovalQueryService(client, cosmosOptions);
     }
 
     /// <summary>Drops the test database so each run starts clean.</summary>
@@ -268,5 +270,32 @@ public sealed class CosmosApprovalStoreIntegrationTests : IAsyncLifetime, IDispo
 
         Assert.Equal(ApprovalDecisionOutcome.NotFound, result.Outcome);
         Assert.Null(result.Request);
+    }
+
+    [Fact]
+    public async Task GetDecidedByAsync_ReturnsOnlyTheDecidersStillDecidedRequestsInTheWindow_AcrossEngagements()
+    {
+        var since = new DateTime(2026, 11, 24, 9, 0, 0, DateTimeKind.Utc);
+        var atTheBound = await DecidedAsync("eng-decided-by-a", "oid-me", DecisionKind.Approve, since);
+        var later = await DecidedAsync("eng-decided-by-b", "oid-me", DecisionKind.Reject, since.AddHours(2));
+        await DecidedAsync("eng-decided-by-a", "oid-me", DecisionKind.Approve, since.AddMilliseconds(-1));
+        await DecidedAsync("eng-decided-by-b", "oid-someone-else", DecisionKind.Approve, since.AddHours(1));
+        var reopened = await DecidedAsync("eng-decided-by-c", "oid-me", DecisionKind.Escalate, since.AddHours(1));
+        await store.EscalateAsync(reopened.EngagementId, reopened.Id, CancellationToken.None);
+        await store.UpsertAsync(NewRequest("eng-decided-by-a"), CancellationToken.None);
+
+        var results = await queries.GetDecidedByAsync("oid-me", since, CancellationToken.None);
+
+        Assert.Equal([later.Id, atTheBound.Id], results.Select(r => r.Id));
+    }
+
+    /// <summary>Stores a request in <paramref name="engagementId"/> decided by <paramref name="approverId"/> at <paramref name="decidedAtUtc"/>.</summary>
+    private async Task<ApprovalRequest> DecidedAsync(string engagementId, string approverId, DecisionKind kind, DateTime decidedAtUtc)
+    {
+        var request = NewRequest(engagementId);
+        await store.UpsertAsync(request, CancellationToken.None);
+        var decision = ApprovalDecisionTransitionTests.DecisionFor(request) with { ApproverId = approverId, Kind = kind, DecidedAtUtc = decidedAtUtc };
+        await store.DecideAsync(engagementId, request.Id, decision, CancellationToken.None);
+        return request;
     }
 }
