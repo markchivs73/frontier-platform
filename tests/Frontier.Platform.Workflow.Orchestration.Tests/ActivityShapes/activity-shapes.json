@@ -366,6 +366,7 @@
             "$.definition.contracts[].schema_version": "string",
             "$.definition.definition_hash": "string (required)",
             "$.definition.definition_version": "integer (required)",
+            "$.definition.description": "string",
             "$.definition.edges": "array (required)",
             "$.definition.edges[]": "object",
             "$.definition.edges[].condition": "string",
@@ -510,6 +511,8 @@
             "$.definition.nodes[]<parallel>.retry.profile_name": "string (required)",
             "$.definition.nodes[]<parallel>.retry.timeout_seconds_override": "integer",
             "$.definition.schema_version": "string",
+            "$.definition.tags": "array",
+            "$.definition.tags[]": "string",
             "$.definition.workflow_id": "string (required)",
             "$.request": "object (required)",
             "$.request.changed_section": "string (required)",
@@ -702,6 +705,7 @@
             "$.definition.contracts[].schema_version": "string",
             "$.definition.definition_hash": "string (required)",
             "$.definition.definition_version": "integer (required)",
+            "$.definition.description": "string",
             "$.definition.edges": "array (required)",
             "$.definition.edges[]": "object",
             "$.definition.edges[].condition": "string",
@@ -846,6 +850,8 @@
             "$.definition.nodes[]<parallel>.retry.profile_name": "string (required)",
             "$.definition.nodes[]<parallel>.retry.timeout_seconds_override": "integer",
             "$.definition.schema_version": "string",
+            "$.definition.tags": "array",
+            "$.definition.tags[]": "string",
             "$.definition.workflow_id": "string (required)"
           }
         },

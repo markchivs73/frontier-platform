@@ -132,19 +132,12 @@ public static class ContextAssemblyServiceCollectionExtensions
         {
             UseSystemTextJsonSerializerWithOptions = CanonicalProfile.Options,
             ConnectionMode = ConnectionMode.Gateway,
-            HttpClientFactory = IsLocalEmulator(options.Endpoint)
+            HttpClientFactory = LocalEndpoint.IsLoopback(options.Endpoint)
                 ? () => new HttpClient(new HttpClientHandler { CheckCertificateRevocationList = true, ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator })
                 : null,
         };
 
         return new CosmosClient(options.Endpoint, options.Key, clientOptions);
     }
-
-    /// <summary>The emulator's self-signed certificate is not in the OS trust store; validation is bypassed for localhost only.</summary>
-    internal static bool IsLocalEmulator(string endpoint) =>
-        endpoint.StartsWith("https://localhost", StringComparison.OrdinalIgnoreCase) ||
-        endpoint.StartsWith("https://127.0.0.1", StringComparison.OrdinalIgnoreCase) ||
-        endpoint.StartsWith("http://localhost", StringComparison.OrdinalIgnoreCase) ||
-        endpoint.StartsWith("http://127.0.0.1", StringComparison.OrdinalIgnoreCase);
 
 }

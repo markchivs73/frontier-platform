@@ -1,0 +1,1 @@
+{"signature_valid":true,"chain_valid":false,"verified_against_key_id":"audit-hmac/v1","verdict":"broken","head_mismatch":{"head_sequence":3,"head_record_hash":"hash-3","walked_count":2,"walked_record_hash":"hash-2"}}

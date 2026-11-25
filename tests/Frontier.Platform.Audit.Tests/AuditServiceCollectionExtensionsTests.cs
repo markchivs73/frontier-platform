@@ -63,13 +63,13 @@ public sealed class AuditServiceCollectionExtensionsTests
     [InlineData("https://127.0.0.1:8081", true)]
     [InlineData("http://localhost:8081", true)]
     [InlineData("http://127.0.0.1:8081", true)]
+    [InlineData("https://localhost.evil.example", false)] // S13.349: lookalikes keep certificate validation on
+    [InlineData("https://localhost:8081@evil.example", false)]
+    [InlineData("https://127.0.0.1.nip.io:8081", false)]
     public void AddFrontierAudit_EndpointLocality_DeterminesCertBypassBranch(string endpoint, bool isLocal)
     {
-        // S13.79: exercises every branch of the private IsLocalEmulator OR-chain, matching the
-        // identical tests in Hitl and ModelRoleConfig (S9.24). Audit was the one of four copies of
-        // this helper left without one — every other Audit test sets a `https://localhost` endpoint,
-        // so three of its six arms had never been reached.
-        _ = isLocal; // asserted implicitly: client construction never throws either way
+        // S13.79 / S13.349: the client relaxes certificate validation (an HttpClientFactory) only for a parsed
+        // loopback host; every other endpoint, lookalikes included, keeps the SDK's validating client.
         var services = new ServiceCollection();
         var configuration = BuildConfiguration(new Dictionary<string, string?>
         {
@@ -81,7 +81,7 @@ public sealed class AuditServiceCollectionExtensionsTests
         services.AddFrontierAudit(configuration);
         using var provider = services.BuildServiceProvider();
 
-        Assert.NotNull(provider.GetRequiredService<CosmosClient>());
+        Assert.Equal(isLocal, provider.GetRequiredService<CosmosClient>().ClientOptions.HttpClientFactory is not null);
     }
 
     [Fact]

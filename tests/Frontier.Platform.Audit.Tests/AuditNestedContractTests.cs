@@ -52,6 +52,16 @@ public sealed class AuditNestedContractTests
     public void VerificationResult_SerializesStablyAndRoundTrips() =>
         ContractRoundTripAssertions.AssertByteStableAndRoundTrips(AuditContractSamples.VerificationResult());
 
+    /// <summary>S13.334: the verdict and head mismatch on the wire. New golden.</summary>
+    [Fact]
+    public void VerificationResultHeadMismatch_MatchesItsGoldenFileAndRoundTrips()
+    {
+        var bytes = ContractRoundTripAssertions.AssertByteStableAcrossCultures(AuditContractSamples.VerificationResultHeadMismatch());
+
+        ContractRoundTripAssertions.AssertMatchesGoldenFile(bytes, "verification_result_head_mismatch.json");
+        ContractRoundTripAssertions.AssertByteStableAndRoundTrips(AuditContractSamples.VerificationResultHeadMismatch());
+    }
+
     [Fact]
     public void ResolvedModelSummary_SerializesStablyAndRoundTrips() =>
         ContractRoundTripAssertions.AssertByteStableAndRoundTrips(AuditContractSamples.ResolvedModelSummary());

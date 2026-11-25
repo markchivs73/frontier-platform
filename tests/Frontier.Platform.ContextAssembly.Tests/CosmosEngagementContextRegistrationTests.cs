@@ -70,10 +70,4 @@ public sealed class CosmosEngagementContextRegistrationTests
         Assert.Throws<ArgumentNullException>(() => new ServiceCollection().AddFrontierCosmosEngagementContext(null!));
     }
 
-    [Theory]
-    [InlineData("https://localhost:8081", true)]
-    [InlineData("http://127.0.0.1:8081", true)]
-    [InlineData("https://frontier.documents.azure.com:443", false)]
-    public void IsLocalEmulator_DistinguishesTheEmulator(string endpoint, bool expected) =>
-        Assert.Equal(expected, ContextAssemblyServiceCollectionExtensions.IsLocalEmulator(endpoint));
 }

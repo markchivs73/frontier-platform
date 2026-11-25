@@ -147,6 +147,17 @@ internal static class AuditContractSamples
         ChainValid = true,
         BrokenLinkAt = null,
         VerifiedAgainstKeyId = "audit-hmac/v1",
+        Verdict = AuditChainVerdict.Valid,
+    };
+
+    /// <summary>S13.334: a truncated tail, reported as a broken verdict with the head mismatch beside it.</summary>
+    public static VerificationResult VerificationResultHeadMismatch() => new()
+    {
+        SignatureValid = true,
+        ChainValid = false,
+        VerifiedAgainstKeyId = "audit-hmac/v1",
+        Verdict = AuditChainVerdict.Broken,
+        HeadMismatch = new AuditChainHeadMismatch { HeadSequence = 3, HeadRecordHash = "hash-3", WalkedCount = 2, WalkedRecordHash = "hash-2" },
     };
 
     /// <summary>A well-formed <see cref="AuditRecord"/> (doc 05 §3 fields 0-13) covering one Gate-3-style execution.</summary>

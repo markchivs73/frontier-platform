@@ -44,7 +44,9 @@ exactly that.
 **The definition**
 
 - `WorkflowDefinition` — the published, immutable DAG. An edit is a new version; running
-  executions stay pinned to the one they started on.
+  executions stay pinned to the one they started on. It may carry an optional `description` and
+  `tags` (kebab-case, checked at publish by the compiler's `structure.required-fields`); both are
+  inside the hash when present, and a definition without them hashes as before.
 - `WorkflowNode` and its eight subtypes (`AgentTaskNode`, `HumanGateNode`, `DecisionNode`,
   `McpToolNode`, `ParallelNode`, `LoopNode`, `CascadeCheckNode`, `ContextInjectionNode`),
   discriminated on `NodeType`.

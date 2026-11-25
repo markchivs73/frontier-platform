@@ -470,6 +470,13 @@ internal static class ContractSamples
         ],
     };
 
+    /// <summary>S13.238: the pinned-writes definition with a description and tags, which follow <c>mode</c> (and <c>contracts</c>).</summary>
+    public static WorkflowDefinition WorkflowDefinitionWithDescriptionAndTags() => WorkflowDefinitionWithPinnedWrites() with
+    {
+        Description = "Reads a ticket, then updates it.",
+        Tags = ["support", "ticket-triage"],
+    };
+
     /// <summary>
     /// ADR-PA41: MCP nodes that pin their write classification, one of each value. Pins where
     /// <c>writes</c> sits on the wire; every older definition golden, whose nodes carry no flag, is

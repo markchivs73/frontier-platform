@@ -1071,6 +1071,52 @@ Release: **minor, v0.24.0** (major version 0, so a breaking change may ship in a
 implement `GetKeyAsync`; the in-repo `DevKeyProvider` resolves its own key id and returns `null`
 for anything else. Tracked as S13.66.
 
+### ADR-PA22 — amended 2026-11-25: an unresolvable key makes the chain unverified, never valid
+
+Consumer task S13.334 (B1, Mark ✅ 2026-11-24; B2 accepted with the triage block), from its run-2 audit-trail
+security review (AUD-1, AUD-2). It revises the paragraph above, "An unresolvable key does not stop the walk",
+which let a missing key version leave `chain_valid` true. This engages K6, the consumer's position that the signed,
+chained audit trail is evidence.
+
+**Why decision C was a hole.** `record_hash` is an unkeyed SHA-256. A writer with data-plane access to
+`audit-records` can edit a record, recompute its hash, relink and rehash every later record, give each one a bogus
+`signing_key_id`, and rewrite the chain head. The walk skipped every unresolvable record and reported
+`chain_valid = true`; the only trace was `unresolved_key_ids`, which read as "a key version was destroyed", not "this
+chain was rewritten". The signature is the only part of a record such a writer cannot forge, because the signing key
+never leaves Key Vault (ADR-PA33). So no verdict that skips an unchecked signature can be trusted.
+
+**Decision.**
+1. *A three-way verdict.* `VerificationResult.Verdict` (`verdict`, order 7) is `valid`, `broken` or `unverified`.
+   Any evidence of damage is `broken`: a signature that fails against a resolved key, a recomputed hash that does not
+   match, a broken or unreachable link, a fork, or a head mismatch. Otherwise a non-empty chain-wide
+   `unresolved_key_ids` is `unverified`. Otherwise `valid`. `chain_valid` is now exactly `verdict == valid`, so
+   existing readers fail safe.
+2. *The hash is checked without a key.* Every walked record's `record_hash` is recomputed, whether or not its key
+   resolves, so an edit that left the stored hash alone is `broken` even under a bogus key id.
+3. *The head must be on the walk.* `head_mismatch` (order 8) is set when the record at the head's `sequence` on the
+   walk does not carry the head's `record_hash`, so a truncated tail or an edited head is `broken`. The walk may be
+   longer than the head: verify now reads the head **before** the chain, so a record appended in between only extends
+   the walk. The check is skipped when a fork or unreachable record exists (they already explain the shape, and a
+   legacy fork leaves the head on the untaken arm) and when there is no head.
+
+**`unverified` is not benign.** A store writer can turn a `broken` chain into an `unverified` one by giving records
+bogus key ids, so consumers should alert on `verdict`, not only on `chain_valid = false`. Rotation never produces it,
+because old versions are disabled, never destroyed (S13.107). **Costs:** an engagement whose key version really was
+destroyed reads `unverified` permanently, which is the truth about it; and because the Key Vault client (`AzureKeyVaultSigningClient`) maps a 403
+to "unresolvable", an RBAC regression on the vault would make every chain read `unverified` until it is fixed.
+
+**Limits.** The head is mutable, unsigned bookkeeping: a writer who also rewrites it defeats the head check, which
+forces a coordinated two-document edit and proves nothing about completeness. Completeness needs an external anchor
+the store writer cannot rewrite (B3, Phase 2). `GovernanceAuditService.VerifyAsync` still reads its records before
+its head; the same ordering fix applies there and is left to a follow-up.
+
+**Surface.** A breaking change, scoped `audit!`: behavioural (`chain_valid` goes from true to false for an
+unresolvable key) and a source break (the required `Verdict` member breaks object initialisers; the consumer's test
+fakes `AdminFakes.cs` and `ApiFixtures.cs` construct `VerificationResult`). New public types `AuditChainVerdict` and
+`AuditChainHeadMismatch`; a new golden `verification_result_head_mismatch.json`. No stored record changes. The internal
+`FindBrokenLink`, named above but with no caller outside tests since ADR-PA31, is removed; its tests now read
+`Verify(...).BrokenLinkAt`.
+
 ## ADR-PA23 — a draft says when it predates the schema it is read with
 
 `MigratingWorkflowDefinitionConverter.Read` adapted only stored versions with a registered adapter.
@@ -2326,6 +2372,25 @@ was created or modified in the vault — the only operations are public-key read
 surprises: the code needed no change to work against real Azure.** The one thing the fake could not
 have told us is now pinned by an assertion — Key Vault returns ES256 signatures as raw `r ‖ s`
 (IEEE P1363), not DER, and `AuditSignatureVerifier` was already right about it.
+
+### ADR-PA33 — amended 2026-11-25: "local" is the parsed loopback host, decided once
+
+Consumer task S13.349 (AUTHN-1) with S13.334 item 3, accepted in its 2026-11-24 triage. `SigningProfileCheck`
+allowed the committed dev signing key, and the four Cosmos client factories (Audit, Hitl, ModelRoleConfig,
+ContextAssembly) skipped TLS validation, whenever the endpoint *started with* `http(s)://localhost` or
+`http(s)://127.0.0.1`. `https://localhost.evil.example`, `https://localhostfrontier.documents.azure.com`,
+`https://127.0.0.1.nip.io` and `https://localhost:8081@evil.example` all passed. All four now call one public rule,
+`Frontier.Platform.Serialization.LocalEndpoint.IsLoopback`: an absolute http/https URI whose parsed host is exactly
+`localhost` or a loopback IP. It judges the host `System.Uri` parses, which is the host a client built from the same
+string dials, so userinfo cannot fool it and the parser's own normalisation (`loopback` to `localhost`, `0x7f.1` to
+`127.0.0.1`) is followed rather than second-guessed. A trailing-dot `localhost.` is refused. `LocalProfile` and the
+three private copies are removed.
+
+Behaviour change, not a surface break: a process configured with a prefix-only "local" endpoint now refuses the dev
+key at boot and validates the server certificate. The consumer's own copy of the rule
+(`CredentialProfileCheck.IsLocalEndpoint`) can collapse onto this one; its test rows are copied into
+`LocalEndpointTests` so that is a known change (only `localhost.` tightens). Giving each head one explicit
+`CosmosClient` is the consumer's part.
 
 ## ADR-PA34 — the mapping governance surface says who changed what, refuses staleness by name, and answers across roles
 
@@ -3949,6 +4014,38 @@ existing four-argument constructor stays, losing only its default value as the P
 optional-parameter rule (RS0027) requires. Every existing call still compiles: a four-argument call binds to it
 as before, and a three-argument call now binds to the new five-argument overload with the same behaviour.
 Points 2 and 4 are proposed and wait on Mark.
+## ADR-PA52 — a definition may carry a description and tags
+
+Consumer task S13.238, split from S13.206 (Mark, 2026-11-06), with picks accepted in the consumer's 2026-11-24
+triage. The consumer's doc 13 §4.2 first had `structure.required-fields` check a description and well-formed
+tags, but `WorkflowDefinition` had neither.
+
+**Decision.**
+1. *Two optional members, inside the hash.* `description` (order 10) and `tags` (order 11) follow `contracts`,
+   omitted when null. A definition without them serializes to the same canonical bytes, so its hash is
+   unchanged (`StoredDefinitionHashStabilityTests`' existing tests are untouched and pass; one test is added). When present they are hashed like any
+   other member, in the order given: re-tagging changes the hash, so (reasoned from immutability, not tested here) it needs a new publish. An empty string and an
+   empty list are written and hashed, so writers send null for "none". No `schema_version` bump: the members
+   are optional (ADR-E15). The activity-shape snapshot grows additively (`EvaluateCascadeActivity` input,
+   `ResolveDispatcherVersionActivity` output).
+2. *The checks* (triage picks). A missing or blank description is a **Warning**. Each tag must be kebab-case,
+   read strictly as `\A[a-z0-9]+(-[a-z0-9]+)*\z` (so a trailing newline is refused), and at most 32 characters (length checked first); each bad tag
+   is an Error on `tags[i]`. More than ten tags is an Error on `tags`. The checks are in the rule, not in
+   `WorkflowDefinition.Validate()`, which throws.
+3. *Proposals are not blocked by tags.* The chat designer's Apply (the granular merge) applies only nodes and
+   edges, so a proposal's tags never reach the draft. Tag findings therefore neither drive the repair pass nor
+   block Apply; they still block a publish. The designer's prompt and schema text are unchanged, so (reasoned, not tested) the prompt bytes
+   for a definition without the members are identical. The schema's unknown-key check no longer flags
+   `description` or `tags` on a proposal.
+
+**Health effect, for Mark.** Because a missing description is a Warning, every draft without one validates
+`PassWithWarnings`, and the consumer's health sweep reports every published version without one as
+`warning`. A published version is immutable, so it stays `warning` until it is republished with a
+description. The alternatives are to keep the Warning, make it Info, or have the sweep ignore this finding.
+
+**Pending Mark (proposed).** Duplicate tags are not checked; tag order is hashed and nothing sorts. No
+description length cap is set, although the description rides inline as orchestration input and in the
+designer prompt on every turn.
 ## ADR-PA53 — a human decision records the role and scope it was made under
 
 Consumer S13.282 (review-01 GOV-58; K5, every human decision attributed; K6, governance signed): a gate decision
