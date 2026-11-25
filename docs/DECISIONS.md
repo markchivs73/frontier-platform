@@ -4046,3 +4046,43 @@ description. The alternatives are to keep the Warning, make it Info, or have the
 **Pending Mark (proposed).** Duplicate tags are not checked; tag order is hashed and nothing sorts. No
 description length cap is set, although the description rides inline as orchestration input and in the
 designer prompt on every turn.
+## ADR-PA53 — a human decision records the role and scope it was made under
+
+Consumer S13.282 (review-01 GOV-58; K5, every human decision attributed; K6, governance signed): a gate decision
+named who decided (`approver_id`) but not by what right, so an audit could not say which role and which binding
+scope admitted the approver. The consumer decided (triage 2026-11-24, accepted block) to stamp the most specific
+matching binding's scope, falling back to the first role in resolution order on a tie. The platform carries it.
+
+**Additive, omit-null members (ADR-E15's additive rule).**
+- `DecisionAuthority { role_id, scope: DecisionScope { kind, id? } }` (Abstractions).
+- `HitlDecision.authority` (order 7) and `HumanDecisionRecord.authority` (order 6); `HumanDecisionProjector` copies
+  it, so it is inside `record_hash` and signed.
+- Null when the caller supplied none: decisions recorded before the member existed, or not made through a binding.
+  Omitted from the wire then, so every older record, snapshot and gate event serializes byte-identically; the
+  existing goldens are unchanged and `RecordSignedBeforeDecisionAuthority_RecomputesToItsStoredBytes` holds over them.
+
+**`kind` is a string, not a smart enum.** It is consumer-defined and opaque to the platform. A smart enum would make an
+older worker throw inside `WaitForExternalEvent<HitlDecision>` on a kind a newer consumer added, which is a replay
+hazard; a string carries it through. Doc 15 §4's `deployment`, `client`, `engagement` are examples, not a list.
+
+**The authority is consumer-asserted and unverified**, exactly as `approver_id` is: the platform signs what it is
+given. Verifying it would mean the platform reading the consumer's bindings, which it does not own.
+
+**`GateDecision` (`frontier/gate-decision/1.0`) is deliberately untouched.** `GateDecision.From` does not copy the
+authority, so a gate's node output and its downstream bytes are unchanged; exposing it to nodes would be a 1.1
+contract, which nothing asks for.
+
+**Skew.** An older worker reading a new gate event drops the unknown member (the canonical profile skips
+undeclared members), so it records the decision without its authority; a newer worker reads an old event as
+null. **Verifiers adopt this release no later than the workers that write it**, for the reason ADR-PA45 gives: a
+verifier whose contract predates the member would read a new record without it and fail the signature.
+
+**Activity shapes.** `ConsolidateAuditActivity`, `RequestApprovalActivity`, `EscalateApprovalActivity` and
+`SnapshotStateActivity` gain optional `authority` paths; `activity-shapes.json` is updated in place (an additive
+change, generation unchanged).
+
+**What the consumer does.** After bumping: derive the authority from the same resolution pass that admits the caller
+(`ApprovalsController` already resolves the gate's approvers), not a second lookup; stamp `Authority` on the
+`HitlDecision` it records; test the most-specific-scope rule and the tie rule; amend doc 06 §9 and doc 15 §4.
+Additive surface; release **minor**.
+

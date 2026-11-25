@@ -71,7 +71,7 @@ There is no `AddFrontier…()` call: this package is types only, with nothing to
 **Shared kernel contracts**
 
 `EngagementId`, `ContextRequest`, `ExecutionStatus`, `GateKind`, `DecisionKind`,
-`HitlDecision`, `ResolvedModelSummary`. These live here because more than one platform library
+`HitlDecision` (with its optional `DecisionAuthority`/`DecisionScope`, ADR-PA53), `ResolvedModelSummary`. These live here because more than one platform library
 needs them; a type used by only one library belongs in that library.
 
 **The contract port**

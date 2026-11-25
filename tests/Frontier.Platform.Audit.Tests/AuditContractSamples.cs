@@ -256,6 +256,15 @@ internal static class AuditContractSamples
         TerminatedAtUtc = new DateTime(2026, 1, 1, 2, 0, 0, DateTimeKind.Utc),
     };
 
+    /// <summary>ADR-PA53: the role and scope a human decision was made under.</summary>
+    public static DecisionAuthority DecisionAuthority() => new() { RoleId = "finance-lead", Scope = new DecisionScope { Kind = "engagement", Id = "eng-1" } };
+
+    /// <summary>ADR-PA53: an audit record whose human decision names the authority it was made under.</summary>
+    public static AuditRecord AuditRecordWithDecisionAuthority() => AuditRecord() with { HumanDecisions = [HumanDecisionRecord() with { Authority = DecisionAuthority() }] };
+
+    /// <summary>ADR-PA53: the signed shape of <see cref="AuditRecordWithDecisionAuthority"/>.</summary>
+    public static SignedAuditRecord SignedAuditRecordWithDecisionAuthority() => SignedAuditRecord() with { HumanDecisions = [HumanDecisionRecord() with { Authority = DecisionAuthority() }] };
+
     /// <summary>S13.240: a failed run's record.</summary>
     public static AuditRecord AuditRecordFailed() => AuditRecord() with { FinalStatus = ExecutionStatus.Failed, Failure = FailureRecord() };
 

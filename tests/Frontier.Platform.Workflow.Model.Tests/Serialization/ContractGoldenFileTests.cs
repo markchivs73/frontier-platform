@@ -39,6 +39,11 @@ public sealed class ContractGoldenFileTests
     public void ExecutionSnapshotDispatcherChild_SerializesStablyAndRoundTrips() =>
         ContractRoundTripAssertions.AssertStableAndRoundTrips(ContractSamples.ExecutionSnapshotDispatcherChild(), "execution_snapshot_dispatcher_child.json");
 
+    /// <summary>ADR-PA53: a recorded decision's <c>authority</c>, after its existing members. New golden; every older snapshot golden is unchanged.</summary>
+    [Fact]
+    public void ExecutionSnapshotWithDecisionAuthority_SerializesStablyAndRoundTrips() =>
+        ContractRoundTripAssertions.AssertStableAndRoundTrips(ContractSamples.ExecutionSnapshotWithDecisionAuthority(), "execution_snapshot_decision_authority.json");
+
     /// <summary>S13.149: a terminated run's <c>terminated_by</c>, <c>termination_reason</c> and <c>terminated_at_utc</c>, after every existing member. New golden; every older snapshot golden is unchanged.</summary>
     [Fact]
     public void ExecutionSnapshotTerminated_SerializesStablyAndRoundTrips() =>
