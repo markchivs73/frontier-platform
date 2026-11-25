@@ -3813,18 +3813,26 @@ ADR-CD1 (stamp at publish, exemption from a housekeeping TTL) is the consumer's 
    Deleting the draft already deletes its turns. Bounding abandoned drafts belongs with S13.383's housekeeping TTL.
 3. *Dropped at publish, before the write.* With the setting off, `ApproveAsync` calls
    `IDefinitionStore.DeleteDesignConversationAsync` as its last step before `ApproveAndPublishAsync`, after
-   re-validation and contract pinning. A failed drop publishes nothing and the proposal can be approved again.
-   **Accepted loss:** if the publish write then fails (a lost race, a transient batch failure), the proposal stays
-   in review with its conversation gone, so the approver no longer sees it beside the diff (consumer doc 15 §10).
-   Dropping after the write would instead leave a landed publish failing on its privacy step, the shape ADR-PA50
-   deals with. A chat turn written while the approval is in flight survives until the next publish.
-4. *The welcome turn stays.* Doc 14 §2 says turn 0 is not deletable, so the drop deletes every turn numbered
-   above 0 and rewrites the chat-history index to list only the welcome turn. The next turn number is kept, so a
-   turn id is never reused.
+   re-validation and contract pinning. A failed drop publishes nothing: the approval is refused before its
+   write, and an approver can approve again. The drop itself is not atomic: if it fails part-way, the turns
+   already deleted stay deleted, and the re-approval deletes the rest.
+   **Accepted loss:** if the publish write then fails (a lost race, a transient batch failure), the approval
+   was not written and the conversation is already gone, so the approver no longer sees it beside the diff
+   (consumer doc 15 §10) when approving again. With the Cosmos store's atomic publish the proposal is then still
+   in review; a store keeping the non-atomic default write makes no such promise. Dropping after the write would
+   instead leave a landed publish failing on its privacy step.
+4. *The welcome turn stays, and a concurrent turn is not lost.* Doc 14 §2 says turn 0 is not deletable, so the
+   drop deletes every turn numbered above 0 that it read, then rewrites the chat-history index without exactly
+   those turns. The rewrite is a replace guarded by the index's ETag: a turn appended in between (whose number is
+   at or above the read's next turn number, so it was not deleted) makes the replace fail, and the index is
+   re-read and rewritten keeping it, at most three times before the approval is refused with nothing published.
+   That turn's document and its index entry both survive until the next publish. The next turn number is kept,
+   so a turn id is never reused.
 
 **Surface.** Additive. `DeleteDesignConversationAsync` is a default-implemented `IDefinitionStore` member that
 throws `NotSupportedException`, as `SupersedeVersionAsync` does, so implementers do not break; it is reached only
 by a deployment that turns history off. `DefinitionLifecycleService` gains a constructor taking the options; the
 existing four-argument constructor stays, losing only its default value as the PublicAPI analyzer's
-optional-parameter rule (RS0027) requires, which leaves every existing call compiling and binding as before.
+optional-parameter rule (RS0027) requires. Every existing call still compiles: a four-argument call binds to it
+as before, and a three-argument call now binds to the new five-argument overload with the same behaviour.
 Points 2 and 4 are proposed and wait on Mark.

@@ -309,8 +309,8 @@ public sealed class DefinitionLifecycleService : IDefinitionLifecycleService
         var versionDoc = NewVersion(proposal, approverId, definition, NextVersionNumber(pointer, existingVersions));
 
         // S13.294: a sector that must not retain design conversations drops this one before the version is
-        // written, so a failed drop publishes nothing. Accepted loss: if the publish then fails, the proposal
-        // stays in review without its conversation.
+        // written, so a failed drop publishes nothing. Accepted loss (ADR-PA51): if the publish then fails, the
+        // approval was not written and the conversation is already gone.
         await DropConversationUnlessKeptAsync(proposal.WorkflowId, ct);
 
         if (!await _store.ApproveAndPublishAsync(proposal, versionDoc, ct))
@@ -438,6 +438,9 @@ public sealed class DefinitionLifecycleService : IDefinitionLifecycleService
         int pointerVersion = pointer?.CurrentVersion ?? 0;
         return Math.Max(pointerVersion, highestExisting) + 1;
     }
+
+    /// <summary>The design-conversation setting this service was built with (S13.294), for the composition root's tests.</summary>
+    internal ChatDesignerHistoryOptions History => _history;
 
     /// <summary>Drops the draft's design conversation when the deployment does not keep them (consumer S13.294, doc 14 §2).</summary>
     private async Task DropConversationUnlessKeptAsync(string workflowId, CancellationToken ct)

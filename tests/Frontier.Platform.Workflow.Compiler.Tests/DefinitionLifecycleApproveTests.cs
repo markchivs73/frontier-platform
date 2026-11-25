@@ -466,6 +466,21 @@ public sealed class DefinitionLifecycleApproveTests
         _store.Verify(s => s.DeleteDesignConversationAsync(WorkflowId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>S13.294: a contract that cannot be pinned refuses the approval before the drop, so nothing is dropped.</summary>
+    [Fact]
+    public async Task ApproveAsync_HistoryDisabled_ContractPinningFails_DropsNothing()
+    {
+        ArrangeHappyPath(currentVersion: 1);
+        var embedder = new Mock<IDefinitionContractEmbedder>();
+        embedder.Setup(e => e.EmbedAsync(It.IsAny<WorkflowDefinition>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("contract acme/x/1.0 is not registered"));
+        var service = new DefinitionLifecycleService(_store.Object, _compiler.Object, embedder.Object, null, new ChatDesignerHistoryOptions { HistoryEnabled = false });
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.ApproveAsync(ProposalId, "user:approver", CancellationToken.None));
+
+        _store.Verify(s => s.DeleteDesignConversationAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     /// <summary>S13.294: a refusal before the publish point (a stale revision) drops nothing.</summary>
     [Fact]
     public async Task ApproveAsync_HistoryDisabled_RevalidationRefuses_DropsNothing()
