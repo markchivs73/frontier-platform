@@ -27,6 +27,12 @@ public interface IMappingDecisionRecorder
     /// <summary>
     /// Records that the change described by <paramref name="recordId"/> did not happen after its record
     /// landed. Never cancellable at the call site: once the first record exists, the trail must say so.
+    /// <para>
+    /// A compensation that does not land must not replace the change's own outcome. The governance services contain any
+    /// failure here (S13.328 (a2): logged at Critical, then the change's own exception or retry proceeds), so an
+    /// implementation may throw — but it should contain and log its own failures too. Containment stops the cascade; it
+    /// does not repair the trail, which keeps an uncompensated record until a durable retry exists (S13.328 (b)/(c)).
+    /// </para>
     /// </summary>
     Task RecordCompensationAsync(MappingGovernanceDecision decision, string recordId, string failureReason, CancellationToken cancellationToken);
 }

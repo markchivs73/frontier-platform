@@ -68,7 +68,7 @@ public sealed class MappingGovernanceServiceTests
 
         var proposal = await new MappingGovernanceService(
                 dangling, ModelRoleDefinitions(), new FakeRoleMappingWriter(), new FakeMappingDecisionRecorder(), new FixedTimeProvider(FixedTimeProvider.Now),
-                Microsoft.Extensions.Options.Options.Create(FastRetry))
+                Microsoft.Extensions.Options.Options.Create(FastRetry), Microsoft.Extensions.Logging.Abstractions.NullLogger<MappingGovernanceService>.Instance)
             .ProposeAsync(Change(), Proposer, CancellationToken.None);
 
         Assert.Null(proposal.PredecessorFleetVersion);
@@ -298,7 +298,7 @@ public sealed class MappingGovernanceServiceTests
         // Every read hands back a token the write will reject, so the decision can never land.
         var service = new MappingGovernanceService(
             new EtagChurningStore(store), ModelRoleDefinitions(), new FakeRoleMappingWriter(), recorder, new FixedTimeProvider(FixedTimeProvider.Now),
-            Microsoft.Extensions.Options.Options.Create(FastRetry));
+            Microsoft.Extensions.Options.Options.Create(FastRetry), Microsoft.Extensions.Logging.Abstractions.NullLogger<MappingGovernanceService>.Instance);
 
         await Assert.ThrowsAsync<MappingGovernanceException>(() =>
             service.RejectAsync(RoleId, "p-1", Approver, "no", null, CancellationToken.None));

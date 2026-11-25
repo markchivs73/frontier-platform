@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Frontier.Platform.Abstractions;
 using Microsoft.Extensions.Options;
 
@@ -14,7 +15,8 @@ internal sealed class RoleDefinitionGovernanceService(
     RoleContractResolver contracts,
     IMappingDecisionRecorder recorder,
     TimeProvider timeProvider,
-    IOptions<MappingGovernanceOptions> options) : IRoleDefinitionGovernanceService
+    IOptions<MappingGovernanceOptions> options,
+    ILogger<RoleDefinitionGovernanceService> logger) : IRoleDefinitionGovernanceService
 {
     /// <inheritdoc />
     public async Task<RoleDefinitionProposal> ProposeAsync(RoleDefinition definition, string proposedBy, string reason, CancellationToken cancellationToken)
@@ -143,13 +145,13 @@ internal sealed class RoleDefinitionGovernanceService(
         }
         catch (Exception ex)
         {
-            await recorder.RecordCompensationAsync(decision, recordId, ex.Message, CancellationToken.None);
+            await CompensationGuard.TryCompensateAsync(recorder, decision, recordId, ex.Message, logger);
             throw;
         }
 
         if (landed is null)
         {
-            await recorder.RecordCompensationAsync(decision, recordId, "another writer allocated this definition version first; the decision was retried.", CancellationToken.None);
+            await CompensationGuard.TryCompensateAsync(recorder, decision, recordId, "another writer allocated this definition version first; the decision was retried.", logger, beforeRetry: true);
         }
 
         return landed;
@@ -190,7 +192,7 @@ internal sealed class RoleDefinitionGovernanceService(
             return updated with { ConcurrencyToken = token };
         }
 
-        await recorder.RecordCompensationAsync(decision, recordId, "another decision reached this proposal first; the decision was retried.", CancellationToken.None);
+        await CompensationGuard.TryCompensateAsync(recorder, decision, recordId, "another decision reached this proposal first; the decision was retried.", logger, beforeRetry: true);
         return null;
     }
 
@@ -221,7 +223,7 @@ internal sealed class RoleDefinitionGovernanceService(
         }
         catch (Exception ex)
         {
-            await recorder.RecordCompensationAsync(decision, recordId, ex.Message, CancellationToken.None);
+            await CompensationGuard.TryCompensateAsync(recorder, decision, recordId, ex.Message, logger);
             throw;
         }
     }

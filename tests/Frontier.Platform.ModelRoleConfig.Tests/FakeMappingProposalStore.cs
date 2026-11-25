@@ -232,11 +232,45 @@ internal sealed class FakeMappingDecisionRecorder : IMappingDecisionRecorder
         return Task.FromResult($"record-{++counter}");
     }
 
+    /// <summary>S13.328 (a2): every compensation attempted, landed or not, as (record id, event type).</summary>
+    internal List<(string RecordId, string EventType)> CompensationAttempts { get; } = [];
+
+    /// <summary>S13.328 (a2): makes <see cref="RecordCompensationAsync"/> throw synchronously, a compensation that does not land.</summary>
+    internal Exception? CompensationThrows { get; set; }
+
+    /// <summary>S13.328 (a2): makes <see cref="RecordCompensationAsync"/> return a faulted task instead.</summary>
+    internal Exception? CompensationFaults { get; set; }
+
     public Task RecordCompensationAsync(MappingGovernanceDecision decision, string recordId, string failureReason, CancellationToken cancellationToken)
     {
+        CompensationAttempts.Add((recordId, decision.EventType));
+        if (CompensationThrows is { } thrown)
+        {
+            throw thrown;
+        }
+
+        if (CompensationFaults is { } faulted)
+        {
+            return Task.FromException(faulted);
+        }
+
         Compensations.Add((recordId, failureReason));
         return Task.CompletedTask;
     }
+}
+
+/// <summary>S13.328 (a2): a logger that keeps every entry's level, message and exception.</summary>
+internal sealed class RecordingLogger<T> : Microsoft.Extensions.Logging.ILogger<T>
+{
+    /// <summary>Every entry logged, in order.</summary>
+    internal List<(Microsoft.Extensions.Logging.LogLevel Level, string Message, Exception? Exception)> Entries { get; } = [];
+
+    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+    public bool IsEnabled(Microsoft.Extensions.Logging.LogLevel logLevel) => true;
+
+    public void Log<TState>(Microsoft.Extensions.Logging.LogLevel logLevel, Microsoft.Extensions.Logging.EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) =>
+        Entries.Add((logLevel, formatter(state, exception), exception));
 }
 
 /// <summary>A clock the governance tests can assert stamped values against.</summary>

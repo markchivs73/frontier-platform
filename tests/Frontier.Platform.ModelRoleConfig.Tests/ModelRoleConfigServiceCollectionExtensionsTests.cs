@@ -3,6 +3,8 @@ using Frontier.Platform.Serialization;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 namespace Frontier.Platform.ModelRoleConfig.Tests;
@@ -41,6 +43,8 @@ public sealed class ModelRoleConfigServiceCollectionExtensionsTests
         services.AddSingleton<IMappingDecisionRecorder>(new NoOpDecisionRecorder());
         // IContractSnapshotCatalog is consumer-owned too (ADR-PA40): role definitions resolve refs through it.
         services.AddSingleton<IContractSnapshotCatalog>(new FakeContractCatalog());
+        // S13.328 (a2): the governance services log a lost compensation, so composition needs logging, which every host has.
+        services.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
         using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
 
         Assert.NotNull(provider.GetRequiredService<CosmosClient>());
@@ -75,6 +79,7 @@ public sealed class ModelRoleConfigServiceCollectionExtensionsTests
             ["Cosmos:Key"] = EmulatorKey,
         }));
         services.AddSingleton<IMappingDecisionRecorder>(new NoOpDecisionRecorder());
+        services.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
         using var provider = services.BuildServiceProvider();
         using var scope = provider.CreateScope();
 
@@ -128,6 +133,69 @@ public sealed class ModelRoleConfigServiceCollectionExtensionsTests
         using var provider = services.BuildServiceProvider();
 
         Assert.Throws<OptionsValidationException>(() => provider.GetRequiredService<IOptions<CosmosOptions>>().Value);
+    }
+
+    /// <summary>
+    /// S13.328 (a2): both container-built governance services — the singleton mapping service and the scoped definition
+    /// service — report a lost compensation through the logging the host registered, under their own category.
+    /// </summary>
+    [Fact]
+    public async Task AddFrontierModelRoleConfig_BothGovernanceServices_LogALostCompensationThroughTheRegisteredLogging()
+    {
+        var sink = new LogSink();
+        var mappingServices = Composed(sink);
+        var proposals = new FakeMappingProposalStore().WithProposal(MappingProposalSamples.Pending());
+        proposals.AllocateThrows = new InvalidOperationException("cosmos down");
+        mappingServices.AddSingleton<IMappingProposalStore>(proposals);
+        mappingServices.AddSingleton<IRoleDefinitionStore>(MappingProposalSamples.ModelRoleDefinitions());
+        var definitionServices = Composed(sink);
+        definitionServices.AddSingleton<IRoleDefinitionStore>(new FakeRoleDefinitionStore { CreateThrows = new InvalidOperationException("cosmos down") });
+        using var mapping = mappingServices.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
+        using var definition = definitionServices.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => mapping.GetRequiredService<IMappingGovernanceService>()
+            .ApproveAsync(MappingProposalSamples.RoleId, "p-1", MappingProposalSamples.Approver, "ok", null, CancellationToken.None));
+        using (var scope = definition.CreateScope())
+        {
+            await Assert.ThrowsAsync<InvalidOperationException>(() => scope.ServiceProvider.GetRequiredService<IRoleDefinitionGovernanceService>()
+                .ProposeAsync(RoleDefinitionProposalSamples.AgentDefinition(), RoleDefinitionProposalSamples.Proposer, RoleDefinitionProposalSamples.Reason, CancellationToken.None));
+        }
+
+        Assert.Contains((nameof(MappingGovernanceService), LogLevel.Critical), sink.Entries);
+        Assert.Contains((nameof(RoleDefinitionGovernanceService), LogLevel.Critical), sink.Entries);
+    }
+
+    private static ServiceCollection Composed(LogSink sink)
+    {
+        var services = new ServiceCollection();
+        services.AddFrontierModelRoleConfig(BuildConfiguration(new Dictionary<string, string?>
+        {
+            ["Cosmos:Endpoint"] = "https://localhost:8081",
+            ["Cosmos:Database"] = "frontier-workflow",
+            ["Cosmos:Key"] = EmulatorKey,
+        }));
+        services.AddSingleton<IMappingDecisionRecorder>(new FakeMappingDecisionRecorder { CompensationThrows = new InvalidOperationException("audit down") });
+        services.AddSingleton<IContractSnapshotCatalog>(RoleDefinitionProposalSamples.Catalog());
+        services.AddSingleton(sink);
+        services.AddSingleton(typeof(ILogger<>), typeof(SinkLogger<>));
+        return services;
+    }
+
+    /// <summary>The entries every <see cref="SinkLogger{T}"/> in a container wrote, as (category, level).</summary>
+    private sealed class LogSink
+    {
+        public List<(string Category, LogLevel Level)> Entries { get; } = [];
+    }
+
+    /// <summary>The open-generic logger the container hands out, writing to the one <see cref="LogSink"/>.</summary>
+    private sealed class SinkLogger<T>(LogSink sink) : ILogger<T>
+    {
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) =>
+            sink.Entries.Add((typeof(T).Name, logLevel));
     }
 
     private static IConfiguration BuildConfiguration(Dictionary<string, string?> values) =>

@@ -150,7 +150,7 @@ public sealed class CosmosMappingProposalStoreIntegrationTests : IAsyncLifetime,
     /// <summary>The governance service over the real store.</summary>
     private MappingGovernanceService Service() =>
         new(store, new CosmosRoleDefinitionStore(client, Options.Create(new CosmosOptions { Database = DatabaseId })), new NoOpWriter(), new FakeMappingDecisionRecorder(), TimeProvider.System,
-            Options.Create(new MappingGovernanceOptions { DecisionMaxAttempts = 50, DecisionBaseDelayMs = 5, DecisionMaxDelayMs = 200 }));
+            Options.Create(new MappingGovernanceOptions { DecisionMaxAttempts = 50, DecisionBaseDelayMs = 5, DecisionMaxDelayMs = 200 }), Microsoft.Extensions.Logging.Abstractions.NullLogger<MappingGovernanceService>.Instance);
 
     /// <summary>A well-formed change targeting <paramref name="role"/>.</summary>
     private static MappingChange ChangeFor(string role)

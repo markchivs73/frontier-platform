@@ -48,6 +48,9 @@ definition's contract refs through it. Register one adapter over your registry a
 use it. Like the recorder it has no default: without it, resolving
 `IRoleDefinitionGovernanceService` fails at composition.
 
+The two governance services also take an `ILogger<T>` (consumer S13.328 (a2)), so the host must register logging; every
+ASP.NET Core and generic host does.
+
 `IMappingDecisionRecorder` is how every propose/approve/reject/withdraw/promote/rollback reaches
 your signed governance audit chain. This library is governance-tier and may not reference
 `Frontier.Platform.Audit` (ADR-PA5), so it declares the port and you adapt it over your own
@@ -277,6 +280,10 @@ ETag guard by each decision.
 - **The boot check is a real gate.** A published definition referencing a role with no active
   fleet or canary mapping stops the process, rather than failing on the first invocation that
   needs it.
+- **A compensation that does not land never replaces the change's own outcome** (consumer S13.328 (a2)). Both
+  governance services contain it, log it at Critical with its exception, and let the store's failure or the retry
+  proceed. This stops the cascade; it does not repair the audit trail, which keeps an uncompensated decision record
+  until a durable retry exists (consumer S13.328 (b)/(c)).
 - **Costs are decimals at a declared scale**, serialized as strings by the canonical profile. They
   feed budget arithmetic; a float here is a rounding bug in a ledger.
 
