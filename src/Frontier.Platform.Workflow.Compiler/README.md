@@ -17,12 +17,17 @@ Three things live here:
   from the thing the interpreter executes.
 - **The publish lifecycle.** Draft → validate → propose → approve → publish, with version
   pinning, proposal merge and diff, and test runs, over Cosmos. Publishing a version marks the
-  versions it replaces `superseded` and leaves the draft open for the next edit. Retirement is a
+  versions it replaces `superseded` and leaves the draft open for the next edit. If that marking fails after the publish has landed, `ApproveAsync` throws
+  `PublishedButNotSupersededException` (not an `InvalidOperationException`): the version is live, and the
+  next publish retries the versions left. Retirement is a
   `workflow-admin` decision; ADR-DC4's evidence-based candidate query is **not built** (deferred at
   S13.223): since v0.51.0 the obsolete `IRetirementMonitor` is no longer registered, so resolving
   it fails, and calling it throws.
 - **The design agent.** The conversational protocol that turns a designer's plain-language
   request into a proposed definition, validates it, and repairs it when validation fails.
+  Its turns are kept with the draft. A deployment that must not retain design conversations sets
+  `ChatDesigner:HistoryEnabled` to `false`, and approving a publish then drops every turn but the
+  welcome turn, before the version is written.
 
 ## Install
 
