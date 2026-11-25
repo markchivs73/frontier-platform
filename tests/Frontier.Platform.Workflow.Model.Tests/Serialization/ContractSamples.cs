@@ -293,6 +293,12 @@ internal static class ContractSamples
     public static ExecutionSnapshot ExecutionSnapshotDispatcherChild() => ExecutionSnapshot() with { ExecutionMode = ExecutionMode.Dispatcher, WorkItemId = "TICKET-1" };
 
     /// <summary>S13.149: a run ended through the governed terminate, saying who, why and when — new golden; every older snapshot golden is untouched, which is the compatibility claim.</summary>
+    /// <summary>ADR-PA53: a snapshot whose recorded decision names the role and scope it was made under.</summary>
+    public static ExecutionSnapshot ExecutionSnapshotWithDecisionAuthority() => ExecutionSnapshot() with
+    {
+        Decisions = [ExecutionSnapshot().Decisions[0] with { Authority = new DecisionAuthority { RoleId = "finance-lead", Scope = new DecisionScope { Kind = "deployment" } } }],
+    };
+
     public static ExecutionSnapshot ExecutionSnapshotTerminated() => ExecutionSnapshotPausedOnFailure() with
     {
         Status = ExecutionStatus.Terminated,

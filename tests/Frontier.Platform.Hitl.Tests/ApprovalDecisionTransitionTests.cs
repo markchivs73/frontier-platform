@@ -104,4 +104,18 @@ public sealed class ApprovalDecisionTransitionTests
 
     internal static ApprovalRequest Decided(ApprovalRequest request) =>
         ApprovalDecisionTransition.Apply(request, DecisionFor(request));
+
+    /// <summary>ADR-PA53: a stored decision keeps the authority it was made under through the request's serialized form.</summary>
+    [Fact]
+    public void DecidedRequest_KeepsTheDecisionsAuthority_ThroughItsSerializedForm()
+    {
+        var decided = Decided(HitlFixtures.PendingRequest());
+        var withAuthority = decided with { Decision = decided.Decision! with { Authority = new DecisionAuthority { RoleId = "finance-lead", Scope = new DecisionScope { Kind = "engagement", Id = "eng-1" } } } };
+
+        var bytes = Frontier.Platform.Serialization.CanonicalProfile.SerializeCanonical(withAuthority);
+        var read = System.Text.Json.JsonSerializer.Deserialize<ApprovalRequest>(bytes, Frontier.Platform.Serialization.CanonicalProfile.Options)!;
+
+        Assert.Equal(withAuthority.Decision!.Authority, read.Decision!.Authority);
+        Assert.Contains("\"authority\":{\"role_id\":\"finance-lead\",\"scope\":{\"kind\":\"engagement\",\"id\":\"eng-1\"}}", System.Text.Encoding.UTF8.GetString(bytes), StringComparison.Ordinal);
+    }
 }

@@ -1,1 +1,3 @@
 #nullable enable
+Frontier.Platform.Audit.HumanDecisionRecord.Authority.get -> Frontier.Platform.Abstractions.DecisionAuthority?
+Frontier.Platform.Audit.HumanDecisionRecord.Authority.init -> void

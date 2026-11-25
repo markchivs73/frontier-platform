@@ -40,4 +40,13 @@ public sealed record HumanDecisionRecord
     [JsonPropertyOrder(5)]
     [JsonPropertyName("decided_at_utc")]
     public required DateTime DecidedAtUtc { get; init; }
+
+    /// <summary>
+    /// The role and scope the approver decided under (ADR-PA53), copied from <see cref="HitlDecision.Authority"/>
+    /// and signed with the rest of the record. Null when the decision carried none (decisions recorded before the
+    /// member existed, or not made through a binding); omitted from the wire then, so older records hash unchanged.
+    /// </summary>
+    [JsonPropertyOrder(6)]
+    [JsonPropertyName("authority")]
+    public DecisionAuthority? Authority { get; init; }
 }

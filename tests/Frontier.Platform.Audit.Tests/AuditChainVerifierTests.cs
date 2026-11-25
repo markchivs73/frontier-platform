@@ -113,6 +113,21 @@ public sealed class AuditChainVerifierTests
         Assert.False(AuditChainVerifier.Verify([asOlderReaderSeesIt], record.ExecutionId, "eng-1", Keys(V1)).SignatureValid);
     }
 
+    /// <summary>ADR-PA53: a decision's authority sits inside the hashed bytes, so a record naming it verifies and an edit of it is caught.</summary>
+    [Fact]
+    public void Verify_RecordWithDecisionAuthority_VerifiesAndAnEditedAuthorityIsCaught()
+    {
+        var unsigned = AuditRecordHasherTests.Sample() with { HumanDecisions = AuditContractSamples.AuditRecordWithDecisionAuthority().HumanDecisions };
+        var record = Sign(unsigned, AuditRecordHasher.ComputeGenesisHash("eng-1"), V1);
+        var decision = record.HumanDecisions[0];
+        var forgedRole = record with { HumanDecisions = [decision with { Authority = decision.Authority! with { RoleId = "platform-admin" } }] };
+        var forgedScope = record with { HumanDecisions = [decision with { Authority = decision.Authority! with { Scope = new() { Kind = "deployment" } } }] };
+
+        Assert.True(AuditChainVerifier.Verify([record], record.ExecutionId, "eng-1", Keys(V1)).SignatureValid);
+        Assert.False(AuditChainVerifier.Verify([forgedRole], forgedRole.ExecutionId, "eng-1", Keys(V1)).SignatureValid);
+        Assert.False(AuditChainVerifier.Verify([forgedScope], forgedScope.ExecutionId, "eng-1", Keys(V1)).SignatureValid);
+    }
+
     [Fact]
     public void Verify_TwoRecordChain_SecondLinksToFirst()
     {
