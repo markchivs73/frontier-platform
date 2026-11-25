@@ -668,6 +668,13 @@
           },
           "output": {
             "$": "object",
+            "$.contract_budgets": "object",
+            "$.contract_budgets.max_payload_depth": "integer (required)",
+            "$.contract_budgets.max_rule_cost": "integer (required)",
+            "$.contract_budgets.max_rule_iterations": "integer (required)",
+            "$.contract_budgets.max_violations": "integer (required)",
+            "$.contract_budgets.schema_version": "string",
+            "$.contract_budgets_version": "integer",
             "$.definition": "object",
             "$.definition.contracts": "array",
             "$.definition.contracts[]": "object",
@@ -826,7 +833,9 @@
             "$.definition.nodes[]<parallel>.retry.profile_name": "string (required)",
             "$.definition.nodes[]<parallel>.retry.timeout_seconds_override": "integer",
             "$.definition.schema_version": "string",
-            "$.definition.workflow_id": "string (required)"
+            "$.definition.workflow_id": "string (required)",
+            "$.dispatcher_rollover_threshold": "integer",
+            "$.dispatcher_settings_version": "integer"
           }
         },
         {

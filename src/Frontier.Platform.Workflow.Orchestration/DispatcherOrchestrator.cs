@@ -137,7 +137,7 @@ public sealed class DispatcherOrchestrator(IResiliencePolicyProvider policyProvi
             DispatcherSteps.BuildResolveRequest(input),
             policyProvider.GetTaskOptions(GraphOrchestratorSteps.StorageProfile));
 
-        context.ContinueAsNew(DispatcherSteps.BuildNextGenerationInput(input, resolved.Definition));
+        context.ContinueAsNew(DispatcherSteps.BuildNextGenerationInput(input, resolved));
 
         return new GraphOrchestratorResult
         {

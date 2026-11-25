@@ -123,7 +123,7 @@ public sealed class ContractBudgetsPinningTests
         var input = DispatcherFixtures.Input() with { ContractBudgets = budgets };
 
         Assert.Equal(budgets, DispatcherSteps.BuildChildInput(new FakeTaskOrchestrationContext(), input, DispatcherFixtures.Item("wi-1")).ContractBudgets);
-        Assert.Equal(budgets, DispatcherSteps.BuildNextGenerationInput(input, resolved: null).ContractBudgets);
+        Assert.Equal(budgets, DispatcherSteps.BuildNextGenerationInput(input, new ResolveDispatcherVersionResult()).ContractBudgets);
     }
 
     /// <summary>A fake context whose activity handlers record the action sequence and each agent input's canonical bytes.</summary>

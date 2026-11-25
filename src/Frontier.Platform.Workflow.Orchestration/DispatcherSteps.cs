@@ -44,7 +44,7 @@ internal static class DispatcherSteps
     /// dispatched from one generation could run against different epochs while their snapshots
     /// claim the same provenance (S13.60/C-42). It carries <see cref="GraphOrchestratorInput.PinModelRoles"/>
     /// forward, so each child pins model-role mappings at its own start; the router pins nothing (ADR-PA29). It carries the run's
-    /// validator budgets, so every child validates under the record the dispatcher was started with (ADR-PA43). Attribution follows ADR-E8/S13.19: the work item's
+    /// validator budgets and their version, so every child validates under the record its dispatcher generation runs with (ADR-PA43). Attribution follows ADR-E8/S13.19: the work item's
     /// directing human wins, the dispatcher's own initiator is the fallback.
     /// </para>
     /// </summary>
@@ -59,29 +59,35 @@ internal static class DispatcherSteps
         DynamicContextHash = input.DynamicContextHash,
         PinModelRoles = input.PinModelRoles,
         ContractBudgets = input.ContractBudgets,
+        ContractBudgetsVersion = input.ContractBudgetsVersion,
     };
 
     /// <summary>
-    /// Builds the next generation's input around <paramref name="resolved"/>, or around the current
-    /// definition when nothing newer was resolved.
+    /// Builds the next generation's input from what the boundary <paramref name="resolved"/>: each value it names
+    /// replaces the input's, and each it leaves null is carried forward.
     /// <para>
     /// A generation change is the <em>same run continuing</em>, so the run's identity and
     /// attribution are preserved deliberately: a new <c>RunId</c> here would fork the audit chain
     /// (ADR-EX1), and a dropped <c>InitiatedBy</c> would break the S13.19 attribution chain at an
-    /// arbitrary work-item boundary. Only the definition may move, and only here.
+    /// arbitrary work-item boundary. Only the definition, the contract budgets and the rollover threshold may move,
+    /// and only here (ADR-PA37, ADR-PA43 as amended 2026-11-25). A governed value moves <b>with its version</b>: new
+    /// budgets with a null version clear the version rather than wear the previous generation's (S13.147). A result
+    /// recorded before these members existed names none of them, so it replays to exactly the old input.
     /// </para>
     /// </summary>
-    internal static GraphOrchestratorInput BuildNextGenerationInput(GraphOrchestratorInput input, WorkflowDefinition? resolved) => new()
+    internal static GraphOrchestratorInput BuildNextGenerationInput(GraphOrchestratorInput input, ResolveDispatcherVersionResult resolved) => new()
     {
-        Definition = resolved ?? input.Definition,
+        Definition = resolved.Definition ?? input.Definition,
         EngagementId = input.EngagementId,
         InitiatedBy = input.InitiatedBy,
         RunId = input.RunId,
         DynamicContextEpoch = input.DynamicContextEpoch,
         DynamicContextHash = input.DynamicContextHash,
         PinModelRoles = input.PinModelRoles,
-        DispatcherRolloverThreshold = input.DispatcherRolloverThreshold,
-        ContractBudgets = input.ContractBudgets,
+        DispatcherRolloverThreshold = resolved.DispatcherRolloverThreshold ?? input.DispatcherRolloverThreshold,
+        DispatcherSettingsVersion = resolved.DispatcherRolloverThreshold is null ? input.DispatcherSettingsVersion : resolved.DispatcherSettingsVersion,
+        ContractBudgets = resolved.ContractBudgets ?? input.ContractBudgets,
+        ContractBudgetsVersion = resolved.ContractBudgets is null ? input.ContractBudgetsVersion : resolved.ContractBudgetsVersion,
     };
 
     /// <summary>Projects the dispatcher's pinned input into the S13.18 rollover request.</summary>

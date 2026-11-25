@@ -65,3 +65,17 @@ internal sealed class SmokeEntryPayloadBuilder : IEntryPayloadBuilder
 {
     public string BuildEntryPayload(string dynamicContentJson) => "{}";
 }
+
+/// <summary>The dispatcher's version port (S13.18): no successor, so a smoke dispatcher stays on its version.</summary>
+internal sealed class SmokeVersionResolver : IDispatcherVersionResolver
+{
+    public Task<WorkflowDefinition?> ResolveAsync(string engagementId, string workflowId, int currentVersion, CancellationToken ct) =>
+        Task.FromResult<WorkflowDefinition?>(null);
+}
+
+/// <summary>The dispatcher's generation-settings port (S13.146): no governed values, so every generation carries its own forward.</summary>
+internal sealed class SmokeGenerationSettingsResolver : IDispatcherGenerationSettingsResolver
+{
+    public Task<DispatcherGenerationSettings> ResolveAsync(string engagementId, string workflowId, CancellationToken ct) =>
+        Task.FromResult(new DispatcherGenerationSettings());
+}

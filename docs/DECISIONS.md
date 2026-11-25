@@ -2536,6 +2536,33 @@ spawn. Pinned by `ContinueAsNew_FiresAtTheInputsThreshold`,
 `RolloverThreshold_IsTheDefault_WhenTheInputNamesNoneOrANonPositiveOne` and
 `RolloverThreshold_IsOmittedWhenNull_AndLastWhenSet`.
 
+### ADR-PA37 — amended 2026-11-25: the threshold and the budgets are re-read at each rollover
+
+Consumer tasks S13.146 and S13.147, decided in the consumer's 2026-11-24 triage (option A: the threshold is a governed
+`dispatcher-settings` record; the budgets version rides in the same release). The threshold is still pinned on the input
+at start, but it is no longer fixed for a dispatcher's lifetime, and neither are the contract budgets (ADR-PA43).
+
+1. *At the boundary, in the activity.* `ResolveDispatcherVersionActivity` now also asks a second consumer-owned port,
+   `IDispatcherGenerationSettingsResolver`, and returns `contract_budgets`, `contract_budgets_version`,
+   `dispatcher_rollover_threshold` and `dispatcher_settings_version` beside the definition (all optional). Nothing is
+   read in an orchestrator body (hard invariant 2), and the schedule is unchanged (same activity, same point), so the
+   compatibility generation stays 1 and the activity-shape snapshot grows additively.
+2. *Carry-forward, value with version.* `BuildNextGenerationInput` takes each value the result names and carries
+   forward each it leaves null. A value moves **with its version**: a new value whose version is null clears the
+   version, and a version without its value is ignored, so a version never labels a value it did not come with. A
+   result recorded before these members existed names none of them and replays to byte-identical input.
+   `GraphOrchestratorInput` gains `contract_budgets_version` (order 10) and `dispatcher_settings_version` (order 11);
+   children inherit the budgets and their version, not the settings version.
+3. *The port is enforced at boot.* A new `DispatcherPorts` startup check, registered by
+   `AddFrontierWorkflowOrchestration`, fails startup unless both `IDispatcherVersionResolver` and
+   `IDispatcherGenerationSettingsResolver` are registered. It probes the container (`IServiceProviderIsService`) rather
+   than injecting the ports, so a missing port fails this one check instead of making every startup check
+   unresolvable. **Behaviour at boot:** any host that runs the platform's startup checks now refuses to start without
+   both ports, including the existing `IDispatcherVersionResolver`, which was never enforced before. The consumer's
+   version bump and its adapter for the new port must land in one PR.
+4. *Additive surface.* The activity's one-port constructor stays, `[Obsolete]`, carrying every setting forward; the
+   container picks the two-port constructor when both ports are registered.
+
 ## ADR-PA38 — contracts as data get their own library, and the checks they pass are fixed here
 
 The consumer's ADR-E27 (S13.116) makes a contract a registry record: a JSON Schema 2020-12 document
@@ -3365,6 +3392,13 @@ dispatcher tests that carry the record, the pipeline tests that validate under i
 validator and registration tests: one compilation across two budgets, the iteration budget and
 violation cap per call, no ceiling at run time, an unbounded rule still refused, and the ceiling and
 iteration budget applied at registration.
+
+### ADR-PA43 — amended 2026-11-25: a dispatcher's budgets are pinned per generation
+
+For a dispatcher, "pinned per run" becomes "pinned per generation" (consumer S13.146). The Host factory still pins the
+current budgets at start; each `ContinueAsNew` boundary then takes the budgets `ResolveDispatcherVersionActivity`
+returns, with their version (`contract_budgets_version`, consumer S13.147), or carries the generation's own forward
+(ADR-PA37 as amended the same day). A one-shot run is unchanged: pinned once at start.
 
 ## ADR-PA44 — the host build stamp is the worker's, through a port the consumer must register
 

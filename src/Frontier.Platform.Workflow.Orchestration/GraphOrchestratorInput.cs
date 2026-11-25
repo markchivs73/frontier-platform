@@ -86,9 +86,9 @@ public sealed record GraphOrchestratorInput
 
     /// <summary>
     /// For a dispatcher: how many work items each generation spawns before <c>ContinueAsNew</c>
-    /// (S13.78). A deployment tuning value, resolved by the Host factory from configuration at start
-    /// and carried across every generation, so the orchestrator body reads no configuration (hard
-    /// invariant 2) and the number is data, not a literal (K7). It is not part of the definition,
+    /// (S13.78). A governed value (consumer S13.146), resolved by the Host factory at start and re-read at each
+    /// generation boundary by <see cref="ResolveDispatcherVersionActivity"/>, carried forward when the boundary
+    /// names none, so the orchestrator body reads no store (hard invariant 2) and the number is data, not a literal (K7). It is not part of the definition,
     /// so it never touches <c>definition_hash</c>. <b>Additive and optional</b> per the ADR-E15
     /// floor: inputs recorded before this field, and one-shot runs, carry <see langword="null"/>,
     /// which means the platform default of 100.
@@ -98,14 +98,32 @@ public sealed record GraphOrchestratorInput
     public int? DispatcherRolloverThreshold { get; init; }
 
     /// <summary>
-    /// The contract validator's budgets this run is pinned to (ADR-PA43): the governed record the Host
-    /// factory resolved once at start, as the definition is (ADR-2), so no step reads a store. Copied
-    /// onto every activity input that validates and carried across <c>ContinueAsNew</c> and into
-    /// dispatcher children. <b>Additive and optional</b> per the ADR-E15 floor: inputs recorded before
+    /// The contract validator's budgets this generation is pinned to (ADR-PA43, amended 2026-11-25): the governed
+    /// record the Host factory resolved at start, re-read for a dispatcher at each generation boundary by
+    /// <see cref="ResolveDispatcherVersionActivity"/>, so no step reads a store. Copied onto every activity input that
+    /// validates and carried across <c>ContinueAsNew</c> (unless the boundary names newer ones) and into dispatcher
+    /// children. <b>Additive and optional</b> per the ADR-E15 floor: inputs recorded before
     /// this field carry <see langword="null"/>, which validates under the deployment's configured
     /// budgets, exactly as they did.
     /// </summary>
     [JsonPropertyOrder(9)]
     [JsonPropertyName("contract_budgets")]
     public ContractBudgets? ContractBudgets { get; init; }
+
+    /// <summary>
+    /// The version of the governed contract-budgets record <see cref="ContractBudgets"/> came from (consumer S13.147),
+    /// set by the Host factory at start and moved with the budgets at each dispatcher generation boundary. Optional:
+    /// inputs recorded before it existed replay as null.
+    /// </summary>
+    [JsonPropertyOrder(10)]
+    [JsonPropertyName("contract_budgets_version")]
+    public int? ContractBudgetsVersion { get; init; }
+
+    /// <summary>
+    /// The version of the governed dispatcher-settings record <see cref="DispatcherRolloverThreshold"/> came from
+    /// (consumer S13.146), moved with the threshold at each generation boundary. Optional, as above.
+    /// </summary>
+    [JsonPropertyOrder(11)]
+    [JsonPropertyName("dispatcher_settings_version")]
+    public int? DispatcherSettingsVersion { get; init; }
 }
