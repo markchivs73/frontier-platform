@@ -3792,3 +3792,39 @@ place: a DNS answer is not a policy decision, and left as it is it stays transie
 server's breaker closed and are not re-run by the activity, and that a returned 504/408 is retried; it moves
 `OrchestrationFactory.ClassifyFailure` to the same exact-name match and gives it a `policy_refused` row; and it
 amends doc 10 §3 (the two statuses in row 2, a `policy_refused` row, and the outer loop's fourth permanent type).
+
+## ADR-PA51 — the design-history kill switch drops the conversation before the publish write
+
+Consumer task S13.294, from its S13.285 review (2026-11-16), accepted in its 2026-11-24 triage. The consumer's
+doc 14 §2 and ADR-CD1 (chat history is persistent and draft-scoped), and its doc 15 §10, give sectors that must
+not retain design conversations a deployment flag, `chatDesigner.historyEnabled`. Neither repository had it.
+
+**What existed.** A `DesignTurnDocument` carries no `publishedVersion` and no `ttl`, nothing stamps turns at
+publish, and no housekeeping TTL is set. Turns live until the draft is deleted, and the draft stays open after
+publish, so every published version's conversation stayed on the draft indefinitely. The enabled half of
+ADR-CD1 (stamp at publish, exemption from a housekeeping TTL) is the consumer's S13.383, not this.
+
+**Decision.**
+1. *One setting.* `ChatDesignerHistoryOptions.HistoryEnabled`, default `true`, bound from the `ChatDesigner`
+   section by `AddFrontierWorkflowCompiler(configuration)` like `CosmosOptions`. No library reads raw
+   configuration, and nothing reads it in an orchestrator body.
+2. *No per-turn TTL.* Doc 14 §9's "draft-lifetime TTL" has no derivable value: drafts carry no TTL, and a Cosmos
+   TTL counts from each item's last write, so it would erode a live draft's conversation from its oldest turn.
+   Deleting the draft already deletes its turns. Bounding abandoned drafts belongs with S13.383's housekeeping TTL.
+3. *Dropped at publish, before the write.* With the setting off, `ApproveAsync` calls
+   `IDefinitionStore.DeleteDesignConversationAsync` as its last step before `ApproveAndPublishAsync`, after
+   re-validation and contract pinning. A failed drop publishes nothing and the proposal can be approved again.
+   **Accepted loss:** if the publish write then fails (a lost race, a transient batch failure), the proposal stays
+   in review with its conversation gone, so the approver no longer sees it beside the diff (consumer doc 15 §10).
+   Dropping after the write would instead leave a landed publish failing on its privacy step, the shape ADR-PA50
+   deals with. A chat turn written while the approval is in flight survives until the next publish.
+4. *The welcome turn stays.* Doc 14 §2 says turn 0 is not deletable, so the drop deletes every turn numbered
+   above 0 and rewrites the chat-history index to list only the welcome turn. The next turn number is kept, so a
+   turn id is never reused.
+
+**Surface.** Additive. `DeleteDesignConversationAsync` is a default-implemented `IDefinitionStore` member that
+throws `NotSupportedException`, as `SupersedeVersionAsync` does, so implementers do not break; it is reached only
+by a deployment that turns history off. `DefinitionLifecycleService` gains a constructor taking the options; the
+existing four-argument constructor stays, losing only its default value as the PublicAPI analyzer's
+optional-parameter rule (RS0027) requires, which leaves every existing call compiling and binding as before.
+Points 2 and 4 are proposed and wait on Mark.

@@ -695,6 +695,19 @@ public sealed class CosmosDefinitionStore : IDefinitionStore
             await TryDeleteItemAsync<TestRunDocument>(testRun.Id, workflowId, ct);
     }
 
+    /// <inheritdoc />
+    public async Task DeleteDesignConversationAsync(string workflowId, CancellationToken ct)
+    {
+        ValidateWorkflowId(workflowId);
+
+        var turns = await GetAllDesignTurnsAsync(workflowId, ct);
+        foreach (var id in DesignConversationDrop.TurnIdsToDelete(turns))
+            await TryDeleteItemAsync<DesignTurnDocument>(id, workflowId, ct);
+
+        if (DesignConversationDrop.KeptHistory(await GetChatHistoryAsync(workflowId, ct), turns) is { } kept)
+            await CreateOrUpdateChatHistoryAsync(kept, ct);
+    }
+
     /// <summary>Deletes an item by id, tolerating a concurrent/prior delete (S9.42's own draft/chat-history/turn/test-run cleanup is idempotent by construction).</summary>
     private async Task TryDeleteItemAsync<T>(string id, string workflowId, CancellationToken ct)
     {

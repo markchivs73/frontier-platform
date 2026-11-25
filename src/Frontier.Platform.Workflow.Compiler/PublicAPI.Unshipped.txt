@@ -1,1 +1,10 @@
 #nullable enable
+*REMOVED*Frontier.Platform.Workflow.Compiler.DefinitionLifecycleService.DefinitionLifecycleService(Frontier.Platform.Workflow.Compiler.Storage.IDefinitionStore! store, Frontier.Platform.Workflow.Compiler.IDefinitionCompiler! compiler, Frontier.Platform.Workflow.Compiler.IDefinitionContractEmbedder! contracts, Frontier.Platform.Workflow.Compiler.PublishGovernanceConfig? publishGovernance = null) -> void
+Frontier.Platform.Workflow.Compiler.DefinitionLifecycleService.DefinitionLifecycleService(Frontier.Platform.Workflow.Compiler.Storage.IDefinitionStore! store, Frontier.Platform.Workflow.Compiler.IDefinitionCompiler! compiler, Frontier.Platform.Workflow.Compiler.IDefinitionContractEmbedder! contracts, Frontier.Platform.Workflow.Compiler.PublishGovernanceConfig? publishGovernance) -> void
+Frontier.Platform.Workflow.Compiler.DefinitionLifecycleService.DefinitionLifecycleService(Frontier.Platform.Workflow.Compiler.Storage.IDefinitionStore! store, Frontier.Platform.Workflow.Compiler.IDefinitionCompiler! compiler, Frontier.Platform.Workflow.Compiler.IDefinitionContractEmbedder! contracts, Frontier.Platform.Workflow.Compiler.PublishGovernanceConfig? publishGovernance = null, Frontier.Platform.Workflow.Compiler.ChatDesignerHistoryOptions? history = null) -> void
+Frontier.Platform.Workflow.Compiler.ChatDesignerHistoryOptions
+Frontier.Platform.Workflow.Compiler.ChatDesignerHistoryOptions.ChatDesignerHistoryOptions() -> void
+Frontier.Platform.Workflow.Compiler.ChatDesignerHistoryOptions.HistoryEnabled.get -> bool
+Frontier.Platform.Workflow.Compiler.ChatDesignerHistoryOptions.HistoryEnabled.init -> void
+Frontier.Platform.Workflow.Compiler.Storage.CosmosDefinitionStore.DeleteDesignConversationAsync(string! workflowId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task!
+Frontier.Platform.Workflow.Compiler.Storage.IDefinitionStore.DeleteDesignConversationAsync(string! workflowId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task!

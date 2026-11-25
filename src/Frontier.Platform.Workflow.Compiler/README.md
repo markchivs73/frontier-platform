@@ -23,6 +23,9 @@ Three things live here:
   it fails, and calling it throws.
 - **The design agent.** The conversational protocol that turns a designer's plain-language
   request into a proposed definition, validates it, and repairs it when validation fails.
+  Its turns are kept with the draft. A deployment that must not retain design conversations sets
+  `ChatDesigner:HistoryEnabled` to `false`, and approving a publish then drops every turn but the
+  welcome turn, before the version is written.
 
 ## Install
 

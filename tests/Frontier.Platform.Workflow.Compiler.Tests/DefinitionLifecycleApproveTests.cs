@@ -404,6 +404,80 @@ public sealed class DefinitionLifecycleApproveTests
         VerifyPublished(d => d.DefinitionVersion == 2);
     }
 
+    /// <summary>S13.294: the service the deployment builds with design conversations not kept across a publish.</summary>
+    private DefinitionLifecycleService HistoryOffService() =>
+        new(_store.Object, _compiler.Object, NoRegistryContracts.Embedder, null, new ChatDesignerHistoryOptions { HistoryEnabled = false });
+
+    /// <summary>S13.294: with history kept (the default), approving never touches the conversation.</summary>
+    [Fact]
+    public async Task ApproveAsync_HistoryEnabled_NeverDropsTheConversation()
+    {
+        ArrangeHappyPath(currentVersion: 1);
+
+        await _service.ApproveAsync(ProposalId, "user:approver", CancellationToken.None);
+
+        _store.Verify(s => s.DeleteDesignConversationAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>S13.294 (doc 14 §2): with history off, the conversation is dropped, and only then is the version written.</summary>
+    [Fact]
+    public async Task ApproveAsync_HistoryDisabled_DropsTheConversationBeforeThePublishWrite()
+    {
+        ArrangeHappyPath(currentVersion: 1);
+        var order = new List<string>();
+        _store.Setup(s => s.DeleteDesignConversationAsync(WorkflowId, It.IsAny<CancellationToken>()))
+            .Callback(() => order.Add("drop")).Returns(Task.CompletedTask);
+        _store.Setup(s => s.ApproveAndPublishAsync(It.IsAny<PublishProposalDocument>(), It.IsAny<DefinitionVersionDocument>(), It.IsAny<CancellationToken>()))
+            .Callback(() => order.Add("publish")).ReturnsAsync(true);
+
+        var published = await HistoryOffService().ApproveAsync(ProposalId, "user:approver", CancellationToken.None);
+
+        Assert.Equal(["drop", "publish"], order);
+        Assert.Equal(2, published.DefinitionVersion);
+    }
+
+    /// <summary>S13.294: a drop that fails publishes nothing, so a re-run can approve the proposal still in review.</summary>
+    [Fact]
+    public async Task ApproveAsync_HistoryDisabled_DropFails_PublishesNothing()
+    {
+        ArrangeHappyPath(currentVersion: 1);
+        var failure = new TimeoutException("store slow");
+        _store.Setup(s => s.DeleteDesignConversationAsync(WorkflowId, It.IsAny<CancellationToken>())).ThrowsAsync(failure);
+
+        var ex = await Assert.ThrowsAsync<TimeoutException>(() => HistoryOffService().ApproveAsync(ProposalId, "user:approver", CancellationToken.None));
+
+        Assert.Same(failure, ex);
+        _store.Verify(s => s.ApproveAndPublishAsync(It.IsAny<PublishProposalDocument>(), It.IsAny<DefinitionVersionDocument>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    /// S13.294, the accepted loss: when the publish write then loses its race, the proposal stays in review and
+    /// its conversation is already gone.
+    /// </summary>
+    [Fact]
+    public async Task ApproveAsync_HistoryDisabled_PublishLosesItsRace_TheConversationIsAlreadyDropped()
+    {
+        ArrangeHappyPath(currentVersion: 1);
+        _store.Setup(s => s.ApproveAndPublishAsync(It.IsAny<PublishProposalDocument>(), It.IsAny<DefinitionVersionDocument>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => HistoryOffService().ApproveAsync(ProposalId, "user:approver", CancellationToken.None));
+
+        _store.Verify(s => s.DeleteDesignConversationAsync(WorkflowId, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>S13.294: a refusal before the publish point (a stale revision) drops nothing.</summary>
+    [Fact]
+    public async Task ApproveAsync_HistoryDisabled_RevalidationRefuses_DropsNothing()
+    {
+        ArrangeHappyPath(currentVersion: 1);
+        ArrangeRevalidation(ValidationOutcome.Fail, new ValidationFinding("graph.single-entry-reachable", ValidationSeverity.Error, "no entry"));
+
+        await Assert.ThrowsAsync<PublishRevalidationException>(() => HistoryOffService().ApproveAsync(ProposalId, "user:approver", CancellationToken.None));
+
+        _store.Verify(s => s.DeleteDesignConversationAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     [Fact]
     public async Task ApproveAsync_FirstEverPublish_SupersedesNothing()
     {
