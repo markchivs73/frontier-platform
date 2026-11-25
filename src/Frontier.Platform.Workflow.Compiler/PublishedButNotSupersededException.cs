@@ -4,8 +4,10 @@ namespace Frontier.Platform.Workflow.Compiler;
 /// An approval landed and its version is published and current, but marking the versions it replaces
 /// <c>superseded</c> did not finish (consumer S13.350a, ADR-PA50). The caller must not treat this as
 /// "the approval did not happen": a governance trail that compensates the approval would contradict the
-/// published version. Deliberately not an <see cref="InvalidOperationException"/>, which this library throws
-/// only when nothing was written. The versions left are retried by the workflow's next publish; until then a
+/// published version. Deliberately not an <see cref="InvalidOperationException"/>: with the Cosmos store's atomic
+/// publish, <c>ApproveAsync</c> throws that type only when nothing was written (a store keeping
+/// <see cref="Storage.IDefinitionStore.ApproveAndPublishAsync"/>'s non-atomic default may throw it after the approval
+/// landed; see <see cref="IDefinitionLifecycleService.ApproveAsync"/>). The versions left are retried by the workflow's next publish; until then a
 /// retired one among them that is un-retired becomes published beside the new version (GOV-14).
 /// <see cref="Exception.InnerException"/> is what stopped the supersede: a store fault, or the caller's
 /// cancellation.
@@ -34,7 +36,7 @@ public sealed class PublishedButNotSupersededException : Exception
 
     /// <summary>Creates the exception for <paramref name="published"/>, naming the versions <paramref name="unsupersededVersions"/> still to supersede.</summary>
     public PublishedButNotSupersededException(PublishedVersion published, IReadOnlyList<int> unsupersededVersions, Exception innerException)
-        : base(PublishedButNotSupersededMessage.For(published, unsupersededVersions), innerException)
+        : base(PublishedButNotSupersededMessage.For(published, unsupersededVersions), innerException ?? throw new ArgumentNullException(nameof(innerException)))
     {
         Published = published;
         UnsupersededVersions = unsupersededVersions;

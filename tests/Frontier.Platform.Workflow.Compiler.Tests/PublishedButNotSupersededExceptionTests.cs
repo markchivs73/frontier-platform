@@ -27,6 +27,7 @@ public sealed class PublishedButNotSupersededExceptionTests
     {
         Assert.Throws<ArgumentNullException>(() => new PublishedButNotSupersededException(null!, [1], new TimeoutException()));
         Assert.Throws<ArgumentNullException>(() => new PublishedButNotSupersededException(Published, null!, new TimeoutException()));
+        Assert.Throws<ArgumentNullException>(() => new PublishedButNotSupersededException(Published, [1], null!));
     }
 
     [Fact]

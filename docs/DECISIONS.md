@@ -3812,8 +3812,10 @@ it answered 409 *and* compensated.
    would have returned and the versions not confirmed superseded (the ones already done are not named), and its
    inner exception is what stopped the loop. A failure of `ApproveAndPublishAsync` itself is never wrapped.
    A store's `false` ("changed concurrently") still counts as done.
-2. *Not an `InvalidOperationException`.* This library throws that type only when nothing was written
-   (`PublishRevalidationException` derives from it for that reason). The new type derives from `Exception`, so
+2. *Not an `InvalidOperationException`.* With the Cosmos store's atomic publish, `ApproveAsync` throws that
+   type only when nothing was written (`PublishRevalidationException` derives from it for that reason); a store
+   keeping `IDefinitionStore.ApproveAndPublishAsync`'s non-atomic default may throw it after the approval landed,
+   as the interface remark says. The new type derives from `Exception`, so
    a caller's "refused / did not happen" mapping cannot catch it by accident.
 3. *Retry, not repair.* The next publish of the workflow retries every older published or retired version that
    records no successor (`SupersessionTargets`). Until then there is a window: a retired predecessor with no
@@ -3826,7 +3828,10 @@ store's own exception type from a failed supersede now gets this type instead.
 
 **Not closed here.** Cancellation or a timeout inside `ApproveAndPublishAsync` after its batch committed still
 looks like a failed publish to the caller and is compensated falsely. That is the same shape as the consumer's
-S13.328 (c), and belongs with it.
+S13.328 (c), and belongs with it. Likewise a store that keeps the non-atomic default
+`ApproveAndPublishAsync` and fails after approving the proposal surfaces an `InvalidOperationException` (or
+the store's own exception) although the approval landed; the platform's Cosmos store overrides it atomically,
+so only a third-party store is exposed, and this change does not cover it.
 
 **What the consumer does.** After bumping: inside the approve mutation it catches this type, logs at Error for a
 store fault (Warning when the inner exception is the caller's cancellation), does not rethrow, so no
