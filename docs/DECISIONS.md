@@ -3831,3 +3831,48 @@ container or index moves.
 **What the consumer does.** After bumping, it implements the member on its doubles. It reads C1's
 decided rows through `GetDecidedByAsync(callerId, now - 24h)`, skips the call when the caller has no id,
 and keeps its exact filter (sandbox engagements, the millisecond edge and the tie-break) over the result.
+
+## ADR-PA50 — a publish whose supersede fails is reported as published, by its own exception type
+
+Consumer task S13.350a, found 2026-11-20 in the consumer's run-2 review of S13.350. Decided in the consumer's
+triage of 2026-11-24 (option B: a distinct typed exception, and the consumer skips compensation).
+
+**Why.** `DefinitionLifecycleService.ApproveAsync` marks the versions a new one replaces `superseded` (GOV-14)
+only after `IDefinitionStore.ApproveAndPublishAsync` has published the new version and moved the pointer. Until
+now a failure there surfaced as whatever the store threw. The consumer's governance path appends
+`definition_publish_approved` before the change and compensates it when the change throws, so the trail then
+said the approval did not happen while the version was live and pinnable. A plain `InvalidOperationException`
+from the store was worse: the consumer's `LifecycleRefusal` exact-matches that type as a lifecycle refusal, so
+it answered 409 *and* compensated.
+
+**Decision.**
+1. *A failure of the supersede, and only that, is wrapped.* Any exception from the supersede loop, cancellation
+   included, becomes `PublishedButNotSupersededException`. It carries the `PublishedVersion` that `ApproveAsync`
+   would have returned and the versions not confirmed superseded (the ones already done are not named), and its
+   inner exception is what stopped the loop. A failure of `ApproveAndPublishAsync` itself is never wrapped.
+   A store's `false` ("changed concurrently") still counts as done.
+2. *Not an `InvalidOperationException`.* With the Cosmos store's atomic publish, `ApproveAsync` throws that
+   type only when nothing was written (`PublishRevalidationException` derives from it for that reason); a store
+   keeping `IDefinitionStore.ApproveAndPublishAsync`'s non-atomic default may throw it after the approval landed,
+   as the interface remark says. The new type derives from `Exception`, so
+   a caller's "refused / did not happen" mapping cannot catch it by accident.
+3. *Retry, not repair.* The next publish of the workflow retries every older published or retired version that
+   records no successor (`SupersessionTargets`). Until then there is a window: a retired predecessor with no
+   successor recorded that is un-retired becomes `published` beside the new version, the state GOV-14 exists to
+   prevent. Durable after-commit supersession (retried or swept) is the consumer's S13.328 (a), not this.
+
+**Surface.** One new public type; no interface member changes and nothing is removed, so the commit is not
+scoped `!` (as #181 shipped `PublishRevalidationException`). The behaviour change: a caller that caught the
+store's own exception type from a failed supersede now gets this type instead.
+
+**Not closed here.** Cancellation or a timeout inside `ApproveAndPublishAsync` after its batch committed still
+looks like a failed publish to the caller and is compensated falsely. That is the same shape as the consumer's
+S13.328 (c), and belongs with it. Likewise a store that keeps the non-atomic default
+`ApproveAndPublishAsync` and fails after approving the proposal surfaces an `InvalidOperationException` (or
+the store's own exception) although the approval landed; the platform's Cosmos store overrides it atomically,
+so only a third-party store is exposed, and this change does not cover it.
+
+**What the consumer does.** After bumping: inside the approve mutation it catches this type, logs at Error for a
+store fault (Warning when the inner exception is the caller's cancellation), does not rethrow, so no
+compensation is appended, and still sends `ProposalStateChanged` and answers as for a publish. Whether an
+incomplete supersede deserves its own signed record (a new event type) is a question for Mark.

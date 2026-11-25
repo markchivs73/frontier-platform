@@ -1,1 +1,8 @@
 #nullable enable
+Frontier.Platform.Workflow.Compiler.PublishedButNotSupersededException
+Frontier.Platform.Workflow.Compiler.PublishedButNotSupersededException.Published.get -> Frontier.Platform.Workflow.Compiler.PublishedVersion?
+Frontier.Platform.Workflow.Compiler.PublishedButNotSupersededException.PublishedButNotSupersededException() -> void
+Frontier.Platform.Workflow.Compiler.PublishedButNotSupersededException.PublishedButNotSupersededException(Frontier.Platform.Workflow.Compiler.PublishedVersion! published, System.Collections.Generic.IReadOnlyList<int>! unsupersededVersions, System.Exception! innerException) -> void
+Frontier.Platform.Workflow.Compiler.PublishedButNotSupersededException.PublishedButNotSupersededException(string! message) -> void
+Frontier.Platform.Workflow.Compiler.PublishedButNotSupersededException.PublishedButNotSupersededException(string! message, System.Exception! innerException) -> void
+Frontier.Platform.Workflow.Compiler.PublishedButNotSupersededException.UnsupersededVersions.get -> System.Collections.Generic.IReadOnlyList<int>!
