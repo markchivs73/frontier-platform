@@ -23,6 +23,11 @@ public sealed class AuditGoldenFileTests
     public void SignedAuditRecord_SerializesStablyAndRoundTrips() =>
         ContractRoundTripAssertions.AssertStableAndRoundTrips(AuditContractSamples.SignedAuditRecord(), "signed_audit_record.json");
 
+    /// <summary>S13.293: the tenant follows <c>termination</c> (order 25). New golden; every older signed-record golden is unchanged.</summary>
+    [Fact]
+    public void SignedAuditRecordWithTenant_SerializesStablyAndRoundTrips() =>
+        ContractRoundTripAssertions.AssertStableAndRoundTrips(AuditContractSamples.SignedAuditRecord() with { Tenant = "contoso" }, "signed_audit_record_tenant.json");
+
     [Fact]
     public void SignedAuditRecordWithOptionalFields_IsByteStableAndRoundTrips() =>
         ContractRoundTripAssertions.AssertStableAndRoundTrips(AuditContractSamples.SignedAuditRecordWithOptionalFields(), "signed_audit_record_optional_fields.json");

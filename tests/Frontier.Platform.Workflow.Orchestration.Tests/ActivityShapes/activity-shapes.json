@@ -256,6 +256,7 @@
             "$.signature": "string (required)",
             "$.signing_key_id": "string (required)",
             "$.started_at_utc": "date_time (required)",
+            "$.tenant": "string",
             "$.termination": "object",
             "$.termination.reason": "string (required)",
             "$.termination.terminated_at_utc": "date_time (required)",

@@ -24,3 +24,14 @@ static Frontier.Platform.Audit.AuditChainHeadMismatch.operator ==(Frontier.Platf
 static readonly Frontier.Platform.Audit.AuditChainVerdict.Broken -> Frontier.Platform.Audit.AuditChainVerdict!
 static readonly Frontier.Platform.Audit.AuditChainVerdict.Unverified -> Frontier.Platform.Audit.AuditChainVerdict!
 static readonly Frontier.Platform.Audit.AuditChainVerdict.Valid -> Frontier.Platform.Audit.AuditChainVerdict!
+Frontier.Platform.Audit.AuditRecord.Tenant.get -> string?
+Frontier.Platform.Audit.AuditRecord.Tenant.init -> void
+Frontier.Platform.Audit.AuditTenantOptions
+Frontier.Platform.Audit.AuditTenantOptions.AuditTenantOptions() -> void
+Frontier.Platform.Audit.AuditTenantOptions.Tenant.get -> string?
+Frontier.Platform.Audit.AuditTenantOptions.Tenant.init -> void
+Frontier.Platform.Audit.SignedAuditRecord.Tenant.get -> string?
+Frontier.Platform.Audit.SignedAuditRecord.Tenant.init -> void
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.Tenant.get -> string?
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.Tenant.init -> void
+const Frontier.Platform.Audit.AuditTenantOptions.SectionName = "Audit" -> string!

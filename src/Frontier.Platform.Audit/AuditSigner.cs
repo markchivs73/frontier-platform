@@ -24,12 +24,15 @@ internal sealed class AuditSigner(
     IAuditChainHeadStore headStore,
     IKeyProvider keyProvider,
     IAuditSigningService signingService,
-    IOptions<ExecutionAuditOptions> options) : IAuditSigner
+    IOptions<ExecutionAuditOptions> options,
+    IOptions<AuditTenantOptions>? tenant = null) : IAuditSigner
 {
     /// <inheritdoc />
     public async Task<SignedAuditRecord> SignAsync(AuditRecord record, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(record);
+        // S13.293: stamped before any hashing, so a tenant that is not this deployment's is refused before anything is signed.
+        record = record with { Tenant = AuditTenantStamp.Resolve(record.Tenant, tenant?.Value.Tenant) };
 
         var retry = options.Value;
         for (var attempt = 1; attempt <= retry.AppendMaxAttempts; attempt++)

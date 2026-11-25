@@ -3838,3 +3838,36 @@ place: a DNS answer is not a policy decision, and left as it is it stays transie
 server's breaker closed and are not re-run by the activity, and that a returned 504/408 is retried; it moves
 `OrchestrationFactory.ClassifyFailure` to the same exact-name match and gives it a `policy_refused` row; and it
 amends doc 10 §3 (the two statuses in row 2, a `policy_refused` row, and the outer loop's fourth permanent type).
+
+## ADR-PA54 — the deployment tenant is stamped inside signed audit records
+
+Consumer task S13.293, from its S13.285 review (2026-11-16); decided by Mark on 2026-11-17 (S13.285 Q4). The
+consumer's doc 15 §6 says tokens, audit records and exported documents are tenant-stamped, but no audit or export
+code carried a tenant. Mark's reason: audit provenance must survive records leaving their deployment (a tenant
+migration, an archive merge, a regulator export), and a field inside the signed record makes the origin
+tamper-evident. Execution stays one tenant per deployment (ADR-SEC2).
+
+**Decision.**
+1. *Where it lives.* An optional `tenant` on `AuditRecord` (order 21) and `SignedAuditRecord` (order 25), copied by
+   the hasher, and on `SignedGovernanceAuditRecord` (order 22). It is inside the hashed and signed bytes, so editing it
+   breaks the chain. It is **not** on `GovernanceAuditEntry`, because a governance record id is hashed from the entry
+   and stamping the entry would change ids and break idempotent re-append across the change.
+2. *Where the value comes from.* One deployment option, `AuditTenantOptions.Tenant` (section `Audit`, at most 128
+   characters), read by the execution signer and the governance service at the signing step, never in an orchestrator
+   body. Workers sign at execution close and hold no token, so the platform stamps a deployment constant; the consumer
+   binds it to the same value its claims transformation mints as `frontier:tenant`, which ADR-SEC2 makes a deployment
+   constant too.
+3. *The rules.* Unset, empty or whitespace stamps nothing, and the bytes are exactly as before. Set: a record carrying
+   no tenant is stamped; one carrying the same tenant is accepted; one carrying a different tenant is a permanent
+   `ContractViolationException`, thrown before anything is hashed, signed or stored.
+4. *Old records.* A null tenant is omitted before hashing (and the governance chain is JCS-sorted), so every record
+   signed before the field existed recomputes its stored hash and verifies. `AuditChainGuardRegressionTests` pins this
+   for the execution golden unchanged, and `TheStoredGoldenRecord_StillHashesToItsStoredRecordHash` for the governance
+   golden. Exports write the signed record's bytes, so the tenant rides inside them with no exporter change.
+
+**Rollout order.** A binary from before this change recomputes a record's hash without the field, so it reads a
+stamped record as broken. Deploy with the option unset first; set it only once no older binary reads the chain.
+Rolling back after stamping has begun has the same effect.
+
+**Surface.** Additive, not `!`: optional members, a new options type, no new required member (ADR-E15). The
+`ConsolidateAuditActivity` output shape grows by one optional member. New golden `signed_audit_record_tenant.json`.

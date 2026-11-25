@@ -84,6 +84,23 @@ public sealed class AuditServiceCollectionExtensionsTests
         Assert.NotNull(provider.GetRequiredService<CosmosClient>());
     }
 
+    /// <summary>S13.293: the deployment tenant binds from <c>Audit:Tenant</c>, and the signer receives it.</summary>
+    [Fact]
+    public void AddFrontierAudit_BindsTheAuditTenant()
+    {
+        var services = new ServiceCollection();
+        services.AddFrontierAudit(BuildConfiguration(new Dictionary<string, string?>
+        {
+            ["Cosmos:Endpoint"] = "https://localhost:8081",
+            ["Cosmos:Database"] = "frontier-workflow",
+            ["Cosmos:Key"] = EmulatorKey,
+            ["Audit:Tenant"] = "contoso",
+        }));
+        using var provider = services.BuildServiceProvider();
+
+        Assert.Equal("contoso", provider.GetRequiredService<IOptions<AuditTenantOptions>>().Value.Tenant);
+    }
+
     [Fact]
     public void AddFrontierAudit_MissingCosmosKey_OptionsResolutionThrows()
     {
