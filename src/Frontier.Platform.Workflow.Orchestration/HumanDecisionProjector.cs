@@ -8,7 +8,8 @@ namespace Frontier.Platform.Workflow.Orchestration;
 /// <see cref="HumanDecisionRecord"/>s (doc 05 §4 step 4). Drops
 /// <see cref="HitlDecision.RollbackToNodeId"/> — <see cref="HumanDecisionRecord"/> has no
 /// equivalent field (S5.1's frozen contract); the rollback target is operational state,
-/// not an audit fact.
+/// not an audit fact. Copies <see cref="HitlDecision.Authority"/> (ADR-PA53), so the signed record says by what
+/// right the approver decided.
 /// </summary>
 internal static class HumanDecisionProjector
 {
@@ -25,5 +26,6 @@ internal static class HumanDecisionProjector
         Kind = decision.Kind,
         Notes = decision.Notes,
         DecidedAtUtc = decision.DecidedAtUtc,
+        Authority = decision.Authority,
     };
 }

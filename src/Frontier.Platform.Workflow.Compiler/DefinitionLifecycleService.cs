@@ -16,12 +16,29 @@ public sealed class DefinitionLifecycleService : IDefinitionLifecycleService
     private readonly IDefinitionCompiler _compiler;
     private readonly IDefinitionContractEmbedder _contracts;
     private readonly PublishGovernanceConfig _publishGovernance;
+    private readonly ChatDesignerHistoryOptions _history;
 
+    /// <summary>Constructs the service keeping design conversations across a publish (the default).</summary>
     public DefinitionLifecycleService(
         IDefinitionStore store,
         IDefinitionCompiler compiler,
         IDefinitionContractEmbedder contracts,
-        PublishGovernanceConfig? publishGovernance = null)
+        PublishGovernanceConfig? publishGovernance)
+        : this(store, compiler, contracts, publishGovernance, null)
+    {
+    }
+
+    /// <summary>
+    /// Constructs the service with the deployment's design-conversation setting (consumer S13.294): with
+    /// <see cref="ChatDesignerHistoryOptions.HistoryEnabled"/> off, approving a publish drops the draft's
+    /// conversation first. Null for either setting means its default.
+    /// </summary>
+    public DefinitionLifecycleService(
+        IDefinitionStore store,
+        IDefinitionCompiler compiler,
+        IDefinitionContractEmbedder contracts,
+        PublishGovernanceConfig? publishGovernance = null,
+        ChatDesignerHistoryOptions? history = null)
     {
         ArgumentNullException.ThrowIfNull(store);
         ArgumentNullException.ThrowIfNull(compiler);
@@ -31,6 +48,7 @@ public sealed class DefinitionLifecycleService : IDefinitionLifecycleService
         _compiler = compiler;
         _contracts = contracts;
         _publishGovernance = publishGovernance ?? new PublishGovernanceConfig();
+        _history = history ?? new ChatDesignerHistoryOptions();
     }
 
     public async Task<DraftHandle> CreateDraftAsync(
@@ -290,21 +308,28 @@ public sealed class DefinitionLifecycleService : IDefinitionLifecycleService
         var pointer = await _store.GetCurrentVersionPointerAsync(proposal.WorkflowId, ct);
         var versionDoc = NewVersion(proposal, approverId, definition, NextVersionNumber(pointer, existingVersions));
 
+        // S13.294: a sector that must not retain design conversations drops this one before the version is
+        // written, so a failed drop publishes nothing. Accepted loss (ADR-PA51): if the publish then fails, the
+        // approval was not written and the conversation is already gone.
+        await DropConversationUnlessKeptAsync(proposal.WorkflowId, ct);
+
         if (!await _store.ApproveAndPublishAsync(proposal, versionDoc, ct))
             throw new InvalidOperationException("Failed to approve proposal — it may have been modified concurrently");
 
-        // GOV-14: the versions this one replaces become superseded. After the pointer moves, so a
-        // failure here leaves the new version current and the old ones published, never the reverse.
-        await SupersedePredecessorsAsync(proposal.WorkflowId, existingVersions, versionDoc.DefinitionVersion, ct);
-
-        // The draft stays open for the next edit; publish does not retire it (Mark, 2026-11-05).
-        return new PublishedVersion(
+        var published = new PublishedVersion(
             WorkflowId: proposal.WorkflowId,
             DefinitionVersion: versionDoc.DefinitionVersion,
             DefinitionHash: versionDoc.DefinitionHash,
             ProposedBy: proposal.ProposerId,
             ApprovedBy: approverId,
             ApprovedAtUtc: versionDoc.ApprovedUtc);
+
+        // GOV-14: the versions this one replaces become superseded. After the pointer moves, so a
+        // failure here leaves the new version current and the old ones published, never the reverse.
+        await SupersedePredecessorsAsync(published, existingVersions, ct);
+
+        // The draft stays open for the next edit; publish does not retire it (Mark, 2026-11-05).
+        return published;
     }
 
     /// <summary>
@@ -416,19 +441,42 @@ public sealed class DefinitionLifecycleService : IDefinitionLifecycleService
         return Math.Max(pointerVersion, highestExisting) + 1;
     }
 
+    /// <summary>The design-conversation setting this service was built with (S13.294), for the composition root's tests.</summary>
+    internal ChatDesignerHistoryOptions History => _history;
+
+    /// <summary>Drops the draft's design conversation when the deployment does not keep them (consumer S13.294, doc 14 §2).</summary>
+    private async Task DropConversationUnlessKeptAsync(string workflowId, CancellationToken ct)
+    {
+        if (!_history.HistoryEnabled)
+            await _store.DeleteDesignConversationAsync(workflowId, ct);
+    }
+
     /// <summary>
-    /// Records <paramref name="successor"/> on each version <see cref="SupersessionTargets"/> names.
-    /// A <see langword="false"/> from the store means the version changed state concurrently (for
-    /// example an admin retired it), which leaves nothing to supersede.
+    /// Records <paramref name="published"/>'s version as the successor on each version
+    /// <see cref="SupersessionTargets"/> names. A <see langword="false"/> from the store means the version
+    /// changed state concurrently (for example an admin retired it), which leaves nothing to supersede.
+    /// Any failure, cancellation included, is reported as <see cref="PublishedButNotSupersededException"/>
+    /// naming the versions left: the publish has landed, so nothing here may read as "did not happen"
+    /// (S13.350a, ADR-PA50).
     /// </summary>
     private async Task SupersedePredecessorsAsync(
-        string workflowId,
+        PublishedVersion published,
         IReadOnlyList<DefinitionVersionDocument> existingVersions,
-        int successor,
         CancellationToken ct)
     {
-        foreach (var version in SupersessionTargets(existingVersions, successor))
-            await _store.SupersedeVersionAsync(workflowId, version, successor, ct);
+        var left = new Queue<int>(SupersessionTargets(existingVersions, published.DefinitionVersion));
+        try
+        {
+            while (left.Count > 0)
+            {
+                await _store.SupersedeVersionAsync(published.WorkflowId, left.Peek(), published.DefinitionVersion, ct);
+                left.Dequeue();
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new PublishedButNotSupersededException(published, [.. left], ex);
+        }
     }
 
     /// <summary>

@@ -85,7 +85,7 @@ public static class AuditServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Registers the signing profile (ADR-PA33): a Key Vault key when <c>AuditSigning:KeyUri</c>
+    /// Registers the signing profile (ADR-PA33): a Key Vault key when <c>AuditSigning:KeyIdentifier</c>
     /// names one, and the committed HMAC dev key otherwise.
     ///
     /// <para>
@@ -129,8 +129,8 @@ public static class AuditServiceCollectionExtensions
             UseSystemTextJsonSerializerWithOptions = CanonicalProfile.Options,
             ConnectionMode = ConnectionMode.Gateway,
             // The Cosmos emulator uses a self-signed TLS cert that is not in the OS trust
-            // store. Bypass validation when connecting to localhost (emulator only).
-            HttpClientFactory = LocalProfile.IsLocalEndpoint(options.Endpoint)
+            // store. Bypass validation only for a parsed loopback host (emulator only; S13.349).
+            HttpClientFactory = LocalEndpoint.IsLoopback(options.Endpoint)
                 ? () => new HttpClient(new HttpClientHandler { CheckCertificateRevocationList = true, ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator })
                 : null
         };

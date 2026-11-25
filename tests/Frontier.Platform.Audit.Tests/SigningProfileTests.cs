@@ -1,3 +1,6 @@
+using Frontier.Platform.Serialization;
+using Microsoft.Extensions.Options;
+
 namespace Frontier.Platform.Audit.Tests;
 
 /// <summary>
@@ -32,18 +35,25 @@ public sealed class SigningProfileTests
         Assert.True(SigningProfileCheck.Evaluate(usesKeyVault: true, isLocalProfile).Passed);
     }
 
+    /// <summary>
+    /// S13.349 (AUTHN-1): the check reads the parsed host through <see cref="LocalEndpoint"/>, so the committed dev
+    /// key is refused against a lookalike host the old prefix rule called local, and allowed against the emulator.
+    /// </summary>
     [Theory]
     [InlineData("https://localhost:8081", true)]
-    [InlineData("https://127.0.0.1:8081", true)]
-    [InlineData("http://localhost:8081", true)]
     [InlineData("http://127.0.0.1:8081", true)]
+    [InlineData("https://localhost.evil.example", false)]
+    [InlineData("https://localhostfrontier.documents.azure.com", false)]
+    [InlineData("https://127.0.0.1.nip.io", false)]
+    [InlineData("https://localhost:8081@evil.example", false)]
     [InlineData("https://frontier.documents.azure.com:443", false)]
-    [InlineData("", false)]
-    [InlineData(null, false)]
-    public void IsLocalEndpoint_ClassifiesTheEndpoint(string? endpoint, bool expected)
+    public async Task CheckAsync_DevKey_PassesOnlyAgainstAParsedLoopbackHost(string endpoint, bool passes)
     {
-        // An absent endpoint is deliberately NOT local: the check must fail towards "deployed".
-        Assert.Equal(expected, LocalProfile.IsLocalEndpoint(endpoint));
+        var check = new SigningProfileCheck(
+            Options.Create(new AuditSigningOptions()),
+            Options.Create(new CosmosOptions { Endpoint = endpoint, Database = "frontier-workflow", Key = "k" }));
+
+        Assert.Equal(passes, (await check.CheckAsync(CancellationToken.None)).Passed);
     }
 
     [Fact]
