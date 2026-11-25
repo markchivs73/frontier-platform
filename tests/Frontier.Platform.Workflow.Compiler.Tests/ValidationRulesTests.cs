@@ -389,6 +389,8 @@ public sealed class ValidationRulesTests
         [InlineData("-triage", "not kebab-case")]
         [InlineData("triage-", "not kebab-case")]
         [InlineData("ticket--triage", "not kebab-case")]
+        [InlineData("support\n", "not kebab-case")]
+        [InlineData("\nsupport", "not kebab-case")]
         [InlineData("", "is empty")]
         [InlineData("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "longer than 32")]
         public async Task RequiredFields_MalformedTag_ReturnsAnErrorOnThatTag(string tag, string expected)

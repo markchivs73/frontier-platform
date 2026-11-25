@@ -251,6 +251,30 @@ public sealed class ChatDesignerServiceTests
             Assert.Equal([null], compiler.StoredSchemaVersions);
         }
 
+        /// <summary>S13.238: a tag finding on the proposal does not trigger the repair pass, since the merge never applies tags.</summary>
+        [Fact]
+        public async Task TagFindingOnly_NoRepair_SingleCall()
+        {
+            var tagError = new ValidationFinding("structure.required-fields", ValidationSeverity.Error, "Tag 'Bad_Tag' is not kebab-case.", FieldPath: "tags[0]");
+            var (service, client, store) = Build(new RepairCompiler { AsyncFindings = [tagError] }, Proposal("only"));
+
+            var result = await RunTurnAsync(service, store);
+
+            VerifyCalls(client, Times.Once());
+            Assert.Equal("only", result.ProposalReasoningJson);
+        }
+
+        /// <summary>S13.238: <c>description</c> and <c>tags</c> are fields the schema defines, so a proposal carrying them reports no unknown key.</summary>
+        [Fact]
+        public void UnknownKeys_DescriptionAndTagsOnTheProposedDefinition_AreNotFlagged()
+        {
+            var json = Proposal("r").Replace("\"mode\":", "\"description\":\"d\",\"tags\":[\"x\"],\"mode\":", StringComparison.Ordinal);
+            using var document = JsonDocument.Parse(json);
+
+            Assert.Contains("\"tags\":[\"x\"]", json, StringComparison.Ordinal);
+            Assert.Empty(UnknownJsonKeys.Find(document.RootElement, typeof(AgentProposal), CanonicalProfile.Options));
+        }
+
         [Fact]
         public async Task PersistentErrors_RetriesExactlyOnce_NeverLoops()
         {

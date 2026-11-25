@@ -3802,18 +3802,18 @@ tags, but `WorkflowDefinition` had neither.
 **Decision.**
 1. *Two optional members, inside the hash.* `description` (order 10) and `tags` (order 11) follow `contracts`,
    omitted when null. A definition without them serializes to the same canonical bytes, so its hash is
-   unchanged (`StoredDefinitionHashStabilityTests` passes untouched). When present they are hashed like any
-   other member, in the order given: re-tagging is an edit, so it is a new version. An empty string and an
+   unchanged (`StoredDefinitionHashStabilityTests`' existing tests are untouched and pass; one test is added). When present they are hashed like any
+   other member, in the order given: re-tagging changes the hash, so (reasoned from immutability, not tested here) it needs a new publish. An empty string and an
    empty list are written and hashed, so writers send null for "none". No `schema_version` bump: the members
    are optional (ADR-E15). The activity-shape snapshot grows additively (`EvaluateCascadeActivity` input,
    `ResolveDispatcherVersionActivity` output).
 2. *The checks* (triage picks). A missing or blank description is a **Warning**. Each tag must be kebab-case,
-   read strictly as `^[a-z0-9]+(-[a-z0-9]+)*$`, and at most 32 characters (length checked first); each bad tag
+   read strictly as `\A[a-z0-9]+(-[a-z0-9]+)*\z` (so a trailing newline is refused), and at most 32 characters (length checked first); each bad tag
    is an Error on `tags[i]`. More than ten tags is an Error on `tags`. The checks are in the rule, not in
    `WorkflowDefinition.Validate()`, which throws.
 3. *Proposals are not blocked by tags.* The chat designer's Apply (the granular merge) applies only nodes and
    edges, so a proposal's tags never reach the draft. Tag findings therefore neither drive the repair pass nor
-   block Apply; they still block a publish. The designer's prompt and schema are unchanged, so prompt bytes
+   block Apply; they still block a publish. The designer's prompt and schema text are unchanged, so (reasoned, not tested) the prompt bytes
    for a definition without the members are identical. The schema's unknown-key check no longer flags
    `description` or `tags` on a proposal.
 

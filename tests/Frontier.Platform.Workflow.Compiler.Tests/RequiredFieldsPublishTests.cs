@@ -57,6 +57,21 @@ public sealed class RequiredFieldsPublishTests
         await AssertProposableAsync(definition, report);
     }
 
+    /// <summary>S13.238: a malformed tag does not block a chat proposal, but it does fail validation, so the publish proposal is refused.</summary>
+    [Fact]
+    public async Task ProposePublishAsync_AMalformedTag_IsRefused()
+    {
+        var definition = Definition("Scoping", "advisory-sow") with { Description = "d", Tags = ["Bad_Tag"] };
+        var report = await Validate(definition);
+        var store = new Mock<IDefinitionStore>();
+        store.Setup(s => s.GetDraftAsync(WorkflowId, It.IsAny<CancellationToken>())).ReturnsAsync(Draft(definition));
+
+        Assert.Equal(ValidationOutcome.Fail, report.Outcome);
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => Service(store).ProposePublishAsync(WorkflowId, DraftRevision, report, "user:mark", CancellationToken.None));
+        store.Verify(s => s.CreateProposalAsync(It.IsAny<PublishProposalDocument>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     [Theory]
     [InlineData("", "")]
     [InlineData("Scoping", "")]

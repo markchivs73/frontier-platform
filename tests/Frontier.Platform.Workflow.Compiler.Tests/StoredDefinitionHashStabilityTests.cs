@@ -53,4 +53,16 @@ public sealed class StoredDefinitionHashStabilityTests
             hasher.ComputeDefinitionHash(definition with { Tags = ["support"] }),
         }.Distinct().Count());
     }
+
+    /// <summary>S13.238: tags are hashed in the order given; nothing sorts them.</summary>
+    [Fact]
+    public void Tags_InADifferentOrder_HashDifferently()
+    {
+        var definition = JsonSerializer.Deserialize<WorkflowDefinition>(StoredBeforeTheChange, CanonicalProfile.Options)!;
+        var hasher = new DefinitionValidator([]);
+
+        Assert.NotEqual(
+            hasher.ComputeDefinitionHash(definition with { Tags = ["a", "b"] }),
+            hasher.ComputeDefinitionHash(definition with { Tags = ["b", "a"] }));
+    }
 }
