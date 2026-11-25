@@ -202,4 +202,17 @@ internal sealed class InMemoryDefinitionStore : IDefinitionStore
         CancellationToken ct) =>
         Task.FromResult<IReadOnlyList<DesignTurnDocument>>(
             turns.Values.Where(t => t.WorkflowId == workflowId).ToList().AsReadOnly());
+
+    /// <summary>S13.294: drops every turn but the welcome turn and rewrites the index, as the Cosmos store does (no concurrency here).</summary>
+    public async Task DeleteDesignConversationAsync(string workflowId, CancellationToken ct)
+    {
+        var deleted = DesignConversationDrop.TurnIdsToDelete(await GetAllDesignTurnsAsync(workflowId, ct));
+        foreach (var id in deleted)
+            turns.Remove(id);
+
+        await DesignConversationDrop.RewriteHistoryAsync(
+            () => Task.FromResult<(ChatHistoryDocument, string)?>(chatHistories.TryGetValue(workflowId, out var h) ? (h, "v") : null),
+            (history, _) => { chatHistories[workflowId] = history; return Task.FromResult(true); },
+            deleted);
+    }
 }

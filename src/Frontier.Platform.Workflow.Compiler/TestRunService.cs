@@ -21,9 +21,6 @@ public sealed class TestRunService : ITestRunService
     /// <summary>The system approver id stamped on auto-approved sandbox gate decisions (S9.38a).</summary>
     internal const string AutoApproveApproverId = "system:sandbox-auto-approve";
 
-    /// <summary>The system approver id stamped on designer-decided sandbox gate decisions (S9.38d).</summary>
-    internal const string DesignerApproverId = "system:sandbox-designer";
-
     private readonly IDefinitionStore _store;
     private readonly IDefinitionCompiler _compiler;
     private readonly ITestRunExecutor _executor;
@@ -146,22 +143,23 @@ public sealed class TestRunService : ITestRunService
     }
 
     /// <summary>
-    /// S9.38d/S9.85: raises the designer's gate decision on the real execution, then reconciles
+    /// S9.38d/S9.85: raises the designer's gate decision, under <paramref name="approverId"/>, on the real execution, then reconciles
     /// once and returns the run's current state — it does not wait for the orchestration to
     /// process the decision (the caller's next poll observes the continuation, or the rejection's
     /// rollback/regeneration cascade).
     /// </summary>
-    public async Task<TestRunResult?> DecideGateAsync(string testRunId, string gateId, DecisionKind decision, string? note, CancellationToken ct)
+    public async Task<TestRunResult?> DecideGateAsync(string testRunId, string gateId, string approverId, DecisionKind decision, string? note, CancellationToken ct)
     {
         ArgumentException.ThrowIfNullOrEmpty(testRunId);
         ArgumentException.ThrowIfNullOrEmpty(gateId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(approverId);
         ArgumentNullException.ThrowIfNull(decision);
 
         var doc = await _store.GetTestRunAsync(testRunId, ct);
         if (doc is null)
             return null;
 
-        await _executor.RaiseGateDecisionAsync(testRunId, doc.EngagementId, gateId, DesignerApproverId, decision, note, ct);
+        await _executor.RaiseGateDecisionAsync(testRunId, doc.EngagementId, gateId, approverId, decision, note, ct);
 
         return await ReconcileAsync(testRunId, ct);
     }
