@@ -105,10 +105,19 @@ internal sealed class FakeRoleDefinitionStore : IRoleDefinitionStore
         }
     }
 
+    /// <summary>S13.328 (a2): how many of the next proposal replaces lose, as if another decision got there first. Zero by default.</summary>
+    internal int ReplacesToLose { get; set; }
+
     public Task<string?> TryReplaceProposalAsync(RoleDefinitionProposal proposal, string expectedETag, CancellationToken cancellationToken)
     {
         lock (gate)
         {
+            if (ReplacesToLose > 0)
+            {
+                ReplacesToLose--;
+                return Task.FromResult<string?>(null);
+            }
+
             return Task.FromResult(TryReplace(proposal, expectedETag));
         }
     }

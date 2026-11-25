@@ -54,6 +54,8 @@ internal static class RoleDefinitionProposalSamples
 
     /// <summary>The service under test, on a fixed clock.</summary>
     internal static RoleDefinitionGovernanceService Service(
-        IRoleDefinitionStore store, FakeMappingDecisionRecorder recorder, FakeContractCatalog? catalog = null) =>
-        new(store, new RoleContractResolver(catalog ?? Catalog()), recorder, new FixedTimeProvider(FixedTimeProvider.Now), Options.Create(FastRetry));
+        IRoleDefinitionStore store, FakeMappingDecisionRecorder recorder, FakeContractCatalog? catalog = null,
+        Microsoft.Extensions.Logging.ILogger<RoleDefinitionGovernanceService>? logger = null) =>
+        new(store, new RoleContractResolver(catalog ?? Catalog()), recorder, new FixedTimeProvider(FixedTimeProvider.Now), Options.Create(FastRetry),
+            logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<RoleDefinitionGovernanceService>.Instance);
 }

@@ -4155,3 +4155,20 @@ Rolling back after stamping has begun has the same effect.
 
 **Surface.** Additive, not `!`: optional members, a new options type, no new required member (ADR-E15). The
 `ConsolidateAuditActivity` output shape grows by one optional member. New golden `signed_audit_record_tenant.json`.
+
+## Consumer S13.328 (a2) — a lost compensation is contained, not repaired (2026-11-25 run 3; triage 2026-11-24, accepted block)
+
+`MappingGovernanceService` and `RoleDefinitionGovernanceService` called `IMappingDecisionRecorder.RecordCompensationAsync` unguarded, at eight places. Four of them were `catch { compensate; throw; }` and four were lost races that retry. A recorder whose compensation threw therefore replaced the store's failure, or aborted the retry. The consumer's own recorder already contained the failure (consumer S13.326), but the port did not require it.
+
+*Decision.* Each call goes through `CompensationGuard.TryCompensateAsync`.
+- It runs on `CancellationToken.None` and catches everything, so even a cancellation is treated as an SDK timeout. The catch-all is under a justified `SuppressMessage(CA1031)`.
+- A failure is logged at **Critical**, because it is data loss that needs an operator, with its exception. Fault text was scrubbed from responses and records, not from logs. The log names the record id and event type, and at a race site it says the uncompensated first record now stands beside the retry's record.
+- The change's own exception still rethrows, and the retry still runs.
+- A recorder failure never escapes the guard. Logging is assumed not to throw, per the `ILogger` contract; the logger is not wrapped.
+- The services pass `CancellationToken.None`. All eight sites are tested, each with both a synchronous throw and a faulted task, and a source scan pins the guard as the only caller.
+- The port's doc comment says this.
+- The services now take a required `ILogger<T>`; they are internal and container-built.
+
+**K6 is not closed by this.** K6 holds that every governance fact sits on the HMAC-chained audit. A compensation that does not land leaves the trail showing a change that did not happen. That stays wrong until consumer S13.328 (b), a durable retry, or (c), reconciliation, lands. Containment only stops the cascade.
+
+Out of scope, and unchanged: the compensation's `failureReason` is still the change's `ex.Message`.

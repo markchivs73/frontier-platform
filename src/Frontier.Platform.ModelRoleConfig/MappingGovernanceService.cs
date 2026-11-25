@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Frontier.Platform.Abstractions;
 using Microsoft.Extensions.Options;
 
@@ -21,7 +22,8 @@ internal sealed class MappingGovernanceService(
     IRoleMappingWriter writer,
     IMappingDecisionRecorder recorder,
     TimeProvider timeProvider,
-    IOptions<MappingGovernanceOptions> options) : IMappingGovernanceService
+    IOptions<MappingGovernanceOptions> options,
+    ILogger<MappingGovernanceService> logger) : IMappingGovernanceService
 {
 
     /// <inheritdoc />
@@ -254,13 +256,13 @@ internal sealed class MappingGovernanceService(
         }
         catch (Exception ex)
         {
-            await recorder.RecordCompensationAsync(decision, recordId, ex.Message, CancellationToken.None);
+            await CompensationGuard.TryCompensateAsync(recorder, decision, recordId, ex.Message, logger);
             throw;
         }
 
         if (landed is null)
         {
-            await recorder.RecordCompensationAsync(decision, recordId, "another writer allocated this mapping version first; the decision was retried.", CancellationToken.None);
+            await CompensationGuard.TryCompensateAsync(recorder, decision, recordId, "another writer allocated this mapping version first; the decision was retried.", logger, beforeRetry: true);
         }
 
         return landed;
@@ -289,7 +291,7 @@ internal sealed class MappingGovernanceService(
                 return updated with { ConcurrencyToken = token };
             }
 
-            await recorder.RecordCompensationAsync(decision, recordId, "another decision reached this proposal first; the decision was retried.", CancellationToken.None);
+            await CompensationGuard.TryCompensateAsync(recorder, decision, recordId, "another decision reached this proposal first; the decision was retried.", logger, beforeRetry: true);
             await DelayBeforeRetryAsync(attempt, retry, cancellationToken);
         }
 
@@ -361,7 +363,7 @@ internal sealed class MappingGovernanceService(
         }
         catch (Exception ex)
         {
-            await recorder.RecordCompensationAsync(decision, recordId, ex.Message, CancellationToken.None);
+            await CompensationGuard.TryCompensateAsync(recorder, decision, recordId, ex.Message, logger);
             throw;
         }
     }

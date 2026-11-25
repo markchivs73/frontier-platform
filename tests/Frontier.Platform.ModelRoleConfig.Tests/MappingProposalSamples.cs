@@ -72,9 +72,11 @@ internal static class MappingProposalSamples
         FakeMappingDecisionRecorder recorder,
         FakeRoleMappingWriter? writer = null,
         MappingGovernanceOptions? options = null,
-        FakeRoleDefinitionStore? definitions = null) =>
+        FakeRoleDefinitionStore? definitions = null,
+        Microsoft.Extensions.Logging.ILogger<MappingGovernanceService>? logger = null) =>
         new(store, definitions ?? ModelRoleDefinitions(), writer ?? new FakeRoleMappingWriter(), recorder,
-            new FixedTimeProvider(FixedTimeProvider.Now), Options.Create(options ?? FastRetry));
+            new FixedTimeProvider(FixedTimeProvider.Now), Options.Create(options ?? FastRetry),
+            logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<MappingGovernanceService>.Instance);
 }
 
 /// <summary>Captures the <c>current</c> pointer writes a rollback makes.</summary>
