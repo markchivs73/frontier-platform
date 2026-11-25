@@ -1,4 +1,5 @@
 using Frontier.Platform.Abstractions;
+using Frontier.Platform.Serialization;
 using Frontier.TestSupport;
 
 namespace Frontier.Platform.Workflow.Model.Tests.Serialization;
@@ -65,6 +66,23 @@ public sealed class ContractGoldenFileTests
     [Fact]
     public void WorkflowDefinitionWithToolContracts_SerializesStablyAndRoundTrips() =>
         ContractRoundTripAssertions.AssertStableAndRoundTrips(ContractSamples.WorkflowDefinitionWithToolContracts(), "workflow_definition_tool_contracts.json");
+
+    /// <summary>S13.238: an optional description and tags, after <c>mode</c>. New golden; every older definition golden is unchanged.</summary>
+    [Fact]
+    public void WorkflowDefinitionWithDescriptionAndTags_SerializesStablyAndRoundTrips() =>
+        ContractRoundTripAssertions.AssertStableAndRoundTrips(ContractSamples.WorkflowDefinitionWithDescriptionAndTags(), "workflow_definition_description_tags.json");
+
+    /// <summary>S13.238: null description and tags are absent from the bytes; an empty string and an empty list are written.</summary>
+    [Fact]
+    public void DescriptionAndTags_NullAreOmitted_EmptyAreWritten()
+    {
+        var none = System.Text.Encoding.UTF8.GetString(CanonicalProfile.SerializeCanonical(ContractSamples.WorkflowDefinitionWithPinnedWrites()));
+        var empty = System.Text.Encoding.UTF8.GetString(CanonicalProfile.SerializeCanonical(ContractSamples.WorkflowDefinitionWithPinnedWrites() with { Description = "", Tags = [] }));
+
+        Assert.DoesNotContain("\"description\"", none, StringComparison.Ordinal);
+        Assert.DoesNotContain("\"tags\"", none, StringComparison.Ordinal);
+        Assert.EndsWith("\"mode\":\"one_shot\",\"description\":\"\",\"tags\":[]}", empty, StringComparison.Ordinal);
+    }
 
     /// <summary>ADR-PA41: an MCP node's pinned <c>writes</c>, both values. New golden; every older definition golden is unchanged.</summary>
     [Fact]

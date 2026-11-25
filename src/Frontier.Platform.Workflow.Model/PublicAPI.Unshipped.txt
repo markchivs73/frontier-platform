@@ -1,1 +1,5 @@
 #nullable enable
+Frontier.Platform.Workflow.Model.WorkflowDefinition.Description.get -> string?
+Frontier.Platform.Workflow.Model.WorkflowDefinition.Description.init -> void
+Frontier.Platform.Workflow.Model.WorkflowDefinition.Tags.get -> System.Collections.Generic.IReadOnlyList<string!>?
+Frontier.Platform.Workflow.Model.WorkflowDefinition.Tags.init -> void
