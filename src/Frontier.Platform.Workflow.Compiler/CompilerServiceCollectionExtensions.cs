@@ -36,6 +36,7 @@ public static class CompilerServiceCollectionExtensions
             .Bind(configuration.GetSection("Cosmos"))
             .ValidateDataAnnotations()
             .ValidateOnStart();
+        services.AddOptions<ChatDesignerHistoryOptions>().Bind(configuration.GetSection("ChatDesigner"));
         return services.AddCompilerServices();
     }
 
@@ -44,6 +45,7 @@ public static class CompilerServiceCollectionExtensions
     public static IServiceCollection AddFrontierWorkflowCompiler(this IServiceCollection services)
     {
         services.AddOptions<CosmosOptions>();
+        services.AddOptions<ChatDesignerHistoryOptions>();
         return services.AddCompilerServices();
     }
 
@@ -160,7 +162,8 @@ public static class CompilerServiceCollectionExtensions
             var store = sp.GetRequiredService<IDefinitionStore>();
             var compiler = sp.GetRequiredService<IDefinitionCompiler>();
             var governance = sp.GetService<PublishGovernanceConfig>() ?? new PublishGovernanceConfig();
-            return new DefinitionLifecycleService(store, compiler, sp.GetRequiredService<IDefinitionContractEmbedder>(), governance);
+            var history = sp.GetRequiredService<IOptions<ChatDesignerHistoryOptions>>().Value;
+            return new DefinitionLifecycleService(store, compiler, sp.GetRequiredService<IDefinitionContractEmbedder>(), governance, history);
         });
 
         // Phase D/S8.3: Register sandbox test-run service. S9.38a: runs the draft on the real

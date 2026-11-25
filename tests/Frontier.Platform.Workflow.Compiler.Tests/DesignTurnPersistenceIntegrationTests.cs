@@ -66,4 +66,27 @@ public sealed class DesignTurnPersistenceIntegrationTests : IAsyncLifetime, IDis
         Assert.Equal(turn.Mentions, reloaded!.Mentions);
         Assert.Equal(turn.Mentions, Assert.Single(history).Mentions);
     }
+
+    /// <summary>S13.294 (doc 14 §2): dropping the conversation deletes every turn but the welcome turn and leaves the history listing it.</summary>
+    [Fact]
+    public async Task DeleteDesignConversation_KeepsOnlyTheWelcomeTurn_AndItsHistoryEntry()
+    {
+        const string workflowId = "wf-s13294";
+        var welcome = DesignTurnFixture.WithMentions(workflowId) with { Id = $"{workflowId}:turn:0", TurnNumber = 0, Mentions = null };
+        foreach (var number in new[] { 1, 2 })
+            await _store!.PersistDesignTurnAsync(welcome with { Id = $"{workflowId}:turn:{number}", TurnNumber = number }, CancellationToken.None);
+        await _store!.PersistDesignTurnAsync(welcome, CancellationToken.None);
+        await _store.CreateOrUpdateChatHistoryAsync(new ChatHistoryDocument
+        {
+            Id = $"{workflowId}:chat-history", WorkflowId = workflowId, DraftId = $"{workflowId}:draft", NextTurnNumber = 3,
+            LastMessageAtUtc = DateTime.UtcNow, TurnDocumentIds = [$"{workflowId}:turn:0", $"{workflowId}:turn:1", $"{workflowId}:turn:2"],
+        }, CancellationToken.None);
+
+        await _store.DeleteDesignConversationAsync(workflowId, CancellationToken.None);
+
+        Assert.Equal(welcome.Id, Assert.Single(await _store.GetAllDesignTurnsAsync(workflowId, CancellationToken.None)).Id);
+        var history = await _store.GetChatHistoryAsync(workflowId, CancellationToken.None);
+        Assert.Equal([welcome.Id], history!.TurnDocumentIds);
+        Assert.Equal(3, history.NextTurnNumber);
+    }
 }

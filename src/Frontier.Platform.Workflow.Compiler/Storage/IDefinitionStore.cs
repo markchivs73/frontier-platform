@@ -71,6 +71,20 @@ public interface IDefinitionStore
         throw new NotSupportedException($"{GetType().Name} does not implement {nameof(UnretireVersionAsync)}.");
 
     /// <summary>
+    /// Drops the design conversation of <paramref name="workflowId"/>'s draft (consumer S13.294): deletes every
+    /// design turn but the welcome turn and rewrites the chat-history index to list only that turn. Called by
+    /// <see cref="DefinitionLifecycleService.ApproveAsync"/> before the publish write when
+    /// <see cref="ChatDesignerHistoryOptions.HistoryEnabled"/> is off. Deleting a turn that is already gone is not
+    /// an error.
+    /// </summary>
+    /// <remarks>
+    /// The default implementation throws <see cref="NotSupportedException"/>, as for
+    /// <see cref="SupersedeVersionAsync"/>; it is reached only by a deployment that turns history off.
+    /// </remarks>
+    Task DeleteDesignConversationAsync(string workflowId, CancellationToken ct) =>
+        throw new NotSupportedException($"{GetType().Name} does not implement {nameof(DeleteDesignConversationAsync)}.");
+
+    /// <summary>
     /// Records <paramref name="supersededByVersion"/> as the successor of an older version that has
     /// none yet (GOV-14). A <c>published</c> version becomes <c>superseded</c>; a <c>retired</c> one
     /// stays retired but keeps the successor, so un-retiring it returns it to <c>superseded</c>

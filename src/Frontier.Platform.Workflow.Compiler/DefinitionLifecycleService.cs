@@ -16,12 +16,29 @@ public sealed class DefinitionLifecycleService : IDefinitionLifecycleService
     private readonly IDefinitionCompiler _compiler;
     private readonly IDefinitionContractEmbedder _contracts;
     private readonly PublishGovernanceConfig _publishGovernance;
+    private readonly ChatDesignerHistoryOptions _history;
 
+    /// <summary>Constructs the service keeping design conversations across a publish (the default).</summary>
     public DefinitionLifecycleService(
         IDefinitionStore store,
         IDefinitionCompiler compiler,
         IDefinitionContractEmbedder contracts,
-        PublishGovernanceConfig? publishGovernance = null)
+        PublishGovernanceConfig? publishGovernance)
+        : this(store, compiler, contracts, publishGovernance, null)
+    {
+    }
+
+    /// <summary>
+    /// Constructs the service with the deployment's design-conversation setting (consumer S13.294): with
+    /// <see cref="ChatDesignerHistoryOptions.HistoryEnabled"/> off, approving a publish drops the draft's
+    /// conversation first. Null for either setting means its default.
+    /// </summary>
+    public DefinitionLifecycleService(
+        IDefinitionStore store,
+        IDefinitionCompiler compiler,
+        IDefinitionContractEmbedder contracts,
+        PublishGovernanceConfig? publishGovernance = null,
+        ChatDesignerHistoryOptions? history = null)
     {
         ArgumentNullException.ThrowIfNull(store);
         ArgumentNullException.ThrowIfNull(compiler);
@@ -31,6 +48,7 @@ public sealed class DefinitionLifecycleService : IDefinitionLifecycleService
         _compiler = compiler;
         _contracts = contracts;
         _publishGovernance = publishGovernance ?? new PublishGovernanceConfig();
+        _history = history ?? new ChatDesignerHistoryOptions();
     }
 
     public async Task<DraftHandle> CreateDraftAsync(
@@ -290,6 +308,11 @@ public sealed class DefinitionLifecycleService : IDefinitionLifecycleService
         var pointer = await _store.GetCurrentVersionPointerAsync(proposal.WorkflowId, ct);
         var versionDoc = NewVersion(proposal, approverId, definition, NextVersionNumber(pointer, existingVersions));
 
+        // S13.294: a sector that must not retain design conversations drops this one before the version is
+        // written, so a failed drop publishes nothing. Accepted loss (ADR-PA51): if the publish then fails, the
+        // approval was not written and the conversation is already gone.
+        await DropConversationUnlessKeptAsync(proposal.WorkflowId, ct);
+
         if (!await _store.ApproveAndPublishAsync(proposal, versionDoc, ct))
             throw new InvalidOperationException("Failed to approve proposal — it may have been modified concurrently");
 
@@ -416,6 +439,16 @@ public sealed class DefinitionLifecycleService : IDefinitionLifecycleService
         int highestExisting = existingVersions.Count > 0 ? existingVersions.Max(v => v.DefinitionVersion) : 0;
         int pointerVersion = pointer?.CurrentVersion ?? 0;
         return Math.Max(pointerVersion, highestExisting) + 1;
+    }
+
+    /// <summary>The design-conversation setting this service was built with (S13.294), for the composition root's tests.</summary>
+    internal ChatDesignerHistoryOptions History => _history;
+
+    /// <summary>Drops the draft's design conversation when the deployment does not keep them (consumer S13.294, doc 14 §2).</summary>
+    private async Task DropConversationUnlessKeptAsync(string workflowId, CancellationToken ct)
+    {
+        if (!_history.HistoryEnabled)
+            await _store.DeleteDesignConversationAsync(workflowId, ct);
     }
 
     /// <summary>

@@ -3905,3 +3905,47 @@ so only a third-party store is exposed, and this change does not cover it.
 store fault (Warning when the inner exception is the caller's cancellation), does not rethrow, so no
 compensation is appended, and still sends `ProposalStateChanged` and answers as for a publish. Whether an
 incomplete supersede deserves its own signed record (a new event type) is a question for Mark.
+
+## ADR-PA51 — the design-history kill switch drops the conversation before the publish write
+
+Consumer task S13.294, from its S13.285 review (2026-11-16), accepted in its 2026-11-24 triage. The consumer's
+doc 14 §2 and ADR-CD1 (chat history is persistent and draft-scoped), and its doc 15 §10, give sectors that must
+not retain design conversations a deployment flag, `chatDesigner.historyEnabled`. Neither repository had it.
+
+**What existed.** A `DesignTurnDocument` carries no `publishedVersion` and no `ttl`, nothing stamps turns at
+publish, and no housekeeping TTL is set. Turns live until the draft is deleted, and the draft stays open after
+publish, so every published version's conversation stayed on the draft indefinitely. The enabled half of
+ADR-CD1 (stamp at publish, exemption from a housekeeping TTL) is the consumer's S13.383, not this.
+
+**Decision.**
+1. *One setting.* `ChatDesignerHistoryOptions.HistoryEnabled`, default `true`, bound from the `ChatDesigner`
+   section by `AddFrontierWorkflowCompiler(configuration)` like `CosmosOptions`. No library reads raw
+   configuration, and nothing reads it in an orchestrator body.
+2. *No per-turn TTL.* Doc 14 §9's "draft-lifetime TTL" has no derivable value: drafts carry no TTL, and a Cosmos
+   TTL counts from each item's last write, so it would erode a live draft's conversation from its oldest turn.
+   Deleting the draft already deletes its turns. Bounding abandoned drafts belongs with S13.383's housekeeping TTL.
+3. *Dropped at publish, before the write.* With the setting off, `ApproveAsync` calls
+   `IDefinitionStore.DeleteDesignConversationAsync` as its last step before `ApproveAndPublishAsync`, after
+   re-validation and contract pinning. A failed drop publishes nothing: the approval is refused before its
+   write, and an approver can approve again. The drop itself is not atomic: if it fails part-way, the turns
+   already deleted stay deleted, and the re-approval deletes the rest.
+   **Accepted loss:** if the publish write then fails (a lost race, a transient batch failure), the approval
+   was not written and the conversation is already gone, so the approver no longer sees it beside the diff
+   (consumer doc 15 §10) when approving again. With the Cosmos store's atomic publish the proposal is then still
+   in review; a store keeping the non-atomic default write makes no such promise. Dropping after the write would
+   instead leave a landed publish failing on its privacy step.
+4. *The welcome turn stays, and a concurrent turn is not lost.* Doc 14 §2 says turn 0 is not deletable, so the
+   drop deletes every turn numbered above 0 that it read, then rewrites the chat-history index without exactly
+   those turns. The rewrite is a replace guarded by the index's ETag: a turn appended in between (whose number is
+   at or above the read's next turn number, so it was not deleted) makes the replace fail, and the index is
+   re-read and rewritten keeping it, at most three times before the approval is refused with nothing published.
+   That turn's document and its index entry both survive until the next publish. The next turn number is kept,
+   so a turn id is never reused.
+
+**Surface.** Additive. `DeleteDesignConversationAsync` is a default-implemented `IDefinitionStore` member that
+throws `NotSupportedException`, as `SupersedeVersionAsync` does, so implementers do not break; it is reached only
+by a deployment that turns history off. `DefinitionLifecycleService` gains a constructor taking the options; the
+existing four-argument constructor stays, losing only its default value as the PublicAPI analyzer's
+optional-parameter rule (RS0027) requires. Every existing call still compiles: a four-argument call binds to it
+as before, and a three-argument call now binds to the new five-argument overload with the same behaviour.
+Points 2 and 4 are proposed and wait on Mark.
