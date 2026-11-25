@@ -39,7 +39,22 @@ public sealed class RequiredFieldsPublishTests
 
         Assert.Equal(ValidationOutcome.Fail, report.Outcome);
         Assert.All(report.Findings, f => Assert.Equal("structure.required-fields", f.RuleId));
-        Assert.Equal(["name", "engagement_type"], report.Findings.Select(f => f.FieldPath));
+        // S13.238: a brand-new draft has no description either, which is a Warning beside the two Errors.
+        Assert.Equal(
+            [("name", ValidationSeverity.Error), ("engagement_type", ValidationSeverity.Error), ("description", ValidationSeverity.Warning)],
+            report.Findings.Select(f => (f.FieldPath, f.Severity)));
+    }
+
+    /// <summary>S13.238: a definition whose only finding is a missing description passes with a warning and can be proposed.</summary>
+    [Fact]
+    public async Task ProposePublishAsync_OnlyTheDescriptionMissing_PassesWithWarningsAndIsProposed()
+    {
+        var definition = Definition("Scoping", "advisory-sow");
+        var report = await Validate(definition);
+
+        Assert.Equal(ValidationOutcome.PassWithWarnings, report.Outcome);
+        Assert.Equal("description", Assert.Single(report.Findings).FieldPath);
+        await AssertProposableAsync(definition, report);
     }
 
     [Theory]
@@ -58,6 +73,19 @@ public sealed class RequiredFieldsPublishTests
 
         Assert.Contains("failing validation", ex.Message, StringComparison.Ordinal);
         store.Verify(s => s.PersistValidationReportAsync(It.IsAny<ValidationReportDocument>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>Proposes <paramref name="definition"/> with <paramref name="report"/> and asserts the proposal was created.</summary>
+    private static async Task AssertProposableAsync(WorkflowDefinition definition, ValidationReport report)
+    {
+        var store = new Mock<IDefinitionStore>();
+        store.Setup(s => s.GetDraftAsync(WorkflowId, It.IsAny<CancellationToken>())).ReturnsAsync(Draft(definition));
+        store.Setup(s => s.CreateProposalAsync(It.IsAny<PublishProposalDocument>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((PublishProposalDocument p, CancellationToken _) => p);
+
+        await Service(store).ProposePublishAsync(WorkflowId, DraftRevision, report, "user:mark", CancellationToken.None);
+
+        store.Verify(s => s.CreateProposalAsync(It.IsAny<PublishProposalDocument>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     private static DefinitionLifecycleService Service(Mock<IDefinitionStore> store) =>

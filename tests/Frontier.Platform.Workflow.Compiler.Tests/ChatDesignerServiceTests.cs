@@ -1123,6 +1123,33 @@ public sealed class ChatDesignerServiceTests
             Assert.Null(block);
         }
 
+        /// <summary>S13.238: a malformed tag on a proposal does not block Apply, because the merge never applies a proposal's tags.</summary>
+        [Fact]
+        public void BuildProposalReview_MalformedTag_DoesNotBlock()
+        {
+            var service = WithRules(new Rules.StructureRequiredFieldsRule());
+            var draft = CreateMinimalDraft("wf-test");
+            var json = JsonSerializer.Serialize(draft.Definition with { Name = "n", EngagementType = "e", Description = "d", Tags = ["Bad_Tag"] }, CanonicalProfile.Options);
+
+            var (_, block) = service.BuildProposalReview(draft, json, unknownKeys: null);
+
+            Assert.Null(block);
+        }
+
+        [Theory]
+        [InlineData("structure.required-fields", "tags[0]", ValidationSeverity.Error, false)]
+        [InlineData("structure.required-fields", "tags", ValidationSeverity.Error, false)]
+        [InlineData("structure.required-fields", "name", ValidationSeverity.Error, true)]
+        [InlineData("structure.required-fields", "description", ValidationSeverity.Warning, false)]
+        public void BlocksProposal_EveryErrorButATagFinding(string ruleId, string fieldPath, ValidationSeverity severity, bool expected) =>
+            Assert.Equal(expected, ChatDesignerService.BlocksProposal(new ValidationFinding(ruleId, severity, "m", FieldPath: fieldPath)));
+
+        /// <summary>The review service over <paramref name="rules"/>.</summary>
+        private static ChatDesignerService WithRules(params IDefinitionValidationRule[] rules) =>
+            new(new InMemoryDefinitionStore(), new Mock<IChatClient>().Object, new WorkflowSchemaProvider(new PermissiveExecutableNodeTypeCatalog(), TestContractSet.Instance),
+                new FakeApproverRoleCatalog(), new FakeDesignerToolCatalog(), new FakeAgentRoleCatalog(), new NodeDiffService(), new DefinitionValidator(rules),
+                new FakeDesignerModelProvider(), new FakeInstructionCatalog(), new FakeContextComponentCatalog(), new FakeEntryContractCatalog(), new FakeContractSnapshotCatalog());
+
         [Fact]
         public void BuildProposalReview_ValidProposal_ComputesChangesWithoutBlock()
         {
