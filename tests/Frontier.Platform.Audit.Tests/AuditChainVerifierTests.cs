@@ -128,6 +128,25 @@ public sealed class AuditChainVerifierTests
         Assert.False(AuditChainVerifier.Verify([forgedScope], forgedScope.ExecutionId, "eng-1", Keys(V1)).SignatureValid);
     }
 
+    /// <summary>
+    /// ADR-PA53: a verifier whose contract predates <c>authority</c> reads a new record without it (the canonical
+    /// profile skips undeclared members). Stripping it from the stored bytes reproduces that read, and the recomputed
+    /// signature fails: verifiers adopt the release no later than the workers that write it.
+    /// </summary>
+    [Fact]
+    public void Verify_RecordReadWithoutTheDecisionAuthority_FailsTheSignature()
+    {
+        var unsigned = AuditRecordHasherTests.Sample() with { HumanDecisions = AuditContractSamples.AuditRecordWithDecisionAuthority().HumanDecisions };
+        var record = Sign(unsigned, AuditRecordHasher.ComputeGenesisHash("eng-1"), V1);
+        var stored = JsonNode.Parse(CanonicalProfile.SerializeCanonical(record))!.AsObject();
+        foreach (var decision in stored["human_decisions"]!.AsArray()) decision!.AsObject().Remove("authority");
+
+        var asOlderReaderSeesIt = stored.Deserialize<SignedAuditRecord>(CanonicalProfile.Options)!;
+
+        Assert.All(asOlderReaderSeesIt.HumanDecisions, decision => Assert.Null(decision.Authority));
+        Assert.False(AuditChainVerifier.Verify([asOlderReaderSeesIt], record.ExecutionId, "eng-1", Keys(V1)).SignatureValid);
+    }
+
     [Fact]
     public void Verify_TwoRecordChain_SecondLinksToFirst()
     {

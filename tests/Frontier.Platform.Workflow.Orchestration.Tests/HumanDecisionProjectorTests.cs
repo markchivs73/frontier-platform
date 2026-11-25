@@ -59,6 +59,18 @@ public sealed class HumanDecisionProjectorTests
         Assert.Equal(newer, System.Text.Encoding.UTF8.GetString(Frontier.Platform.Serialization.CanonicalProfile.SerializeCanonical(current)));
     }
 
+    /// <summary>ADR-PA53: the scope kind is consumer-defined, so a kind the platform has never heard of round-trips unchanged.</summary>
+    [Fact]
+    public void RecordedGateEvent_WithAnUnknownScopeKind_RoundTripsUnchanged()
+    {
+        const string payload = """{"gate_id":"human-gate","request_id":"exec-1:human-gate:1","approver_id":"approver-1","kind":"approve","decided_at_utc":"2026-01-01T01:00:00.000Z","authority":{"role_id":"finance-lead","scope":{"kind":"region","id":"emea"}}}""";
+
+        var decision = System.Text.Json.JsonSerializer.Deserialize<HitlDecision>(payload, Frontier.Platform.Serialization.CanonicalProfile.Options)!;
+
+        Assert.Equal("region", decision.Authority!.Scope.Kind);
+        Assert.Equal(payload, System.Text.Encoding.UTF8.GetString(Frontier.Platform.Serialization.CanonicalProfile.SerializeCanonical(decision)));
+    }
+
     [Fact]
     public void Project_MapsEveryDecision()
     {
