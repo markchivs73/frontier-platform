@@ -61,6 +61,7 @@ Frontier.Platform.Serialization.IStartupCheck.Name.get -> string!
 Frontier.Platform.Serialization.Iso8601UtcDateTimeConverter
 Frontier.Platform.Serialization.Iso8601UtcDateTimeConverter.Iso8601UtcDateTimeConverter() -> void
 Frontier.Platform.Serialization.JsonCanonicalizer
+Frontier.Platform.Serialization.LocalEndpoint
 Frontier.Platform.Serialization.RealTimeFetch
 Frontier.Platform.Serialization.RealTimeFetch.<Clone>$() -> Frontier.Platform.Serialization.RealTimeFetch!
 Frontier.Platform.Serialization.RealTimeFetch.Equals(Frontier.Platform.Serialization.RealTimeFetch? other) -> bool
@@ -173,6 +174,7 @@ static Frontier.Platform.Serialization.DynamicTier.operator ==(Frontier.Platform
 static Frontier.Platform.Serialization.JsonCanonicalizer.Canonicalize(System.ReadOnlySpan<byte> utf8Json) -> byte[]!
 static Frontier.Platform.Serialization.JsonCanonicalizer.Canonicalize(System.Text.Json.JsonElement element) -> byte[]!
 static Frontier.Platform.Serialization.JsonCanonicalizer.Hash(System.ReadOnlySpan<byte> utf8Json) -> string!
+static Frontier.Platform.Serialization.LocalEndpoint.IsLoopback(string? endpoint) -> bool
 static Frontier.Platform.Serialization.RealTimeFetch.operator !=(Frontier.Platform.Serialization.RealTimeFetch? left, Frontier.Platform.Serialization.RealTimeFetch? right) -> bool
 static Frontier.Platform.Serialization.RealTimeFetch.operator ==(Frontier.Platform.Serialization.RealTimeFetch? left, Frontier.Platform.Serialization.RealTimeFetch? right) -> bool
 static Frontier.Platform.Serialization.RealTimeTier.operator !=(Frontier.Platform.Serialization.RealTimeTier? left, Frontier.Platform.Serialization.RealTimeTier? right) -> bool

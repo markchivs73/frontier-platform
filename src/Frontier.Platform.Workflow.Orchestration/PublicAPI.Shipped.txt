@@ -200,6 +200,19 @@ Frontier.Platform.Workflow.Orchestration.CascadeEvalRequestPayload.ExecutionId.g
 Frontier.Platform.Workflow.Orchestration.CascadeEvalRequestPayload.ExecutionId.init -> void
 Frontier.Platform.Workflow.Orchestration.ConsolidateAuditActivity
 Frontier.Platform.Workflow.Orchestration.ConsolidateAuditActivity.ConsolidateAuditActivity(Frontier.Platform.Workflow.Orchestration.IAuditConsolidator! consolidator, Frontier.Platform.Audit.IAuditSigner! signer) -> void
+Frontier.Platform.Workflow.Orchestration.DispatcherGenerationSettings
+Frontier.Platform.Workflow.Orchestration.DispatcherGenerationSettings.<Clone>$() -> Frontier.Platform.Workflow.Orchestration.DispatcherGenerationSettings!
+Frontier.Platform.Workflow.Orchestration.DispatcherGenerationSettings.ContractBudgets.get -> Frontier.Platform.Abstractions.ContractBudgets?
+Frontier.Platform.Workflow.Orchestration.DispatcherGenerationSettings.ContractBudgets.init -> void
+Frontier.Platform.Workflow.Orchestration.DispatcherGenerationSettings.ContractBudgetsVersion.get -> int?
+Frontier.Platform.Workflow.Orchestration.DispatcherGenerationSettings.ContractBudgetsVersion.init -> void
+Frontier.Platform.Workflow.Orchestration.DispatcherGenerationSettings.Deconstruct(out Frontier.Platform.Abstractions.ContractBudgets? ContractBudgets, out int? ContractBudgetsVersion, out int? DispatcherRolloverThreshold, out int? DispatcherSettingsVersion) -> void
+Frontier.Platform.Workflow.Orchestration.DispatcherGenerationSettings.DispatcherGenerationSettings(Frontier.Platform.Abstractions.ContractBudgets? ContractBudgets = null, int? ContractBudgetsVersion = null, int? DispatcherRolloverThreshold = null, int? DispatcherSettingsVersion = null) -> void
+Frontier.Platform.Workflow.Orchestration.DispatcherGenerationSettings.DispatcherRolloverThreshold.get -> int?
+Frontier.Platform.Workflow.Orchestration.DispatcherGenerationSettings.DispatcherRolloverThreshold.init -> void
+Frontier.Platform.Workflow.Orchestration.DispatcherGenerationSettings.DispatcherSettingsVersion.get -> int?
+Frontier.Platform.Workflow.Orchestration.DispatcherGenerationSettings.DispatcherSettingsVersion.init -> void
+Frontier.Platform.Workflow.Orchestration.DispatcherGenerationSettings.Equals(Frontier.Platform.Workflow.Orchestration.DispatcherGenerationSettings? other) -> bool
 Frontier.Platform.Workflow.Orchestration.DispatcherOrchestrator
 Frontier.Platform.Workflow.Orchestration.DispatcherOrchestrator.DispatcherOrchestrator(Frontier.Platform.Resilience.IResiliencePolicyProvider! policyProvider) -> void
 Frontier.Platform.Workflow.Orchestration.EscalateApprovalActivity
@@ -210,10 +223,14 @@ Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput
 Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.<Clone>$() -> Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput!
 Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.ContractBudgets.get -> Frontier.Platform.Abstractions.ContractBudgets?
 Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.ContractBudgets.init -> void
+Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.ContractBudgetsVersion.get -> int?
+Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.ContractBudgetsVersion.init -> void
 Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.Definition.get -> Frontier.Platform.Workflow.Model.WorkflowDefinition!
 Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.Definition.init -> void
 Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.DispatcherRolloverThreshold.get -> int?
 Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.DispatcherRolloverThreshold.init -> void
+Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.DispatcherSettingsVersion.get -> int?
+Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.DispatcherSettingsVersion.init -> void
 Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.DynamicContextEpoch.get -> int?
 Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.DynamicContextEpoch.init -> void
 Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.DynamicContextHash.get -> string?
@@ -245,6 +262,8 @@ Frontier.Platform.Workflow.Orchestration.IAgentTaskActivityPipeline
 Frontier.Platform.Workflow.Orchestration.IAgentTaskActivityPipeline.RunAsync(Frontier.Platform.Workflow.Orchestration.AgentTaskActivityInput! input, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Orchestration.AgentTaskActivityResult!>!
 Frontier.Platform.Workflow.Orchestration.IAuditConsolidator
 Frontier.Platform.Workflow.Orchestration.IAuditConsolidator.ConsolidateAsync(Frontier.Platform.Workflow.Model.ConsolidateAuditInput! input, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Audit.AuditRecord!>!
+Frontier.Platform.Workflow.Orchestration.IDispatcherGenerationSettingsResolver
+Frontier.Platform.Workflow.Orchestration.IDispatcherGenerationSettingsResolver.ResolveAsync(string! engagementId, string! workflowId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Orchestration.DispatcherGenerationSettings!>!
 Frontier.Platform.Workflow.Orchestration.IDispatcherVersionResolver
 Frontier.Platform.Workflow.Orchestration.IDispatcherVersionResolver.ResolveAsync(string! engagementId, string! workflowId, int currentVersion, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Model.WorkflowDefinition?>!
 Frontier.Platform.Workflow.Orchestration.IDynamicContextContentProducer
@@ -378,6 +397,7 @@ Frontier.Platform.Workflow.Orchestration.RequestApprovalActivity
 Frontier.Platform.Workflow.Orchestration.RequestApprovalActivity.RequestApprovalActivity(Frontier.Platform.Hitl.IApprovalStore! store) -> void
 Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionActivity
 Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionActivity.ResolveDispatcherVersionActivity(Frontier.Platform.Workflow.Orchestration.IDispatcherVersionResolver! resolver) -> void
+Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionActivity.ResolveDispatcherVersionActivity(Frontier.Platform.Workflow.Orchestration.IDispatcherVersionResolver! resolver, Frontier.Platform.Workflow.Orchestration.IDispatcherGenerationSettingsResolver? settings) -> void
 Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionRequest
 Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionRequest.<Clone>$() -> Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionRequest!
 Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionRequest.CurrentDefinitionVersion.get -> int
@@ -390,8 +410,16 @@ Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionRequest.Workflo
 Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionRequest.WorkflowId.init -> void
 Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult
 Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult.<Clone>$() -> Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult!
+Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult.ContractBudgets.get -> Frontier.Platform.Abstractions.ContractBudgets?
+Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult.ContractBudgets.init -> void
+Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult.ContractBudgetsVersion.get -> int?
+Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult.ContractBudgetsVersion.init -> void
 Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult.Definition.get -> Frontier.Platform.Workflow.Model.WorkflowDefinition?
 Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult.Definition.init -> void
+Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult.DispatcherRolloverThreshold.get -> int?
+Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult.DispatcherRolloverThreshold.init -> void
+Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult.DispatcherSettingsVersion.get -> int?
+Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult.DispatcherSettingsVersion.init -> void
 Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult.Equals(Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult? other) -> bool
 Frontier.Platform.Workflow.Orchestration.ResolveDispatcherVersionResult.ResolveDispatcherVersionResult() -> void
 Frontier.Platform.Workflow.Orchestration.SnapshotActivityResponse
@@ -440,6 +468,9 @@ override Frontier.Platform.Workflow.Orchestration.CascadeEvalRequestPayload.Equa
 override Frontier.Platform.Workflow.Orchestration.CascadeEvalRequestPayload.GetHashCode() -> int
 override Frontier.Platform.Workflow.Orchestration.CascadeEvalRequestPayload.ToString() -> string!
 override Frontier.Platform.Workflow.Orchestration.ConsolidateAuditActivity.RunAsync(Microsoft.DurableTask.TaskActivityContext! context, Frontier.Platform.Workflow.Model.ConsolidateAuditInput! input) -> System.Threading.Tasks.Task<Frontier.Platform.Audit.SignedAuditRecord!>!
+override Frontier.Platform.Workflow.Orchestration.DispatcherGenerationSettings.Equals(object? obj) -> bool
+override Frontier.Platform.Workflow.Orchestration.DispatcherGenerationSettings.GetHashCode() -> int
+override Frontier.Platform.Workflow.Orchestration.DispatcherGenerationSettings.ToString() -> string!
 override Frontier.Platform.Workflow.Orchestration.DispatcherOrchestrator.RunAsync(Microsoft.DurableTask.TaskOrchestrationContext! context, Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput! input) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult!>!
 override Frontier.Platform.Workflow.Orchestration.EscalateApprovalActivity.RunAsync(Microsoft.DurableTask.TaskActivityContext! context, Frontier.Platform.Hitl.ApprovalRequest! input) -> System.Threading.Tasks.Task<Frontier.Platform.Hitl.ApprovalRequest!>!
 override Frontier.Platform.Workflow.Orchestration.GraphOrchestrator.RunAsync(Microsoft.DurableTask.TaskOrchestrationContext! context, Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput! input) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult!>!
@@ -505,6 +536,8 @@ static Frontier.Platform.Workflow.Orchestration.CascadeActivityResponse.operator
 static Frontier.Platform.Workflow.Orchestration.CascadeActivityResponse.operator ==(Frontier.Platform.Workflow.Orchestration.CascadeActivityResponse? left, Frontier.Platform.Workflow.Orchestration.CascadeActivityResponse? right) -> bool
 static Frontier.Platform.Workflow.Orchestration.CascadeEvalRequestPayload.operator !=(Frontier.Platform.Workflow.Orchestration.CascadeEvalRequestPayload? left, Frontier.Platform.Workflow.Orchestration.CascadeEvalRequestPayload? right) -> bool
 static Frontier.Platform.Workflow.Orchestration.CascadeEvalRequestPayload.operator ==(Frontier.Platform.Workflow.Orchestration.CascadeEvalRequestPayload? left, Frontier.Platform.Workflow.Orchestration.CascadeEvalRequestPayload? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.DispatcherGenerationSettings.operator !=(Frontier.Platform.Workflow.Orchestration.DispatcherGenerationSettings? left, Frontier.Platform.Workflow.Orchestration.DispatcherGenerationSettings? right) -> bool
+static Frontier.Platform.Workflow.Orchestration.DispatcherGenerationSettings.operator ==(Frontier.Platform.Workflow.Orchestration.DispatcherGenerationSettings? left, Frontier.Platform.Workflow.Orchestration.DispatcherGenerationSettings? right) -> bool
 static Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.operator !=(Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput? left, Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput? right) -> bool
 static Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput.operator ==(Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput? left, Frontier.Platform.Workflow.Orchestration.GraphOrchestratorInput? right) -> bool
 static Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult.operator !=(Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult? left, Frontier.Platform.Workflow.Orchestration.GraphOrchestratorResult? right) -> bool

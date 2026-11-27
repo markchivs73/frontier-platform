@@ -44,6 +44,10 @@ Frontier.Platform.Workflow.Compiler.ApproverRoleDescriptor.Responsibilities.get 
 Frontier.Platform.Workflow.Compiler.ApproverRoleDescriptor.Responsibilities.init -> void
 Frontier.Platform.Workflow.Compiler.ApproverRoleDescriptor.RoleId.get -> string!
 Frontier.Platform.Workflow.Compiler.ApproverRoleDescriptor.RoleId.init -> void
+Frontier.Platform.Workflow.Compiler.ChatDesignerHistoryOptions
+Frontier.Platform.Workflow.Compiler.ChatDesignerHistoryOptions.ChatDesignerHistoryOptions() -> void
+Frontier.Platform.Workflow.Compiler.ChatDesignerHistoryOptions.HistoryEnabled.get -> bool
+Frontier.Platform.Workflow.Compiler.ChatDesignerHistoryOptions.HistoryEnabled.init -> void
 Frontier.Platform.Workflow.Compiler.ChatHistoryData
 Frontier.Platform.Workflow.Compiler.ChatHistoryData.<Clone>$() -> Frontier.Platform.Workflow.Compiler.ChatHistoryData!
 Frontier.Platform.Workflow.Compiler.ChatHistoryData.ChatHistoryData() -> void
@@ -68,7 +72,8 @@ Frontier.Platform.Workflow.Compiler.DefinitionLifecycleService
 Frontier.Platform.Workflow.Compiler.DefinitionLifecycleService.ApplyAgentMergeAsync(string! workflowId, System.Collections.Generic.IReadOnlyList<string!>! approvedChangeIds, string! expectedRevision, string! userId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.MergeOutcome!>!
 Frontier.Platform.Workflow.Compiler.DefinitionLifecycleService.ApproveAsync(string! proposalId, string! approverId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.PublishedVersion!>!
 Frontier.Platform.Workflow.Compiler.DefinitionLifecycleService.CreateDraftAsync(string! workflowId, int? fromVersion, string! userId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.DraftHandle!>!
-Frontier.Platform.Workflow.Compiler.DefinitionLifecycleService.DefinitionLifecycleService(Frontier.Platform.Workflow.Compiler.Storage.IDefinitionStore! store, Frontier.Platform.Workflow.Compiler.IDefinitionCompiler! compiler, Frontier.Platform.Workflow.Compiler.IDefinitionContractEmbedder! contracts, Frontier.Platform.Workflow.Compiler.PublishGovernanceConfig? publishGovernance = null) -> void
+Frontier.Platform.Workflow.Compiler.DefinitionLifecycleService.DefinitionLifecycleService(Frontier.Platform.Workflow.Compiler.Storage.IDefinitionStore! store, Frontier.Platform.Workflow.Compiler.IDefinitionCompiler! compiler, Frontier.Platform.Workflow.Compiler.IDefinitionContractEmbedder! contracts, Frontier.Platform.Workflow.Compiler.PublishGovernanceConfig? publishGovernance = null, Frontier.Platform.Workflow.Compiler.ChatDesignerHistoryOptions? history = null) -> void
+Frontier.Platform.Workflow.Compiler.DefinitionLifecycleService.DefinitionLifecycleService(Frontier.Platform.Workflow.Compiler.Storage.IDefinitionStore! store, Frontier.Platform.Workflow.Compiler.IDefinitionCompiler! compiler, Frontier.Platform.Workflow.Compiler.IDefinitionContractEmbedder! contracts, Frontier.Platform.Workflow.Compiler.PublishGovernanceConfig? publishGovernance) -> void
 Frontier.Platform.Workflow.Compiler.DefinitionLifecycleService.DeleteDraftAsync(string! workflowId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.DeleteDraftResult!>!
 Frontier.Platform.Workflow.Compiler.DefinitionLifecycleService.GetHistoryAsync(string! workflowId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.VersionHistory!>!
 Frontier.Platform.Workflow.Compiler.DefinitionLifecycleService.ProposePublishAsync(string! workflowId, string! draftRevision, Frontier.Platform.Workflow.Compiler.ValidationReport! report, string! userId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.PublishProposal!>!
@@ -249,7 +254,7 @@ Frontier.Platform.Workflow.Compiler.ITestRunExecutor.StartAsync(string! engageme
 Frontier.Platform.Workflow.Compiler.ITestRunInputSchemaProvider
 Frontier.Platform.Workflow.Compiler.ITestRunInputSchemaProvider.GetInputSchema(Frontier.Platform.Workflow.Model.WorkflowDefinition! definition) -> Frontier.Platform.Workflow.Compiler.TestRunInputSchema?
 Frontier.Platform.Workflow.Compiler.ITestRunService
-Frontier.Platform.Workflow.Compiler.ITestRunService.DecideGateAsync(string! testRunId, string! gateId, Frontier.Platform.Abstractions.DecisionKind! decision, string? note, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.TestRunResult?>!
+Frontier.Platform.Workflow.Compiler.ITestRunService.DecideGateAsync(string! testRunId, string! gateId, string! approverId, Frontier.Platform.Abstractions.DecisionKind! decision, string? note, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.TestRunResult?>!
 Frontier.Platform.Workflow.Compiler.ITestRunService.GetResultAsync(string! testRunId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.TestRunResult?>!
 Frontier.Platform.Workflow.Compiler.ITestRunService.ReconcileAsync(string! testRunId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.TestRunResult?>!
 Frontier.Platform.Workflow.Compiler.ITestRunService.StartAsync(string! workflowId, Frontier.Platform.Workflow.Compiler.TestRunRequest! request, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.TestRunHandle!>!
@@ -388,6 +393,13 @@ Frontier.Platform.Workflow.Compiler.PublishRevalidationException.PublishRevalida
 Frontier.Platform.Workflow.Compiler.PublishRevalidationException.PublishRevalidationException(string! message) -> void
 Frontier.Platform.Workflow.Compiler.PublishRevalidationException.PublishRevalidationException(string! message, System.Exception! innerException) -> void
 Frontier.Platform.Workflow.Compiler.PublishRevalidationException.PublishRevalidationException(string! proposalId, System.Collections.Generic.IReadOnlyList<Frontier.Platform.Workflow.Compiler.ValidationFinding!>! findings) -> void
+Frontier.Platform.Workflow.Compiler.PublishedButNotSupersededException
+Frontier.Platform.Workflow.Compiler.PublishedButNotSupersededException.Published.get -> Frontier.Platform.Workflow.Compiler.PublishedVersion?
+Frontier.Platform.Workflow.Compiler.PublishedButNotSupersededException.PublishedButNotSupersededException() -> void
+Frontier.Platform.Workflow.Compiler.PublishedButNotSupersededException.PublishedButNotSupersededException(Frontier.Platform.Workflow.Compiler.PublishedVersion! published, System.Collections.Generic.IReadOnlyList<int>! unsupersededVersions, System.Exception! innerException) -> void
+Frontier.Platform.Workflow.Compiler.PublishedButNotSupersededException.PublishedButNotSupersededException(string! message) -> void
+Frontier.Platform.Workflow.Compiler.PublishedButNotSupersededException.PublishedButNotSupersededException(string! message, System.Exception! innerException) -> void
+Frontier.Platform.Workflow.Compiler.PublishedButNotSupersededException.UnsupersededVersions.get -> System.Collections.Generic.IReadOnlyList<int>!
 Frontier.Platform.Workflow.Compiler.PublishedVersion
 Frontier.Platform.Workflow.Compiler.PublishedVersion.<Clone>$() -> Frontier.Platform.Workflow.Compiler.PublishedVersion!
 Frontier.Platform.Workflow.Compiler.PublishedVersion.ApprovedAtUtc.get -> System.DateTime
@@ -756,6 +768,7 @@ Frontier.Platform.Workflow.Compiler.Storage.CosmosDefinitionStore.CosmosDefiniti
 Frontier.Platform.Workflow.Compiler.Storage.CosmosDefinitionStore.CreateDraftAsync(string! workflowId, int baseVersion, Frontier.Platform.Workflow.Compiler.Storage.DefinitionDraftDocument! draft, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.Storage.DefinitionDraftDocument!>!
 Frontier.Platform.Workflow.Compiler.Storage.CosmosDefinitionStore.CreateOrUpdateChatHistoryAsync(Frontier.Platform.Workflow.Compiler.Storage.ChatHistoryDocument! history, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.Storage.ChatHistoryDocument!>!
 Frontier.Platform.Workflow.Compiler.Storage.CosmosDefinitionStore.CreateProposalAsync(Frontier.Platform.Workflow.Compiler.Storage.PublishProposalDocument! proposal, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.Storage.PublishProposalDocument!>!
+Frontier.Platform.Workflow.Compiler.Storage.CosmosDefinitionStore.DeleteDesignConversationAsync(string! workflowId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task!
 Frontier.Platform.Workflow.Compiler.Storage.CosmosDefinitionStore.DeleteDraftAsync(string! workflowId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task!
 Frontier.Platform.Workflow.Compiler.Storage.CosmosDefinitionStore.GetActiveProposalAsync(string! workflowId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.Storage.PublishProposalDocument?>!
 Frontier.Platform.Workflow.Compiler.Storage.CosmosDefinitionStore.GetAllDesignTurnsAsync(string! workflowId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Frontier.Platform.Workflow.Compiler.Storage.DesignTurnDocument!>!>!
@@ -897,6 +910,7 @@ Frontier.Platform.Workflow.Compiler.Storage.IDefinitionStore.ApproveProposalAsyn
 Frontier.Platform.Workflow.Compiler.Storage.IDefinitionStore.CreateDraftAsync(string! workflowId, int baseVersion, Frontier.Platform.Workflow.Compiler.Storage.DefinitionDraftDocument! draft, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.Storage.DefinitionDraftDocument!>!
 Frontier.Platform.Workflow.Compiler.Storage.IDefinitionStore.CreateOrUpdateChatHistoryAsync(Frontier.Platform.Workflow.Compiler.Storage.ChatHistoryDocument! history, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.Storage.ChatHistoryDocument!>!
 Frontier.Platform.Workflow.Compiler.Storage.IDefinitionStore.CreateProposalAsync(Frontier.Platform.Workflow.Compiler.Storage.PublishProposalDocument! proposal, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.Storage.PublishProposalDocument!>!
+Frontier.Platform.Workflow.Compiler.Storage.IDefinitionStore.DeleteDesignConversationAsync(string! workflowId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task!
 Frontier.Platform.Workflow.Compiler.Storage.IDefinitionStore.DeleteDraftAsync(string! workflowId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task!
 Frontier.Platform.Workflow.Compiler.Storage.IDefinitionStore.GetActiveProposalAsync(string! workflowId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.Storage.PublishProposalDocument?>!
 Frontier.Platform.Workflow.Compiler.Storage.IDefinitionStore.GetAllDesignTurnsAsync(string! workflowId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Frontier.Platform.Workflow.Compiler.Storage.DesignTurnDocument!>!>!
@@ -1245,7 +1259,7 @@ Frontier.Platform.Workflow.Compiler.TestRunResult.TestRunResult() -> void
 Frontier.Platform.Workflow.Compiler.TestRunResult.ValidatorFindings.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Workflow.Compiler.ValidationFinding!>!
 Frontier.Platform.Workflow.Compiler.TestRunResult.ValidatorFindings.init -> void
 Frontier.Platform.Workflow.Compiler.TestRunService
-Frontier.Platform.Workflow.Compiler.TestRunService.DecideGateAsync(string! testRunId, string! gateId, Frontier.Platform.Abstractions.DecisionKind! decision, string? note, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.TestRunResult?>!
+Frontier.Platform.Workflow.Compiler.TestRunService.DecideGateAsync(string! testRunId, string! gateId, string! approverId, Frontier.Platform.Abstractions.DecisionKind! decision, string? note, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.TestRunResult?>!
 Frontier.Platform.Workflow.Compiler.TestRunService.GetResultAsync(string! testRunId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.TestRunResult?>!
 Frontier.Platform.Workflow.Compiler.TestRunService.ReconcileAsync(string! testRunId, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.TestRunResult?>!
 Frontier.Platform.Workflow.Compiler.TestRunService.StartAsync(string! workflowId, Frontier.Platform.Workflow.Compiler.TestRunRequest! request, System.Threading.CancellationToken ct) -> System.Threading.Tasks.Task<Frontier.Platform.Workflow.Compiler.TestRunHandle!>!

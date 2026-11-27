@@ -73,7 +73,23 @@ Frontier.Platform.Abstractions.ContractViolationException.ContractViolationExcep
 Frontier.Platform.Abstractions.ContractViolationException.ContractViolationException(string! message) -> void
 Frontier.Platform.Abstractions.ContractViolationException.ContractViolationException(string! message, System.Exception! innerException) -> void
 Frontier.Platform.Abstractions.ContractViolationException.Violations.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Frontier.Platform.Abstractions.DecisionAuthority
+Frontier.Platform.Abstractions.DecisionAuthority.<Clone>$() -> Frontier.Platform.Abstractions.DecisionAuthority!
+Frontier.Platform.Abstractions.DecisionAuthority.DecisionAuthority() -> void
+Frontier.Platform.Abstractions.DecisionAuthority.Equals(Frontier.Platform.Abstractions.DecisionAuthority? other) -> bool
+Frontier.Platform.Abstractions.DecisionAuthority.RoleId.get -> string!
+Frontier.Platform.Abstractions.DecisionAuthority.RoleId.init -> void
+Frontier.Platform.Abstractions.DecisionAuthority.Scope.get -> Frontier.Platform.Abstractions.DecisionScope!
+Frontier.Platform.Abstractions.DecisionAuthority.Scope.init -> void
 Frontier.Platform.Abstractions.DecisionKind
+Frontier.Platform.Abstractions.DecisionScope
+Frontier.Platform.Abstractions.DecisionScope.<Clone>$() -> Frontier.Platform.Abstractions.DecisionScope!
+Frontier.Platform.Abstractions.DecisionScope.DecisionScope() -> void
+Frontier.Platform.Abstractions.DecisionScope.Equals(Frontier.Platform.Abstractions.DecisionScope? other) -> bool
+Frontier.Platform.Abstractions.DecisionScope.Id.get -> string?
+Frontier.Platform.Abstractions.DecisionScope.Id.init -> void
+Frontier.Platform.Abstractions.DecisionScope.Kind.get -> string!
+Frontier.Platform.Abstractions.DecisionScope.Kind.init -> void
 Frontier.Platform.Abstractions.DynamicContextRefreshRequired
 Frontier.Platform.Abstractions.DynamicContextRefreshRequired.<Clone>$() -> Frontier.Platform.Abstractions.DynamicContextRefreshRequired!
 Frontier.Platform.Abstractions.DynamicContextRefreshRequired.ChangedFields.get -> System.Collections.Generic.IReadOnlyList<string!>!
@@ -109,6 +125,8 @@ Frontier.Platform.Abstractions.HitlDecision
 Frontier.Platform.Abstractions.HitlDecision.<Clone>$() -> Frontier.Platform.Abstractions.HitlDecision!
 Frontier.Platform.Abstractions.HitlDecision.ApproverId.get -> string!
 Frontier.Platform.Abstractions.HitlDecision.ApproverId.init -> void
+Frontier.Platform.Abstractions.HitlDecision.Authority.get -> Frontier.Platform.Abstractions.DecisionAuthority?
+Frontier.Platform.Abstractions.HitlDecision.Authority.init -> void
 Frontier.Platform.Abstractions.HitlDecision.DecidedAtUtc.get -> System.DateTime
 Frontier.Platform.Abstractions.HitlDecision.DecidedAtUtc.init -> void
 Frontier.Platform.Abstractions.HitlDecision.Equals(Frontier.Platform.Abstractions.HitlDecision? other) -> bool
@@ -187,6 +205,12 @@ override Frontier.Platform.Abstractions.ContractRule.ToString() -> string!
 override Frontier.Platform.Abstractions.ContractSnapshot.Equals(object? obj) -> bool
 override Frontier.Platform.Abstractions.ContractSnapshot.GetHashCode() -> int
 override Frontier.Platform.Abstractions.ContractSnapshot.ToString() -> string!
+override Frontier.Platform.Abstractions.DecisionAuthority.Equals(object? obj) -> bool
+override Frontier.Platform.Abstractions.DecisionAuthority.GetHashCode() -> int
+override Frontier.Platform.Abstractions.DecisionAuthority.ToString() -> string!
+override Frontier.Platform.Abstractions.DecisionScope.Equals(object? obj) -> bool
+override Frontier.Platform.Abstractions.DecisionScope.GetHashCode() -> int
+override Frontier.Platform.Abstractions.DecisionScope.ToString() -> string!
 override Frontier.Platform.Abstractions.DynamicContextRefreshRequired.Equals(object? obj) -> bool
 override Frontier.Platform.Abstractions.DynamicContextRefreshRequired.GetHashCode() -> int
 override Frontier.Platform.Abstractions.DynamicContextRefreshRequired.ToString() -> string!
@@ -215,6 +239,10 @@ static Frontier.Platform.Abstractions.ContractRule.operator !=(Frontier.Platform
 static Frontier.Platform.Abstractions.ContractRule.operator ==(Frontier.Platform.Abstractions.ContractRule? left, Frontier.Platform.Abstractions.ContractRule? right) -> bool
 static Frontier.Platform.Abstractions.ContractSnapshot.operator !=(Frontier.Platform.Abstractions.ContractSnapshot? left, Frontier.Platform.Abstractions.ContractSnapshot? right) -> bool
 static Frontier.Platform.Abstractions.ContractSnapshot.operator ==(Frontier.Platform.Abstractions.ContractSnapshot? left, Frontier.Platform.Abstractions.ContractSnapshot? right) -> bool
+static Frontier.Platform.Abstractions.DecisionAuthority.operator !=(Frontier.Platform.Abstractions.DecisionAuthority? left, Frontier.Platform.Abstractions.DecisionAuthority? right) -> bool
+static Frontier.Platform.Abstractions.DecisionAuthority.operator ==(Frontier.Platform.Abstractions.DecisionAuthority? left, Frontier.Platform.Abstractions.DecisionAuthority? right) -> bool
+static Frontier.Platform.Abstractions.DecisionScope.operator !=(Frontier.Platform.Abstractions.DecisionScope? left, Frontier.Platform.Abstractions.DecisionScope? right) -> bool
+static Frontier.Platform.Abstractions.DecisionScope.operator ==(Frontier.Platform.Abstractions.DecisionScope? left, Frontier.Platform.Abstractions.DecisionScope? right) -> bool
 static Frontier.Platform.Abstractions.DynamicContextRefreshRequired.operator !=(Frontier.Platform.Abstractions.DynamicContextRefreshRequired? left, Frontier.Platform.Abstractions.DynamicContextRefreshRequired? right) -> bool
 static Frontier.Platform.Abstractions.DynamicContextRefreshRequired.operator ==(Frontier.Platform.Abstractions.DynamicContextRefreshRequired? left, Frontier.Platform.Abstractions.DynamicContextRefreshRequired? right) -> bool
 static Frontier.Platform.Abstractions.EngagementId.implicit operator Frontier.Platform.Abstractions.EngagementId!(string! value) -> Frontier.Platform.Abstractions.EngagementId!
