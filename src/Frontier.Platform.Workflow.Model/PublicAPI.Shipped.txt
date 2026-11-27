@@ -377,6 +377,8 @@ Frontier.Platform.Workflow.Model.WorkflowDefinition.DefinitionHash.get -> string
 Frontier.Platform.Workflow.Model.WorkflowDefinition.DefinitionHash.init -> void
 Frontier.Platform.Workflow.Model.WorkflowDefinition.DefinitionVersion.get -> int
 Frontier.Platform.Workflow.Model.WorkflowDefinition.DefinitionVersion.init -> void
+Frontier.Platform.Workflow.Model.WorkflowDefinition.Description.get -> string?
+Frontier.Platform.Workflow.Model.WorkflowDefinition.Description.init -> void
 Frontier.Platform.Workflow.Model.WorkflowDefinition.Edges.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Workflow.Model.WorkflowEdge!>!
 Frontier.Platform.Workflow.Model.WorkflowDefinition.Edges.init -> void
 Frontier.Platform.Workflow.Model.WorkflowDefinition.EngagementType.get -> string!
@@ -390,6 +392,8 @@ Frontier.Platform.Workflow.Model.WorkflowDefinition.Nodes.get -> System.Collecti
 Frontier.Platform.Workflow.Model.WorkflowDefinition.Nodes.init -> void
 Frontier.Platform.Workflow.Model.WorkflowDefinition.SchemaVersion.get -> string!
 Frontier.Platform.Workflow.Model.WorkflowDefinition.SchemaVersion.init -> void
+Frontier.Platform.Workflow.Model.WorkflowDefinition.Tags.get -> System.Collections.Generic.IReadOnlyList<string!>?
+Frontier.Platform.Workflow.Model.WorkflowDefinition.Tags.init -> void
 Frontier.Platform.Workflow.Model.WorkflowDefinition.Validate() -> void
 Frontier.Platform.Workflow.Model.WorkflowDefinition.WorkflowDefinition() -> void
 Frontier.Platform.Workflow.Model.WorkflowDefinition.WorkflowId.get -> string!

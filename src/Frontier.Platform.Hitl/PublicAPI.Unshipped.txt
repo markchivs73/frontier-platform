@@ -1,2 +1,1 @@
 #nullable enable
-Frontier.Platform.Hitl.IApprovalQueryService.GetDecidedByAsync(string! approverId, System.DateTime sinceUtc, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Frontier.Platform.Hitl.ApprovalRequest!>!>!

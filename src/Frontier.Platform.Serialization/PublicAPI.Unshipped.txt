@@ -1,2 +1,0 @@
-Frontier.Platform.Serialization.LocalEndpoint
-static Frontier.Platform.Serialization.LocalEndpoint.IsLoopback(string? endpoint) -> bool

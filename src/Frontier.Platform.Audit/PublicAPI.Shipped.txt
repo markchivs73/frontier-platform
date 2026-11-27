@@ -58,6 +58,19 @@ Frontier.Platform.Audit.AuditChainFork.Kind.init -> void
 Frontier.Platform.Audit.AuditChainFork.PreviousRecordHash.get -> string!
 Frontier.Platform.Audit.AuditChainFork.PreviousRecordHash.init -> void
 Frontier.Platform.Audit.AuditChainForkKind
+Frontier.Platform.Audit.AuditChainHeadMismatch
+Frontier.Platform.Audit.AuditChainHeadMismatch.<Clone>$() -> Frontier.Platform.Audit.AuditChainHeadMismatch!
+Frontier.Platform.Audit.AuditChainHeadMismatch.AuditChainHeadMismatch() -> void
+Frontier.Platform.Audit.AuditChainHeadMismatch.Equals(Frontier.Platform.Audit.AuditChainHeadMismatch? other) -> bool
+Frontier.Platform.Audit.AuditChainHeadMismatch.HeadRecordHash.get -> string!
+Frontier.Platform.Audit.AuditChainHeadMismatch.HeadRecordHash.init -> void
+Frontier.Platform.Audit.AuditChainHeadMismatch.HeadSequence.get -> long
+Frontier.Platform.Audit.AuditChainHeadMismatch.HeadSequence.init -> void
+Frontier.Platform.Audit.AuditChainHeadMismatch.WalkedCount.get -> int
+Frontier.Platform.Audit.AuditChainHeadMismatch.WalkedCount.init -> void
+Frontier.Platform.Audit.AuditChainHeadMismatch.WalkedRecordHash.get -> string?
+Frontier.Platform.Audit.AuditChainHeadMismatch.WalkedRecordHash.init -> void
+Frontier.Platform.Audit.AuditChainVerdict
 Frontier.Platform.Audit.AuditQuery
 Frontier.Platform.Audit.AuditQuery.<Clone>$() -> Frontier.Platform.Audit.AuditQuery!
 Frontier.Platform.Audit.AuditQuery.AuditQuery() -> void
@@ -116,6 +129,8 @@ Frontier.Platform.Audit.AuditRecord.SchemaVersion.get -> string!
 Frontier.Platform.Audit.AuditRecord.SchemaVersion.init -> void
 Frontier.Platform.Audit.AuditRecord.StartedAtUtc.get -> System.DateTime
 Frontier.Platform.Audit.AuditRecord.StartedAtUtc.init -> void
+Frontier.Platform.Audit.AuditRecord.Tenant.get -> string?
+Frontier.Platform.Audit.AuditRecord.Tenant.init -> void
 Frontier.Platform.Audit.AuditRecord.Termination.get -> Frontier.Platform.Audit.TerminationRecord?
 Frontier.Platform.Audit.AuditRecord.Termination.init -> void
 Frontier.Platform.Audit.AuditRecord.Validate() -> void
@@ -210,6 +225,10 @@ Frontier.Platform.Audit.AuditTelemetryRecord.RetryCount.get -> int
 Frontier.Platform.Audit.AuditTelemetryRecord.RetryCount.init -> void
 Frontier.Platform.Audit.AuditTelemetryRecord.ToolCalls.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.ToolCall!>!
 Frontier.Platform.Audit.AuditTelemetryRecord.ToolCalls.init -> void
+Frontier.Platform.Audit.AuditTenantOptions
+Frontier.Platform.Audit.AuditTenantOptions.AuditTenantOptions() -> void
+Frontier.Platform.Audit.AuditTenantOptions.Tenant.get -> string?
+Frontier.Platform.Audit.AuditTenantOptions.Tenant.init -> void
 Frontier.Platform.Audit.CacheMetrics
 Frontier.Platform.Audit.CacheMetrics.<Clone>$() -> Frontier.Platform.Audit.CacheMetrics!
 Frontier.Platform.Audit.CacheMetrics.Baseline.get -> Frontier.Platform.Audit.CacheTierMetrics!
@@ -384,6 +403,8 @@ Frontier.Platform.Audit.HumanDecisionRecord
 Frontier.Platform.Audit.HumanDecisionRecord.<Clone>$() -> Frontier.Platform.Audit.HumanDecisionRecord!
 Frontier.Platform.Audit.HumanDecisionRecord.ApproverId.get -> string!
 Frontier.Platform.Audit.HumanDecisionRecord.ApproverId.init -> void
+Frontier.Platform.Audit.HumanDecisionRecord.Authority.get -> Frontier.Platform.Abstractions.DecisionAuthority?
+Frontier.Platform.Audit.HumanDecisionRecord.Authority.init -> void
 Frontier.Platform.Audit.HumanDecisionRecord.DecidedAtUtc.get -> System.DateTime
 Frontier.Platform.Audit.HumanDecisionRecord.DecidedAtUtc.init -> void
 Frontier.Platform.Audit.HumanDecisionRecord.Equals(Frontier.Platform.Audit.HumanDecisionRecord? other) -> bool
@@ -502,6 +523,8 @@ Frontier.Platform.Audit.SignedAuditRecord.SigningKeyId.get -> string!
 Frontier.Platform.Audit.SignedAuditRecord.SigningKeyId.init -> void
 Frontier.Platform.Audit.SignedAuditRecord.StartedAtUtc.get -> System.DateTime
 Frontier.Platform.Audit.SignedAuditRecord.StartedAtUtc.init -> void
+Frontier.Platform.Audit.SignedAuditRecord.Tenant.get -> string?
+Frontier.Platform.Audit.SignedAuditRecord.Tenant.init -> void
 Frontier.Platform.Audit.SignedAuditRecord.Termination.get -> Frontier.Platform.Audit.TerminationRecord?
 Frontier.Platform.Audit.SignedAuditRecord.Termination.init -> void
 Frontier.Platform.Audit.SignedAuditRecord.Validate() -> void
@@ -557,6 +580,8 @@ Frontier.Platform.Audit.SignedGovernanceAuditRecord.SubjectType.get -> string!
 Frontier.Platform.Audit.SignedGovernanceAuditRecord.SubjectType.init -> void
 Frontier.Platform.Audit.SignedGovernanceAuditRecord.SubjectVersion.get -> string?
 Frontier.Platform.Audit.SignedGovernanceAuditRecord.SubjectVersion.init -> void
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.Tenant.get -> string?
+Frontier.Platform.Audit.SignedGovernanceAuditRecord.Tenant.init -> void
 Frontier.Platform.Audit.SignedGovernanceAuditRecord.Validate() -> void
 Frontier.Platform.Audit.SigningAlgorithm
 Frontier.Platform.Audit.SigningKey
@@ -622,12 +647,16 @@ Frontier.Platform.Audit.VerificationResult.ChainValid.init -> void
 Frontier.Platform.Audit.VerificationResult.Equals(Frontier.Platform.Audit.VerificationResult? other) -> bool
 Frontier.Platform.Audit.VerificationResult.Forks.get -> System.Collections.Generic.IReadOnlyList<Frontier.Platform.Audit.AuditChainFork!>?
 Frontier.Platform.Audit.VerificationResult.Forks.init -> void
+Frontier.Platform.Audit.VerificationResult.HeadMismatch.get -> Frontier.Platform.Audit.AuditChainHeadMismatch?
+Frontier.Platform.Audit.VerificationResult.HeadMismatch.init -> void
 Frontier.Platform.Audit.VerificationResult.SignatureValid.get -> bool
 Frontier.Platform.Audit.VerificationResult.SignatureValid.init -> void
 Frontier.Platform.Audit.VerificationResult.UnreachableRecords.get -> System.Collections.Generic.IReadOnlyList<string!>?
 Frontier.Platform.Audit.VerificationResult.UnreachableRecords.init -> void
 Frontier.Platform.Audit.VerificationResult.UnresolvedKeyIds.get -> System.Collections.Generic.IReadOnlyList<string!>?
 Frontier.Platform.Audit.VerificationResult.UnresolvedKeyIds.init -> void
+Frontier.Platform.Audit.VerificationResult.Verdict.get -> Frontier.Platform.Audit.AuditChainVerdict!
+Frontier.Platform.Audit.VerificationResult.Verdict.init -> void
 Frontier.Platform.Audit.VerificationResult.VerificationResult() -> void
 Frontier.Platform.Audit.VerificationResult.VerifiedAgainstKeyId.get -> string!
 Frontier.Platform.Audit.VerificationResult.VerifiedAgainstKeyId.init -> void
@@ -647,6 +676,7 @@ Frontier.Platform.Audit.WorkflowEvent.OccurredAtUtc.init -> void
 Frontier.Platform.Audit.WorkflowEvent.WorkflowEvent() -> void
 Frontier.Platform.Audit.WorkflowEventType
 const Frontier.Platform.Audit.AuditSigningOptions.SectionName = "AuditSigning" -> string!
+const Frontier.Platform.Audit.AuditTenantOptions.SectionName = "Audit" -> string!
 const Frontier.Platform.Audit.ExecutionAuditOptions.SectionName = "ExecutionAudit" -> string!
 const Frontier.Platform.Audit.GovernanceAuditOptions.SectionName = "GovernanceAudit" -> string!
 const Frontier.Platform.Audit.GovernanceAuditQuery.MaxPageSize = 500 -> int
@@ -657,6 +687,9 @@ override Frontier.Platform.Audit.AgentInvocation.ToString() -> string!
 override Frontier.Platform.Audit.AuditChainFork.Equals(object? obj) -> bool
 override Frontier.Platform.Audit.AuditChainFork.GetHashCode() -> int
 override Frontier.Platform.Audit.AuditChainFork.ToString() -> string!
+override Frontier.Platform.Audit.AuditChainHeadMismatch.Equals(object? obj) -> bool
+override Frontier.Platform.Audit.AuditChainHeadMismatch.GetHashCode() -> int
+override Frontier.Platform.Audit.AuditChainHeadMismatch.ToString() -> string!
 override Frontier.Platform.Audit.AuditQuery.Equals(object? obj) -> bool
 override Frontier.Platform.Audit.AuditQuery.GetHashCode() -> int
 override Frontier.Platform.Audit.AuditQuery.ToString() -> string!
@@ -733,6 +766,8 @@ static Frontier.Platform.Audit.AgentInvocation.operator !=(Frontier.Platform.Aud
 static Frontier.Platform.Audit.AgentInvocation.operator ==(Frontier.Platform.Audit.AgentInvocation? left, Frontier.Platform.Audit.AgentInvocation? right) -> bool
 static Frontier.Platform.Audit.AuditChainFork.operator !=(Frontier.Platform.Audit.AuditChainFork? left, Frontier.Platform.Audit.AuditChainFork? right) -> bool
 static Frontier.Platform.Audit.AuditChainFork.operator ==(Frontier.Platform.Audit.AuditChainFork? left, Frontier.Platform.Audit.AuditChainFork? right) -> bool
+static Frontier.Platform.Audit.AuditChainHeadMismatch.operator !=(Frontier.Platform.Audit.AuditChainHeadMismatch? left, Frontier.Platform.Audit.AuditChainHeadMismatch? right) -> bool
+static Frontier.Platform.Audit.AuditChainHeadMismatch.operator ==(Frontier.Platform.Audit.AuditChainHeadMismatch? left, Frontier.Platform.Audit.AuditChainHeadMismatch? right) -> bool
 static Frontier.Platform.Audit.AuditQuery.operator !=(Frontier.Platform.Audit.AuditQuery? left, Frontier.Platform.Audit.AuditQuery? right) -> bool
 static Frontier.Platform.Audit.AuditQuery.operator ==(Frontier.Platform.Audit.AuditQuery? left, Frontier.Platform.Audit.AuditQuery? right) -> bool
 static Frontier.Platform.Audit.AuditRecord.operator !=(Frontier.Platform.Audit.AuditRecord? left, Frontier.Platform.Audit.AuditRecord? right) -> bool
@@ -786,6 +821,9 @@ static Frontier.Platform.Audit.WorkflowEvent.operator !=(Frontier.Platform.Audit
 static Frontier.Platform.Audit.WorkflowEvent.operator ==(Frontier.Platform.Audit.WorkflowEvent? left, Frontier.Platform.Audit.WorkflowEvent? right) -> bool
 static readonly Frontier.Platform.Audit.AuditChainForkKind.Guarded -> Frontier.Platform.Audit.AuditChainForkKind!
 static readonly Frontier.Platform.Audit.AuditChainForkKind.Legacy -> Frontier.Platform.Audit.AuditChainForkKind!
+static readonly Frontier.Platform.Audit.AuditChainVerdict.Broken -> Frontier.Platform.Audit.AuditChainVerdict!
+static readonly Frontier.Platform.Audit.AuditChainVerdict.Unverified -> Frontier.Platform.Audit.AuditChainVerdict!
+static readonly Frontier.Platform.Audit.AuditChainVerdict.Valid -> Frontier.Platform.Audit.AuditChainVerdict!
 static readonly Frontier.Platform.Audit.GovernanceAuditBreakKind.HashLinkBreak -> Frontier.Platform.Audit.GovernanceAuditBreakKind!
 static readonly Frontier.Platform.Audit.GovernanceAuditBreakKind.HeadMismatch -> Frontier.Platform.Audit.GovernanceAuditBreakKind!
 static readonly Frontier.Platform.Audit.GovernanceAuditBreakKind.OutOfOrder -> Frontier.Platform.Audit.GovernanceAuditBreakKind!

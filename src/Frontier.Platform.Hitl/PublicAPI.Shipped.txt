@@ -85,6 +85,7 @@ Frontier.Platform.Hitl.HitlServiceCollectionExtensions
 Frontier.Platform.Hitl.IApprovalQueryService
 Frontier.Platform.Hitl.IApprovalQueryService.GetAsync(string! approvalId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Frontier.Platform.Hitl.ApprovalRequest?>!
 Frontier.Platform.Hitl.IApprovalQueryService.GetByEngagementAsync(string! engagementId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Frontier.Platform.Hitl.ApprovalRequest!>!>!
+Frontier.Platform.Hitl.IApprovalQueryService.GetDecidedByAsync(string! approverId, System.DateTime sinceUtc, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Frontier.Platform.Hitl.ApprovalRequest!>!>!
 Frontier.Platform.Hitl.IApprovalQueryService.GetEscalatedAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Frontier.Platform.Hitl.ApprovalRequest!>!>!
 Frontier.Platform.Hitl.IApprovalQueryService.GetPendingAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Frontier.Platform.Hitl.ApprovalRequest!>!>!
 Frontier.Platform.Hitl.IApprovalStore
